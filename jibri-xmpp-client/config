@@ -1,0 +1,25 @@
+#place in /etc/jitsi/jibri/, source from the init.d script
+
+# The jid/username of the jibri user. It needs to be registered in prosody with
+# prosodyctl adduser $JID
+# All jibri instances can use the same account, they will be bound to different resources.
+JID=jibri@auth.boris.jitsi.net
+
+# The password for the XMPP account
+PASS=jibri
+
+# The full JID (name@muc.address) of the special room for jibri instances.
+# Named weirdly because it can't be used for conferences any more. 
+ROOM=TheBrewery-fe5a1a8993c07edc1a63@conference.boris.jitsi.net
+
+# Nickname in the MUC. Set to something unique amongst jibri instances
+NICK=jibri-fds
+
+# Password for the room.
+ROOMPASS=roompass
+
+# Shared secret between jibris and jicofos
+TOKEN=token
+
+# The list of IP addresses/hostnames to connect to.
+SERVERS="jicofo1.example.com jicofo2.example.com"
