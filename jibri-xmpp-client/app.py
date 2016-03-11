@@ -88,6 +88,8 @@ def on_jibri_iq(client, iq):
                     iq['jibri']._getAttr('streamid'))
         # TODO: notify of updates
     elif stop:
+        global js
+        js.quit()
         call([stop_recording_script])
         logging.info("Stopping.")
         time.sleep(3)
@@ -168,37 +170,37 @@ def wait_until_done(js=None):
         call([stop_recording_script])            
         return
 
-    while True:
-        try:
-            #check that ffmpeg is running
-            os.kill(ffmpeg_pid, 0)
-            #check that we're still receiving data
-            if js.waitDownloadBitrate() == 0:
-                #throw an error here
-                raise ValueError('no data received by meet for recording')
+    # while True:
+    #     try:
+    #         #check that ffmpeg is running
+    #         os.kill(ffmpeg_pid, 0)
+    #         #check that we're still receiving data
+    #         if js.waitDownloadBitrate() == 0:
+    #             #throw an error here
+    #             raise ValueError('no data received by meet for recording')
 
-            #nothing is wrong, so wait a bit
-            time.sleep(5)
-        except:
-            #oops it all went awry
-            #quit chrome
-            js.quit()
-            #clean up ffmpeg and kill off any last pieces
-            update_jibri_status('off')
-            call([stop_recording_script])            
-            return
+    #         #nothing is wrong, so wait a bit
+    #         time.sleep(5)
+    #     except:
+    #         #oops it all went awry
+    #         #quit chrome
+    #         js.quit()
+    #         #clean up ffmpeg and kill off any last pieces
+    #         update_jibri_status('off')
+    #         call([stop_recording_script])            
+    #         return
 
 
 def update_jibri_status(status):
     iq = client_in_use.Iq()
     iq['to'] = controllerJid
-    iq['type'] = 'get'
+    iq['type'] = 'set'
     iq['jibri']._setAttr('status', status)
     logging.info('sending status update: %s' % iq)
     try:
-        iq.send(wait=False)
-    except:
-        logging.info("Failed to send status update.")
+        iq.send()
+    except Exception as e:
+        logging.error("Failed to send status update: %s", str(e))
 
 
 

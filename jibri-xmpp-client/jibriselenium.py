@@ -104,6 +104,14 @@ class JibriSeleniumDriver():
 
 
     def quit(self):
+      try:
+        response=self.driver.execute_script('return APP.conference._room.connection.disconnect();')
+        #give chrome a chance to finish logging out
+        time.sleep(2)
+      except Exception as e:
+        print("Failed to click hangup button")
+        pprint.pprint(e)
+
       self.driver.quit()      
 
 
