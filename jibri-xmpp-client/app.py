@@ -12,12 +12,14 @@ from optparse import OptionParser
 from subprocess import call
 import sys
 from jibrixmppclient import JibriXMPPClient
+from jibriselenium import JibriSeleniumDriver
 
 jibriiq = False
 running = False
 clients = {}
 client_in_use = None
 controllerJid = None
+js = None
 
 # FIXME
 launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
@@ -74,7 +76,7 @@ def on_jibri_iq(client, iq):
         tmp = client.Iq()
         tmp['jibri-status']._setAttr('status', 'busy')
         presence.append(tmp['jibri-status'])
-        print('sending presence: %s' % presence)
+        logging.info('sending presence: %s' % presence)
         presence.send()
 
         close_all_other_clients(client)
@@ -95,54 +97,95 @@ def on_jibri_iq(client, iq):
 def close_all_other_clients(c):
     pass
 
-def get_full_url(conference_name, follow_entity):
+def get_full_url(conference_name, follow_entity, token=None):
+
+    if '@' in conference_name:
+        conference_name = conference_name[:conference_name.index('@')]
     if follow_entity:
-        url += 'follow_entity=' + follow_entity + '&'
+        url += '&follow_entity=' + follow_entity + 
+    if token:
+        url += '&token=' + token
 
     return url
 
-def start_jibri(url, follow_entity, stream_id):
-    url = get_full_url(url, follow_entity)
-    stream_id = 'xxxFIXME'
+def start_jibri(url, follow_entity, stream_id, token='token'):
+    retcode=0
+    global js
+    token='abc'
+    #url = get_full_url(url, follow_entity)
+
     logging.info(
         "starting jibri, url=%s, youtube-stream-id=%s" % (
             url, stream_id))
 
-    retcode = call([launch_recording_script, url, 'ignore', 'ignore', stream_id],
-         shell=False)
+    js = JibriSeleniumDriver(url,token)
+    js.launchUrl()
+    if js.waitXMPPConnected():
+      if js.waitDownloadBitrate()>0:
+        retcode = call([launch_recording_script, url, 'ignore', 'ignore', stream_id],
+             shell=False)
+      else:
+        #didn't launch ffmpeg properly right
+        retcode=1336
+
+    else:
+      #didn't launch chrome properly right
+      retcode=1337
 
     if retcode > 0:
         # We failed to start, bail.
-        print("start returned retcode=" + str(retcode))
+        logging.info("start returned retcode=" + str(retcode))
         update_jibri_status('off')
         return
 
     # this seems broken
-    # wait_until_done()
+    wait_until_done(js)
     # sys.exit(0)
 
-def wait_until_done():
+def wait_until_done(js=None):
     # So far so good.
     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
     try:
         ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
     except:
+        #oops it all went awry
+        #quit chrome
+        js.quit()
+        #clean up ffmpeg and kill off any last pieces
         update_jibri_status('off')
+        call([stop_recording_script])
         return
 
     try:
         os.kill(ffmpeg_pid, 0)
         update_jibri_status('on')
     except:
+        #oops it all went awry
+        #quit chrome
+        js.quit()
+        #clean up ffmpeg and kill off any last pieces
         update_jibri_status('off')
+        call([stop_recording_script])            
         return
 
     while True:
         try:
+            #check that ffmpeg is running
             os.kill(ffmpeg_pid, 0)
+            #check that we're still receiving data
+            if js.waitDownloadBitrate() == 0:
+                #throw an error here
+                raise ValueError('no data received by meet for recording')
+
+            #nothing is wrong, so wait a bit
             time.sleep(5)
         except:
+            #oops it all went awry
+            #quit chrome
+            js.quit()
+            #clean up ffmpeg and kill off any last pieces
             update_jibri_status('off')
+            call([stop_recording_script])            
             return
 
 
@@ -151,11 +194,11 @@ def update_jibri_status(status):
     iq['to'] = controllerJid
     iq['type'] = 'get'
     iq['jibri']._setAttr('status', status)
-    print('sending status update: %s' % iq)
+    logging.info('sending status update: %s' % iq)
     try:
         iq.send(wait=False)
     except:
-        print("Failed to send status update.")
+        logging.info("Failed to send status update.")
 
 
 
