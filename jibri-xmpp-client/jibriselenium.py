@@ -4,6 +4,7 @@ import signal
 import time
 import pprint
 from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -49,28 +50,39 @@ class JibriSeleniumDriver():
 
       print("Launching URL: %s"%url)
       self.driver.get(url)
+      ActionChains(self.driver).move_to_element(self.driver.find_element_by_css_selector("#welcome_page")).perform()
 
-    def isXMPPConnected(self):
-      response=''
+    def execute_script(self, script):
       try:
-        response = self.driver.execute_script('return APP.conference._room.xmpp.connection.connected;')
+        response=self.driver.execute_script(script)
       except WebDriverException as e:
         pprint.pprint(e)
         response = None
+#      except ConnectionRefusedError as e:
+        #should kill chrome and restart? unhealthy for sure
+#        pprint.pprint(e)
+#        response = None
       except:
         print("Unexpected error:%s"%sys.exc_info()[0])
         raise
+
+      return response
+
+    def isXMPPConnected(self):
+      response=''
+      response = self.execute_script('return APP.conference._room.xmpp.connection.connected;')
       
       print('isXMPPConnected:%s'%response)
       return response
     
     def getDownloadBitrate(self):
       try:
-        stats = self.driver.execute_script("return APP.conference.getStats();")
+        stats = self.execute_script("return APP.conference.getStats();")
+        if stats == None:
+          return 0
         return stats['bitrate']['download']
       except:
         return 0
-
 
     def waitDownloadBitrate(self,timeout=None, interval=5):
       if not timeout:
@@ -105,7 +117,7 @@ class JibriSeleniumDriver():
 
     def quit(self):
       try:
-        response=self.driver.execute_script('return APP.conference._room.connection.disconnect();')
+        response=self.execute_script('return APP.conference._room.connection.disconnect();')
         #give chrome a chance to finish logging out
         time.sleep(2)
       except Exception as e:
@@ -159,21 +171,3 @@ if __name__ == '__main__':
     print("Failed to connect to meet")
 
   js.quit()
-
-
-
-
-#driver.execute_script("window.localStorage.displayname = 'JIBRI'")
-#driver.execute_script("window.localStorage.email = 'jibri@mustelinae.net'")
-
-#driver.refresh()
-#time.sleep(1)
-#driver.find_element_by_id("toolbar_button_camera").click()
-#driver.find_element_by_id("toolbar_button_mute").click()
-
-#driver.execute_script("window.localStorage.displayname='Recorder'")
-#driver.find_element_by_id("toolbar_button_chat").click()
-
-#driver.quit()
-
-

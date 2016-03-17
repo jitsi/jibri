@@ -19,13 +19,6 @@ icewm-session > /tmp/jibri-icewm.out 2>&1 &
 echo $! > $PID_DIR/icewm.pid
 sleep 1
 
-#launch chrome in selenium in the appropriate room
-# TODO: maybe include this as a module in the control app, so we can monitor it
-# easier and send errors to jicofo if it bails.
-python3 -i start-chromium-selenium.py -u "$URL" -t $TOKEN > /tmp/jibri-python-selenium.out 2>&1 &
-echo $! > $PID_DIR/python-selenium.pid
-sleep 1
-
 
 YOUTUBE_BASE="rtmp://a.rtmp.youtube.com/live2"
 if [ ! -z "$4" ]; then
