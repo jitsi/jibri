@@ -8,25 +8,6 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 app = sys.argv[0]
 argv=sys.argv[1:]
-URL = ''
-token = ''
-try:
-  opts, args = getopt.getopt(argv,"hu:t:",["meeting_url=","token="])
-except getopt.GetoptError:
-  print(app+' -u <meetingurl> -t <authtoken>')
-  sys.exit(2)
-for opt, arg in opts:
-  if opt == '-h':
-     print(app+' -u <meetingurl> -t <authtoken>')
-     sys.exit()
-  elif opt in ("-u", "--meeting_url"):
-     URL = arg
-  elif opt in ("-t", "--token"):
-     token = arg
-
-if not URL:
-    print('No meeting URL provided.')
-    exit(1)
 
 d = DesiredCapabilities.CHROME
 d['loggingPrefs'] = { 'browser':'ALL' }
@@ -48,14 +29,22 @@ options.add_argument('--enable-logging')
 options.add_argument('--vmodule=*=3')
 
 driver = webdriver.Chrome(chrome_options=options, desired_capabilities=d)
+URL="http://www.google.com/"
 driver.get(URL)
-
+time.sleep(10)
+driver.quit()
+exit("Jibri Warmed Up")
 #driver.execute_script("window.localStorage.displayname = 'JIBRI'")
-#driver.execute_script("window.localStorage.email = 'jibri@example.net'")
-#driver.refresh()
+#driver.execute_script("window.localStorage.email = 'jibri@mustelinae.net'")
 
+#driver.refresh()
 #time.sleep(1)
 #driver.find_element_by_id("toolbar_button_camera").click()
 #driver.find_element_by_id("toolbar_button_mute").click()
 
+#driver.execute_script("window.localStorage.displayname='Recorder'")
+#driver.find_element_by_id("toolbar_button_chat").click()
+
 #driver.quit()
+
+
