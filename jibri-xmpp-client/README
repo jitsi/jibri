@@ -13,4 +13,4 @@ To send it a command to start recording:
 Find its full jid (jibri@yayayada/random-crap) in the output (might need to run with -d).
 
 source config
-python3 custom_stanza_user.py -j $JID -p $PASS  -d -o $FULL_JID -u <URL>
+python3 custom_stanza_user.py -j $JID -p $PASS  -d -o $FULL_JID

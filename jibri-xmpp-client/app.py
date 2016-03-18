@@ -143,7 +143,15 @@ def jibri_start_callback(client, url, follow_entity, stream_id, wait=True):
     update_jibri_status('busy',client)
 
     logging.info("Starting jibri")
-    retcode = start_jibri(url, follow_entity, stream_id)
+    retcode=9999
+    try:
+        retcode = start_jibri(url, follow_entity, stream_id)
+    except:
+        #oops it all went awry
+        #quit chrome
+        #clean up ffmpeg and kill off any last pieces
+        reset_recording()
+        return
     if retcode > 0:
         # We failed to start, bail.
         logging.info("start returned retcode=" + str(retcode))
@@ -256,7 +264,7 @@ def watch_ffmpeg(queue, loop, finished_callback):
                 break
 
             if result:
-                logging.info("ffmpeg still running, sleeping...")
+                logging.debug("ffmpeg still running, sleeping...")
                 time.sleep(5)
             else:
                 logging.info("ffmpeg no longer running, triggering callback")
@@ -447,7 +455,8 @@ if __name__ == '__main__':
     #debugging signal
     loop.add_signal_handler(signal.SIGUSR1,sigusr1_handler, loop)
 
-    loop.set_debug(True)
+# no longer debug
+#    loop.set_debug(True)
 
     ffmpeg_queue = Queue()
 
