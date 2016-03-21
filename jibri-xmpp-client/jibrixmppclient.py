@@ -116,7 +116,16 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
     def handle_queue_msg(self, msg):
         if msg== None:
             #got the message to quit, so stand down
+            logging.info("Attempting to disconnect and abort client...")
+            self.disconnect(wait=True)
             self.abort()
+            logging.info("Finished abort processing")
+        if msg== False:
+            #got the message to quit, so stand down
+            logging.info("Attempting to disconnect and abort client...")
+            self.disconnect(wait=True)
+            self.abort()
+            logging.info("Finished abort processing")
         if msg == 'idle':
             self.presence_idle()
         elif msg == 'busy': 

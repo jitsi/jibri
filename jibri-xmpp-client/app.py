@@ -13,6 +13,7 @@ import threading
 import signal
 import functools
 import atexit
+import requests
 from optparse import OptionParser
 from subprocess import call
 from queue import Queue, Empty
@@ -70,7 +71,9 @@ def sigterm_handler(loop=None):
     logging.warn("Received SIGTERM...")
     #do the real killing here
     kill_theworld(loop)
-    #sys.exit("Jibri begone!")
+    #exit with a termination error
+    logging.info("Finished SIGTERM processing...")
+    sys.exit("Jibri terminated!")
 
 #handled in main thread
 #when we receive a SIGHUP we should wait until we can get the recording lock (so recording has ended), then exit
@@ -82,7 +85,9 @@ def sighup_handler(loop=None):
         logging.info("SIGHUP, received recording lock")
         #do the real killing here
         kill_theworld(loop)
-        #sys.exit("Jibri gracefully begone!")
+        #exit without an error
+        logging.info("Finished SIGHUP processing...")
+        sys.exit(None)
 
 
 def sigusr1_handler(loop=None):
@@ -129,8 +134,10 @@ def kill_theworld(loop=None):
     for c in clients:
         clients[c].auto_reconnect = False
         #send abort message to every client
-        clients[c].disconnect()
+        clients[c].disconnect(wait=True)
+        clients[c].abort()
     #end the final asyncio loop
+    requests.post('http://localhost:5000/jibri/kill')
     loop.stop()
 
 
@@ -226,7 +233,7 @@ def update_jibri_status(status, c=None):
 
 #function to start the ffmpeg watcher thread..only meant to be run once
 def start_watch_ffmpeg(queue, loop, finished_callback):
-    t = threading.Thread(target=watch_ffmpeg, args=(queue, loop, finished_callback))
+    t = threading.Thread(target=watch_ffmpeg, args=(queue, loop, finished_callback),name="watch_ffmpeg")
     t.daemon = True
     t.start()
 
@@ -355,6 +362,15 @@ def url_start_recording():
             success = False
             result = {'success': success, 'error': 'Token does not match'}
         return jsonify(result)
+
+@app.route('/jibri/kill', methods=['POST'])
+def kill():
+    logging.info('Received kill signal for flask server')
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+    return "Shutting down..."
 
 @app.route('/jibri/api/v1.0/stop', methods=['POST','GET'])
 def url_stop_recording():

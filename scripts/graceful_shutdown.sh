@@ -22,6 +22,7 @@
 hostUrl="http://localhost:5000"
 timeout=25
 verbose=1
+restart=0
 
 # Parse arguments
 OPTIND=1
@@ -38,6 +39,9 @@ while getopts "p:h:t:s" opt; do
         ;;
     s)
         verbose=0
+        ;;
+    r)
+        restart=1
         ;;
     esac
 done
