@@ -191,7 +191,7 @@ def jibri_start_callback(client, url, follow_entity, stream_id, room=None, wait=
                     raise ValueError('FFMPEG Failed to start after %s attempts'%attempt_count)
                     break
 
-                sleep(1)
+                time.sleep(1)
                 success = check_ffmpeg_running()
 
             if success:
