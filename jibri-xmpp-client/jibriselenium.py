@@ -26,6 +26,7 @@ class JibriSeleniumDriver():
       self.options.add_argument('--use-fake-ui-for-media-stream')
       self.options.add_argument('--start-maximized')
       self.options.add_argument('--kiosk')
+      self.options.add_argument('--enabled')
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
       self.initDriver()
