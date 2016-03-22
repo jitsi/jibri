@@ -51,7 +51,6 @@ class JibriSeleniumDriver():
 
       print("Launching URL: %s"%url)
       self.driver.get(url)
-      ActionChains(self.driver).move_to_element(self.driver.find_element_by_css_selector("#welcome_page")).perform()
 
     def execute_script(self, script):
       try:
