@@ -103,7 +103,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             client_in_use = self
             # msg received, call the msg callback in the main thread with the event loop
             # this nets out a call to start_recording(client, url, follow_entity, stream_id)
-            self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('follow-entity'),iq['jibri']._getAttr('streamid'),room=iq['jibri']._getAttr('room'))
+            self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('follow-entity'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'))
 
             #callback to parent thread to start jibri
             # TODO: notify of updates
