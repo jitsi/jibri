@@ -181,10 +181,23 @@ def jibri_start_callback(client, url, follow_entity, stream_id, room=None, wait=
             return
 
         try:
-            os.kill(ffmpeg_pid, 0)
-            update_jibri_status('started')
-            queue_ffmpeg_start(stream_id)
-            logging.info("queued job for watch_ffmpeg, startup completed...")
+            success = check_ffmpeg_running()
+            attempt_count=0
+            attempt_max=5
+            while not success:
+                if attempt_count > attempt_max:
+                    logging.warn("FFMPEG failed to start after %s attempts"%attempt_count)
+                    success = False
+                    raise ValueError('FFMPEG Failed to start after %s attempts'%attempt_count)
+                    break
+
+                sleep(1)
+                success = check_ffmpeg_running()
+
+            if success:
+                update_jibri_status('started')
+                queue_ffmpeg_start(stream_id)
+                logging.info("queued job for watch_ffmpeg, startup completed...")
         except Exception as e:
             #oops it all went awry
             #clean up ffmpeg and kill off any last pieces
@@ -286,6 +299,7 @@ def watch_ffmpeg(queue, loop, finished_callback):
 #utility function called by watch_ffmpeg, checks for the ffmpeg process, returns true if the pidfile can be found and the process exists
 def check_ffmpeg_running():
     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
+    ffmpeg_output_file="/tmp/jibri-ffmpeg.out"
     try:
         ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
     except:
@@ -297,6 +311,11 @@ def check_ffmpeg_running():
     try:
         #check that ffmpeg is running
         os.kill(ffmpeg_pid, 0)
+        #check if we are streaming
+        retcode = call(['grep', '-q', 'frame=', ffmpeg_output_file])
+        if retcode > 0:
+            logging.info('No frame= lines found from ffmpeg, not running yet')
+            return False
         #check that we're still receiving data
 #        if js.waitDownloadBitrate() == 0:
             #throw an error here
