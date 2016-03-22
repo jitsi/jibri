@@ -12,6 +12,8 @@ PASS=jibri
 # Named weirdly because it can't be used for conferences any more. 
 ROOM=TheBrewery-fe5a1a8993c07edc1a63@conference.boris.jitsi.net
 
+URL=https://boris.jitsi.net/%ROOM%
+
 # Nickname in the MUC. Set to something unique amongst jibri instances
 NICK=jibri-fds
 

@@ -142,9 +142,15 @@ def kill_theworld(loop=None):
 
 
 #main callback to start jibri: meant to be run in the main thread, kicked off using a loop.call_soon_threadsafe() from within another thread (XMPP or REST thread)
-def jibri_start_callback(client, url, follow_entity, stream_id, wait=True):
+def jibri_start_callback(client, url, follow_entity, stream_id, room=None, wait=True):
     global js
     global loop
+    global opts
+    if room:
+        if not url:
+            url = opts.url
+        url = url.replace('%ROOM%',room)
+
     logging.info("Start recording callback")
     #mark everyone else as busy
     update_jibri_status('busy',client)
@@ -417,6 +423,7 @@ if __name__ == '__main__':
                     const=5, default=logging.INFO)
 
     optp.add_option("-j", "--jid", dest="jid", help="JID to use")
+    optp.add_option("-u", "--url", dest="url", help="URL to record, with token %ROOM% for room name: https://meet.jit.si/%ROOM%")
     optp.add_option("-p", "--password", dest="password", help="password to use")
     optp.add_option("-r", "--room", dest="room", help="MUC room to join")
     optp.add_option("-n", "--nick", dest="nick", help="MUC nickname",
@@ -426,6 +433,7 @@ if __name__ == '__main__':
 
     optp.usage = 'Usage: %prog [options] <server_hostname1 server_hostname2 ...>'
 
+    global opts
     opts, args = optp.parse_args()
 
     # Setup logging.
@@ -438,6 +446,12 @@ if __name__ == '__main__':
           exit("No jid given.")
         else:
           opts.jid = os.environ.get('JID')
+    if opts.url is None:
+        if os.environ.get('URL') is None:
+          optp.print_help()
+          exit("No url given.")
+        else:
+          opts.url = os.environ.get('URL')
     if opts.password is None:
         if os.environ.get('PASS') is None:
           optp.print_help()
