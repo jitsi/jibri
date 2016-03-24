@@ -3,11 +3,16 @@ import sys, getopt, os
 import signal
 import time
 import pprint
+import logging
 from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
+from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
+
 
 class JibriSeleniumDriver():
     def __init__(self, url, authtoken=None, xmpp_connect_timeout=60):
@@ -15,6 +20,8 @@ class JibriSeleniumDriver():
       #init based on url and optional token
       self.url = url
       self.authtoken = authtoken
+
+      self.flag_jibri_identifiers_set = False
 
       #only wait this only before failing to load meet
       self.xmpp_connect_timeout = xmpp_connect_timeout
@@ -45,12 +52,40 @@ class JibriSeleniumDriver():
       print("Initializing Driver")
       self.driver = webdriver.Chrome(chrome_options=options, desired_capabilities=desired_capabilities)
 
+    def setJibriIdentifiers(self):
+      print("Setting jibri identifiers")
+      self.execute_script("window.localStorage.setItem('displayname','JIBRI'); window.localStorage.setItem('email','recorder@jitsi.org');")
+#      self.execute_script("window.localStorage.setItem('email','recorder@jitsi.org');")
+
     def launchUrl(self, url=None):
       if not url:
         url = self.url
 
       print("Launching URL: %s"%url)
+      #we do this twice: once to launch the page the first time,
+      if not self.flag_jibri_identifiers_set:
+        self.driver.get(url)
+        self.setJibriIdentifiers()
+        self.flag_jibri_identifiers_set = True
+
       self.driver.get(url)
+
+    def execute_async_script(self, script):
+      try:
+        response=self.driver.execute_script(script)
+      except WebDriverException as e:
+        pprint.pprint(e)
+        response = None
+#      except ConnectionRefusedError as e:
+        #should kill chrome and restart? unhealthy for sure
+#        pprint.pprint(e)
+#        response = None
+      except:
+        print("Unexpected error:%s"%sys.exc_info()[0])
+        raise
+
+      return response
+
 
     def execute_script(self, script):
       try:
@@ -70,14 +105,14 @@ class JibriSeleniumDriver():
 
     def isXMPPConnected(self):
       response=''
-      response = self.execute_script('return APP.conference._room.xmpp.connection.connected;')
+      response = self.execute_async_script('return APP.conference._room.xmpp.connection.connected;')
       
       print('isXMPPConnected:%s'%response)
       return response
     
     def getDownloadBitrate(self):
       try:
-        stats = self.execute_script("return APP.conference.getStats();")
+        stats = self.execute_async_script("return APP.conference.getStats();")
         if stats == None:
           return 0
         return stats['bitrate']['download']
@@ -85,21 +120,27 @@ class JibriSeleniumDriver():
         return 0
 
     def waitDownloadBitrate(self,timeout=None, interval=5):
+      logging.info('starting to wait for DownloadBitrate')
       if not timeout:
         timeout = self.xmpp_connect_timeout
       if self.getDownloadBitrate() > 0:
+        logging.info('downloadbitrate > 0, done waiting')
         return True
       else:
         wait_time=0
         while wait_time < timeout:
+          logging.info('waiting +%d = %d < %d for XMPPConnected'%(interval, wait_time, timeout))
           time.sleep(interval)
           wait_time = wait_time + interval
           if self.getDownloadBitrate() > 0:
+            logging.info('downloadbitrate > 0, done waiting')
             return True
           if wait_time >= timeout:
+            logging.info('Timed out waiting for download bitrate')
             return False
 
     def waitXMPPConnected(self,timeout=None, interval=5):
+      logging.info('starting to wait for XMPPConnected')
       if not timeout:
         timeout = self.xmpp_connect_timeout
       if self.isXMPPConnected():
@@ -107,13 +148,31 @@ class JibriSeleniumDriver():
       else:
         wait_time=0
         while wait_time < timeout:
+          logging.info('waiting +%d = %d < %d for XMPPConnected'%(interval, wait_time, timeout))
           time.sleep(interval)
           wait_time = wait_time + interval
           if self.waitXMPPConnected():
+            logging.info('XMPP connected, done waiting')
             return True
           if wait_time >= timeout:
+            logging.info('Timed out waiting for XMPP connection')
             return False
 
+
+    def checkRunning(self, timeout=2):
+      logging.info('checkRunning selenium')
+#      self.driver.set_script_timeout(10)
+      try:
+        element = WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        if element:
+          return True
+        else:
+          return False
+      except Exception as e:
+        logging.info("Failed to run script properly")
+        pprint.pprint(e)
+#        raise e
+      return False
 
     def quit(self):
       try:
@@ -159,15 +218,34 @@ if __name__ == '__main__':
   signal.signal(signal.SIGTERM, sigterm_handler)
   js = JibriSeleniumDriver(URL,token)
   js.launchUrl()
-  if js.waitXMPPConnected():
-    print('Successful connection to meet')
-    if js.waitDownloadBitrate()>0:
-      print('Successfully receving data in meet, waiting 60 seconds for fun')
-      time.sleep(60)
+  if js.checkRunning():
+    if js.waitXMPPConnected():
+      print('Successful connection to meet')
+      if js.waitDownloadBitrate()>0:
+        print('Successfully receving data in meet, waiting 60 seconds for fun')
+        interval=1
+        timeout=60
+        sleep_clock=0
+        while sleep_clock < timeout:
+          br=js.getDownloadBitrate()
+          if not br:
+            print('No more data, waiting a few...')
+            if not js.waitDownloadBitrate():
+              print('Never got more data, finishing up...')
+              break
+          else:
+            print('Current bitrate: %s'%br)
+
+          sleep_clock=sleep_clock+interval
+          time.sleep(interval)
+
+      else:
+        print("Failed to receive data in meet client")
+
     else:
-      print("Failed to receive data in meet client")
-
+      print("Failed to connect to meet")
   else:
-    print("Failed to connect to meet")
+    print("Failed to start selenium/launch URL")
 
+  print("Done waiting, finishing up and exiting...")
   js.quit()

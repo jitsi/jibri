@@ -24,7 +24,7 @@ class JibriStatusElement(ElementBase):
 
 class JibriXMPPClient(sleekxmpp.ClientXMPP):
 
-    def __init__(self, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, recording_lock, signal_queue):
+    def __init__(self, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue):
         sleekxmpp.ClientXMPP.__init__(self, jid, password)
 
         self.room = room
@@ -33,6 +33,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         self.jid = jid
         self.jibri_start_callback = jibri_start_callback
         self.jibri_stop_callback = jibri_stop_callback
+        self.jibri_health_callback = jibri_health_callback
         self.recording_lock = recording_lock
         self.queue = signal_queue
         self.loop = loop
@@ -68,16 +69,21 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         if action == 'start':
             #we hope for threadsafe, so don't block and just tell jicofo no....
             if not self.recording_lock.acquire(False):
+                logging.info("Unable to acquire a lock, instance is already in use")
                 reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='Instance already in use.', ito=iq['from'], iq=reply)
-                reply._setAttr('code', 503)
+                reply['error']['code']='503'
 #                reply['jibri']._setAttr('state', 'pending')
             else:
                 if not iq['jibri']._getAttr('streamid'):
-                    reply['type'] = 'error'
-                    reply['error']['text'] = 'No stream-id.'
-                elif not iq['jibri']._getAttr('url'):
-                    reply['type'] = 'error'
-                    reply['error']['text'] = 'No URL.'
+                    logging.info("No stream provided")
+                    reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No stream-id specified.', ito=iq['from'], iq=reply)
+                    reply['error']['code']='501'
+                    self.recording_lock.release()
+                elif not iq['jibri']._getAttr('room') and not iq['jibri']._getAttr('url'):
+                    logging.info("No URL or Room provided")
+                    reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No URL or room specified.', ito=iq['from'], iq=reply)
+                    reply['error']['code']='501'
+                    self.recording_lock.release()
                 else:
                     running = True
                     reply['type'] = 'result'
@@ -103,7 +109,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             client_in_use = self
             # msg received, call the msg callback in the main thread with the event loop
             # this nets out a call to start_recording(client, url, follow_entity, stream_id)
-            self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('follow-entity'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'))
+            self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'))
 
             #callback to parent thread to start jibri
             # TODO: notify of updates
@@ -126,6 +132,8 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             self.disconnect(wait=True)
             self.abort()
             logging.info("Finished abort processing")
+        if msg == 'health':
+             self.loop.call_soon_threadsafe(self.jibri_health_callback, self)
         if msg == 'idle':
             self.presence_idle()
         elif msg == 'busy': 
@@ -160,7 +168,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
                                         self.nick,
                                         password=self.roompass)
                                         #wait=True)
-        self.scheduler.add("asyncio_queue", 2, self.from_main_thread_nonblocking,
+        self.scheduler.add("asyncio_queue", 1, self.from_main_thread_nonblocking,
             repeat=True, qpointer=self.event_queue)
 
 

@@ -30,6 +30,7 @@ client_in_use = None
 enso_token_suffix = ""
 js = None
 
+health_lock = threading.Lock()
 recording_lock = threading.Lock()
 loop = asyncio.get_event_loop()
 
@@ -100,8 +101,8 @@ def sigusr1_handler(loop=None):
 def reset_recording():
     global recording_lock
     kill_selenium_driver()
-    #send a false to stop watching ffmpeg and restart the loop
-    queue_ffmpeg_start(False)
+    #send a false to stop watching ffmpeg/selenium and restart the loop
+    queue_watcher_start(False)
     stop_recording()
     update_jibri_status('stopped')
     try:
@@ -127,8 +128,8 @@ def kill_theworld(loop=None):
     global clients
     kill_selenium_driver()
     stop_recording()
-    #send a poisoned job to ffmpeg watcher to kill that thread
-    queue_ffmpeg_start(None)
+    #send a poisoned job to ffmpeg/selenium watcher to kill that thread
+    queue_watcher_start(None)
     #send a poisoned job to the sleekxmpp threads
     update_jibri_status(None)
     for c in clients:
@@ -140,13 +141,23 @@ def kill_theworld(loop=None):
     requests.post('http://localhost:5000/jibri/kill')
     loop.stop()
 
+def jibri_health_callback(client):
+    logging.info('Jibri health callback response from client %s'%client)
+    global health_lock
+    try:
+        health_lock.release()
+    except Exception as e:
+        logging.info('Exception releasing health lock: %s'%e)
 
 #main callback to start jibri: meant to be run in the main thread, kicked off using a loop.call_soon_threadsafe() from within another thread (XMPP or REST thread)
-def jibri_start_callback(client, url, follow_entity, stream_id, room=None, wait=True):
+def jibri_start_callback(client, url, stream_id, room=None, token='token'):
     global js
     global loop
     global opts
     if room:
+        at_index = room.rfind('@')
+        if at_index > 0:
+            room = room[0:at_index]
         if not url:
             url = opts.url
         url = url.replace('%ROOM%',room)
@@ -158,7 +169,7 @@ def jibri_start_callback(client, url, follow_entity, stream_id, room=None, wait=
     logging.info("Starting jibri")
     retcode=9999
     try:
-        retcode = start_jibri(url, follow_entity, stream_id)
+        retcode = start_jibri(url, stream_id, token)
     except:
         #oops it all went awry
         #quit chrome
@@ -196,8 +207,8 @@ def jibri_start_callback(client, url, follow_entity, stream_id, room=None, wait=
 
             if success:
                 update_jibri_status('started')
-                queue_ffmpeg_start(stream_id)
-                logging.info("queued job for watch_ffmpeg, startup completed...")
+                queue_watcher_start(stream_id)
+                logging.info("queued job for jibri_watcher, startup completed...")
         except Exception as e:
             #oops it all went awry
             #clean up ffmpeg and kill off any last pieces
@@ -205,12 +216,12 @@ def jibri_start_callback(client, url, follow_entity, stream_id, room=None, wait=
             reset_recording()
             return
 
-def queue_ffmpeg_start(msg):
-    logging.info("queueing job for watch_ffmpeg")
-    global ffmpeg_queue
-    ffmpeg_queue.put(msg)
+def queue_watcher_start(msg):
+    logging.info("queueing job for jibri_watcher")
+    global watcher_queue
+    watcher_queue.put(msg)
 
-def start_jibri(url, follow_entity, stream_id, token='token'):
+def start_jibri(url, stream_id, token='token'):
     retcode=0
     global js
     token='abc'
@@ -251,43 +262,45 @@ def update_jibri_status(status, c=None):
             queues[hostname].put(status)
 
 #function to start the ffmpeg watcher thread..only meant to be run once
-def start_watch_ffmpeg(queue, loop, finished_callback):
-    t = threading.Thread(target=watch_ffmpeg, args=(queue, loop, finished_callback),name="watch_ffmpeg")
+def start_jibri_watcher(queue, loop, finished_callback):
+    t = threading.Thread(target=jibri_watcher, args=(queue, loop, finished_callback),name="jibri_watcher")
     t.daemon = True
     t.start()
 
-#main function for watch_ffmpeg thread: waits on a queue until triggered
+#main function for jibri_watcher thread: waits on a queue until triggered
 #thread then watches a running ffmpeg process until it completes, then triggers a callback
-def watch_ffmpeg(queue, loop, finished_callback):
+def jibri_watcher(queue, loop, finished_callback):
     while True:
-        logging.info("watch_ffmpeg starting up...")
+        logging.info("jibri_watcher starting up...")
         msg = queue.get() #blocks waiting on a new job
         result = True
         if msg == None:
             #done here, so exit
-            logging.info("watch_ffmpeg got poisoned job, exiting thread.")
+            logging.info("jibri_watcher got poisoned job, exiting thread.")
             return
         elif (msg == False):
-            logging.info("watch_ffmpeg got reset job, restarting thread.")
+            logging.info("jibri_watcher got reset job, restarting thread.")
             result = False
         else:
-            logging.info("watch_ffmpeg got msg from main: %s" % msg)
+            logging.info("jibri_watcher got msg from main: %s" % msg)
 
         #now start looping to watch this ffmpeg process
         while (result):
-            result = check_ffmpeg_running()
             try:
                 msg = queue.get(False) #doesn't block
             except Empty:
                 msg = True
                 pass
             if (msg == None):
-                logging.info("watch_ffmpeg got poisoned job, exiting thread.")
+                logging.info("jibri_watcher got poisoned job, exiting thread.")
                 return
             elif (msg == False):
-                logging.info("watch_ffmpeg got reset job, restarting thread.")
+                logging.info("jibri_watcher got reset job, restarting thread.")
                 result=False
                 break
+
+            result = check_ffmpeg_running()
+            selenium_result = check_selenium_running()
 
             if result:
                 logging.debug("ffmpeg still running, sleeping...")
@@ -296,7 +309,16 @@ def watch_ffmpeg(queue, loop, finished_callback):
                 logging.info("ffmpeg no longer running, triggering callback")
                 loop.call_soon_threadsafe(finished_callback, 'ffmpeg_died')
 
-#utility function called by watch_ffmpeg, checks for the ffmpeg process, returns true if the pidfile can be found and the process exists
+
+#utility function called by jibri_watcher, checks for the selenium process, returns true if the driver object is defined and shows connected to selenium
+def check_selenium_running():
+    global js
+    if not js:
+        return False
+    else:
+        return js.checkRunning()
+
+#utility function called by jibri_watcher, checks for the ffmpeg process, returns true if the pidfile can be found and the process exists
 def check_ffmpeg_running():
     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
     ffmpeg_output_file="/tmp/jibri-ffmpeg.out"
@@ -329,7 +351,7 @@ def check_ffmpeg_running():
 
 
 
-def start_sleekxmpp(jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, recording_lock, signal_queue):
+def start_sleekxmpp(jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue):
     global clients
     logging.info("Creating a client for hostname: %s" % hostname)
     c = JibriXMPPClient(
@@ -339,6 +361,7 @@ def start_sleekxmpp(jid, password, room, nick, roompass, loop, jibri_start_callb
 #        iq_callback=on_jibri_iq,
         jibri_start_callback=jibri_start_callback,
         jibri_stop_callback=jibri_stop_callback,
+        jibri_health_callback=jibri_health_callback,
         recording_lock=recording_lock,
         signal_queue=signal_queue)
     # c.register_plugin('xep_0030')  # Service Discovery
@@ -374,7 +397,7 @@ def url_start_recording():
         if app_token == token:
             global recording_lock
             if recording_lock.acquire(False):
-                retcode=jibri_start_callback(None, url, '', stream, wait=True)
+                retcode=jibri_start_callback(None, url, stream, wait=True)
                 if retcode == 0:
                     result = {'success': success, 'url':url, 'stream':stream, 'token':token}
                 else:
@@ -410,15 +433,69 @@ def url_stop_recording():
 @app.route('/jibri/health', methods=['GET'])
 def url_health_check():
     global recording_lock
+    global health_lock
     global js
-    result={'recording':recording_lock.locked(), 'health':True, 'XMPPConnected':False}
+
+    #put an item on the XMPP queue, and watch for a return by callback
+    result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False}
     if js:
-        try:
-            result['XMPPConnected'] = js.waitXMPPConnected(timeout=10)
-        except:
-            pass
+        if js.checkRunning():
+            result['selenium_health']=True
+            try:
+                result['XMPPConnected'] = js.waitXMPPConnected(timeout=10)
+            except Exception as e:
+                logging.info("Exception: %s"%e)
+                pass
+        else:
+            result['selenium_health']=False
+    else:
+        result['selenium_health']=''
+
+    result['jibri_xmpp']=check_xmpp_running()
+
+    #only return good if we are connected via jibri, and not recording OR recording with good selenium health
+    if result['jibri_xmpp'] and (not result['recording'] or (result['recording'] and result['selenium_health'])):
+        result['health'] = True
 
     return jsonify(result)
+
+
+def check_xmpp_running():
+    update_jibri_status('health')
+    #wait 2 seconds for a callback from the XMPP client threads
+    xmpp_health_timeout = 5
+    try:
+        #first acquire the lock
+        if health_lock.acquire(False):
+            #ok it's acquired, now keep checking to see if it becomes unlocked outside our thread
+            health_wait=0
+            while health_lock.locked():
+                if health_wait>xmpp_health_timeout:
+                    logging.info('Health check timeout')
+                    break
+                #still locked, sleep
+                health_wait=health_wait+1
+                logging.info('Health check waiting on XMPP client response')
+                time.sleep(1)
+
+            if health_wait>xmpp_health_timeout:
+                logging.info('Health check never responded, XMPP failure')
+                try:
+                    health_lock.release()
+                except Exception as e:
+                    logging.info("Exception: %s"%e)
+                    pass
+                return False
+            else:
+                #unlocked elsewhere, so we know the xmpp health callback worked as expected
+                logging.info('Health check unlocked outside thread')
+                return True
+        else:
+            logging.info('Health lock already locked, so cannot lock it again')
+    except Exception as e:
+        logging.error('Exception: %e'%e)
+        raise
+
 
 if __name__ == '__main__':
     #first things first, write ourselves a pidfile
@@ -507,14 +584,14 @@ if __name__ == '__main__':
 # no longer debug
 #    loop.set_debug(True)
 
-    ffmpeg_queue = Queue()
+    watcher_queue = Queue()
 
     for hostname in args:
         queues[hostname] = Queue()
-        loop.run_in_executor(None, start_sleekxmpp, opts.jid, opts.password, opts.room, opts.nick, opts.roompass, loop, jibri_start_callback, jibri_stop_callback, recording_lock, queues[hostname])
+        loop.run_in_executor(None, start_sleekxmpp, opts.jid, opts.password, opts.room, opts.nick, opts.roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, queues[hostname])
 
     #now start flask
     loop.run_in_executor(None, functools.partial(app.run, host='0.0.0.0'))
-    loop.run_in_executor(None, start_watch_ffmpeg, ffmpeg_queue, loop, jibri_stop_callback)
+    loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback)
     loop.run_forever()
     loop.close()
