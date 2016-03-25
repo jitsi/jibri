@@ -148,7 +148,7 @@ def jibri_health_callback(client):
     try:
         health_lock.release()
     except Exception as e:
-        logging.info('Exception releasing health lock: %s'%e)
+        logging.debug('Exception releasing health lock: %s'%e)
 
 #main callback to start jibri: meant to be run in the main thread, kicked off using a loop.call_soon_threadsafe() from within another thread (XMPP or REST thread)
 def jibri_start_callback(client, url, stream_id, room=None, token='token', backup=''):
@@ -480,7 +480,7 @@ def url_health_check():
 def check_xmpp_running():
     update_jibri_status('health')
     #wait 2 seconds for a callback from the XMPP client threads
-    xmpp_health_timeout = 10
+    xmpp_health_lock_retries = 10
     try:
         #first acquire the lock
         if health_lock.acquire(False):
@@ -493,19 +493,19 @@ def check_xmpp_running():
                 #still locked, sleep
                 health_wait=health_wait+1
                 logging.debug('Health check waiting on XMPP client response')
-                time.sleep(2)
+                time.sleep(5)
 
             if health_wait>xmpp_health_timeout:
                 logging.info('Health check never responded, XMPP failure')
                 try:
                     health_lock.release()
                 except Exception as e:
-                    logging.info("Exception: %s"%e)
+                    logging.debug("Exception: %s"%e)
                     pass
                 return False
             else:
                 #unlocked elsewhere, so we know the xmpp health callback worked as expected
-                logging.info('Health check unlocked outside thread')
+                logging.debug('Health check unlocked outside thread, healthy!')
                 return True
         else:
             logging.info('Health lock already locked, so cannot lock it again')
