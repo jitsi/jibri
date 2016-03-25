@@ -169,17 +169,21 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token'):
     logging.info("Starting jibri")
     retcode=9999
     try:
-        retcode = start_jibri(url, stream_id, token)
+        retcode = start_jibri_selenium(url, token)
+        if retcode == 0:
+            #we started selenium on the first try!
+            #we got a selenium, so start ffmpeg
+            retcode = start_ffmpeg(stream_id)
     except:
         #oops it all went awry
         #quit chrome
         #clean up ffmpeg and kill off any last pieces
-        reset_recording()
+        jibri_stop_callback('startup_exception')
         return
     if retcode > 0:
         # We failed to start, bail.
         logging.info("start returned retcode=" + str(retcode))
-        reset_recording()
+        jibri_stop_callback('startup_error')
     else:
         ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
         try:
@@ -188,7 +192,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token'):
             #oops it all went awry
             #quit chrome
             #clean up ffmpeg and kill off any last pieces
-            reset_recording()
+            jibri_stop_callback('ffmpeg_startup_error')
             return
 
         try:
@@ -214,7 +218,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token'):
             #oops it all went awry
             #clean up ffmpeg and kill off any last pieces
             logging.warn("Exception occured: %s"%e)
-            reset_recording()
+            jibri_stop_callback('ffmpeg_startup_exception')
             return
 
 def queue_watcher_start(msg):
@@ -222,7 +226,7 @@ def queue_watcher_start(msg):
     global watcher_queue
     watcher_queue.put(msg)
 
-def start_jibri(url, stream_id, token='token'):
+def start_jibri_selenium(url, token='token'):
     retcode=0
     global js
     token='abc'
@@ -235,8 +239,8 @@ def start_jibri(url, stream_id, token='token'):
     js.launchUrl()
     if js.waitXMPPConnected():
       if js.waitDownloadBitrate()>0:
-        retcode = call([launch_recording_script, url, 'ignore', 'ignore', stream_id],
-             shell=False)
+        #everything is AWESOME!
+        retcode=0
       else:
         #didn't launch ffmpeg properly right
         retcode=1336
@@ -247,6 +251,9 @@ def start_jibri(url, stream_id, token='token'):
 
     return retcode
 
+def start_ffmpeg(stream_id, url=None):
+    return call([launch_recording_script, url, 'ignore', 'ignore', stream_id],
+             shell=False)
 
 def jibri_stop_callback(status=None):
     logging.info("jibri_stop_callback run with status %s"%status)
