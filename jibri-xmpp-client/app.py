@@ -204,6 +204,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token'):
 
                 time.sleep(1)
                 success = check_ffmpeg_running()
+                attempt_count=attempt_count+1
 
             if success:
                 update_jibri_status('started')
