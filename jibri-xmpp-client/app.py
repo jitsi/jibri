@@ -36,6 +36,7 @@ loop = asyncio.get_event_loop()
 
 # FIXME
 launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
+check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
 stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
 
 pidfile = '/var/run/jibri/jibri-xmpp.pid'
@@ -349,7 +350,7 @@ def check_ffmpeg_running():
         #check that ffmpeg is running
         os.kill(ffmpeg_pid, 0)
         #check if we are streaming
-        retcode = call(['grep', '-q', 'frame=', ffmpeg_output_file])
+        retcode = call([check_ffmpeg_script, ffmpeg_output_file])
         if retcode > 0:
             logging.info('No frame= lines found from ffmpeg, not running yet')
             return False
