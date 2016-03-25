@@ -285,6 +285,7 @@ def jibri_watcher(queue, loop, finished_callback):
         logging.info("jibri_watcher starting up...")
         msg = queue.get() #blocks waiting on a new job
         result = True
+        selenium_result = True
         if msg == None:
             #done here, so exit
             logging.info("jibri_watcher got poisoned job, exiting thread.")
@@ -297,7 +298,7 @@ def jibri_watcher(queue, loop, finished_callback):
 
         queue.task_done()
         #now start looping to watch this ffmpeg process
-        while (result):
+        while (result and selenium_result):
             try:
                 msg = queue.get(False) #doesn't block
             except Empty:
