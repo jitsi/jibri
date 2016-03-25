@@ -487,7 +487,7 @@ def check_xmpp_running():
             #ok it's acquired, now keep checking to see if it becomes unlocked outside our thread
             health_wait=0
             while health_lock.locked():
-                if health_wait>xmpp_health_timeout:
+                if health_wait>xmpp_health_lock_retries:
                     logging.info('Health check timeout')
                     break
                 #still locked, sleep
@@ -495,7 +495,7 @@ def check_xmpp_running():
                 logging.debug('Health check waiting on XMPP client response')
                 time.sleep(5)
 
-            if health_wait>xmpp_health_timeout:
+            if health_wait>xmpp_health_lock_retries:
                 logging.info('Health check never responded, XMPP failure')
                 try:
                     health_lock.release()
