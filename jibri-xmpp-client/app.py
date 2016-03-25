@@ -288,13 +288,13 @@ def jibri_watcher(queue, loop, finished_callback):
         selenium_result = True
         if msg == None:
             #done here, so exit
-            logging.info("jibri_watcher got poisoned job, exiting thread.")
+            logging.debug("jibri_watcher got poisoned job, exiting thread.")
             return
         elif (msg == False):
-            logging.info("jibri_watcher got reset job, restarting thread.")
+            logging.debug("jibri_watcher got reset job, restarting thread.")
             result = False
         else:
-            logging.info("jibri_watcher got msg from main: %s" % msg)
+            logging.debug("jibri_watcher got msg from main: %s" % msg)
 
         queue.task_done()
         #now start looping to watch this ffmpeg process
@@ -305,10 +305,10 @@ def jibri_watcher(queue, loop, finished_callback):
                 msg = True
                 pass
             if (msg == None):
-                logging.info("jibri_watcher got poisoned job, exiting thread.")
+                logging.debug("jibri_watcher got poisoned job, exiting thread.")
                 return
             elif (msg == False):
-                logging.info("jibri_watcher got reset job, restarting thread.")
+                logging.debug("jibri_watcher got reset job, restarting thread.")
                 result=False
                 break
 
