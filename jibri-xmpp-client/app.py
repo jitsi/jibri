@@ -199,7 +199,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         try:
             success = check_ffmpeg_running()
             attempt_count=0
-            attempt_max=5
+            attempt_max=15
             while not success:
                 if attempt_count > attempt_max:
                     logging.warn("FFMPEG failed to start after %s attempts"%attempt_count)
@@ -477,7 +477,7 @@ def url_health_check():
 def check_xmpp_running():
     update_jibri_status('health')
     #wait 2 seconds for a callback from the XMPP client threads
-    xmpp_health_timeout = 5
+    xmpp_health_timeout = 10
     try:
         #first acquire the lock
         if health_lock.acquire(False):
@@ -489,8 +489,8 @@ def check_xmpp_running():
                     break
                 #still locked, sleep
                 health_wait=health_wait+1
-                logging.info('Health check waiting on XMPP client response')
-                time.sleep(1)
+                logging.debug('Health check waiting on XMPP client response')
+                time.sleep(2)
 
             if health_wait>xmpp_health_timeout:
                 logging.info('Health check never responded, XMPP failure')
