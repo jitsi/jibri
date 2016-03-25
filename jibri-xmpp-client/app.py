@@ -150,7 +150,7 @@ def jibri_health_callback(client):
         logging.info('Exception releasing health lock: %s'%e)
 
 #main callback to start jibri: meant to be run in the main thread, kicked off using a loop.call_soon_threadsafe() from within another thread (XMPP or REST thread)
-def jibri_start_callback(client, url, stream_id, room=None, token='token'):
+def jibri_start_callback(client, url, stream_id, room=None, token='token', backup=''):
     global js
     global loop
     global opts
@@ -173,11 +173,12 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token'):
         if retcode == 0:
             #we started selenium on the first try!
             #we got a selenium, so start ffmpeg
-            retcode = start_ffmpeg(stream_id)
-    except:
+            retcode = start_ffmpeg(stream_id, backup)
+    except Exception as e:
         #oops it all went awry
         #quit chrome
         #clean up ffmpeg and kill off any last pieces
+        logging.info("Jibri Startup exception: %s"%e)
         jibri_stop_callback('startup_exception')
         return
     if retcode > 0:
@@ -232,8 +233,8 @@ def start_jibri_selenium(url, token='token'):
     token='abc'
 
     logging.info(
-        "starting jibri, url=%s, youtube-stream-id=%s" % (
-            url, stream_id))
+        "starting jibri selenium, url=%s" % (
+            url))
 
     js = JibriSeleniumDriver(url,token)
     js.launchUrl()
@@ -251,8 +252,9 @@ def start_jibri_selenium(url, token='token'):
 
     return retcode
 
-def start_ffmpeg(stream_id, url=None):
-    return call([launch_recording_script, url, 'ignore', 'ignore', stream_id],
+def start_ffmpeg(stream_id, backup=''):
+    logging.info("starting jibri ffmpeg with youtube-stream-id=%s" % stream_id)
+    return call([launch_recording_script, 'ignore', 'ignore', 'ignore', stream_id, backup],
              shell=False)
 
 def jibri_stop_callback(status=None):
