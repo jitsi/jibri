@@ -160,12 +160,12 @@ class JibriSeleniumDriver():
 
 
     def checkRunning(self, timeout=2):
-      logging.info('checkRunning selenium')
+      logging.debug('checkRunning selenium')
 #      self.driver.set_script_timeout(10)
       try:
         element = WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         if element:
-          return True
+          return self.waitDownloadBitrate()
         else:
           return False
       except Exception as e:

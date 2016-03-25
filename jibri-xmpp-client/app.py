@@ -302,12 +302,16 @@ def jibri_watcher(queue, loop, finished_callback):
             result = check_ffmpeg_running()
             selenium_result = check_selenium_running()
 
-            if result:
-                logging.debug("ffmpeg still running, sleeping...")
+            if result and selenium_result:
+                logging.debug("ffmpeg and selenium still running, sleeping...")
                 time.sleep(5)
             else:
-                logging.info("ffmpeg no longer running, triggering callback")
-                loop.call_soon_threadsafe(finished_callback, 'ffmpeg_died')
+                logging.info("ffmpeg or selenium no longer running, triggering callback")
+                if not result:
+                    reason = 'ffmpeg_died'
+                if not selenium_result:
+                    reason = 'selenium_died'
+                loop.call_soon_threadsafe(finished_callback, reason)
 
 
 #utility function called by jibri_watcher, checks for the selenium process, returns true if the driver object is defined and shows connected to selenium
