@@ -294,6 +294,7 @@ def jibri_watcher(queue, loop, finished_callback):
         else:
             logging.info("jibri_watcher got msg from main: %s" % msg)
 
+        queue.task_done()
         #now start looping to watch this ffmpeg process
         while (result):
             try:
