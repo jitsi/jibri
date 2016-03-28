@@ -340,7 +340,7 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
 
 
             #now we check if we should stop running because of a timeout
-            if timeout:
+            if int(timeout)>0:
                 if (datetime.now() - task_started) >= timedelta(seconds=int(timeout)):
                     #time to stop recording and reset the thread
                     logging.info("jibri_watcher ran past the recording timeout of %s."%timeout)
