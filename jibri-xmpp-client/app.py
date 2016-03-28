@@ -25,6 +25,10 @@ from jibriselenium import JibriSeleniumDriver
 #by default, stop recording automatically after 1 hour
 default_timeout = 3600
 
+#rest token
+default_rest_token='abc123'
+
+
 global queues
 global js
 clients = {}
@@ -418,6 +422,7 @@ app = Flask(__name__)
 #call to begin recording
 @app.route('/jibri/api/v1.0/start', methods=['POST','GET'])
 def url_start_recording():
+    global rest_token
     if request.method == 'POST':
         url = request.json['url']
         stream = request.json['stream']
@@ -430,10 +435,10 @@ def url_start_recording():
         result = {'success': False, 'error':'Bad Parameters', 'request':request}
         return jsonify(result)
     else:
-        if app_token == token:
+        if rest_token == token:
             global recording_lock
             if recording_lock.acquire(False):
-                retcode=jibri_start_callback(None, url, stream, wait=True)
+                retcode=jibri_start_callback(None, url, stream)
                 if retcode == 0:
                     result = {'success': success, 'url':url, 'stream':stream, 'token':token}
                 else:
@@ -565,6 +570,9 @@ if __name__ == '__main__':
     optp.add_option("-P", "--roompass", dest="roompass",
                     help="password for the MUC")
 
+    optp.add_option("-rt", "--resttoken", dest="rest_token", help="Token to control rest start messages",
+                    default=default_rest_token)
+
     optp.usage = 'Usage: %prog [options] <server_hostname1 server_hostname2 ...>'
 
     global opts
@@ -605,6 +613,10 @@ if __name__ == '__main__':
     if os.environ.get('TIMEOUT') is not None:
       opts.timeout = os.environ.get('TIMEOUT')
 
+
+    if os.environ.get('REST_TOKEN') is not None:
+      opts.rest_token = os.environ.get('REST_TOKEN')
+
     if not args:
         if os.environ.get('SERVERS') is None:
           optp.print_help()
@@ -612,7 +624,8 @@ if __name__ == '__main__':
         else:
           args = os.environ.get('SERVERS').split(" ")
 
-
+    global rest_token
+    rest_token = opts.rest_token
 
     #handle SIGHUP graceful shutdown
     loop.add_signal_handler(signal.SIGHUP,sighup_handler, loop)
