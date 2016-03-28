@@ -635,6 +635,6 @@ if __name__ == '__main__':
 
     #now start flask
     loop.run_in_executor(None, functools.partial(app.run, host='0.0.0.0'))
-    loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback)
+    loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, opts.timeout)
     loop.run_forever()
     loop.close()
