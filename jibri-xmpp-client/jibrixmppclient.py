@@ -162,6 +162,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             pass
 
     def start(self, event):
+        logging.info("Starting up client %s, connecting to room %s as %s"%(self, self.room,self.nick))
         self.get_roster()
         self.send_presence()
         self.plugin['xep_0045'].joinMUC(self.room,
@@ -170,11 +171,10 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
                                         #wait=True)
         self.scheduler.add("asyncio_queue", 1, self.from_main_thread_nonblocking,
             repeat=True, qpointer=self.event_queue)
-
-
         #update our presence with
         #<jibri xmlns="http://jitsi.org/protocol/jibri status="idle" />
         self.presence_idle()
+        logging.info("Started up client %s"%self)
 
     def presence_busy(self):
         presence = self.make_presence(pto=self.room)
@@ -205,4 +205,4 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             logging.error("Failed to send status update: %s", str(e))
 
     def muc_online(self, presence):
-        pass
+        logging.info("Got online into a MUC: %s")

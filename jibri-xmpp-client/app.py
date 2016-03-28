@@ -17,9 +17,13 @@ import requests
 from optparse import OptionParser
 from subprocess import call
 from queue import Queue, Empty
+from datetime import datetime, timedelta
 import sys
 from jibrixmppclient import JibriXMPPClient
 from jibriselenium import JibriSeleniumDriver
+
+#by default, stop recording automatically after 1 hour
+default_timeout = 3600
 
 global queues
 global js
@@ -273,14 +277,14 @@ def update_jibri_status(status, c=None):
             queues[hostname].put(status)
 
 #function to start the ffmpeg watcher thread..only meant to be run once
-def start_jibri_watcher(queue, loop, finished_callback):
-    t = threading.Thread(target=jibri_watcher, args=(queue, loop, finished_callback),name="jibri_watcher")
+def start_jibri_watcher(queue, loop, finished_callback, timeout=0):
+    t = threading.Thread(target=jibri_watcher, args=(queue, loop, finished_callback, timeout),name="jibri_watcher")
     t.daemon = True
     t.start()
 
 #main function for jibri_watcher thread: waits on a queue until triggered
 #thread then watches a running ffmpeg process until it completes, then triggers a callback
-def jibri_watcher(queue, loop, finished_callback):
+def jibri_watcher(queue, loop, finished_callback, timeout=0):
     while True:
         logging.info("jibri_watcher starting up...")
         msg = queue.get() #blocks waiting on a new job
@@ -298,6 +302,10 @@ def jibri_watcher(queue, loop, finished_callback):
 
         queue.task_done()
         #now start looping to watch this ffmpeg process
+        task_start=0
+        if timeout:
+            task_started=datetime.now()
+
         while (result and selenium_result):
             try:
                 msg = queue.get(False) #doesn't block
@@ -311,6 +319,16 @@ def jibri_watcher(queue, loop, finished_callback):
                 logging.debug("jibri_watcher got reset job, restarting thread.")
                 result=False
                 break
+
+
+            #now we check if we should stop running because of a timeout
+            if timeout:
+                if (datetime.now() - task_started) >= timedelta(seconds=timeout):
+                    #time to stop recording and reset the thread
+                    logging.debug("jibri_watcher ran past the recording timeout of %s."%timeout)
+                    loop.call_soon_threadsafe(finished_callback, 'timelimit')
+                    result=False
+                    break
 
             result = check_ffmpeg_running()
             selenium_result = check_selenium_running()
@@ -480,7 +498,7 @@ def url_health_check():
 def check_xmpp_running():
     update_jibri_status('health')
     #wait 2 seconds for a callback from the XMPP client threads
-    xmpp_health_lock_retries = 10
+    xmpp_health_lock_retries = 5
     try:
         #first acquire the lock
         if health_lock.acquire(False):
@@ -493,7 +511,7 @@ def check_xmpp_running():
                 #still locked, sleep
                 health_wait=health_wait+1
                 logging.debug('Health check waiting on XMPP client response')
-                time.sleep(5)
+                time.sleep(3)
 
             if health_wait>xmpp_health_lock_retries:
                 logging.info('Health check never responded, XMPP failure')
@@ -541,6 +559,8 @@ if __name__ == '__main__':
     optp.add_option("-r", "--room", dest="room", help="MUC room to join")
     optp.add_option("-n", "--nick", dest="nick", help="MUC nickname",
                     default=default_nick)
+    optp.add_option("-t", "--timeout", dest="timeout", help="Max usage in seconds before restarting",
+                    default=default_timeout)
     optp.add_option("-P", "--roompass", dest="roompass",
                     help="password for the MUC")
 
@@ -580,6 +600,11 @@ if __name__ == '__main__':
     if opts.roompass is None:
         if os.environ.get('ROOMPASS') is not None:
             opts.roompass = os.environ.get('ROOMPASS')
+
+    if opts.timeout is None:
+        if os.environ.get('TIMEOUT') is not None:
+          opts.timeout = os.environ.get('TIMEOUT')
+
     if not args:
         if os.environ.get('SERVERS') is None:
           optp.print_help()
