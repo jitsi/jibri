@@ -29,9 +29,11 @@ options.add_argument('--enable-logging')
 options.add_argument('--vmodule=*=3')
 
 driver = webdriver.Chrome(chrome_options=options, desired_capabilities=d)
-URL="http://www.google.com/"
+
+#nggyu
+URL="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 driver.get(URL)
-time.sleep(10)
+time.sleep(20)
 driver.quit()
 exit("Jibri Warmed Up")
 #driver.execute_script("window.localStorage.displayname = 'JIBRI'")

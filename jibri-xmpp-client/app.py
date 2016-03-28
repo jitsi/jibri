@@ -324,7 +324,7 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
 
             #now we check if we should stop running because of a timeout
             if timeout:
-                if (datetime.now() - task_started) >= timedelta(seconds=timeout):
+                if (datetime.now() - task_started) >= timedelta(seconds=int(timeout)):
                     #time to stop recording and reset the thread
                     logging.info("jibri_watcher ran past the recording timeout of %s."%timeout)
                     loop.call_soon_threadsafe(finished_callback, 'timelimit')
@@ -602,9 +602,8 @@ if __name__ == '__main__':
         if os.environ.get('ROOMPASS') is not None:
             opts.roompass = os.environ.get('ROOMPASS')
 
-    if opts.timeout is None:
-        if os.environ.get('TIMEOUT') is not None:
-          opts.timeout = os.environ.get('TIMEOUT')
+    if os.environ.get('TIMEOUT') is not None:
+      opts.timeout = os.environ.get('TIMEOUT')
 
     if not args:
         if os.environ.get('SERVERS') is None:
