@@ -258,7 +258,7 @@ def start_jibri_selenium(url, token='token'):
         "starting jibri selenium, url=%s" % (
             url))
 
-    js = JibriSeleniumDriver(url,token,binary_path=chrome_binary_path)
+    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path)
     js.launchUrl()
     if js.waitXMPPConnected():
       if js.waitDownloadBitrate()>0:
