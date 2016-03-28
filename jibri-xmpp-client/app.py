@@ -31,6 +31,8 @@ default_rest_token='abc123'
 
 global queues
 global js
+global chrome_binary_path
+chrome_binary_path=None
 clients = {}
 queues = {}
 
@@ -109,6 +111,7 @@ def sigusr1_handler(loop=None):
 #basic reset function
 def reset_recording():
     global recording_lock
+    kill_ffmpeg_process()
     kill_selenium_driver()
     #send a false to stop watching ffmpeg/selenium and restart the loop
     queue_watcher_start(False)
@@ -123,6 +126,15 @@ def reset_recording():
 #this calls a bash scripts which kills external processes and includes any AWS stop-recording hooks
 def stop_recording():
      call([stop_recording_script])
+
+def kill_ffmpeg_process():
+    ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
+    try:
+        ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
+        os.kill(ffmpeg_pid)
+    except:
+        return False
+    return True        
 
 # kill selenium driver if it exists
 def kill_selenium_driver():
@@ -239,13 +251,14 @@ def queue_watcher_start(msg):
 def start_jibri_selenium(url, token='token'):
     retcode=0
     global js
+    global chrome_binary_path
     token='abc'
 
     logging.info(
         "starting jibri selenium, url=%s" % (
             url))
 
-    js = JibriSeleniumDriver(url,token)
+    js = JibriSeleniumDriver(url,token,binary_path=chrome_binary_path)
     js.launchUrl()
     if js.waitXMPPConnected():
       if js.waitDownloadBitrate()>0:
@@ -338,10 +351,16 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
             result = check_ffmpeg_running()
             selenium_result = check_selenium_running()
 
+            if not selenium_result:
+                #try at least 2 more times
+                selenium_result = check_selenium_running()
+                if not selenium_result:
+                    selenium_result = check_selenium_running()
+
             if result and selenium_result:
                 logging.debug("ffmpeg and selenium still running, sleeping...")
                 time.sleep(5)
-            else:
+            else:                
                 logging.info("ffmpeg or selenium no longer running, triggering callback")
                 if not result:
                     reason = 'ffmpeg_died'
@@ -570,8 +589,12 @@ if __name__ == '__main__':
     optp.add_option("-P", "--roompass", dest="roompass",
                     help="password for the MUC")
 
-    optp.add_option("-rt", "--resttoken", dest="rest_token", help="Token to control rest start messages",
+    optp.add_option("-k", "--resttoken", dest="rest_token", help="Token to control rest start messages",
                     default=default_rest_token)
+
+    optp.add_option("-b", "--chrome-binary", dest="chrome_binary_path", help="Path to chrome binary (defaults to chrome in PATH)",
+                    default=None)
+
 
     optp.usage = 'Usage: %prog [options] <server_hostname1 server_hostname2 ...>'
 
@@ -617,6 +640,9 @@ if __name__ == '__main__':
     if os.environ.get('REST_TOKEN') is not None:
       opts.rest_token = os.environ.get('REST_TOKEN')
 
+    if os.environ.get('CHROME_BINARY') is not None:
+      opts.chrome_binary_path = os.environ.get('CHROME_BINARY')
+
     if not args:
         if os.environ.get('SERVERS') is None:
           optp.print_help()
@@ -626,6 +652,10 @@ if __name__ == '__main__':
 
     global rest_token
     rest_token = opts.rest_token
+
+    if opts.chrome_binary_path:
+        chrome_binary_path = opts.chrome_binary_path
+        logging.info("Overriding chrome binary with value: %s"%chrome_binary_path)
 
     #handle SIGHUP graceful shutdown
     loop.add_signal_handler(signal.SIGHUP,sighup_handler, loop)

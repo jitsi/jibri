@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC # available sin
 
 
 class JibriSeleniumDriver():
-    def __init__(self, url, authtoken=None, xmpp_connect_timeout=60):
+    def __init__(self, url, authtoken=None, xmpp_connect_timeout=60, binary_location=None):
 
       #init based on url and optional token
       self.url = url
@@ -36,6 +36,8 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enabled')
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
+      if binary_location:
+        self.options.binary_location = binary_location
       self.initDriver()
 
     def initDriver(self, options=None, desired_capabilities=None):
@@ -169,7 +171,7 @@ class JibriSeleniumDriver():
         else:
           return False
       except Exception as e:
-        logging.info("Failed to run script properly")
+        logging.info("Failed to run script properly: %s"%e)
         pprint.pprint(e)
 #        raise e
       return False

@@ -1,8 +1,7 @@
 #!/bin/bash
 PID_DIR=/var/run/jibri/
-
-kill `cat $PID_DIR/ffmpeg.pid`
+./stop-ffmpeg.sh
 sleep 5
 killall chrome
 killall chromedriver
-rm ${PID_DIR}/*
+rm ${PID_DIR}/*.pid
