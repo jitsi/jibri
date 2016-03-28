@@ -306,6 +306,7 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
         if timeout:
             task_started=datetime.now()
 
+        logging.info("jibri_watcher received job, now watching ffmpeg and selenium with a timeout of %s."%timeout)
         while (result and selenium_result):
             try:
                 msg = queue.get(False) #doesn't block
@@ -325,7 +326,7 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
             if timeout:
                 if (datetime.now() - task_started) >= timedelta(seconds=timeout):
                     #time to stop recording and reset the thread
-                    logging.debug("jibri_watcher ran past the recording timeout of %s."%timeout)
+                    logging.info("jibri_watcher ran past the recording timeout of %s."%timeout)
                     loop.call_soon_threadsafe(finished_callback, 'timelimit')
                     result=False
                     break
