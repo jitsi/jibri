@@ -253,6 +253,7 @@ def start_jibri_selenium(url, token='token'):
     global js
     global chrome_binary_path
     token='abc'
+    url = "%s#config.iAmRecorder=true"%url
 
     logging.info(
         "starting jibri selenium, url=%s" % (
