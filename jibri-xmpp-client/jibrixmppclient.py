@@ -205,4 +205,4 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             logging.error("Failed to send status update: %s", str(e))
 
     def muc_online(self, presence):
-        logging.info("Got online into a MUC: %s")
+        logging.info("Got online into a MUC: %s"%presence)
