@@ -56,7 +56,7 @@ class JibriSeleniumDriver():
 
     def setJibriIdentifiers(self):
       print("Setting jibri identifiers")
-      self.execute_script("window.localStorage.setItem('displayname','JIBRI'); window.localStorage.setItem('email','recorder@jitsi.org');")
+      self.execute_script("window.localStorage.setItem('displayname','Live Stream'); window.localStorage.setItem('email','recorder@jitsi.org');")
 #      self.execute_script("window.localStorage.setItem('email','recorder@jitsi.org');")
 
     def launchUrl(self, url=None):
