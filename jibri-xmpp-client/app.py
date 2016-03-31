@@ -394,7 +394,7 @@ def check_selenium_running():
         return False
     else:
         #first start a thread to ensure we stop everything if needed
-        t = threading.Timer(selenium_timeout, target=jibri_stop_callback, kwargs=dict(status='selenium_stuck'))
+        t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_stuck'))
         t.start
         running= js.checkRunning()
         try:
