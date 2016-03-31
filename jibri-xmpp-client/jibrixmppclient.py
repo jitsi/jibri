@@ -7,6 +7,7 @@
 
 import sleekxmpp
 import logging
+import threading
 from sleekxmpp import Iq
 from queue import Queue, Empty
 from sleekxmpp.xmlstream import register_stanza_plugin, ElementBase, scheduler
