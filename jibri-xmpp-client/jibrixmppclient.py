@@ -128,7 +128,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         #old way, didn't always run?  not sure why
         #self.loop.call_soon_threadsafe(self.jibri_stop_callback, 'xmpp_stop')
         #begin the stopping of jibri in a totally separate thread
-        t=threading.Thread(None, target=self.jibri_stop_callback, args=(reason))
+        t=threading.Thread(None, target=self.jibri_stop_callback, kwargs=dict(status=reason))
         t.start()
 
     def handle_queue_msg(self, msg):

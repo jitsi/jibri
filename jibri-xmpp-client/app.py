@@ -144,7 +144,7 @@ def definitely_kill_selenium_driver():
 # kill selenium driver if it exists
 def kill_selenium_driver():
     global js
-    kill_timeout=2
+    kill_timeout=5
     if js:
         #first start a thread that will kill selenium for reals if this blocks
         t=threading.Timer(kill_timeout, definitely_kill_selenium_driver)
