@@ -367,9 +367,11 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
             selenium_result = check_selenium_running()
 
             if not selenium_result:
+                logging.info("Received a failure checking if selenium is running, checking again...")
                 #try at least 2 more times
                 selenium_result = check_selenium_running()
                 if not selenium_result:
+                    logging.info("Received a second failure checking if selenium is running, checking again...")
                     selenium_result = check_selenium_running()
 
             if result and selenium_result:
@@ -387,10 +389,20 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
 #utility function called by jibri_watcher, checks for the selenium process, returns true if the driver object is defined and shows connected to selenium
 def check_selenium_running():
     global js
+    selenium_timeout=10
     if not js:
         return False
     else:
-        return js.checkRunning()
+        #first start a thread to ensure we stop everything if needed
+        t = threading.Timer(selenium_timeout, target=jibri_stop_callback, kwargs=dict(status='selenium_stuck'))
+        t.start
+        running= js.checkRunning()
+        try:
+            t.cancel()
+        except Exception as e:
+            logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
+        return running
+
 
 #utility function called by jibri_watcher, checks for the ffmpeg process, returns true if the pidfile can be found and the process exists
 def check_ffmpeg_running():
@@ -412,10 +424,6 @@ def check_ffmpeg_running():
         if retcode > 0:
             logging.info('No frame= lines found from ffmpeg, not running yet')
             return False
-        #check that we're still receiving data
-#        if js.waitDownloadBitrate() == 0:
-            #throw an error here
-#            raise ValueError('no data received by meet for recording')
         #nothing is wrong, so wait a bit
         return True
     except:

@@ -36,6 +36,7 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enabled')
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
+      self.options.add_argument('--alsa-output-device=hw:0,1')
       if binary_location:
         self.options.binary_location = binary_location
       self.initDriver()
@@ -131,7 +132,7 @@ class JibriSeleniumDriver():
       else:
         wait_time=0
         while wait_time < timeout:
-          logging.info('waiting +%d = %d < %d for XMPPConnected'%(interval, wait_time, timeout))
+          logging.info('waiting +%d = %d < %d for DownloadBitrate'%(interval, wait_time, timeout))
           time.sleep(interval)
           wait_time = wait_time + interval
           if self.getDownloadBitrate() > 0:
@@ -161,18 +162,17 @@ class JibriSeleniumDriver():
             return False
 
 
-    def checkRunning(self, timeout=2):
+    def checkRunning(self, timeout=2, download_timeout=5, download_interval=1):
       logging.debug('checkRunning selenium')
 #      self.driver.set_script_timeout(10)
       try:
         element = WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         if element:
-          return self.waitDownloadBitrate()
+          return self.waitDownloadBitrate(timeout=download_timeout, interval=download_interval)
         else:
           return False
       except Exception as e:
         logging.info("Failed to run script properly: %s"%e)
-        pprint.pprint(e)
 #        raise e
       return False
 
@@ -199,8 +199,10 @@ if __name__ == '__main__':
   argv=sys.argv[1:]
   URL = ''
   token = ''
+  loglevel='DEBUG'
+
   try:
-    opts, args = getopt.getopt(argv,"hu:t:",["meeting_url=","token="])
+    opts, args = getopt.getopt(argv,"hu:t:d:",["meeting_url=","token=","loglevel="])
   except getopt.GetoptError:
     print(app+' -u <meetingurl> -t <authtoken>')
     sys.exit(2)
@@ -212,15 +214,19 @@ if __name__ == '__main__':
        URL = arg
     elif opt in ("-t", "--token"):
        token = arg
+    elif opt in ("-d", "--debug"):
+       loglevel = arg
 
   if not URL:
       print('No meeting URL provided.')
       exit(1)
 
+  logging.basicConfig(level=loglevel,
+                        format='%(asctime)s %(levelname)-8s %(message)s')
   signal.signal(signal.SIGTERM, sigterm_handler)
   js = JibriSeleniumDriver(URL,token)
   js.launchUrl()
-  if js.checkRunning():
+  if js.checkRunning(download_timeout=60):
     if js.waitXMPPConnected():
       print('Successful connection to meet')
       if js.waitDownloadBitrate()>0:
