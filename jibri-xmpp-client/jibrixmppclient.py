@@ -109,15 +109,26 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             client_in_use = self
             # msg received, call the msg callback in the main thread with the event loop
             # this nets out a call to start_recording(client, url, follow_entity, stream_id)
-            self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'))
+            self.start_jibri(iq)
 
             #callback to parent thread to start jibri
             # TODO: notify of updates
         elif stop:
             logging.info("Stopping.")
-            # msg received, call the msg callback in the main thread with the event loop
-            # this nets out a call to stop_recording(client)
-            self.loop.call_soon_threadsafe(self.jibri_stop_callback, 'xmpp_stop')
+            # msg received
+            # call the stop callback in a new thread
+            # this nets out a call to stop_recording('xmpp_stop')
+            self.stop_jibri('xmpp_stop')
+
+    def start_jibri(self,iq):
+        self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'))
+
+    def stop_jibri(self, reason='xmpp_stop'):
+        #old way, didn't always run?  not sure why
+        #self.loop.call_soon_threadsafe(self.jibri_stop_callback, 'xmpp_stop')
+        #begin the stopping of jibri in a totally separate thread
+        t=threading.Thread(None, target=self.jibri_stop_callback, args=(reason))
+        t.start()
 
     def handle_queue_msg(self, msg):
         if msg== None:

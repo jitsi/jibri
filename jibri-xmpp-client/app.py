@@ -136,11 +136,25 @@ def kill_ffmpeg_process():
         return False
     return True        
 
+#ungraceful kill
+def definitely_kill_selenium_driver():
+    logging.info("Killing selenium driver after kill timed out waiting for graceful shutdown")
+    stop_recording()
+
 # kill selenium driver if it exists
 def kill_selenium_driver():
     global js
+    kill_timeout=2
     if js:
+        #first start a thread that will kill selenium for reals if this blocks
+        t=threading.Timer(kill_timeout, definitely_kill_selenium_driver)
+        t.start()
         js.quit()
+        try:
+            t.cancel()
+        except Exception as e:
+            logging.debug("Exception cancelling definitely_kill_selenium_driver thread timer")
+
     js = False
 
 
