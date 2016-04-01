@@ -28,11 +28,21 @@ default_timeout = 3600
 #rest token
 default_rest_token='abc123'
 
+#nggyu
+default_audio_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+
+
 
 global queues
 global js
 global chrome_binary_path
+global google_account
+global google_account_password
 chrome_binary_path=None
+google_account=None
+google_account_password=None
+
+
 clients = {}
 queues = {}
 
@@ -48,6 +58,7 @@ loop = asyncio.get_event_loop()
 launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
 check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
 stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
+check_audio_script = os.getcwd() + "/../scripts/check_audio.sh"
 
 pidfile = '/var/run/jibri/jibri-xmpp.pid'
 def writePidFile():
@@ -267,32 +278,56 @@ def queue_watcher_start(msg):
     global watcher_queue
     watcher_queue.put(msg)
 
-def start_jibri_selenium(url, token='token'):
+def start_jibri_selenium(url,token='token',google_account=None,google_account_password=None):
     retcode=0
     global js
     global chrome_binary_path
     token='abc'
-    url = "%s#config.iAmRecorder=true"%url
+    url = "%s#config.iAmRecorder=true&config.debug=true"%url
 
     logging.info(
         "starting jibri selenium, url=%s" % (
             url))
 
-    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path)
-    js.launchUrl()
-    if js.waitXMPPConnected():
-      if js.waitDownloadBitrate()>0:
-        #everything is AWESOME!
-        retcode=0
-      else:
-        #didn't launch ffmpeg properly right
-        retcode=1336
+    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password)
 
+    if not check_selenium_audio_stream(js):
+        logging.warn("jibri detected audio issues during startup, bailing out.")
+        retcode=3
     else:
-      #didn't launch chrome properly right
-      retcode=1337
+        js.launchUrl()
+        if js.waitXMPPConnected():
+          if js.waitDownloadBitrate()>0:
+            #everything is AWESOME!
+            retcode=0
+          else:
+            #didn't launch ffmpeg properly right
+            retcode=1336
+
+        else:
+          #didn't launch chrome properly right
+          retcode=1337
 
     return retcode
+
+def check_selenium_audio_stream(js, audio_url=None, audio_delay=1):
+    #first send the selenium driver to something with audio
+    if not audio_url:
+        audio_url = default_audio_url
+
+    js.driver.get(audio_url)
+    #wait a bit to be sure audio is flow
+    time.sleep(audio_delay)
+
+    #now execute audio check script
+    ret = call([check_audio_script])
+    if ret != 0:
+        logging.warn("ERROR: failed audio check, no audio levels detected: %s"%ret)
+        return False
+    else:
+        logging.info("Audio levels confirmed OK.")
+        return True
+
 
 def start_ffmpeg(stream_id, backup=''):
     logging.info("starting jibri ffmpeg with youtube-stream-id=%s" % stream_id)
@@ -623,6 +658,12 @@ if __name__ == '__main__':
     optp.add_option("-b", "--chrome-binary", dest="chrome_binary_path", help="Path to chrome binary (defaults to chrome in PATH)",
                     default=None)
 
+    optp.add_option("-a", "--google-account", dest="google_account", help="Login for google",
+                    default=None)
+
+    optp.add_option("-g", "--google-account-password", dest="google_account_password", help="Password for google",
+                    default=None)
+
 
     optp.usage = 'Usage: %prog [options] <server_hostname1 server_hostname2 ...>'
 
@@ -671,6 +712,12 @@ if __name__ == '__main__':
     if os.environ.get('CHROME_BINARY') is not None:
       opts.chrome_binary_path = os.environ.get('CHROME_BINARY')
 
+    if os.environ.get('GOOGLE_ACCOUNT') is not None:
+      opts.google_account = os.environ.get('GOOGLE_ACCOUNT')
+
+    if os.environ.get('GOOGLE_ACCOUNT_PASSWORD') is not None:
+      opts.google_account_password = os.environ.get('GOOGLE_ACCOUNT_PASSWORD')
+
     if not args:
         if os.environ.get('SERVERS') is None:
           optp.print_help()
@@ -680,6 +727,12 @@ if __name__ == '__main__':
 
     global rest_token
     rest_token = opts.rest_token
+
+    if opts.google_account:
+        google_account = opts.google_account
+
+    if opts.google_account_password:
+        google_account_password = opts.google_account_password
 
     if opts.chrome_binary_path:
         chrome_binary_path = opts.chrome_binary_path

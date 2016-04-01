@@ -15,13 +15,26 @@ from selenium.webdriver.support import expected_conditions as EC # available sin
 
 
 class JibriSeleniumDriver():
-    def __init__(self, url, authtoken=None, xmpp_connect_timeout=60, binary_location=None):
+    def __init__(self, 
+            url, 
+            authtoken=None, 
+            xmpp_connect_timeout=60, 
+            binary_location=None, 
+            google_account=None,
+            google_account_password=None, 
+            displayname='Live Stream', 
+            email='recorder@jitsi.org'):
 
       #init based on url and optional token
       self.url = url
       self.authtoken = authtoken
+      self.google_account = google_account
+      self.google_account_password = google_account_password
+      self.displayname = displayname
+      self.email = email
 
       self.flag_jibri_identifiers_set = False
+      self.flag_google_login_set = False
 
       #only wait this only before failing to load meet
       self.xmpp_connect_timeout = xmpp_connect_timeout
@@ -55,22 +68,63 @@ class JibriSeleniumDriver():
       print("Initializing Driver")
       self.driver = webdriver.Chrome(chrome_options=options, desired_capabilities=desired_capabilities)
 
-    def setJibriIdentifiers(self):
-      print("Setting jibri identifiers")
-      self.execute_script("window.localStorage.setItem('displayname','Live Stream'); window.localStorage.setItem('email','recorder@jitsi.org');")
-#      self.execute_script("window.localStorage.setItem('email','recorder@jitsi.org');")
+    def setJibriIdentifiers(self, url,displayname=None, email=None,ignore_flag=False,):
+      if ignore_flag or not self.flag_jibri_identifiers_set:
+        if displayname == None:
+          displayname = self.displayname
+        if email == None:
+          email = self.email
+
+        logging.info("setting jibri identifiers: %s - %s"%(displayname,email))
+        self.driver.get(url)
+        self.execute_script("window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s');"%(displayname,email))
+        self.flag_jibri_identifiers_set = True
+
+    def googleLogin(self):
+      if self.google_account and not self.flag_google_login_set:
+        logging.info("Logging in with google account")
+        # log in
+        timeout=5
+        try:
+          self.driver.get('https://accounts.google.com/ServiceLogin?continue=https%3A%2F%2Fwww.youtube.com%2F&uilel=3&service=youtube&passive=true&hl=en')
+          self.driver.find_element_by_id('Email').send_keys(self.google_account)
+          self.driver.find_element_by_id('next').click()
+          element = WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located((By.ID, "Passwd")))
+          self.driver.find_element_by_id('Passwd').send_keys(self.google_account_password)
+          self.driver.find_element_by_id('signIn').click()
+
+          #now let's see what happened
+          page=self.driver.execute_script('return window.location.href;')
+          if page.startswith('https://accounts.google.com/ServiceLogin'):
+            logging.info('Google Login or password wrong, failing to log in to google')
+          elif page.startswith('https://accounts.google.com/signin/challenge'):
+            logging.info("Google Login includes another challenge, failing to log in to google")
+          elif page.startswith('https://www.youtube.com/'):
+            logging.info("Google Login successful, continued to www.youtube.com")
+          else:
+            logging.info("Unknown current page after Google Login: %s"%page)
+        except Exception as e:
+          logging.info("Exception occurred logging into google: %s"%e)
+
+        #finished trying to log in
+        logging.info("Google Login completed one way or another")
+        self.flag_google_login_set = True
 
     def launchUrl(self, url=None):
       if not url:
+        #pull URL if not provided
         url = self.url
 
-      print("Launching URL: %s"%url)
-      #we do this twice: once to launch the page the first time,
-      if not self.flag_jibri_identifiers_set:
-        self.driver.get(url)
-        self.setJibriIdentifiers()
-        self.flag_jibri_identifiers_set = True
+      logging.info("Launching URL: %s"%url)
 
+      #log in to google, if appropriate
+      self.googleLogin()
+      
+      #launch the page early and set our identifiers, if we haven't done it already
+      self.setJibriIdentifiers(url)
+
+      #launch the page for real
+      logging.debug("launchUrl Final driver.get() call begun")
       self.driver.get(url)
 
     def execute_async_script(self, script):
@@ -84,7 +138,7 @@ class JibriSeleniumDriver():
 #        pprint.pprint(e)
 #        response = None
       except:
-        print("Unexpected error:%s"%sys.exc_info()[0])
+        logging.error("Unexpected error:%s"%sys.exc_info()[0])
         raise
 
       return response
@@ -225,6 +279,8 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)-8s %(message)s')
   signal.signal(signal.SIGTERM, sigterm_handler)
   js = JibriSeleniumDriver(URL,token)
+#  js.google_account='user@gmail.com'
+#  js.google_account_password='password'
   js.launchUrl()
   if js.checkRunning(download_timeout=60):
     if js.waitXMPPConnected():
