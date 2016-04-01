@@ -149,11 +149,16 @@ def kill_selenium_driver():
         #first start a thread that will kill selenium for reals if this blocks
         t=threading.Timer(kill_timeout, definitely_kill_selenium_driver)
         t.start()
-        js.quit()
+        try:
+            #selenium driver sometimes dies with an exception, which we can handle
+            js.quit()
+        except Exception as e:
+            logging.info("Exception quitting selenium driver %s"%e)
+
         try:
             t.cancel()
         except Exception as e:
-            logging.debug("Exception cancelling definitely_kill_selenium_driver thread timer")
+            logging.debug("Exception cancelling definitely_kill_selenium_driver thread timer %s"%e)
 
     js = False
 
