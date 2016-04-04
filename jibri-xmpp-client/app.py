@@ -36,9 +36,9 @@ default_audio_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 global queues
 global js
 global chrome_binary_path
+chrome_binary_path=None
 global google_account
 global google_account_password
-chrome_binary_path=None
 google_account=None
 google_account_password=None
 
@@ -278,10 +278,13 @@ def queue_watcher_start(msg):
     global watcher_queue
     watcher_queue.put(msg)
 
-def start_jibri_selenium(url,token='token',google_account=None,google_account_password=None):
+def start_jibri_selenium(url,token='token'):
     retcode=0
     global js
     global chrome_binary_path
+    global google_account
+    global google_account_password
+
     token='abc'
     url = "%s#config.iAmRecorder=true&config.debug=true"%url
 
