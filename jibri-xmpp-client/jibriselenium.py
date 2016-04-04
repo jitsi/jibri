@@ -101,6 +101,10 @@ class JibriSeleniumDriver():
             logging.info("Google Login includes another challenge, failing to log in to google")
           elif page.startswith('https://www.youtube.com/'):
             logging.info("Google Login successful, continued to www.youtube.com")
+
+            #hack to sign into youtube if neccessary after getting google login working
+            element = WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'div.signin-container button')))
+            self.driver.find_element_by_css_selector('div.signin-container button').click()
           else:
             logging.info("Unknown current page after Google Login: %s"%page)
         except Exception as e:
@@ -279,8 +283,8 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)-8s %(message)s')
   signal.signal(signal.SIGTERM, sigterm_handler)
   js = JibriSeleniumDriver(URL,token)
-#  js.google_account='user@gmail.com'
-#  js.google_account_password='password'
+  # js.google_account='user@gmail.com'
+  # js.google_account_password='password'
   js.launchUrl()
   if js.checkRunning(download_timeout=60):
     if js.waitXMPPConnected():
