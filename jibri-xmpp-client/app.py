@@ -221,10 +221,6 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     retcode=9999
     try:
         retcode = start_jibri_selenium(url, token)
-        if retcode == 0:
-            #we started selenium on the first try!
-            #we got a selenium, so start ffmpeg
-            retcode = start_ffmpeg(stream_id, backup)
     except Exception as e:
         #oops it all went awry
         #quit chrome
@@ -234,44 +230,82 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         return
     if retcode > 0:
         # We failed to start, bail.
-        logging.info("start returned retcode=" + str(retcode))
-        jibri_stop_callback('startup_error')
+        logging.info("start_jibri_selenium returned retcode=" + str(retcode))
+        jibri_stop_callback('startup_selenium_error')
     else:
-        ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
+        #we got a selenium, so start ffmpeg
+        #we will allow the following number of attempts:
         try:
-            ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
-        except:
-            #oops it all went awry
-            #quit chrome
-            #clean up ffmpeg and kill off any last pieces
-            jibri_stop_callback('ffmpeg_startup_error')
+            #first try to start ffmpeg
+            attempt_count=0
+            attempt_max=3
+            while attempt_count<attempt_max:
+                attempt_count=attempt_count+1
+                logging.info("Starting ffmpeg attempt %d/%d"%(attempt_count,attempt_max))
+                retcode = start_ffmpeg(stream_id, backup)
+                if retcode == 0:
+                    #make sure we wrote a pid, so that we can track this ffmpeg process
+                    ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
+                    try:
+                        ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
+                    except Exception as e:
+                        #oops it all went awry while starting up ffmpeg, something is seriously wrong so no retries
+                        #clean up ffmpeg and kill off any last pieces
+                        logging.error("start_ffmpeg had an exception %s"%e)
+                        jibri_stop_callback('ffmpeg_startup_exception')
+                        return
+
+                    #now that we have a pid, let's make sure ffmpeg is really streaming
+                    success = wait_until_ffmpeg_running()
+                    if success:
+                        #we are live!  Let's tell jicofo and start watching ffmpeg
+                        update_jibri_status('started')
+                        queue_watcher_start(stream_id)
+                        logging.info("queued job for jibri_watcher, startup completed...")
+                        return
+                    else:
+                        #we didn't start properly, so let's reset ffmpeg and try again
+                        kill_ffmpeg_process()
+                else:
+                    logging.error("start_ffmpeg returned retcode=" + str(retcode))
+                    jibri_stop_callback('startup_ffmpeg_error')
+                    return
+
+            #we made it all the way past the while loop and didn't return for either
+            #a fatal error OR success, so apparently we just never started streaming
+            logging.error("Failed to start ffmpeg streaming 3 times in a row, out of attempts")
+            jibri_stop_callback('startup_ffmpeg_streaming_error')
             return
 
-        try:
-            success = check_ffmpeg_running()
-            attempt_count=0
-            attempt_max=15
-            while not success:
-                if attempt_count > attempt_max:
-                    logging.warn("FFMPEG failed to start after %s attempts"%attempt_count)
-                    success = False
-                    raise ValueError('FFMPEG Failed to start after %s attempts'%attempt_count)
-                    break
-
-                time.sleep(1)
-                success = check_ffmpeg_running()
-                attempt_count=attempt_count+1
-
-            if success:
-                update_jibri_status('started')
-                queue_watcher_start(stream_id)
-                logging.info("queued job for jibri_watcher, startup completed...")
         except Exception as e:
             #oops it all went awry
-            #clean up ffmpeg and kill off any last pieces
-            logging.warn("Exception occured: %s"%e)
-            jibri_stop_callback('ffmpeg_startup_exception')
-            return
+            success = False
+            logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
+
+
+def wait_until_ffmpeg_running(attempts=10,interval=1):
+    success = False
+    try:
+        #first try to start ffmpeg
+        success = check_ffmpeg_running()
+        attempt_count=0
+        while not success:
+            if attempt_count >= attempts:
+                logging.warn("FFMPEG failed to start streaming after %s read attempts"%attempt_count)
+                success = False
+                raise ValueError('FFMPEG Failed to start streaming after %s read attempts'%attempt_count)
+                break
+
+            time.sleep(interval)
+            success = check_ffmpeg_running()
+            attempt_count=attempt_count+1
+    except Exception as e:
+        #oops it all went awry
+        success = False
+        logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
+
+    return success
+
 
 def queue_watcher_start(msg):
     logging.info("queueing job for jibri_watcher")
