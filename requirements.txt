@@ -2,3 +2,4 @@ asyncio
 selenium
 sleekxmpp
 flask
+requests
