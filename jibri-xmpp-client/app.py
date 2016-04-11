@@ -25,42 +25,54 @@ from jibriselenium import JibriSeleniumDriver
 #by default, stop recording automatically after 1 hour
 default_timeout = 3600
 
-#rest token
+#rest token, required to be passed in when accessing the service via REST API
 default_rest_token='abc123'
 
-#nggyu
+#nggyu, video used to check for audio levels from loopback
 default_audio_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
 
 
-
+#collection of queues for use with each client
 global queues
+#javascript driver object
 global js
+
+#path to chrome on the filesystem, like /usr/bin/google-chrome-beta
 global chrome_binary_path
 chrome_binary_path=None
+
+#username and password for authenticating to google before acting as a jibri
 global google_account
 global google_account_password
 google_account=None
 google_account_password=None
 
-
+#initialize our collections
 clients = {}
 queues = {}
 
-client_in_use = None
-enso_token_suffix = ""
+#init empty selenium driver
 js = None
 
+#start with a global lock for health checking and recording
 health_lock = threading.Lock()
 recording_lock = threading.Lock()
+
+#do most things in an async event loop on the main thread
 loop = asyncio.get_event_loop()
 
-# FIXME
+# Paths to external scripts for different shell-related tasks
 launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
 check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
 stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
 check_audio_script = os.getcwd() + "/../scripts/check_audio.sh"
 
+#our pidfile
+#@TODO: make this more dynamic
 pidfile = '/var/run/jibri/jibri-xmpp.pid'
+
+#utility function for writing pid on startup
+#includes a registration of the delete pid function on atexit for cleanup
 def writePidFile():
     global pidfile
     try:
@@ -74,6 +86,8 @@ def writePidFile():
     except:
         raise
 
+#utility function for writing pid on startup
+#registered to run atexit in the writePidFile function above
 def deletePidFile():
     global pidfile
     if os.path.exists(pidfile):
@@ -112,7 +126,8 @@ def sighup_handler(loop=None):
         logging.info("Finished SIGHUP processing...")
         sys.exit(None)
 
-
+#handle a usr1 by sending a busy signal
+#@TODO: decide what to really do on USR1
 def sigusr1_handler(loop=None):
 #    global queues
     logging.warn("Received SIGUSR1")
@@ -120,14 +135,24 @@ def sigusr1_handler(loop=None):
     logging.warn("FINISHED SIGUSR1")
 
 #basic reset function
+#used to return jibri to a state where it can record again
 def reset_recording():
     global recording_lock
+    #first kill ffmpeg, to ensure that streaming stops before everything else
     kill_ffmpeg_process()
+
+    #kill selenium gracefully if possible
     kill_selenium_driver()
     #send a false to stop watching ffmpeg/selenium and restart the loop
     queue_watcher_start(False)
+
+    #run the killall shell scripts to FORCE stop anything that didn't die gracefully above
     stop_recording()
+
+    #let the XMPP clients know we're stopped now
     update_jibri_status('stopped')
+
+    #if we were locked, we shouldn't be anymore so unlock us
     try:
         recording_lock.release()
         success=True
@@ -138,6 +163,7 @@ def reset_recording():
 def stop_recording():
      call([stop_recording_script])
 
+#this attempts to kill the ffmpeg process that jibri launched gracefully via os.kill
 def kill_ffmpeg_process():
     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
     try:
@@ -147,12 +173,17 @@ def kill_ffmpeg_process():
         return False
     return True        
 
-#ungraceful kill
+#ungraceful kill selenium using shell script with killall
+#this function is run in a Timer thread while attempting to stop selenium the graceful way
+#if the graceful shutdown works, we cancel the timer.  Otherwise
+#Otherwise if the timer is reached, then we kill selenium via shell here
+#This presumably also eventually unblocks the thread which tried to do the graceful shutdown using kill_selenium_driver
 def definitely_kill_selenium_driver():
     logging.info("Killing selenium driver after kill timed out waiting for graceful shutdown")
     stop_recording()
 
 # kill selenium driver if it exists
+#also kick off a thread to ensure that chrome is killed via shell if not via the driver
 def kill_selenium_driver():
     global js
     kill_timeout=5
@@ -175,6 +206,7 @@ def kill_selenium_driver():
 
 
 #shut it all down!
+#this function is meant to immediately cause the shutdown of jibri
 def kill_theworld(loop=None):
     global clients
     kill_selenium_driver()
@@ -192,6 +224,10 @@ def kill_theworld(loop=None):
     requests.post('http://localhost:5000/jibri/kill')
     loop.stop()
 
+#this function is meant to be run by the XMPP client thread upon receipt of a 'health' message on the queue
+#The callback then releases the health check lock, which was locked by the thread attempting to check for health
+#The checking thread determines the health of the XMPP thread by checking the lock after a period if time
+#if the lock is still set, then we know that no XMPP threads have handled the 'health' message, and are blocked
 def jibri_health_callback(client):
     logging.info('Jibri health callback response from client %s'%client)
     global health_lock
@@ -510,7 +546,7 @@ def check_ffmpeg_running():
 
 
 
-def start_sleekxmpp(jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue):
+def start_sleekxmpp(hostname, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue,port=5222):
     global clients
     logging.info("Creating a client for hostname: %s" % hostname)
     c = JibriXMPPClient(
@@ -526,7 +562,8 @@ def start_sleekxmpp(jid, password, room, nick, roompass, loop, jibri_start_callb
     # c.register_plugin('xep_0030')  # Service Discovery
     c.register_plugin('xep_0045')  # Multi-User Chat
     # c.register_plugin('xep_0199')  # XMPP Ping
-    if c.connect((hostname, 5222)):
+    logging.debug("Connecting client for hostname: %s port %d" %(hostname,port))
+    if c.connect((hostname, port)):
         c.process(block=False)
         clients[hostname] = c
 
@@ -791,7 +828,7 @@ if __name__ == '__main__':
 
     for hostname in args:
         queues[hostname] = Queue()
-        loop.run_in_executor(None, start_sleekxmpp, opts.jid, opts.password, opts.room, opts.nick, opts.roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, queues[hostname])
+        loop.run_in_executor(None, start_sleekxmpp, hostname, opts.jid, opts.password, opts.room, opts.nick, opts.roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, queues[hostname])
 
     #now start flask
     loop.run_in_executor(None, functools.partial(app.run, host='0.0.0.0'))
