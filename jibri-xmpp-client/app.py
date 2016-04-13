@@ -822,6 +822,9 @@ if __name__ == '__main__':
             if 'roompass' in config_data:
                 default_client_opts['roompass'] = config_data['roompass']
 
+            #main XMPP domain value
+            if 'xmpp_domain' in config_data:
+                default_client_opts['xmpp_domain'] = config_data['xmpp_domain']
 
             #get a URL template to visit when launched
             #can include %ROOM% which is replaced by the requested room at launch time
@@ -841,12 +844,12 @@ if __name__ == '__main__':
                 default_client_opts['chrome-binary'] = config_data['chrome-binary']
 
             #path to chrome binary
-            if 'google-account' in config_data:
-                default_client_opts['google-account'] = config_data['google-account']
+            if 'google_account' in config_data:
+                default_client_opts['google_account'] = config_data['google_account']
 
             #path to chrome binary
-            if 'google-account-password' in config_data:
-                default_client_opts['google-account-password'] = config_data['google-account-password']
+            if 'google_account_password' in config_data:
+                default_client_opts['google_account_password'] = config_data['google_account_password']
 
             #user part of JID
             if 'jid_username' in config_data:
@@ -1046,7 +1049,7 @@ if __name__ == '__main__':
 
     watcher_queue = Queue()
 
-    logging.debug('Client Options: %s'%str(client_opts[hostname]))
+    logging.debug('Client Options: %s'%str(client_opts))
     if len(client_opts) == 0:
         logging.warn('No XMPP client options available, acting in pure REST mode')
     for hostname in client_opts:

@@ -1,0 +1,10 @@
+{
+    "jidserver_prefix":"auth.",
+    "mucserver_prefix":"conference.",
+    "password":"jibri",
+    "jid_username":"jibri",
+    "roomname":"TheBrewery",
+    "xmpp_domain":"xmpp.domain.name",
+    "servers":["10.0.0.10"],
+    "environments":{}
+}
