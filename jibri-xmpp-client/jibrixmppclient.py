@@ -25,9 +25,10 @@ class JibriStatusElement(ElementBase):
 
 class JibriXMPPClient(sleekxmpp.ClientXMPP):
 
-    def __init__(self, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue):
+    def __init__(self, hostname, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue):
         sleekxmpp.ClientXMPP.__init__(self, jid, password)
 
+        self.hostname = hostname
         self.room = room
         self.nick = nick
         self.roompass = roompass
