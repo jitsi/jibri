@@ -438,6 +438,8 @@ def start_ffmpeg(stream_id, backup=''):
 
 def jibri_stop_callback(status=None):
     logging.info("jibri_stop_callback run with status %s"%status)
+    #no longer report ourselves as recording in the last environment
+    current_environment = ''
     reset_recording()
     update_jibri_status('idle')
 
