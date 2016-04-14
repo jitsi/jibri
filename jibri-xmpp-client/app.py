@@ -46,6 +46,8 @@ chrome_binary_path=None
 #username and password for authenticating to google before acting as a jibri
 global google_account
 global google_account_password
+global current_environment
+current_environment=''
 google_account=None
 google_account_password=None
 
@@ -246,6 +248,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     global client_opts
     global google_account_password
     global google_account
+    global current_environment
 
     c_google_account=None
     c_google_account_password=None
@@ -262,6 +265,8 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         if 'google-account-password' in co:
             c_google_account_password = co['google_account_password']
 
+        if 'environment' in co:
+            current_environment = co['environment']
 
     if room:
         at_index = room.rfind('@')
@@ -660,9 +665,10 @@ def url_health_check():
     global recording_lock
     global health_lock
     global js
+    global current_environment
 
     #put an item on the XMPP queue, and watch for a return by callback
-    result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False}
+    result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False, 'environment':current_environment}
     if js:
         if js.checkRunning():
             result['selenium_health']=True
@@ -972,6 +978,7 @@ if __name__ == '__main__':
 
         #build a shared config for all clients sharing these parameters
         client_config = default_client_opts.copy()
+        client_config['environment'] = item
         for key in config_environments[item]:
             if key == 'servers':
                 #skip, don't need to save all servers to client config for now
