@@ -364,7 +364,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
             logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
 
 
-def wait_until_ffmpeg_running(attempts=10,interval=1):
+def wait_until_ffmpeg_running(attempts=15,interval=1):
     success = False
     try:
         #first try to start ffmpeg
