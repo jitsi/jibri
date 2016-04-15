@@ -249,13 +249,18 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     global google_account_password
     global google_account
     global current_environment
+    global chrome_binary_path
+
 
     c_google_account=None
     c_google_account_password=None
+    c_chrome_binary_path=None
     if google_account:
         c_google_account = google_account
     if google_account_password:
         c_google_account_password = google_account_password
+    if chrome_binary_path:
+        c_chrome_binary_path = chrome_binary_path
 
     if client:
         co = client_opts[client.hostname]
@@ -268,6 +273,10 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         if 'google_account_password' in co:
             c_google_account_password = co['google_account_password']
             logging.info("Setting selenium google account password from client options")
+
+        if 'chrome_binary_path' in co:
+            c_chrome_binary_path = co['chrome_binary_path']
+            logging.info("Setting chrome binary path from client options: %s"%c_chrome_binary_path)
 
         if 'environment' in co:
             current_environment = co['environment']
@@ -292,7 +301,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     logging.info("Starting jibri")
     retcode=9999
     try:
-        retcode = start_jibri_selenium(url, token, google_account=c_google_account, google_account_password=c_google_account_password)
+        retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password)
     except Exception as e:
         #oops it all went awry
         #quit chrome
@@ -852,8 +861,8 @@ if __name__ == '__main__':
                 default_client_opts['resttoken'] = config_data['resttoken']
 
             #path to chrome binary
-            if 'chrome-binary' in config_data:
-                default_client_opts['chrome-binary'] = config_data['chrome-binary']
+            if 'chrome_binary' in config_data:
+                default_client_opts['chrome_binary'] = config_data['chrome_binary']
 
             #path to chrome binary
             if 'google_account' in config_data:
@@ -969,7 +978,12 @@ if __name__ == '__main__':
         default_client_opts['jidserver_prefix'] = opts.jidserverprefix
     if opts.mucserverprefix:
         default_client_opts['mucserver_prefix'] = opts.mucserverprefix
-
+    if opts.chrome_binary_path:
+        default_client_opts['chrome_binary_path'] = opts.chrome_binary_path
+    if opts.google_account:
+        default_client_opts['google_account'] = opts.google_account
+    if opts.google_account_password:
+        default_client_opts['google_account_password'] = opts.google_account_password
 
     #finally build up server configurations from all the above pieces
     #first walk through the default servers specified in config or command line
@@ -1036,14 +1050,14 @@ if __name__ == '__main__':
     global rest_token
     rest_token = opts.rest_token
 
-    if opts.google_account:
-        google_account = opts.google_account
+    if 'google_account' in default_client_opts:
+        google_account = default_client_opts['google_account']
 
-    if opts.google_account_password:
-        google_account_password = opts.google_account_password
+    if 'google_account_password' in default_client_opts:
+        google_account_password = default_client_opts['google_account_password']
 
-    if opts.chrome_binary_path:
-        chrome_binary_path = opts.chrome_binary_path
+    if 'chrome_binary_path' in default_client_opts:
+        chrome_binary_path = default_client_opts['chrome_binary_path']
         logging.info("Overriding chrome binary with value: %s"%chrome_binary_path)
 
     #handle SIGHUP graceful shutdown
