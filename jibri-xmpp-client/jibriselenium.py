@@ -49,7 +49,7 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enabled')
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
-#      self.options.add_argument('--alsa-output-device=hw:0,1')
+      self.options.add_argument('--alsa-output-device=plug:amix')
       if binary_location:
         self.options.binary_location = binary_location
       self.initDriver()
