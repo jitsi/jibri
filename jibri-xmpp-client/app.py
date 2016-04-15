@@ -861,8 +861,8 @@ if __name__ == '__main__':
                 default_client_opts['resttoken'] = config_data['resttoken']
 
             #path to chrome binary
-            if 'chrome_binary' in config_data:
-                default_client_opts['chrome_binary'] = config_data['chrome_binary']
+            if 'chrome_binary_path' in config_data:
+                default_client_opts['chrome_binary_path'] = config_data['chrome_binary_path']
 
             #path to chrome binary
             if 'google_account' in config_data:
