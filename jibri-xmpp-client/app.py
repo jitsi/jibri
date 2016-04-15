@@ -259,11 +259,15 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
 
     if client:
         co = client_opts[client.hostname]
-        if 'google-account' in co:
+        if co:
+            logging.info('Client options for host: %s'%co)
+        if 'google_account' in co:
             c_google_account = co['google_account']
+            logging.info("Setting selenium google account from client options: %s"%c_google_account)
 
-        if 'google-account-password' in co:
+        if 'google_account_password' in co:
             c_google_account_password = co['google_account_password']
+            logging.info("Setting selenium google account password from client options")
 
         if 'environment' in co:
             current_environment = co['environment']
@@ -388,8 +392,8 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
     url = "%s#config.iAmRecorder=true&config.debug=true"%url
 
     logging.info(
-        "starting jibri selenium, url=%s" % (
-            url))
+        "starting jibri selenium, url=%s, google_account=%s" % (
+            url, google_account))
 
     js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password)
 
