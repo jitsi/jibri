@@ -24,8 +24,8 @@ import sys
 from jibrixmppclient import JibriXMPPClient
 from jibriselenium import JibriSeleniumDriver
 
-#by default, stop recording automatically after 1 hour
-default_timeout = 3600
+#by default, never stop recording automatically
+default_timeout = None
 
 #rest token, required to be passed in when accessing the service via REST API
 default_rest_token='abc123'
@@ -805,7 +805,7 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)-8s %(message)s')
 
     #now parse and handle configuration params from the file, and build client config
-    default_client_opts = {'jid_username':'jibri', 'jidserver_prefix':'', 'mucserver_prefix':'conference.', 'roompass':'','nick':'jibri'}
+    default_client_opts = {'jid_username':'jibri', 'jidserver_prefix':'', 'mucserver_prefix':'conference.', 'boshdomain_prefix':'', 'roompass':'','nick':'jibri', 'usage_timeout': 0}
     default_servers = []
     client_opts = {}
     config_environments = {}
@@ -853,8 +853,8 @@ if __name__ == '__main__':
                 default_client_opts['url'] = config_data['url']
 
             #timeout when communication with external components
-            if 'timeout' in config_data:
-                default_client_opts['timeout'] = config_data['timeout']
+            if 'usage_timeout' in config_data:
+                default_client_opts['usage_timeout'] = config_data['usage_timeout']
 
             #token for accessing JIBRI via REST
             if 'resttoken' in config_data:
@@ -984,7 +984,8 @@ if __name__ == '__main__':
         default_client_opts['google_account'] = opts.google_account
     if opts.google_account_password:
         default_client_opts['google_account_password'] = opts.google_account_password
-
+    if opts.timeout is not None:
+        default_client_opts['usage_timeout'] = opts.timeout
     #finally build up server configurations from all the above pieces
     #first walk through the default servers specified in config or command line
     for hostname in default_servers:
@@ -1087,6 +1088,6 @@ if __name__ == '__main__':
 
     #now start flask
     loop.run_in_executor(None, functools.partial(app.run, host='0.0.0.0'))
-    loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, opts.timeout)
+    loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, default_client_opts['usage_timeout'])
     loop.run_forever()
     loop.close()
