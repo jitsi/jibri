@@ -1,5 +1,5 @@
 #!/bin/sh
-source config
+[ -e "config" ] && source config
 set -x
 [ -z "$JID" ] || JID_FLAG="-j $JID"
 [ -z "$URL" ] || URL_FLAG="-u $URL"
