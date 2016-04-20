@@ -23,7 +23,9 @@ class JibriSeleniumDriver():
             google_account=None,
             google_account_password=None, 
             displayname='Live Stream', 
-            email='recorder@jitsi.org'):
+            email='recorder@jitsi.org',
+            xmpp_login = None,
+            xmpp_password = None):
 
       #init based on url and optional token
       self.url = url
@@ -31,6 +33,8 @@ class JibriSeleniumDriver():
       self.google_account = google_account
       self.google_account_password = google_account_password
       self.displayname = displayname
+      self.xmpp_login = xmpp_login
+      self.xmpp_password = xmpp_password
       self.email = email
 
       self.flag_jibri_identifiers_set = False
@@ -68,17 +72,19 @@ class JibriSeleniumDriver():
       print("Initializing Driver")
       self.driver = webdriver.Chrome(chrome_options=options, desired_capabilities=desired_capabilities)
 
-    def setJibriIdentifiers(self, url,displayname=None, email=None,ignore_flag=False,):
-      if ignore_flag or not self.flag_jibri_identifiers_set:
-        if displayname == None:
-          displayname = self.displayname
-        if email == None:
-          email = self.email
+    def setJibriIdentifiers(self, url,displayname=None, email=None,xmpp_login=None,xmpp_password=None,ignore_flag=False,):
+      if displayname == None:
+        displayname = self.displayname
+      if email == None:
+        email = self.email
+      if xmpp_login == None:
+        xmpp_login = self.xmpp_login
+      if xmpp_password == None:
+        xmpp_password = self.xmpp_password
 
-        logging.info("setting jibri identifiers: %s - %s"%(displayname,email))
-        self.driver.get(url)
-        self.execute_script("window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s');"%(displayname,email))
-        self.flag_jibri_identifiers_set = True
+      logging.info("setting jibri identifiers: display %s -  email %s - xmpp_login %s"%(displayname,email,xmpp_login))
+      self.driver.get(url)
+      self.execute_script("window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s'); window.localStorage.setItem('xmpp_login','%s'); window.localStorage.setItem('xmpp_password','%s');"%(displayname,email,xmpp_login,xmpp_password))
 
     def googleLogin(self):
       if self.google_account and not self.flag_google_login_set:
