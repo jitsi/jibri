@@ -289,6 +289,8 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)-8s %(message)s')
   signal.signal(signal.SIGTERM, sigterm_handler)
   js = JibriSeleniumDriver(URL,token)
+  # js.xmpp_login = 'user@xmpp-domain.com'
+  # js.xmpp_password = 'password'
   # js.google_account='user@gmail.com'
   # js.google_account_password='password'
   js.launchUrl()
