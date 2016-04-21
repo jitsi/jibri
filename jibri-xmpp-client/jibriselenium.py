@@ -84,7 +84,14 @@ class JibriSeleniumDriver():
 
       logging.info("setting jibri identifiers: display %s -  email %s - xmpp_login %s"%(displayname,email,xmpp_login))
       self.driver.get(url)
-      self.execute_script("window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s'); window.localStorage.setItem('xmpp_login','%s'); window.localStorage.setItem('xmpp_password','%s');"%(displayname,email,xmpp_login,xmpp_password))
+      script_text=''
+      script_text+="window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s');"%(displayname,email)
+      if xmpp_login:
+        script_text+="window.localStorage.setItem('xmpp_login','%s');"%(xmpp_login)
+      if xmpp_password:
+        script_text+="window.localStorage.setItem('xmpp_password','%s');"%(xmpp_password)
+
+      self.execute_script(script_text)
 
     def googleLogin(self):
       if self.google_account and not self.flag_google_login_set:
