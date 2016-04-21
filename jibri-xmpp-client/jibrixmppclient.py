@@ -123,7 +123,13 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             self.stop_jibri('xmpp_stop')
 
     def start_jibri(self,iq):
-        self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'))
+        backup_stream = iq['jibri']._getAttr('backup_stream')
+        if backup_stream and backup_flag == 'true':
+            backup_flag = 'backup'
+        else:
+            backup_flag = ''
+
+        self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'), backup_flag)
 
     def stop_jibri(self, reason='xmpp_stop'):
         #old way, didn't always run?  not sure why
