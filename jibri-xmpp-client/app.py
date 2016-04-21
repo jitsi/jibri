@@ -428,13 +428,14 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
     token='abc'
     url = "%s#config.iAmRecorder=true"%(url)
     if boshdomain:
+        logging.info('overriding config.hosts.domain with boshdomain: %s'%boshdomain)
         url = "%s&config.hosts.domain=\"%s\""%(url,boshdomain)
 
     logging.info(
-        "starting jibri selenium, url=%s, google_account=%s" % (
-            url, google_account))
+        "starting jibri selenium, url=%s, google_account=%s, xmpp_login=%s" % (
+            url, google_account, xmpp_login))
 
-    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, xmpp_login=xmpp_login, xmpp_password=xmpp_password, boshdomain=boshdomain)
+    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, xmpp_login=xmpp_login, xmpp_password=xmpp_password)
 
     if not check_selenium_audio_stream(js):
         logging.warn("jibri detected audio issues during startup, bailing out.")
