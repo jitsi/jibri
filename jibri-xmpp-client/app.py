@@ -304,7 +304,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
 
         if 'boshdomain' in co:
             boshdomain = co['boshdomain']
-            logging.info("Setting boshdomain from client options"%boshdomain)
+            logging.info("Setting boshdomain from client options %s"%boshdomain)
 
         if 'environment' in co:
             current_environment = co['environment']
