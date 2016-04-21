@@ -917,6 +917,11 @@ if __name__ == '__main__':
             if 'selenium_xmpp_prefix' in config_data:
                 default_client_opts['selenium_xmpp_prefix'] = config_data['selenium_xmpp_prefix']
 
+            #user part for selenium XMPP meet-jitsi user
+            if 'selenium_xmpp_username' in config_data:
+                default_client_opts['selenium_xmpp_username'] = config_data['selenium_xmpp_username']
+
+
             #user part of JID
             if 'jid_username' in config_data:
                 default_client_opts['jid_username'] = config_data['jid_username']
