@@ -328,8 +328,17 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
 
     logging.info("Starting jibri")
     retcode=9999
+    #wait 30 seconds for full start of selenium, otherwise kill it
+    selenium_timeout=30
     try:
+        #don't want to get stuck in here, so add a timer thread and run the shutdown callback in another thread if we fail to start after N seconds
+        t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_start_stuck'))
+        t.start()
         retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain)
+        try:
+            t.cancel()
+        except Exception as e:
+            logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
     except Exception as e:
         #oops it all went awry
         #quit chrome
@@ -442,17 +451,20 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
         retcode=3
     else:
         js.launchUrl()
-        if js.waitXMPPConnected():
-          if js.waitDownloadBitrate()>0:
-            #everything is AWESOME!
-            retcode=0
-          else:
-            #didn't launch ffmpeg properly right
-            retcode=1336
-
+        if not js:
+            logging.warn("jibri detected selenium driver went away, bailing out.")
+            retcode=9999
         else:
-          #didn't launch chrome properly right
-          retcode=1337
+            if js.waitXMPPConnected():
+              if js.waitDownloadBitrate()>0:
+                #everything is AWESOME!
+                retcode=0
+              else:
+                #didn't find any data flowing to JIBRI
+                retcode=1336
+            else:
+              #didn't launch chrome properly right
+              retcode=1337
 
     return retcode
 
@@ -583,7 +595,7 @@ def check_selenium_running():
     else:
         #first start a thread to ensure we stop everything if needed
         t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_stuck'))
-        t.start
+        t.start()
         running= js.checkRunning()
         try:
             t.cancel()
