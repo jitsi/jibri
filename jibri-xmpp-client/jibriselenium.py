@@ -82,11 +82,12 @@ class JibriSeleniumDriver():
       if xmpp_password == None:
         xmpp_password = self.xmpp_password
 
-      logging.info("setting jibri identifiers: display %s -  email %s - xmpp_login %s"%(displayname,email,xmpp_login))
+      logging.info("setting jibri identifiers: display %s -  email %s"%(displayname,email))
       self.driver.get(url)
       script_text=''
       script_text+="window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s');"%(displayname,email)
       if xmpp_login:
+        logging.info("setting jibri identifiers: xmpp_login %s"%(xmpp_login))
         script_text+="window.localStorage.setItem('xmpp_login','%s');"%(xmpp_login)
       if xmpp_password:
         script_text+="window.localStorage.setItem('xmpp_password','%s');"%(xmpp_password)
