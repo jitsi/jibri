@@ -87,10 +87,10 @@ class JibriSeleniumDriver():
       script_text=''
       script_text+="window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s');"%(displayname,email)
       if xmpp_login:
-        logging.info("setting jibri identifiers: xmpp_login %s"%(xmpp_login))
-        script_text+="window.localStorage.setItem('xmpp_login','%s');"%(xmpp_login)
+        logging.info("setting jibri identifiers: xmpp_username_override %s"%(xmpp_login))
+        script_text+="window.localStorage.setItem('xmpp_username_override','%s');"%(xmpp_login)
       if xmpp_password:
-        script_text+="window.localStorage.setItem('xmpp_password','%s');"%(xmpp_password)
+        script_text+="window.localStorage.setItem('xmpp_password_override','%s');"%(xmpp_password)
 
       self.execute_script(script_text)
 
