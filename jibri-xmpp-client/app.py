@@ -435,7 +435,7 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
     global js
 
     token='abc'
-    url = "%s#config.iAmRecorder=true"%(url)
+    url = "%s#config.iAmRecorder=true&config.externalConnectUrl=null"%(url)
     if boshdomain:
         logging.info('overriding config.hosts.domain with boshdomain: %s'%boshdomain)
         url = "%s&config.hosts.domain=\"%s\""%(url,boshdomain)
