@@ -49,7 +49,9 @@ global google_account_password
 global current_environment
 global selenium_xmpp_login
 global selenium_xmpp_password
+global active_client
 
+active_client=None
 current_environment=''
 google_account=None
 google_account_password=None
@@ -251,6 +253,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     global loop
     global opts
     global client_opts
+    global active_client
     global google_account_password
     global google_account
     global current_environment
@@ -279,6 +282,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         c_xmpp_password = selenium_xmpp_password
 
     if client:
+        active_client = client
         co = client_opts[client.hostname]
         if co:
             logging.info('Client options for host: %s'%co)
@@ -493,18 +497,29 @@ def start_ffmpeg(stream_id, backup=''):
              shell=False)
 
 def jibri_stop_callback(status=None):
+    global current_environment
+    global active_client
     logging.info("jibri_stop_callback run with status %s"%status)
-    #no longer report ourselves as recording in the last environment
+    if active_client and not status == 'xmpp_stop':
+        #the stop wasn't specifically requested, so report this error to jicofo
+        status = 'error|'+status
+        logging.info("queueing error %s for host %s"%(status,active_client.hostname))
+        queues[active_client.hostname].put(status)
+
+    #no longer report ourselves as recording in the last environment, clear our active client
     current_environment = ''
+    active_client = None
     reset_recording()
+    #report ourselves idle
     update_jibri_status('idle')
 
+#c is client to NOT send updates to, used for 'busy' case
 def update_jibri_status(status, c=None):
     logging.info("update_jibri_status")
     global queues
     for hostname in queues:
         logging.info("looping through queue for host %s"%hostname)
-        if not c or c.address[0] != hostname:
+        if not c or c.hostname != hostname:
             logging.info("queueing status %s for host %s"%(status,hostname))
             queues[hostname].put(status)
 

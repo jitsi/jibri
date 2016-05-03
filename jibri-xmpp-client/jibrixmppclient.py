@@ -151,6 +151,13 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             self.disconnect(wait=True)
             self.abort()
             logging.info("Finished abort processing")
+        if msg.startswith('error'):
+            error_parts = msg.split('|')
+            if len(error_parts) == 2:
+                error_type=error_parts[1]
+            else:
+                error_type='unknown'
+            self.report_jibri_error(error_type)
         if msg == 'health':
              self.loop.call_soon_threadsafe(self.jibri_health_callback, self)
         if msg == 'idle':
@@ -222,6 +229,40 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         logging.info('sending presence: %s' % presence)
         presence.send()
 
+    def report_jibri_error(self, error):
+        iq = self.Iq()
+        iq['jibri']._setAttr('status', 'failed')
+        iq['to'] = self.controllerJid
+        iq['from'] = self.jid
+        iq._setAttr('type','set')
+
+        if error == 'selenium_start_stuck':
+            error_text='Startup error: Selenium stuck'
+        elif error == 'startup_exception':
+            error_text='Startup error: Startup exception'
+        elif error == 'startup_selenium_error':
+            error_text='Startup error: Selenium error'
+        elif error == 'ffmpeg_startup_exception':
+            error_text='Startup error: FFMPEG fatal exception'
+        elif error == 'startup_ffmpeg_error':
+            error_text='Startup error: FFMPEG fatal error'
+        elif error == 'startup_ffmpeg_streaming_error':
+            error_text='Youtube request timeout'
+        elif error == 'selenium_stuck':
+            error_text='Streaming Error: Selenium stuck'
+        else:
+            error_text='Unknown error'
+
+        iq_error = self.make_iq_error(iq['id'], type='wait', condition='remote-server-timeout', text=error_text, ito=self.controllerJid)
+        iq_error['error']['code']='504'
+
+        iq['jibri'].append(iq_error['error'])
+
+        logging.info('sending status update: %s' % iq)
+        try:
+            iq.send()
+        except Exception as e:
+            logging.error("Failed to send status update: %s", str(e))
 
     def update_jibri_status(self, status):
         iq = self.Iq()
