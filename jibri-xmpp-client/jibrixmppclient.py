@@ -139,43 +139,47 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         t.start()
 
     def handle_queue_msg(self, msg):
-        if msg== None:
+        if msg == None:
             #got the message to quit, so stand down
             logging.info("Attempting to disconnect and abort client...")
             self.disconnect(wait=True)
             self.abort()
             logging.info("Finished abort processing")
-        if msg== False:
+            return
+        if msg == False:
             #got the message to quit, so stand down
             logging.info("Attempting to disconnect and abort client...")
             self.disconnect(wait=True)
             self.abort()
             logging.info("Finished abort processing")
-        if msg.startswith('error'):
-            error_parts = msg.split('|')
-            if len(error_parts) == 2:
-                error_type=error_parts[1]
-            else:
-                error_type='unknown'
-            self.report_jibri_error(error_type)
-        if msg == 'health':
-             self.loop.call_soon_threadsafe(self.jibri_health_callback, self)
-        if msg == 'idle':
-            self.presence_idle()
-        elif msg == 'busy': 
-            self.presence_busy()
-        elif msg == 'off':
-            self.update_jibri_status('off')
-        elif msg == 'on':
-            self.update_jibri_status('on')
-        elif msg == 'stopped':
-            try:
-                recording_lock.release()
-            except:
-                pass
-            self.update_jibri_status('off')
-        elif msg == 'started':
-            self.update_jibri_status('on')
+            return
+
+        if msg:
+            if msg.startswith('error'):
+                error_parts = msg.split('|')
+                if len(error_parts) == 2:
+                    error_type=error_parts[1]
+                else:
+                    error_type='unknown'
+                self.report_jibri_error(error_type)
+            if msg == 'health':
+                 self.loop.call_soon_threadsafe(self.jibri_health_callback, self)
+            if msg == 'idle':
+                self.presence_idle()
+            elif msg == 'busy': 
+                self.presence_busy()
+            elif msg == 'off':
+                self.update_jibri_status('off')
+            elif msg == 'on':
+                self.update_jibri_status('on')
+            elif msg == 'stopped':
+                try:
+                    recording_lock.release()
+                except:
+                    pass
+                self.update_jibri_status('off')
+            elif msg == 'started':
+                self.update_jibri_status('on')
 
     def from_main_thread_nonblocking(self):
 #        logging.info("Checking queue")
