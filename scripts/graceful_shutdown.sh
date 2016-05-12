@@ -20,6 +20,7 @@
 
 # Initialize arguments
 hostUrl="http://localhost:5000"
+pidFile="/var/run/jibri/jibri-xmpp.pid"
 timeout=25
 verbose=1
 restart=0
@@ -61,7 +62,7 @@ function getHealthJSON {
 }
 
 function getRecordingStatus {
-    echo `getHealthJSON` | jq ".recording"
+    echo `getHealthJSON` | jq -r ".recording"
 }
 
 # Prints info messages
@@ -83,57 +84,66 @@ KILL_HUP_RESPONSE=$?
 if [ $KILL_HUP_RESPONSE == 0 ]
 then
     printInfo "Graceful shutdown started"
-    recordingStatus=`getRecordingStatus`
-    echo "Recording Status: $recordingStatus"
-    while [[ $recordingStatus == 'true' ]] ; do
-        printInfo "The jibri is still recording..."
-        sleep 10
+    sleep 5
+    #first check to see if pid has swapped, if so we're already restarted and need do nothing else
+    NEWPID=`cat $pidFile`
+    echo "NEW PID: $NEWPID"
+    if [ ! -z $NEWPID] && [ $NEWPID -eq $pid ]; then
+        #still running
+        echo "Checking Recording Status..."
         recordingStatus=`getRecordingStatus`
         echo "Recording Status: $recordingStatus"
-    done
+        while [[ "$recordingStatus" == 'true' ]] ; do
+            printInfo "The jibri is still recording..."
+            sleep 10
+            recordingStatus=`getRecordingStatus`
+            echo "Recording Status: $recordingStatus"
+        done
 
-    sleep 5
+        sleep 5
 
-    if ps -p $pid > /dev/null 2>&1
-    then
-        printInfo "It is still running, lets give it $timeout seconds"
-        sleep $timeout
         if ps -p $pid > /dev/null 2>&1
         then
-            printError "Jibri did not exit after $timeout sec - killing $pid"
-            kill -TERM $pid
+            printInfo "It is still running, lets give it $timeout seconds"
+            sleep $timeout
+            if ps -p $pid > /dev/null 2>&1
+            then
+                printError "Jibri did not exit after $timeout sec - killing $pid"
+                kill -TERM $pid
+            else
+                printInfo "Jibri shutdown OK"
+                exit 0
+            fi
         else
             printInfo "Jibri shutdown OK"
             exit 0
         fi
+        # check for 3 seconds if we managed to kill
+        for I in 1 2 3
+        do
+            if ps -p $pid > /dev/null 2>&1
+            then
+                sleep 1
+            fi
+        done
+        if ps -p $pid > /dev/null 2>&1
+        then
+            printError "Failed to kill $pid"
+            printError "Sending force kill to $pid"
+            kill -9 $pid
+            if ps -p $pid > /dev/null 2>&1
+            then
+                printError "Failed to force kill $pid"
+                exit 1
+            fi
+        fi
+        printInfo "JIBRI shutdown OK"
+        exit 0
     else
-        printInfo "Jibri shutdown OK"
+        printInfo "JIBRI shutdown immediately OK"
         exit 0
     fi
-    # check for 3 seconds if we managed to kill
-    for I in 1 2 3
-    do
-        if ps -p $pid > /dev/null 2>&1
-        then
-            sleep 1
-        fi
-    done
-    if ps -p $pid > /dev/null 2>&1
-    then
-        printError "Failed to kill $pid"
-        printError "Sending force kill to $pid"
-        kill -9 $pid
-        if ps -p $pid > /dev/null 2>&1
-        then
-            printError "Failed to force kill $pid"
-            exit 1
-        fi
-    fi
-    printInfo "JIBRI shutdown OK"
-    exit 0
 else
     printError "Invalid response: $KILL_HUP_RESPONSE results from kill -HUP on JIBRI PID: $pid"
     exit 1
 fi
-
-

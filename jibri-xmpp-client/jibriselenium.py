@@ -23,7 +23,9 @@ class JibriSeleniumDriver():
             google_account=None,
             google_account_password=None, 
             displayname='Live Stream', 
-            email='recorder@jitsi.org'):
+            email='recorder@jitsi.org',
+            xmpp_login = None,
+            xmpp_password = None):
 
       #init based on url and optional token
       self.url = url
@@ -31,6 +33,8 @@ class JibriSeleniumDriver():
       self.google_account = google_account
       self.google_account_password = google_account_password
       self.displayname = displayname
+      self.xmpp_login = xmpp_login
+      self.xmpp_password = xmpp_password
       self.email = email
 
       self.flag_jibri_identifiers_set = False
@@ -49,7 +53,7 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enabled')
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
-#      self.options.add_argument('--alsa-output-device=hw:0,1')
+      self.options.add_argument('--alsa-output-device=plug:amix')
       if binary_location:
         self.options.binary_location = binary_location
       self.initDriver()
@@ -68,17 +72,27 @@ class JibriSeleniumDriver():
       print("Initializing Driver")
       self.driver = webdriver.Chrome(chrome_options=options, desired_capabilities=desired_capabilities)
 
-    def setJibriIdentifiers(self, url,displayname=None, email=None,ignore_flag=False,):
-      if ignore_flag or not self.flag_jibri_identifiers_set:
-        if displayname == None:
-          displayname = self.displayname
-        if email == None:
-          email = self.email
+    def setJibriIdentifiers(self, url,displayname=None, email=None,xmpp_login=None,xmpp_password=None,ignore_flag=False,):
+      if displayname == None:
+        displayname = self.displayname
+      if email == None:
+        email = self.email
+      if xmpp_login == None:
+        xmpp_login = self.xmpp_login
+      if xmpp_password == None:
+        xmpp_password = self.xmpp_password
 
-        logging.info("setting jibri identifiers: %s - %s"%(displayname,email))
-        self.driver.get(url)
-        self.execute_script("window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s');"%(displayname,email))
-        self.flag_jibri_identifiers_set = True
+      logging.info("setting jibri identifiers: display %s -  email %s"%(displayname,email))
+      self.driver.get(url)
+      script_text=''
+      script_text+="window.localStorage.setItem('displayname','%s'); window.localStorage.setItem('email','%s');"%(displayname,email)
+      if xmpp_login:
+        logging.info("setting jibri identifiers: xmpp_username_override %s"%(xmpp_login))
+        script_text+="window.localStorage.setItem('xmpp_username_override','%s');"%(xmpp_login)
+      if xmpp_password:
+        script_text+="window.localStorage.setItem('xmpp_password_override','%s');"%(xmpp_password)
+
+      self.execute_script(script_text)
 
     def googleLogin(self):
       if self.google_account and not self.flag_google_login_set:
@@ -283,6 +297,8 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)-8s %(message)s')
   signal.signal(signal.SIGTERM, sigterm_handler)
   js = JibriSeleniumDriver(URL,token)
+  # js.xmpp_login = 'user@xmpp-domain.com'
+  # js.xmpp_password = 'password'
   # js.google_account='user@gmail.com'
   # js.google_account_password='password'
   js.launchUrl()

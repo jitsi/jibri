@@ -1,0 +1,15 @@
+{
+    "jidserver_prefix":"auth.",
+    "mucserver_prefix":"conference.",
+    "boshdomain_prefix":"recorder.",    
+    "password":"jibri",
+    "jid_username":"jibri",
+    "roomname":"TheBrewery",
+    "xmpp_domain":"xmpp.domain.name",
+    "selenium_xmpp_prefix":"recorder.",
+    "selenium_xmpp_username":"recorder",
+    "selenium_xmpp_password":"recorderpass",
+    "servers":["10.0.0.10"],
+    "environments":{
+    }
+}

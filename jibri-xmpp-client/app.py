@@ -14,6 +14,8 @@ import signal
 import functools
 import atexit
 import requests
+import json
+
 from optparse import OptionParser
 from subprocess import call
 from queue import Queue, Empty
@@ -22,8 +24,8 @@ import sys
 from jibrixmppclient import JibriXMPPClient
 from jibriselenium import JibriSeleniumDriver
 
-#by default, stop recording automatically after 1 hour
-default_timeout = 3600
+#by default, never stop recording automatically
+default_timeout = None
 
 #rest token, required to be passed in when accessing the service via REST API
 default_rest_token='abc123'
@@ -44,8 +46,17 @@ chrome_binary_path=None
 #username and password for authenticating to google before acting as a jibri
 global google_account
 global google_account_password
+global current_environment
+global selenium_xmpp_login
+global selenium_xmpp_password
+global active_client
+
+active_client=None
+current_environment=''
 google_account=None
 google_account_password=None
+selenium_xmpp_login=None
+selenium_xmpp_password=None
 
 #initialize our collections
 clients = {}
@@ -241,12 +252,78 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     global js
     global loop
     global opts
+    global client_opts
+    global active_client
+    global google_account_password
+    global google_account
+    global current_environment
+    global chrome_binary_path
+    global selenium_xmpp_login
+    global selenium_xmpp_password
+
+
+    c_google_account=None
+    c_google_account_password=None
+    c_chrome_binary_path=None
+    c_xmpp_login=None
+    c_xmpp_password=None
+    boshdomain=None
+
+    if google_account:
+        c_google_account = google_account
+    if google_account_password:
+        c_google_account_password = google_account_password
+    if chrome_binary_path:
+        c_chrome_binary_path = chrome_binary_path
+
+    if selenium_xmpp_login:
+        c_xmpp_login = selenium_xmpp_login
+    if selenium_xmpp_password:
+        c_xmpp_password = selenium_xmpp_password
+
+    if client:
+        active_client = client
+        co = client_opts[client.hostname]
+        if co:
+            logging.info('Client options for host: %s'%co)
+        if 'google_account' in co:
+            c_google_account = co['google_account']
+            logging.info("Setting selenium google account from client options: %s"%c_google_account)
+
+        if 'google_account_password' in co:
+            c_google_account_password = co['google_account_password']
+            logging.info("Setting selenium google account password from client options")
+
+        if 'chrome_binary_path' in co:
+            c_chrome_binary_path = co['chrome_binary_path']
+            logging.info("Setting chrome binary path from client options: %s"%c_chrome_binary_path)
+
+        if 'selenium_xmpp_login' in co:
+            c_xmpp_login = co['selenium_xmpp_login']
+            logging.info("Setting xmpp login from client options: %s"%c_xmpp_login)
+
+        if 'selenium_xmpp_password' in co:
+            c_xmpp_password = co['selenium_xmpp_password']
+            logging.info("Setting xmpp password from client options")
+
+        if 'boshdomain' in co:
+            boshdomain = co['boshdomain']
+            logging.info("Setting boshdomain from client options %s"%boshdomain)
+
+        if 'environment' in co:
+            current_environment = co['environment']
+
     if room:
         at_index = room.rfind('@')
         if at_index > 0:
             room = room[0:at_index]
-        if not url:
-            url = opts.url
+        #no url was passed in explicitly, so look it up by client
+        if client and not url:
+            if client.hostname in client_opts:
+                co = client_opts[client.hostname]
+                if 'url' in co and co['url']:
+                    url = co['url']
+
         url = url.replace('%ROOM%',room)
 
     logging.info("Start recording callback")
@@ -255,8 +332,17 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
 
     logging.info("Starting jibri")
     retcode=9999
+    #wait 30 seconds for full start of selenium, otherwise kill it
+    selenium_timeout=30
     try:
-        retcode = start_jibri_selenium(url, token)
+        #don't want to get stuck in here, so add a timer thread and run the shutdown callback in another thread if we fail to start after N seconds
+        t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_start_stuck'))
+        t.start()
+        retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain)
+        try:
+            t.cancel()
+        except Exception as e:
+            logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
     except Exception as e:
         #oops it all went awry
         #quit chrome
@@ -319,7 +405,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
             logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
 
 
-def wait_until_ffmpeg_running(attempts=10,interval=1):
+def wait_until_ffmpeg_running(attempts=15,interval=1):
     success = False
     try:
         #first try to start ffmpeg
@@ -348,38 +434,41 @@ def queue_watcher_start(msg):
     global watcher_queue
     watcher_queue.put(msg)
 
-def start_jibri_selenium(url,token='token'):
+def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None):
     retcode=0
     global js
-    global chrome_binary_path
-    global google_account
-    global google_account_password
 
     token='abc'
-    url = "%s#config.iAmRecorder=true&config.debug=true"%url
+    url = "%s#config.iAmRecorder=true&config.externalConnectUrl=null"%(url)
+    if boshdomain:
+        logging.info('overriding config.hosts.domain with boshdomain: %s'%boshdomain)
+        url = "%s&config.hosts.domain=\"%s\""%(url,boshdomain)
 
     logging.info(
-        "starting jibri selenium, url=%s" % (
-            url))
+        "starting jibri selenium, url=%s, google_account=%s, xmpp_login=%s" % (
+            url, google_account, xmpp_login))
 
-    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password)
+    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, xmpp_login=xmpp_login, xmpp_password=xmpp_password)
 
     if not check_selenium_audio_stream(js):
         logging.warn("jibri detected audio issues during startup, bailing out.")
         retcode=3
     else:
         js.launchUrl()
-        if js.waitXMPPConnected():
-          if js.waitDownloadBitrate()>0:
-            #everything is AWESOME!
-            retcode=0
-          else:
-            #didn't launch ffmpeg properly right
-            retcode=1336
-
+        if not js:
+            logging.warn("jibri detected selenium driver went away, bailing out.")
+            retcode=9999
         else:
-          #didn't launch chrome properly right
-          retcode=1337
+            if js.waitXMPPConnected():
+              if js.waitDownloadBitrate()>0:
+                #everything is AWESOME!
+                retcode=0
+              else:
+                #didn't find any data flowing to JIBRI
+                retcode=1336
+            else:
+              #didn't launch chrome properly right
+              retcode=1337
 
     return retcode
 
@@ -408,16 +497,29 @@ def start_ffmpeg(stream_id, backup=''):
              shell=False)
 
 def jibri_stop_callback(status=None):
+    global current_environment
+    global active_client
     logging.info("jibri_stop_callback run with status %s"%status)
+    if active_client and not status == 'xmpp_stop':
+        #the stop wasn't specifically requested, so report this error to jicofo
+        status = 'error|'+status
+        logging.info("queueing error %s for host %s"%(status,active_client.hostname))
+        queues[active_client.hostname].put(status)
+
+    #no longer report ourselves as recording in the last environment, clear our active client
+    current_environment = ''
+    active_client = None
     reset_recording()
+    #report ourselves idle
     update_jibri_status('idle')
 
+#c is client to NOT send updates to, used for 'busy' case
 def update_jibri_status(status, c=None):
     logging.info("update_jibri_status")
     global queues
     for hostname in queues:
         logging.info("looping through queue for host %s"%hostname)
-        if not c or c.address[0] != hostname:
+        if not c or c.hostname != hostname:
             logging.info("queueing status %s for host %s"%(status,hostname))
             queues[hostname].put(status)
 
@@ -508,7 +610,7 @@ def check_selenium_running():
     else:
         #first start a thread to ensure we stop everything if needed
         t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_stuck'))
-        t.start
+        t.start()
         running= js.checkRunning()
         try:
             t.cancel()
@@ -545,13 +647,17 @@ def check_ffmpeg_running():
         return False
 
 
-
-def start_sleekxmpp(hostname, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue,port=5222):
+#function to start sleekxmpp from within its own thread
+def start_sleekxmpp(hostname, loop, recording_lock, signal_queue,port=5222):
     global clients
-    logging.info("Creating a client for hostname: %s" % hostname)
+    global client_opts
+    connect_opts = client_opts[hostname]
+
+    logging.info("Creating a client for hostname: %s with options: %s" %(hostname,str(connect_opts)))
     c = JibriXMPPClient(
-        jid, password, room, nick,
-        roompass=roompass,
+        hostname,
+        connect_opts['jid'], connect_opts['password'], connect_opts['room'], connect_opts['nick'],
+        roompass=connect_opts['roompass'],
         loop=loop,
 #        iq_callback=on_jibri_iq,
         jibri_start_callback=jibri_start_callback,
@@ -632,9 +738,10 @@ def url_health_check():
     global recording_lock
     global health_lock
     global js
+    global current_environment
 
     #put an item on the XMPP queue, and watch for a return by callback
-    result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False}
+    result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False, 'environment':current_environment}
     if js:
         if js.checkRunning():
             result['selenium_health']=True
@@ -715,10 +822,19 @@ if __name__ == '__main__':
                     action='store_const', dest='loglevel',
                     const=5, default=logging.INFO)
 
+    optp.add_option("-c", "--config", dest="config", help="Server config file to use, JSON format", default=os.getcwd() + "/../config.json")
+
     optp.add_option("-j", "--jid", dest="jid", help="JID to use")
     optp.add_option("-u", "--url", dest="url", help="URL to record, with token %ROOM% for room name: https://meet.jit.si/%ROOM%")
     optp.add_option("-p", "--password", dest="password", help="password to use")
     optp.add_option("-r", "--room", dest="room", help="MUC room to join")
+    optp.add_option("", "--room-name", dest="roomname", help="MUC room name to join (combined with MUC server if room isn't provided)")
+    optp.add_option("", "--muc-server-prefix", dest="mucserverprefix", help="MUC server prefix to join (combined with xmpp domain and room name if room isn't provided)")
+    optp.add_option("", "--jid-server-prefix", dest="jidserverprefix", help="JID server prefix to auth (combined with xmpp domain and username if room isn't provided)")
+    optp.add_option("", "--bosh-domain-prefix", dest="boshdomainprefix", help="BOSH domain prefix to auth (combined with xmpp domain if boshdomain isn't provided)")
+    optp.add_option("", "--bosh-domain", dest="boshdomain", help="BOSH domain to override default for site")
+    optp.add_option("", "--jid-username", dest="jidusername", help="JID user to auth (combined with xmpp domain and username if room isn't provided)")
+    optp.add_option("-x", "--xmpp-domain", dest="xmppdomain", help="XMPP domain, used to generate other parameters")
     optp.add_option("-n", "--nick", dest="nick", help="MUC nickname",
                     default=default_nick)
     optp.add_option("-t", "--timeout", dest="timeout", help="Max usage in seconds before restarting",
@@ -748,43 +864,165 @@ if __name__ == '__main__':
     logging.basicConfig(level=opts.loglevel,
                         format='%(asctime)s %(levelname)-8s %(message)s')
 
-    if opts.jid is None:
-        if os.environ.get('JID') is None:
-          optp.print_help()
-          exit("No jid given.")
+    #now parse and handle configuration params from the file, and build client config
+    default_client_opts = {'jid_username':'jibri', 'jidserver_prefix':'', 'mucserver_prefix':'conference.', 'boshdomain_prefix':'', 'selenium_xmpp_prefix':'', 'boshdomain':'', 'roompass':'','nick':'jibri', 'usage_timeout': 0}
+    default_servers = []
+    client_opts = {}
+    config_environments = {}
+
+    if opts.config:
+        config_data=None
+        try:
+            with open(opts.config) as data_file:    
+                config_data = json.load(data_file)
+        except FileNotFoundError:
+            logging.warn('Configuration file %s not found.'%opts.config)
+        except PermissionError:
+            logging.warn('Configuration file %s access denied.'%opts.config)
+        except Exception as e:
+            logging.error('Exception while reading JSON configuration %s'%e)
+
+        if config_data:
+            #first we read basic global config parameters
+            if 'jid' in config_data:
+                default_client_opts['jid'] = config_data['jid']
+
+            #XMPP password for the jibri user JID
+            if 'password' in config_data:
+                default_client_opts['password'] = config_data['password']
+
+            #nickname for this jibri
+            if 'nick' in config_data:
+                default_client_opts['nick'] = config_data['nick']
+
+            #room for jibri to join
+            if 'room' in config_data:
+                default_client_opts['room'] = config_data['room']
+
+            #password on room for jibri to join
+            if 'roompass' in config_data:
+                default_client_opts['roompass'] = config_data['roompass']
+
+            #main XMPP domain value
+            if 'xmpp_domain' in config_data:
+                default_client_opts['xmpp_domain'] = config_data['xmpp_domain']
+
+            #get a URL template to visit when launched
+            #can include %ROOM% which is replaced by the requested room at launch time
+            if 'url' in config_data:
+                default_client_opts['url'] = config_data['url']
+
+            #timeout when communication with external components
+            if 'usage_timeout' in config_data:
+                default_client_opts['usage_timeout'] = config_data['usage_timeout']
+
+            #token for accessing JIBRI via REST
+            if 'resttoken' in config_data:
+                default_client_opts['resttoken'] = config_data['resttoken']
+
+            #path to chrome binary
+            if 'chrome_binary_path' in config_data:
+                default_client_opts['chrome_binary_path'] = config_data['chrome_binary_path']
+
+            #google account to log in to for selenium chrome session
+            if 'google_account' in config_data:
+                default_client_opts['google_account'] = config_data['google_account']
+
+            #google password to log in to for selenium chrome session
+            if 'google_account_password' in config_data:
+                default_client_opts['google_account_password'] = config_data['google_account_password']
+
+            #login for selenium XMPP meet-jitsi user
+            if 'selenium_xmpp_login' in config_data:
+                default_client_opts['selenium_xmpp_login'] = config_data['selenium_xmpp_login']
+
+            #password for selenium XMPP meet-jitsi user
+            if 'selenium_xmpp_password' in config_data:
+                default_client_opts['selenium_xmpp_password'] = config_data['selenium_xmpp_password']
+
+            #start of host part for selenium XMPP meet-jitsi user
+            if 'selenium_xmpp_prefix' in config_data:
+                default_client_opts['selenium_xmpp_prefix'] = config_data['selenium_xmpp_prefix']
+
+            #user part for selenium XMPP meet-jitsi user
+            if 'selenium_xmpp_username' in config_data:
+                default_client_opts['selenium_xmpp_username'] = config_data['selenium_xmpp_username']
+
+
+            #user part of JID
+            if 'jid_username' in config_data:
+                default_client_opts['jid_username'] = config_data['jid_username']
+
+            #start of host part of JID
+            if 'jidserver_prefix' in config_data:
+                default_client_opts['jidserver_prefix'] = config_data['jidserver_prefix']
+
+            #start of host part of muc server
+            if 'mucserver_prefix' in config_data:
+                default_client_opts['mucserver_prefix'] = config_data['mucserver_prefix']
+
+            #start of host part of bosh server
+            if 'boshdomain_prefix' in config_data:
+                default_client_opts['boshdomain_prefix'] = config_data['boshdomain_prefix']
+
+            #start of host part of bosh server
+            if 'boshdomain' in config_data:
+                default_client_opts['boshdomain'] = config_data['boshdomain']
+
+            #name part of room for jibri to join
+            if 'roomname' in config_data:
+                default_client_opts['roomname'] = config_data['roomname']
+
+            if 'servers' in config_data:
+                for hostname in config_data['servers']:
+                    default_servers.append(hostname)
+
+            if 'environments' in config_data:
+                config_environments = config_data['environments']
+
         else:
+            logging.warn('No data found in config file %s'%opts.config)
+
+
+
+    #environment used if command line not provided
+    if not opts.jid:
+        if not os.environ.get('JID') is None:
           opts.jid = os.environ.get('JID')
-    if opts.url is None:
-        if os.environ.get('URL') is None:
-          optp.print_help()
-          exit("No url given.")
-        else:
+
+    if not opts.url:
+        if not os.environ.get('URL') is None:
           opts.url = os.environ.get('URL')
-    if opts.password is None:
-        if os.environ.get('PASS') is None:
-          optp.print_help()
-          exit("No password given.")
-        else:
-          opts.password = os.environ.get('PASS')
-    if opts.room is None:
-        if os.environ.get('ROOM') is None:
-          optp.print_help()
-          exit("No room given.")
-        else:
+
+    if not opts.room:
+        if not os.environ.get('ROOM') is None:
           opts.room = os.environ.get('ROOM')
-    if opts.roompass is None:
-        if os.environ.get('ROOMPASS') is not None:
-            opts.roompass = os.environ.get('ROOMPASS')
+
+    if not opts.password:
+        if not os.environ.get('PASS') is None:
+          opts.password = os.environ.get('PASS')
+
+    if not opts.roompass:
+        if not os.environ.get('ROOMPASS') is None:
+          opts.roompass = os.environ.get('ROOMPASS')
+
+    if not opts.roomname:
+        if not os.environ.get('ROOMNAME') is None:
+          opts.roomname = os.environ.get('ROOMNAME')
+
+    if not opts.xmppdomain:
+        if not os.environ.get('XMPP_DOMAIN') is None:
+          opts.xmppdomain = os.environ.get('XMPP_DOMAIN')
 
     if os.environ.get('TIMEOUT') is not None:
       opts.timeout = os.environ.get('TIMEOUT')
 
-
     if os.environ.get('REST_TOKEN') is not None:
       opts.rest_token = os.environ.get('REST_TOKEN')
 
-    if os.environ.get('CHROME_BINARY') is not None:
-      opts.chrome_binary_path = os.environ.get('CHROME_BINARY')
+    if not opts.chrome_binary_path:
+        if os.environ.get('CHROME_BINARY') is not None:
+          opts.chrome_binary_path = os.environ.get('CHROME_BINARY')
 
     if os.environ.get('GOOGLE_ACCOUNT') is not None:
       opts.google_account = os.environ.get('GOOGLE_ACCOUNT')
@@ -792,25 +1030,137 @@ if __name__ == '__main__':
     if os.environ.get('GOOGLE_ACCOUNT_PASSWORD') is not None:
       opts.google_account_password = os.environ.get('GOOGLE_ACCOUNT_PASSWORD')
 
+
+    #pull the servers from the environment if not specified on the command line
     if not args:
-        if os.environ.get('SERVERS') is None:
-          optp.print_help()
-          exit("No hostnames given.")
-        else:
+        if not os.environ.get('SERVERS') is None:
           args = os.environ.get('SERVERS').split(" ")
+
+    #no matter their source, append the servers to the default list
+    if args:
+        for hostname in args:
+            default_servers.append(hostname)
+
+    #now override file parameters with command line if specified
+    if opts.room:
+        default_client_opts['room'] = opts.room
+    if opts.url:
+        default_client_opts['url'] = opts.url
+    if opts.jid:
+        default_client_opts['jid'] = opts.jid
+    if opts.password:
+        default_client_opts['password'] = opts.password
+    if opts.nick:
+        default_client_opts['nick'] = opts.nick
+
+    if opts.xmppdomain:
+        default_client_opts['xmpp_domain'] = opts.xmppdomain
+    if opts.roomname:
+        default_client_opts['roomname'] = opts.roomname
+    if opts.jidusername:
+        default_client_opts['jid_username'] = opts.jidusername
+    if opts.jidserverprefix:
+        default_client_opts['jidserver_prefix'] = opts.jidserverprefix
+    if opts.mucserverprefix:
+        default_client_opts['mucserver_prefix'] = opts.mucserverprefix
+    if opts.boshdomainprefix:
+        default_client_opts['boshdomain_prefix'] = opts.boshdomainprefix
+    if opts.boshdomain:
+        default_client_opts['boshdomain'] = opts.boshdomain
+    if opts.chrome_binary_path:
+        default_client_opts['chrome_binary_path'] = opts.chrome_binary_path
+    if opts.google_account:
+        default_client_opts['google_account'] = opts.google_account
+    if opts.google_account_password:
+        default_client_opts['google_account_password'] = opts.google_account_password
+    if opts.timeout is not None:
+        default_client_opts['usage_timeout'] = opts.timeout
+    #finally build up server configurations from all the above pieces
+    #first walk through the default servers specified in config or command line
+    for hostname in default_servers:
+        client_opts[hostname] = default_client_opts.copy()
+
+    #now loop through the environments and pull out the servers
+    for item in config_environments.keys():
+        if 'servers' not in config_environments[item]:
+            logging.warn('Environment config item %s missing serverlist, incomplete, skipping...'%item)
+            continue
+
+        #build a shared config for all clients sharing these parameters
+        client_config = default_client_opts.copy()
+        client_config['environment'] = item
+        for key in config_environments[item]:
+            if key == 'servers':
+                #skip, don't need to save all servers to client config for now
+                pass
+            else:
+                client_config[key] = config_environments[item][key]
+
+        #now save those servers into global client options
+        for hostname in config_environments[item]['servers']:
+            client_opts[hostname] = client_config
+
+
+    #final sanity check of configuration parameters
+    candidate_hosts = list(client_opts.keys())
+    for hostname in candidate_hosts:
+        if not 'jid' in client_opts[hostname]:
+            if 'jid_username' in client_opts[hostname] and 'jidserver_prefix' in client_opts[hostname] and 'xmpp_domain' in client_opts[hostname]:
+                client_opts[hostname]['jid'] = '%s@%s%s'%(client_opts[hostname]['jid_username'],client_opts[hostname]['jidserver_prefix'],client_opts[hostname]['xmpp_domain'])
+            else:
+                logging.warn('No JID specified in client option, removing from list: %s'%client_opts[hostname])
+                del client_opts[hostname]
+                continue
+
+        if not 'url' in client_opts[hostname]:
+            if 'xmpp_domain' in client_opts[hostname]:
+                client_opts[hostname]['url'] = 'https://%s/'%client_opts[hostname]['xmpp_domain']+'%ROOM%'
+            else:
+                logging.warn('No URL specified in client option, removing from list: %s'%client_opts[hostname])
+                del client_opts[hostname]
+                continue
+
+        if not 'room' in client_opts[hostname]:
+            if 'roomname' in client_opts[hostname] and 'mucserver_prefix' in client_opts[hostname] and 'xmpp_domain' in client_opts[hostname]:
+                client_opts[hostname]['room'] = '%s@%s%s'%(client_opts[hostname]['roomname'],client_opts[hostname]['mucserver_prefix'],client_opts[hostname]['xmpp_domain'])
+            else:
+                logging.warn('No ROOM specified in client option, removing from list: %s'%client_opts[hostname])
+                del client_opts[hostname]
+                continue
+
+        if not 'password' in client_opts[hostname]:
+            logging.warn('No Password specified in client option, removing from list: %s'%client_opts[hostname])
+            del client_opts[hostname]
+            continue
+
+        if not 'selenium_xmpp_login' in client_opts[hostname]:
+            if 'selenium_xmpp_username' in client_opts[hostname] and 'xmpp_domain' in client_opts[hostname]:
+                #build selenium username from xmpp domain plus prefix
+                client_opts[hostname]['selenium_xmpp_login'] = '%s@%s%s'%(client_opts[hostname]['selenium_xmpp_username'],client_opts[hostname]['selenium_xmpp_prefix'],client_opts[hostname]['xmpp_domain'])
+
+        if not 'boshdomain' in client_opts[hostname] or client_opts[hostname]['boshdomain'] == '':
+            if 'boshdomain_prefix' in client_opts[hostname] and client_opts[hostname]['boshdomain_prefix'] and 'xmpp_domain' in client_opts[hostname] and client_opts[hostname]['xmpp_domain']:
+                client_opts[hostname]['boshdomain'] = '%s%s'%(client_opts[hostname]['boshdomain_prefix'],client_opts[hostname]['xmpp_domain'])
+
 
     global rest_token
     rest_token = opts.rest_token
 
-    if opts.google_account:
-        google_account = opts.google_account
+    if 'google_account' in default_client_opts:
+        google_account = default_client_opts['google_account']
 
-    if opts.google_account_password:
-        google_account_password = opts.google_account_password
+    if 'google_account_password' in default_client_opts:
+        google_account_password = default_client_opts['google_account_password']
 
-    if opts.chrome_binary_path:
-        chrome_binary_path = opts.chrome_binary_path
+    if 'chrome_binary_path' in default_client_opts:
+        chrome_binary_path = default_client_opts['chrome_binary_path']
         logging.info("Overriding chrome binary with value: %s"%chrome_binary_path)
+
+    if 'selenium_xmpp_login' in default_client_opts:
+        selenium_xmpp_login = default_client_opts['selenium_xmpp_login']
+
+    if 'selenium_xmpp_password' in default_client_opts:
+        selenium_xmpp_password = default_client_opts['selenium_xmpp_password']
 
     #handle SIGHUP graceful shutdown
     loop.add_signal_handler(signal.SIGHUP,sighup_handler, loop)
@@ -826,12 +1176,17 @@ if __name__ == '__main__':
 
     watcher_queue = Queue()
 
-    for hostname in args:
+    logging.debug('Client Options: %s'%str(client_opts))
+    if len(client_opts) == 0:
+        logging.warn('No XMPP client options available, acting in pure REST mode')
+    for hostname in client_opts:
+        logging.debug('Starting up client thread for host: %s'%hostname)
+        #make a queue for talking to the XMPP client thread
         queues[hostname] = Queue()
-        loop.run_in_executor(None, start_sleekxmpp, hostname, opts.jid, opts.password, opts.room, opts.nick, opts.roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, queues[hostname])
+        loop.run_in_executor(None, start_sleekxmpp, hostname, loop, recording_lock, queues[hostname])
 
     #now start flask
     loop.run_in_executor(None, functools.partial(app.run, host='0.0.0.0'))
-    loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, opts.timeout)
+    loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, default_client_opts['usage_timeout'])
     loop.run_forever()
     loop.close()

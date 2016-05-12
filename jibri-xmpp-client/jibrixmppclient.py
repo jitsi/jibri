@@ -25,9 +25,10 @@ class JibriStatusElement(ElementBase):
 
 class JibriXMPPClient(sleekxmpp.ClientXMPP):
 
-    def __init__(self, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue):
+    def __init__(self, hostname, jid, password, room, nick, roompass, loop, jibri_start_callback, jibri_stop_callback, jibri_health_callback, recording_lock, signal_queue):
         sleekxmpp.ClientXMPP.__init__(self, jid, password)
 
+        self.hostname = hostname
         self.room = room
         self.nick = nick
         self.roompass = roompass
@@ -122,7 +123,13 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             self.stop_jibri('xmpp_stop')
 
     def start_jibri(self,iq):
-        self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'))
+        backup_stream = iq['jibri']._getAttr('backup_stream')
+        if backup_stream and backup_flag == 'true':
+            backup_flag = 'backup'
+        else:
+            backup_flag = ''
+
+        self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'), backup_flag)
 
     def stop_jibri(self, reason='xmpp_stop'):
         #old way, didn't always run?  not sure why
@@ -132,36 +139,47 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         t.start()
 
     def handle_queue_msg(self, msg):
-        if msg== None:
+        if msg == None:
             #got the message to quit, so stand down
             logging.info("Attempting to disconnect and abort client...")
             self.disconnect(wait=True)
             self.abort()
             logging.info("Finished abort processing")
-        if msg== False:
+            return
+        if msg == False:
             #got the message to quit, so stand down
             logging.info("Attempting to disconnect and abort client...")
             self.disconnect(wait=True)
             self.abort()
             logging.info("Finished abort processing")
-        if msg == 'health':
-             self.loop.call_soon_threadsafe(self.jibri_health_callback, self)
-        if msg == 'idle':
-            self.presence_idle()
-        elif msg == 'busy': 
-            self.presence_busy()
-        elif msg == 'off':
-            self.update_jibri_status('off')
-        elif msg == 'on':
-            self.update_jibri_status('on')
-        elif msg == 'stopped':
-            try:
-                recording_lock.release()
-            except:
-                pass
-            self.update_jibri_status('off')
-        elif msg == 'started':
-            self.update_jibri_status('on')
+            return
+
+        if msg:
+            if msg.startswith('error'):
+                error_parts = msg.split('|')
+                if len(error_parts) == 2:
+                    error_type=error_parts[1]
+                else:
+                    error_type='unknown'
+                self.report_jibri_error(error_type)
+            if msg == 'health':
+                 self.loop.call_soon_threadsafe(self.jibri_health_callback, self)
+            if msg == 'idle':
+                self.presence_idle()
+            elif msg == 'busy': 
+                self.presence_busy()
+            elif msg == 'off':
+                self.update_jibri_status('off')
+            elif msg == 'on':
+                self.update_jibri_status('on')
+            elif msg == 'stopped':
+                try:
+                    recording_lock.release()
+                except:
+                    pass
+                self.update_jibri_status('off')
+            elif msg == 'started':
+                self.update_jibri_status('on')
 
     def from_main_thread_nonblocking(self):
 #        logging.info("Checking queue")
@@ -215,6 +233,40 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         logging.info('sending presence: %s' % presence)
         presence.send()
 
+    def report_jibri_error(self, error):
+        iq = self.Iq()
+        iq['jibri']._setAttr('status', 'failed')
+        iq['to'] = self.controllerJid
+        iq['from'] = self.jid
+        iq._setAttr('type','set')
+
+        if error == 'selenium_start_stuck':
+            error_text='Startup error: Selenium stuck'
+        elif error == 'startup_exception':
+            error_text='Startup error: Startup exception'
+        elif error == 'startup_selenium_error':
+            error_text='Startup error: Selenium error'
+        elif error == 'ffmpeg_startup_exception':
+            error_text='Startup error: FFMPEG fatal exception'
+        elif error == 'startup_ffmpeg_error':
+            error_text='Startup error: FFMPEG fatal error'
+        elif error == 'startup_ffmpeg_streaming_error':
+            error_text='Youtube request timeout'
+        elif error == 'selenium_stuck':
+            error_text='Streaming Error: Selenium stuck'
+        else:
+            error_text='Unknown error'
+
+        iq_error = self.make_iq_error(iq['id'], type='wait', condition='remote-server-timeout', text=error_text, ito=self.controllerJid)
+        iq_error['error']['code']='504'
+
+        iq['jibri'].append(iq_error['error'])
+
+        logging.info('sending status update: %s' % iq)
+        try:
+            iq.send()
+        except Exception as e:
+            logging.error("Failed to send status update: %s", str(e))
 
     def update_jibri_status(self, status):
         iq = self.Iq()
