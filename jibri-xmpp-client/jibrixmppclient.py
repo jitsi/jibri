@@ -237,7 +237,6 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         iq = self.Iq()
         iq['jibri']._setAttr('status', 'failed')
         iq['to'] = self.controllerJid
-        iq['from'] = self.jid
         iq._setAttr('type','set')
 
         if error == 'selenium_start_stuck':
