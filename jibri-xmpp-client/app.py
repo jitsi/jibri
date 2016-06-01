@@ -88,9 +88,8 @@ def writePidFile():
     global pidfile
     try:
         pid = str(os.getpid())
-        f = open(pidfile, 'w')
-        f.write(pid)
-        f.close()
+        with open(pidfile, 'w') as f:
+            f.write(pid)
         atexit.register(deletePidFile)
     except FileNotFoundError as e:
         logging.warn("Unable to write pidfile: %s, %s"%(pidfile, e))
