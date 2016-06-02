@@ -100,16 +100,14 @@ def writePidFile():
 #registered to run atexit in the writePidFile function above
 def deletePidFile():
     global pidfile
-    if os.path.exists(pidfile):
-        try:
-            pid = str(os.getpid())
-            file_pid = str(open(pidfile).read().strip())
-            if pid == file_pid:
-                os.remove(pidfile)
-        except FileNotFoundError as e:
-            logging.warn("Unable to find pidfile: %s, %s"%(pidfile, e))
-        except:
-            raise
+    try:
+        pid = str(os.getpid())
+        with open(pidfile) as f:
+            file_pid = str(f.read().strip())
+        if pid == file_pid:
+            os.remove(pidfile)
+    except FileNotFoundError as e:
+        logging.warn("Unable to find pidfile: %s, %s" % (pidfile, e))
 
 
 #handled in main thread
@@ -177,11 +175,12 @@ def stop_recording():
 def kill_ffmpeg_process():
     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
     try:
-        ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
+        with open(ffmpeg_pid_file) as f:
+            ffmpeg_pid = int(f.read().strip())
         os.kill(ffmpeg_pid)
     except:
         return False
-    return True        
+    return True
 
 #ungraceful kill selenium using shell script with killall
 #this function is run in a Timer thread while attempting to stop selenium the graceful way
@@ -368,7 +367,8 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
                     #make sure we wrote a pid, so that we can track this ffmpeg process
                     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
                     try:
-                        ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
+                        with open(ffmpeg_pid_file) as f:
+                            ffmpeg_pid = int(f.read().strip())
                     except Exception as e:
                         #oops it all went awry while starting up ffmpeg, something is seriously wrong so no retries
                         #clean up ffmpeg and kill off any last pieces
@@ -623,8 +623,9 @@ def check_ffmpeg_running():
     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
     ffmpeg_output_file="/tmp/jibri-ffmpeg.out"
     try:
-        ffmpeg_pid = int(open(ffmpeg_pid_file).read().strip())
-    except:
+        with open(ffmpeg_pid_file) as f:
+            ffmpeg_pid = int(f.read().strip())
+    except Exception:
         #oops it all went awry
         #quit chrome
         #clean up ffmpeg and kill off any last pieces
@@ -872,7 +873,7 @@ if __name__ == '__main__':
     if opts.config:
         config_data=None
         try:
-            with open(opts.config) as data_file:    
+            with open(opts.config) as data_file:
                 config_data = json.load(data_file)
         except FileNotFoundError:
             logging.warn('Configuration file %s not found.'%opts.config)
