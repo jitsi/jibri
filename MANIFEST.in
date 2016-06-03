@@ -1,0 +1,4 @@
+include LICENSE README.md MANIFEST.in asoundrc config.json
+recursive-include jibri *
+recursive-include scripts *
+global-exclude *~ *.pyc .git*
