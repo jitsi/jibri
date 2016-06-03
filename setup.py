@@ -16,7 +16,6 @@ setup(
         'console_scripts': [
             'jibri = jibri.app:main',
             'jibri-selenium = jibri.selenium:main',
-            'jibri-custom-stanza-user = jibri.custom_stanza_user:main'
         ],
     },
 )
