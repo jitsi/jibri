@@ -21,8 +21,8 @@ from subprocess import call
 from queue import Queue, Empty
 from datetime import datetime, timedelta
 import sys
-from jibrixmppclient import JibriXMPPClient
-from jibriselenium import JibriSeleniumDriver
+from jibri.xmppclient import JibriXMPPClient
+from jibri.selenium import JibriSeleniumDriver
 
 #by default, never stop recording automatically
 default_timeout = None
@@ -802,8 +802,7 @@ def check_xmpp_running():
         logging.error('Exception: %e'%e)
         raise
 
-
-if __name__ == '__main__':
+def main():
     #first things first, write ourselves a pidfile
     writePidFile()
 
@@ -1192,3 +1191,6 @@ if __name__ == '__main__':
     loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, default_client_opts['usage_timeout'])
     loop.run_forever()
     loop.close()
+
+if __name__ == '__main__':
+    main()
