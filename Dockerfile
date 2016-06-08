@@ -1,7 +1,7 @@
 FROM alpine:latest
 MAINTAINER Sam Whited <swhited@atlassian.com>
 
-RUN apk update
+RUN ["apk", "update"]
 
 RUN ["apk", "add", "chromium"]
 RUN ["apk", "add", "chromium-chromedriver"]
@@ -15,10 +15,9 @@ RUN ["apk", "add", "xorg-server"]
 
 # Deps from testing
 # TODO: Move these into the normal list when they're in the stable repos
-RUN apk add --update-cache --repository \
-	http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted icewm
-RUN apk add --update-cache --repository \
-	http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted pulseaudio
+RUN ["apk", "add", "--update-cache", "--repository", \
+	"http://dl-3.alpinelinux.org/alpine/edge/testing/", "--allow-untrusted", \
+	"icewm", "pulseaudio"]
 
 WORKDIR /root
 
@@ -32,6 +31,11 @@ RUN ["curl", "https://bootstrap.pypa.io/get-pip.py", "-o", "get-pip.py"]
 RUN ["python3", "./get-pip.py"]
 RUN ["pip", "install", "-r", "requirements.txt"]
 
-CMD ["python3", "./jibri-xmpp-client/app.py", "-j $JIBRI_JID", \
+# Build and install dumb-init (then remove build system)
+RUN ["apk", "add", "gcc", "musl-dev"]
+RUN ["pip", "install", "dumb-init"]
+RUN ["apk", "del", "gcc", "musl-dev"]
+
+CMD ["dumb-init", "python3", "./jibri-xmpp-client/app.py", "-j $JIBRI_JID", \
 	"-p $JIBRI_PASS", "-r $JIBRI_ROOM", "-n $JIBRI_NICK", "-P $JIBRI_ROOMPASS", \
 	"-t $JIBRI_TOKEN_SERVERS", "-c config.json"]
