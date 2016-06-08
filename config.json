@@ -1,7 +1,7 @@
 {
     "jidserver_prefix":"auth.",
     "mucserver_prefix":"conference.",
-    "boshdomain_prefix":"recorder.",    
+    "boshdomain_prefix":"recorder.",
     "password":"jibri",
     "jid_username":"jibri",
     "roomname":"TheBrewery",
