@@ -37,6 +37,13 @@ COPY scripts scripts
 
 RUN ["mkdir", "-p", "/var/run/jibri"]
 
-CMD ["dumb-init", "python3", "./jibri-xmpp-client/app.py", "-j $JIBRI_JID", \
-	"-p $JIBRI_PASS", "-r $JIBRI_ROOM", "-n $JIBRI_NICK", "-P $JIBRI_ROOMPASS", \
-	"-t $JIBRI_TOKEN_SERVERS", "-c", "config.json"]
+CMD [ \
+  "dumb-init", "python3", "./jibri-xmpp-client/app.py", \
+	"-j $JIBRI_JID", \
+	"-n $JIBRI_NICK", \
+	"-p $JIBRI_PASS", \
+	"-P $JIBRI_ROOMPASS", \
+	"-r $JIBRI_ROOM", \
+	"-t $JIBRI_TOKEN_SERVERS", \
+	"-c", "config.json" \
+]
