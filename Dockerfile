@@ -33,7 +33,7 @@ WORKDIR /root
 COPY asoundrc .asoundrc
 COPY config.json config.json
 COPY jibri-xmpp-client jibri-xmpp-client
-COPY scripts scripts
+COPY scripts/* scripts/
 
 RUN ["mkdir", "-p", "/var/run/jibri"]
 
