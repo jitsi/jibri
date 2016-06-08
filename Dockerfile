@@ -33,6 +33,7 @@ RUN ["pip", "install", "-r", "requirements.txt"]
 
 # Build and install dumb-init (then remove build system)
 RUN ["apk", "add", "gcc", "musl-dev"]
+ENV CC "musl-gcc"
 RUN ["pip", "install", "dumb-init"]
 RUN ["apk", "del", "gcc", "musl-dev"]
 
