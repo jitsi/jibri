@@ -581,11 +581,13 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
             selenium_result = check_selenium_running()
 
             if not selenium_result:
-                logging.info("Received a failure checking if selenium is running, checking again...")
+                logging.info("Received a failure checking if selenium is running, checking again in 1 second...")
+                time.sleep(1)
                 #try at least 2 more times
                 selenium_result = check_selenium_running()
                 if not selenium_result:
-                    logging.info("Received a second failure checking if selenium is running, checking again...")
+                    logging.info("Received a second failure checking if selenium is running, checking again in 1 second...")
+                    time.sleep(1)
                     selenium_result = check_selenium_running()
 
             if result and selenium_result:
