@@ -2,14 +2,14 @@
 
 STREAM=$1
 
-RESOLUTION="1280x720"
-RATE=30
-PRESET=veryfast
-YOUTUBE_BASE="rtmp://a.rtmp.youtube.com/live2"
-QUEUE_SIZE=4096
+: ${RESOLUTION:=1920x1080}
+: ${RATE:=30}
+: ${PRESET:=veryfast}
+: ${YOUTUBE_BASE:="rtmp://a.rtmp.youtube.com/live2"}
+: ${QUEUE_SIZE:=4096}
 
 #use alsa directly
-INPUT_DEVICE='hw:0,1,0'
+: ${INPUT_DEVICE:='hw:0,1,0'}
 
 #use pulse for audio input
 #INPUT_DEVICE='pulse'
