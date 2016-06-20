@@ -91,6 +91,7 @@ class JibriSeleniumDriver():
         script_text+="window.localStorage.setItem('xmpp_username_override','%s');"%(xmpp_login)
       if xmpp_password:
         script_text+="window.localStorage.setItem('xmpp_password_override','%s');"%(xmpp_password)
+      script_text+="window.localStorage.setItem('callStatsUserName', 'jibri');"
 
       self.execute_script(script_text)
 
@@ -137,7 +138,7 @@ class JibriSeleniumDriver():
 
       #log in to google, if appropriate
       self.googleLogin()
-      
+
       #launch the page early and set our identifiers, if we haven't done it already
       self.setJibriIdentifiers(url)
 
