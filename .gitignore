@@ -1,0 +1,6 @@
+dist/
+env/
+venv/
+*.egg-info/
+*.sw[op]
+*.py[oc]

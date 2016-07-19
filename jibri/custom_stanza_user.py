@@ -17,7 +17,7 @@ from sleekxmpp import Iq
 from sleekxmpp.exceptions import XMPPError
 from sleekxmpp.xmlstream import register_stanza_plugin
 
-from jibrixmppclient import JibriElement
+from jibri.xmppclient import JibriElement
 
 YSI = 'id-of-the-youtube-stream'
 
@@ -105,7 +105,7 @@ class ActionUserBot(sleekxmpp.ClientXMPP):
         """
         logging.info(msg['body'])
 
-if __name__ == '__main__':
+def main():
     # Setup the command line arguments.
     optp = OptionParser()
 
@@ -186,3 +186,6 @@ if __name__ == '__main__':
         print("Done")
     else:
         print("Unable to connect.")
+
+if __name__ == '__main__':
+    main()

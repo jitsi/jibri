@@ -5,24 +5,26 @@
     Based on examples from SleekXMPP: https://github.com/fritzy/SleekXMPP
 """
 import asyncio
-import os
-import time
-import random
-import logging
-import threading
-import signal
-import functools
 import atexit
-import requests
+import functools
 import json
-
-from optparse import OptionParser
-from subprocess import call
-from queue import Queue, Empty
-from datetime import datetime, timedelta
+import logging
+import os
+import random
+import requests
+import signal
 import sys
-from jibrixmppclient import JibriXMPPClient
-from jibriselenium import JibriSeleniumDriver
+import threading
+import time
+
+from datetime import datetime, timedelta
+from optparse import OptionParser
+from os import path
+from queue import Queue, Empty
+from subprocess import call
+
+from jibri.selenium import JibriSeleniumDriver
+from jibri.xmppclient import JibriXMPPClient
 
 #by default, never stop recording automatically
 default_timeout = None
@@ -72,11 +74,13 @@ recording_lock = threading.Lock()
 #do most things in an async event loop on the main thread
 loop = asyncio.get_event_loop()
 
+scriptsdir = os.path.join(os.path.split(__file__)[0], "scripts")
+
 # Paths to external scripts for different shell-related tasks
-launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
-check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
-stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
-check_audio_script = os.getcwd() + "/../scripts/check_audio.sh"
+launch_recording_script = path.join(scriptsdir, "launch_recording.sh")
+check_ffmpeg_script = path.join(scriptsdir, "check_ffmpeg.sh")
+stop_recording_script = path.join(scriptsdir, "stop_recording.sh")
+check_audio_script = path.join(scriptsdir, "check_audio.sh")
 
 #our pidfile
 #@TODO: make this more dynamic
@@ -679,7 +683,6 @@ def start_sleekxmpp(hostname, loop, recording_lock, signal_queue,port=5222):
 
 from flask import Flask, jsonify, request
 from subprocess import call
-from os import chdir, getcwd
 
 app = Flask(__name__)
 
@@ -802,8 +805,7 @@ def check_xmpp_running():
         logging.error('Exception: %e'%e)
         raise
 
-
-if __name__ == '__main__':
+def main():
     #first things first, write ourselves a pidfile
     writePidFile()
 
@@ -824,7 +826,7 @@ if __name__ == '__main__':
                     action='store_const', dest='loglevel',
                     const=5, default=logging.INFO)
 
-    optp.add_option("-c", "--config", dest="config", help="Server config file to use, JSON format", default=os.getcwd() + "/../config.json")
+    optp.add_option("-c", "--config", dest="config", help="Server config file to use, JSON format", default="/etc/jibri/config.json")
 
     optp.add_option("-j", "--jid", dest="jid", help="JID to use")
     optp.add_option("-u", "--url", dest="url", help="URL to record, with token %ROOM% for room name: https://meet.jit.si/%ROOM%")
@@ -1192,3 +1194,6 @@ if __name__ == '__main__':
     loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, default_client_opts['usage_timeout'])
     loop.run_forever()
     loop.close()
+
+if __name__ == '__main__':
+    main()

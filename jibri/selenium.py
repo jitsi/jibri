@@ -266,8 +266,7 @@ def sigterm_handler(a, b):
         driver.quit()
     exit("Jibri begone!")
 
-
-if __name__ == '__main__':
+def main():
   app = sys.argv[0]
   argv=sys.argv[1:]
   URL = ''
@@ -334,3 +333,6 @@ if __name__ == '__main__':
 
   print("Done waiting, finishing up and exiting...")
   js.quit()
+
+if __name__ == '__main__':
+    main()
