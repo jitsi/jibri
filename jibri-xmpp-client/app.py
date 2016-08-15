@@ -261,9 +261,9 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
 
 
     #make sure we remove whitespace from all input parameters
-    room.strip()
-    url.strip()
-    stream_id.strip()
+    room=room.strip()
+    url=url.strip()
+    stream_id=stream_id.strip()
 
     c_google_account=None
     c_google_account_password=None
