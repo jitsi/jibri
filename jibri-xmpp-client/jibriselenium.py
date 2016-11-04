@@ -144,6 +144,8 @@ class JibriSeleniumDriver():
 
       #launch the page for real
       logging.debug("launchUrl Final driver.get() call begun")
+      #instead of using driver.reload or attempting to get the same URL (which was skipping the reload) we now go to the "about:blank" page first before loading meet again
+      self.driver.get('about:blank')
       self.driver.get(url)
 
     def execute_async_script(self, script):
