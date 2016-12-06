@@ -175,7 +175,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             elif msg == 'stopped':
                 try:
                     recording_lock.release()
-                except:
+                except Exception:
                     pass
                 self.update_jibri_status('off')
             elif msg == 'started':
