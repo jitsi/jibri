@@ -9,5 +9,5 @@ if [ ! -e "$OUTPUT_PATH" ]; then
 fi
 
 #look for frame= on the last line of the file
-cat $OUTPUT_PATH | tr \\r \\n | tail -1 | grep -q frame=
+cat $OUTPUT_PATH | tr \\r \\n | tail -10 | grep -q frame=
 exit $?
