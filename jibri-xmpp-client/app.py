@@ -582,7 +582,8 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
                     result=False
                     break
 
-            result = check_ffmpeg_running()
+            #during ongoing check, ensure that process is running but don't search for frame=
+            result = check_ffmpeg_running(False)
             selenium_result = check_selenium_running()
 
             if not selenium_result:
@@ -626,7 +627,7 @@ def check_selenium_running():
 
 
 #utility function called by jibri_watcher, checks for the ffmpeg process, returns true if the pidfile can be found and the process exists
-def check_ffmpeg_running():
+def check_ffmpeg_running(include_frame_check=True):
     ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
     ffmpeg_output_file="/tmp/jibri-ffmpeg.out"
     try:
@@ -641,11 +642,12 @@ def check_ffmpeg_running():
     try:
         #check that ffmpeg is running
         os.kill(ffmpeg_pid, 0)
-        #check if we are streaming
-        retcode = call([check_ffmpeg_script, ffmpeg_output_file])
-        if retcode > 0:
-            logging.info('No frame= lines found from ffmpeg, not running yet')
-            return False
+        if include_frame_check:
+            #check if we are streaming
+            retcode = call([check_ffmpeg_script, ffmpeg_output_file])
+            if retcode > 0:
+                logging.info('No frame= lines found from ffmpeg, not running yet')
+                return False
         #nothing is wrong, so wait a bit
         return True
     except:
