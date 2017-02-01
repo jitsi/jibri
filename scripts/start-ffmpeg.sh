@@ -22,7 +22,7 @@ DISPLAY=:0
 
 #Record the output of display :0 plus the ALSA loopback device hw:0,1,0
 exec ffmpeg -y -v info \
-    -f x11grab -r $RATE -s $RESOLUTION -thread_queue_size $QUEUE_SIZE -i :0.0+0,0 \
+    -f x11grab -draw_mouse 0 -r $RATE -s $RESOLUTION -thread_queue_size $QUEUE_SIZE -i :0.0+0,0 \
     -f alsa -thread_queue_size $QUEUE_SIZE -i $INPUT_DEVICE -acodec libmp3lame -ar 44100 \
     -c:v libx264 -preset $PRESET -maxrate ${MAX_BITRATE}k -bufsize ${BUFSIZE}k -pix_fmt yuv420p -r $RATE \
     -crf $CRF -g $G  -tune zerolatency \
