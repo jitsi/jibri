@@ -1084,7 +1084,8 @@ if __name__ == '__main__':
 
         #build a shared config for all clients sharing these parameters
         client_config = default_client_opts.copy()
-        client_config['environment'] = item
+        if 'environment' not in client_config:
+            client_config['environment'] = item
         for key in config_environments[item]:
             if key == 'servers':
                 #skip, don't need to save all servers to client config for now
