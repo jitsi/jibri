@@ -87,8 +87,10 @@ then
     sleep 5
     #first check to see if pid has swapped, if so we're already restarted and need do nothing else
     NEWPID=`cat $pidFile`
+    PIDRESULT=$?
     echo "NEW PID: $NEWPID"
-    if [ ! -z $NEWPID] && [ $NEWPID -eq $pid ]; then
+    #if we don't find a PID (PIDRESULT greater than 0) OR we read a pid and it matches the previous pid
+    if [ $PIDRESULT -gt 0 ] || ( [ ! -z $NEWPID ] && [ $NEWPID -eq $pid ] ); then
         #still running
         echo "Checking Recording Status..."
         recordingStatus=`getRecordingStatus`
