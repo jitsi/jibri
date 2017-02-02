@@ -746,28 +746,15 @@ def url_stop_recording():
 def url_health_check():
     global recording_lock
     global health_lock
-    global js
     global current_environment
 
     #put an item on the XMPP queue, and watch for a return by callback
     result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False, 'environment':current_environment}
-    if js:
-        if js.checkRunning():
-            result['selenium_health']=True
-            try:
-                result['XMPPConnected'] = js.waitXMPPConnected(timeout=10)
-            except Exception as e:
-                logging.info("Exception: %s"%e)
-                pass
-        else:
-            result['selenium_health']=False
-    else:
-        result['selenium_health']=''
 
     result['jibri_xmpp']=check_xmpp_running()
 
     #only return good if we are connected via jibri, and not recording OR recording with good selenium health
-    if result['jibri_xmpp'] and (not result['recording'] or (result['recording'] and result['selenium_health'])):
+    if result['jibri_xmpp']:
         result['health'] = True
 
     return jsonify(result)
@@ -1097,7 +1084,8 @@ if __name__ == '__main__':
 
         #build a shared config for all clients sharing these parameters
         client_config = default_client_opts.copy()
-        client_config['environment'] = item
+        if 'environment' not in client_config:
+            client_config['environment'] = item
         for key in config_environments[item]:
             if key == 'servers':
                 #skip, don't need to save all servers to client config for now

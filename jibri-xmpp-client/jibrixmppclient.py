@@ -40,6 +40,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         self.queue = signal_queue
         self.loop = loop
         self.controllerJid = ''
+        self.asyncio_init_flag = False
 
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("muc::%s::got_online"%self.room,
@@ -175,7 +176,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             elif msg == 'stopped':
                 try:
                     recording_lock.release()
-                except:
+                except Exception:
                     pass
                 self.update_jibri_status('off')
             elif msg == 'started':
@@ -206,16 +207,21 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
                                         password=self.roompass)
                                         #wait=True)
 
-        #run every second and check the queue from the main thread
-        logging.debug("Adding asyncio queue check to the scheduler for client %s"%self)
-        self.scheduler.add("asyncio_queue", 1, self.from_main_thread_nonblocking,
-            repeat=True, qpointer=self.event_queue)
-
         #update our presence with
         #<jibri xmlns="http://jitsi.org/protocol/jibri status="idle" />
         logging.debug("Sending initial idle presence for client %s"%self)
         self.presence_idle()
+
+        #only do this once, as it errors out with a ValueError: Key asyncio_queue already exists
+        if not self.asyncio_init_flag:
+            #run every second and check the queue from the main thread
+            logging.debug("Adding asyncio queue check to the scheduler for client %s"%self)
+            self.scheduler.add("asyncio_queue", 1, self.from_main_thread_nonblocking,
+                repeat=True, qpointer=self.event_queue)
+            self.asyncio_init_flag = True
+
         logging.info("Started up client %s"%self)
+
 
     def presence_busy(self):
         presence = self.make_presence(pto=self.room)
