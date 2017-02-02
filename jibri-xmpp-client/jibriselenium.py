@@ -229,7 +229,7 @@ class JibriSeleniumDriver():
           logging.info('waiting +%d = %d < %d for XMPPConnected'%(interval, wait_time, timeout))
           time.sleep(interval)
           wait_time = wait_time + interval
-          if self.waitXMPPConnected():
+          if self.isXMPPConnected():
             logging.info('XMPP connected, done waiting')
             return True
           if wait_time >= timeout:
