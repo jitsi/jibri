@@ -52,7 +52,6 @@ global selenium_xmpp_password
 global active_client
 global default_display_name
 global default_email
-
 #flag to control whether we launch with ffmpeg or pjsua
 global pjsua_flag
 
@@ -396,6 +395,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         retcode=9999
         attempt_count=attempt_count+1
         logging.info("Starting selenium attempt %d/%d"%(attempt_count,attempt_max))
+
         try:
             #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
             t = threading.Timer(selenium_timeout, stop_selenium, kwargs=dict(status='selenium_start_stuck'))
