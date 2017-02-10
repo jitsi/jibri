@@ -24,7 +24,7 @@ options.add_argument('--use-fake-ui-for-media-stream')
 #options.add_argument('--use-file-for-fake-video-capture=/home/boris/720p-sample.y4m')
 options.add_argument('--start-maximized')
 options.add_argument('--kiosk')
-options.add_argument('--alsa-output-device=hw:0,0,0')
+options.add_argument('--alsa-output-device=plug:amix')
 options.add_argument('--enable-logging')
 options.add_argument('--vmodule=*=3')
 
