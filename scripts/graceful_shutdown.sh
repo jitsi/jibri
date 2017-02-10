@@ -27,7 +27,7 @@ restart=0
 
 # Parse arguments
 OPTIND=1
-while getopts "p:h:t:s" opt; do
+while getopts "p:h:t:sr" opt; do
     case "$opt" in
     p)
         pid=$OPTARG
