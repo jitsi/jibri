@@ -50,9 +50,13 @@ global current_environment
 global selenium_xmpp_login
 global selenium_xmpp_password
 global active_client
+global default_display_name
+global default_email
 
 active_client=None
 current_environment=''
+default_display_name='Live Stream'
+default_email='recorder@jitsi.org'
 google_account=None
 google_account_password=None
 selenium_xmpp_login=None
@@ -259,6 +263,8 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     global selenium_xmpp_login
     global selenium_xmpp_password
 
+    global default_display_name
+    global default_email
 
     #make sure we remove whitespace from all input parameters
     room=room.strip()
@@ -270,6 +276,8 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     c_chrome_binary_path=None
     c_xmpp_login=None
     c_xmpp_password=None
+    c_display_name=default_display_name
+    c_email=default_email
     boshdomain=None
 
     if google_account:
@@ -316,6 +324,11 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         if 'environment' in co:
             current_environment = co['environment']
 
+        if 'displayname' in co:
+            c_display_name = co['displayname']
+
+        if 'email' in co:
+            c_email = co['email']
     if room:
         at_index = room.rfind('@')
         if at_index > 0:
@@ -341,7 +354,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         #don't want to get stuck in here, so add a timer thread and run the shutdown callback in another thread if we fail to start after N seconds
         t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_start_stuck'))
         t.start()
-        retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain)
+        retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email)
         try:
             t.cancel()
         except Exception as e:
@@ -438,7 +451,7 @@ def queue_watcher_start(msg):
     global watcher_queue
     watcher_queue.put(msg)
 
-def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None):
+def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None, displayname=None, email=None):
     retcode=0
     global js
 
@@ -452,7 +465,7 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
         "starting jibri selenium, url=%s, google_account=%s, xmpp_login=%s" % (
             url, google_account, xmpp_login))
 
-    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, xmpp_login=xmpp_login, xmpp_password=xmpp_password)
+    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, displayname=displayname, email=email, xmpp_login=xmpp_login, xmpp_password=xmpp_password)
 
     if not check_selenium_audio_stream(js):
         logging.warn("jibri detected audio issues during startup, bailing out.")
@@ -968,6 +981,14 @@ if __name__ == '__main__':
             #name part of room for jibri to join
             if 'roomname' in config_data:
                 default_client_opts['roomname'] = config_data['roomname']
+
+            #default display name for jibri selenium session
+            if 'displayname' in config_data:
+                default_display_name = config_data['displayname']
+
+            #default display name for jibri selenium session
+            if 'email' in config_data:
+                default_email = config_data['email']
 
             if 'servers' in config_data:
                 for hostname in config_data['servers']:
