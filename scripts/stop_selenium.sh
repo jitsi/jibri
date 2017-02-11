@@ -1,3 +1,3 @@
 #!/bin/bash
-killall chrome
-killall chromedriver
+killall -9 chrome
+killall -9 chromedriver
