@@ -4,3 +4,4 @@ PID_DIR=/var/run/jibri/
 ./stop_selenium.sh
 sleep 1
 [ -e "${PID_DIR}/ffmpeg.pid" ] && rm ${PID_DIR}/ffmpeg.pid
+[ -e "${PID_DIR}/pjsua.pid" ] && rm ${PID_DIR}/pjsua.pid
