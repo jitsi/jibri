@@ -80,6 +80,7 @@ loop = asyncio.get_event_loop()
 launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
 check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
 stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
+stop_selenium_script = os.getcwd() + "/../scripts/stop_selenium.sh"
 check_audio_script = os.getcwd() + "/../scripts/check_audio.sh"
 
 #our pidfile
@@ -146,6 +147,10 @@ def sigusr1_handler(loop=None):
     update_jibri_status('busy')
     logging.warn("FINISHED SIGUSR1")
 
+def reset_selenium():
+    #kill selenium gracefully if possible
+    kill_selenium_driver()
+
 #basic reset function
 #used to return jibri to a state where it can record again
 def reset_recording():
@@ -153,12 +158,13 @@ def reset_recording():
     #first kill ffmpeg, to ensure that streaming stops before everything else
     kill_ffmpeg_process()
 
-    #kill selenium gracefully if possible
-    kill_selenium_driver()
     #send a false to stop watching ffmpeg/selenium and restart the loop
     queue_watcher_start(False)
 
-    #run the killall shell scripts to FORCE stop anything that didn't die gracefully above
+    #kill selenium gracefully if possible, by force otherwise
+    reset_selenium()
+
+    #final catchall, run the killall shell scripts to FORCE stop anything that didn't die gracefully above
     stop_recording()
 
     #let the XMPP clients know we're stopped now
@@ -174,6 +180,10 @@ def reset_recording():
 #this calls a bash scripts which kills external processes and includes any AWS stop-recording hooks
 def stop_recording():
      call([stop_recording_script])
+
+#this calls a bash scripts which kills only chrome/chromedriver
+def stop_selenium():
+     call([stop_selenium_script])
 
 #this attempts to kill the ffmpeg process that jibri launched gracefully via os.kill
 def kill_ffmpeg_process():
@@ -193,7 +203,7 @@ def kill_ffmpeg_process():
 #This presumably also eventually unblocks the thread which tried to do the graceful shutdown using kill_selenium_driver
 def definitely_kill_selenium_driver():
     logging.info("Killing selenium driver after kill timed out waiting for graceful shutdown")
-    stop_recording()
+    stop_selenium()
 
 # kill selenium driver if it exists
 #also kick off a thread to ensure that chrome is killed via shell if not via the driver
@@ -262,7 +272,6 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     global chrome_binary_path
     global selenium_xmpp_login
     global selenium_xmpp_password
-
     global default_display_name
     global default_email
 
@@ -329,6 +338,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
 
         if 'email' in co:
             c_email = co['email']
+
     if room:
         at_index = room.rfind('@')
         if at_index > 0:
@@ -347,29 +357,46 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     update_jibri_status('busy',client)
 
     logging.info("Starting jibri")
-    retcode=9999
     #wait 30 seconds for full start of selenium, otherwise kill it
     selenium_timeout=30
-    try:
-        #don't want to get stuck in here, so add a timer thread and run the shutdown callback in another thread if we fail to start after N seconds
-        t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_start_stuck'))
-        t.start()
-        retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email)
+
+
+    #begin attempting to launch selenium
+    attempt_count=0
+    attempt_max=3
+    while attempt_count<attempt_max:
+        retcode=9999
+        attempt_count=attempt_count+1
+        logging.info("Starting selenium attempt %d/%d"%(attempt_count,attempt_max))
         try:
-            t.cancel()
+            #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
+            t = threading.Timer(selenium_timeout, stop_selenium, kwargs=dict(status='selenium_start_stuck'))
+            t.start()
+            retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email)
+            try:
+                t.cancel()
+            except Exception as e:
+                logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
         except Exception as e:
-            logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
-    except Exception as e:
-        #oops it all went awry
-        #quit chrome
-        #clean up ffmpeg and kill off any last pieces
-        logging.info("Jibri Startup exception: %s"%e)
-        jibri_stop_callback('startup_exception')
-        return
+            #oops it all went awry, so try again?
+            #quit chrome (should already be handled by above)
+            logging.error("Jibri Startup exception during attempt %d/%d: %s"%(attempt_count,attempt_max,e))
+            #make sure our retcode isn't 0, since we hit an exception here
+            retcode=9999
+
+        if retcode > 0:
+            # We failed to start, bail.
+            logging.info("start_jibri_selenium returned retcode=%s during attempt %d/%d"%(str(retcode),attempt_count,attempt_max))
+        else:
+            #success, so don't try again, and just move on
+            logging.info("Selenium started successfully on attempt %d/%d"%(attempt_count,attempt_max))
+            break
+
     if retcode > 0:
-        # We failed to start, bail.
+        #final failure handling
         logging.info("start_jibri_selenium returned retcode=" + str(retcode))
         jibri_stop_callback('startup_selenium_error')
+
     else:
         #we got a selenium, so start ffmpeg
         #we will allow the following number of attempts:
