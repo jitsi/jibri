@@ -75,18 +75,20 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
                 logging.info("Unable to acquire a lock, instance is already in use")
                 reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='Instance already in use.', ito=iq['from'], iq=reply)
                 reply['error']['code']='503'
-#                reply['jibri']._setAttr('state', 'pending')
+                start = False
             else:
                 if not iq['jibri']._getAttr('streamid'):
                     logging.info("No stream provided")
                     reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No stream-id specified.', ito=iq['from'], iq=reply)
                     reply['error']['code']='501'
                     self.recording_lock.release()
+                    start = False
                 elif not iq['jibri']._getAttr('room') and not iq['jibri']._getAttr('url'):
                     logging.info("No URL or Room provided")
                     reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No URL or room specified.', ito=iq['from'], iq=reply)
                     reply['error']['code']='501'
                     self.recording_lock.release()
+                    start = False
                 else:
                     running = True
                     reply['type'] = 'result'
