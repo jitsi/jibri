@@ -357,8 +357,8 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     update_jibri_status('busy',client)
 
     logging.info("Starting jibri")
-    #wait 30 seconds for full start of selenium, otherwise kill it
-    selenium_timeout=30
+    #wait 45 seconds for full start of selenium, otherwise kill it
+    selenium_timeout=45
 
 
     #begin attempting to launch selenium
@@ -370,7 +370,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         logging.info("Starting selenium attempt %d/%d"%(attempt_count,attempt_max))
         try:
             #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
-            t = threading.Timer(selenium_timeout, stop_selenium, kwargs=dict(status='selenium_start_stuck'))
+            t = threading.Timer(selenium_timeout, stop_selenium)
             t.start()
             retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email)
             try:
