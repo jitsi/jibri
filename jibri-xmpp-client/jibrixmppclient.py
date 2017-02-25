@@ -77,9 +77,9 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
                 reply['error']['code']='503'
                 start = False
             else:
-                if not iq['jibri']._getAttr('streamid'):
+                if not iq['jibri']._getAttr('streamid') and not iq['jibri']._getAttr('sipaddress'):
                     logging.info("No stream provided")
-                    reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No stream-id specified.', ito=iq['from'], iq=reply)
+                    reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No streamid or sipaddress specified.', ito=iq['from'], iq=reply)
                     reply['error']['code']='501'
                     self.recording_lock.release()
                     start = False
@@ -132,7 +132,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         else:
             backup_flag = ''
 
-        self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'), backup_flag)
+        self.loop.call_soon_threadsafe(self.jibri_start_callback, self, iq['jibri']._getAttr('url'),iq['jibri']._getAttr('streamid'),iq['jibri']._getAttr('sipaddress'),iq['jibri']._getAttr('displayname'),iq['jibri']._getAttr('room'),iq['jibri']._getAttr('token'), backup_flag)
 
     def stop_jibri(self, reason='xmpp_stop'):
         #old way, didn't always run?  not sure why

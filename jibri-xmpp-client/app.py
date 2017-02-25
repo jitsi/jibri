@@ -277,7 +277,7 @@ def jibri_health_callback(client):
         logging.debug('Exception releasing health lock: %s'%e)
 
 #main callback to start jibri: meant to be run in the main thread, kicked off using a loop.call_soon_threadsafe() from within another thread (XMPP or REST thread)
-def jibri_start_callback(client, url, stream_id, room=None, token='token', backup=''):
+def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=None, room=None, token='token', backup=''):
     global js
     global loop
     global opts
@@ -297,6 +297,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     room=room.strip()
     url=url.strip()
     stream_id=stream_id.strip()
+    sipaddress=sipaddress.strip()
 
     c_google_account=None
     c_google_account_password=None
@@ -361,10 +362,13 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
             pjsua_flag = co['pjsua_flag']
             logging.info("Setting pjsua_flag from client options %s"%pjsua_flag)
 
-    #when we're using pjsua, override the default display name to be the sip address (currently stream_id)
+    #when we're using pjsua, override the default display name to be the sip address or passed in display name
     if pjsua_flag:
-        c_display_name = stream_id
-        c_email = stream_id
+        if displayname:
+            c_display_name = displayname
+        else:
+            c_display_name = sipaddress
+        c_email = sipaddress
 
     if room:
         at_index = room.rfind('@')
@@ -431,7 +435,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     else:
         #we got a selenium, so start ffmpeg
         if pjsua_flag:
-            launch_pjsua(stream_id)
+            launch_pjsua(sipaddress)
         else:
             launch_ffmpeg(stream_id, backup)
 
