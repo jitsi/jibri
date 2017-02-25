@@ -384,7 +384,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     update_jibri_status('busy',client)
 
     logging.info("Starting jibri")
-    #wait 30 seconds for full start of selenium, otherwise kill it
+    #wait 30 seconds for start of selenium, otherwise kill it
     selenium_timeout=30
 
     #begin attempting to launch selenium
@@ -396,13 +396,18 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         logging.info("Starting selenium attempt %d/%d"%(attempt_count,attempt_max))
         try:
             #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
-            t = threading.Timer(selenium_timeout, stop_selenium, kwargs=dict(status='selenium_start_stuck'))
+            t = threading.Timer(selenium_timeout, stop_selenium)
             t.start()
             retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email, pjsua_flag=pjsua_flag)
             try:
                 t.cancel()
             except Exception as e:
                 logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
+
+            if retcode == 0:
+                #ok so we launched the URL, now wait for XMPP connection to be established, download bitrate to be seen
+                retcode = connect_confirm_bitrate_jibri_selenium()
+
         except Exception as e:
             #oops it all went awry, so try again?
             #quit chrome (should already be handled by above)
@@ -580,19 +585,26 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
         if not js:
             logging.warn("jibri detected selenium driver went away, bailing out.")
             retcode=9999
-        else:
-            if js.waitXMPPConnected():
-              if js.waitDownloadBitrate()>0:
-                #everything is AWESOME!
-                retcode=0
-              else:
-                #didn't find any data flowing to JIBRI
-                retcode=1336
-            else:
-              #didn't launch chrome properly right
-              retcode=1337
 
     return retcode
+
+
+def connect_confirm_bitrate_jibri_selenium():
+    global js
+    retcode = 9999
+    if js.waitXMPPConnected():
+      if js.waitDownloadBitrate()>0:
+        #everything is AWESOME!
+        retcode=0
+      else:
+        #didn't find any data flowing to JIBRI
+        retcode=1336
+    else:
+      #didn't launch chrome properly right
+      retcode=1337
+
+    return retcode
+
 
 def check_selenium_audio_stream(js, audio_url=None, audio_delay=1):
     #first send the selenium driver to something with audio
