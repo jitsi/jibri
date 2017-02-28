@@ -1,17 +1,13 @@
 #!/bin/bash
 
 # SCRIPT TO LAUNCH PJSUA FROM PARAMETERS
+#Directory for storing pids (should be writeable by jibri user)
+PID_DIR=/var/run/jibri/
 
 
 SIP_ADDRESS=$1
 
-PID_DIR=/var/run/jibri/
-
-CAPTURE_DEV=23
-PLAYBACK_DEV=24
-CONFIG_FILE=/home/jibri/pjsua.config
-
-export DISPLAY=:1
-
-pjsua --capture-dev=$CAPTURE_DEV --playback-dev=$PLAYBACK_DEV --config-file $CONFIG_FILE sip:$SIP_ADDRESS > /tmp/jibri-pjsua.out 2>&1 &
-echo $! > $PID_DIR/pjsua.pid 
+screen -S pjsua -d -m ./start-pjsua.sh $SIP_ADDRESS
+sleep 1
+PID=$(pidof pjsua)
+[ ! -z "$PID" ] && echo $PID > $PID_DIR/pjsua.pid 
