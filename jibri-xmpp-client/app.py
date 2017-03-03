@@ -804,9 +804,9 @@ def check_ffmpeg_running(include_frame_check=True):
         return False
 
 #utility function called by jibri_watcher, checks for the pjsua process, returns true if the pidfile can be found and the process exists
-def check_pjsua_running(include_frame_check=True):
+def check_pjsua_running():
     pjsua_pid_file = "/var/run/jibri/pjsua.pid"
-    pjsua_output_file="/tmp/jibri-pjsua.out"
+    pjsua_output_file="/tmp/jibri-pjsua.log"
     try:
         with open(pjsua_pid_file) as f:
             pjsua_pid = int(f.read().strip())

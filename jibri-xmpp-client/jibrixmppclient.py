@@ -261,6 +261,12 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             error_text='Youtube request timeout'
         elif error == 'selenium_stuck':
             error_text='Streaming Error: Selenium stuck'
+        elif error == 'selenium_died':
+            error_text='Streaming Error: Selenium died'
+        elif error == 'ffmpeg_died':
+            error_text='Streaming Error: ffmpeg died'
+        elif error == 'pjsua_died':
+            error_text='Gateway Error: pjsua died'
         else:
             error_text='Unknown error'
 
