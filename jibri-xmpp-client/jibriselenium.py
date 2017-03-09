@@ -25,7 +25,8 @@ class JibriSeleniumDriver():
             displayname='Live Stream', 
             email='recorder@jitsi.org',
             xmpp_login = None,
-            xmpp_password = None):
+            xmpp_password = None,
+            pjsua_flag = False):
 
       #init based on url and optional token
       self.url = url
@@ -36,6 +37,7 @@ class JibriSeleniumDriver():
       self.xmpp_login = xmpp_login
       self.xmpp_password = xmpp_password
       self.email = email
+      self.pjsua_flag = pjsua_flag
 
       self.flag_jibri_identifiers_set = False
       self.flag_google_login_set = False
@@ -54,6 +56,11 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
       self.options.add_argument('--alsa-output-device=plug:amix')
+
+      #use microphone if provided
+      if self.pjsua_flag:
+        self.options.add_argument('--alsa-input-device=plughw:1,1')
+
       if binary_location:
         self.options.binary_location = binary_location
       self.initDriver()

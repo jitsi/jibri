@@ -52,6 +52,10 @@ global selenium_xmpp_password
 global active_client
 global default_display_name
 global default_email
+#flag to control whether we launch with ffmpeg or pjsua
+global pjsua_flag
+
+pjsua_flag=False
 
 active_client=None
 current_environment=''
@@ -78,6 +82,7 @@ loop = asyncio.get_event_loop()
 
 # Paths to external scripts for different shell-related tasks
 launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
+launch_gateway_script = os.getcwd() + "/../scripts/launch_gateway.sh"
 check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
 stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
 stop_selenium_script = os.getcwd() + "/../scripts/stop_selenium.sh"
@@ -157,6 +162,7 @@ def reset_recording():
     global recording_lock
     #first kill ffmpeg, to ensure that streaming stops before everything else
     kill_ffmpeg_process()
+    kill_pjsua_process()
 
     #send a false to stop watching ffmpeg/selenium and restart the loop
     queue_watcher_start(False)
@@ -192,6 +198,17 @@ def kill_ffmpeg_process():
         with open(ffmpeg_pid_file) as f:
             ffmpeg_pid = int(f.read().strip())
         os.kill(ffmpeg_pid)
+    except:
+        return False
+    return True
+
+#this attempts to kill the pjsua process that jibri launched gracefully via os.kill
+def kill_pjsua_process():
+    pjsua_pid_file = "/var/run/jibri/pjsua.pid"
+    try:
+        with open(pjsua_pid_file) as f:
+            pjsua_pid = int(f.read().strip())
+        os.kill(pjsua_pid)
     except:
         return False
     return True
@@ -260,7 +277,7 @@ def jibri_health_callback(client):
         logging.debug('Exception releasing health lock: %s'%e)
 
 #main callback to start jibri: meant to be run in the main thread, kicked off using a loop.call_soon_threadsafe() from within another thread (XMPP or REST thread)
-def jibri_start_callback(client, url, stream_id, room=None, token='token', backup=''):
+def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=None, room=None, token='token', backup=''):
     global js
     global loop
     global opts
@@ -274,11 +291,13 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     global selenium_xmpp_password
     global default_display_name
     global default_email
+    global pjsua_flag
 
     #make sure we remove whitespace from all input parameters
     room=room.strip()
     url=url.strip()
     stream_id=stream_id.strip()
+    sipaddress=sipaddress.strip()
 
     c_google_account=None
     c_google_account_password=None
@@ -339,6 +358,18 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
         if 'email' in co:
             c_email = co['email']
 
+        if 'pjsua_flag' in co:
+            pjsua_flag = co['pjsua_flag']
+            logging.info("Setting pjsua_flag from client options %s"%pjsua_flag)
+
+    #when we're using pjsua, override the default display name to be the sip address or passed in display name
+    if pjsua_flag:
+        if displayname:
+            c_display_name = displayname
+        else:
+            c_display_name = sipaddress
+        c_email = sipaddress
+
     if room:
         at_index = room.rfind('@')
         if at_index > 0:
@@ -360,7 +391,6 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
     #wait 30 seconds for start of selenium, otherwise kill it
     selenium_timeout=30
 
-
     #begin attempting to launch selenium
     attempt_count=0
     attempt_max=3
@@ -372,7 +402,7 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
             #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
             t = threading.Timer(selenium_timeout, stop_selenium)
             t.start()
-            retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email)
+            retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email, pjsua_flag=pjsua_flag)
             try:
                 t.cancel()
             except Exception as e:
@@ -404,54 +434,106 @@ def jibri_start_callback(client, url, stream_id, room=None, token='token', backu
 
     else:
         #we got a selenium, so start ffmpeg
-        #we will allow the following number of attempts:
-        try:
-            #first try to start ffmpeg
-            attempt_count=0
-            attempt_max=3
-            while attempt_count<attempt_max:
-                attempt_count=attempt_count+1
-                logging.info("Starting ffmpeg attempt %d/%d"%(attempt_count,attempt_max))
-                retcode = start_ffmpeg(stream_id, backup)
-                if retcode == 0:
-                    #make sure we wrote a pid, so that we can track this ffmpeg process
-                    ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
-                    try:
-                        with open(ffmpeg_pid_file) as f:
-                            ffmpeg_pid = int(f.read().strip())
-                    except Exception as e:
-                        #oops it all went awry while starting up ffmpeg, something is seriously wrong so no retries
-                        #clean up ffmpeg and kill off any last pieces
-                        logging.error("start_ffmpeg had an exception %s"%e)
-                        jibri_stop_callback('ffmpeg_startup_exception')
-                        return
+        if pjsua_flag:
+            launch_pjsua(sipaddress)
+        else:
+            launch_ffmpeg(stream_id, backup)
 
-                    #now that we have a pid, let's make sure ffmpeg is really streaming
-                    success = wait_until_ffmpeg_running()
-                    if success:
-                        #we are live!  Let's tell jicofo and start watching ffmpeg
-                        update_jibri_status('started')
-                        queue_watcher_start(stream_id)
-                        logging.info("queued job for jibri_watcher, startup completed...")
-                        return
-                    else:
-                        #we didn't start properly, so let's reset ffmpeg and try again
-                        kill_ffmpeg_process()
+
+def launch_pjsua(stream_id):
+    #we only attempt to launch pjsua
+    try:
+        logging.info("Starting pjsua")
+        retcode = start_pjsua(stream_id)
+        if retcode == 0:
+            #make sure we wrote a pid, so that we can track this ffmpeg process
+            pjsua_pid_file = "/var/run/jibri/pjsua.pid"
+            try:
+                with open(pjsua_pid_file) as f:
+                    pjsua_pid = int(f.read().strip())
+            except Exception as e:
+                #oops it all went awry while starting up ffmpeg, something is seriously wrong so no retries
+                #clean up pjsua and kill off any last pieces
+                logging.error("start_pjsua had an exception %s"%e)
+                jibri_stop_callback('pjsua_startup_exception')
+                return
+
+                #now that we have a pid, let's make sure ffmpeg is really streaming
+                success = wait_until_pjsua_running()
+                if success:
+                    #we are live!  Let's tell jicofo and start watching ffmpeg
+                    update_jibri_status('started')
+                    queue_watcher_start(stream_id)
+                    logging.info("queued job for jibri_watcher, startup completed...")
+                    return
                 else:
-                    logging.error("start_ffmpeg returned retcode=" + str(retcode))
-                    jibri_stop_callback('startup_ffmpeg_error')
+                    #we didn't start properly, so let's reset pjsua
+                    kill_pjsua_process()
+            else:
+                logging.error("start_pjsua returned retcode=" + str(retcode))
+                jibri_stop_callback('startup_pjsua_error')
+                return
+
+        #we made it all the way past the while loop and didn't return for either
+        #a fatal error OR success, so apparently we just never started streaming
+        logging.error("Failed to start pjsua client")
+        jibri_stop_callback('startup_pjsua_streaming_error')
+        return
+
+    except Exception as e:
+        #oops it all went awry
+        success = False
+        logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
+
+def launch_ffmpeg(stream_id, backup=''):
+    #we will allow the following number of attempts:
+    try:
+        #first try to start ffmpeg
+        attempt_count=0
+        attempt_max=3
+        while attempt_count<attempt_max:
+            attempt_count=attempt_count+1
+            logging.info("Starting ffmpeg attempt %d/%d"%(attempt_count,attempt_max))
+            retcode = start_ffmpeg(stream_id, backup)
+            if retcode == 0:
+                #make sure we wrote a pid, so that we can track this ffmpeg process
+                ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
+                try:
+                    with open(ffmpeg_pid_file) as f:
+                        ffmpeg_pid = int(f.read().strip())
+                except Exception as e:
+                    #oops it all went awry while starting up ffmpeg, something is seriously wrong so no retries
+                    #clean up ffmpeg and kill off any last pieces
+                    logging.error("start_ffmpeg had an exception %s"%e)
+                    jibri_stop_callback('ffmpeg_startup_exception')
                     return
 
-            #we made it all the way past the while loop and didn't return for either
-            #a fatal error OR success, so apparently we just never started streaming
-            logging.error("Failed to start ffmpeg streaming 3 times in a row, out of attempts")
-            jibri_stop_callback('startup_ffmpeg_streaming_error')
-            return
+                #now that we have a pid, let's make sure ffmpeg is really streaming
+                success = wait_until_ffmpeg_running()
+                if success:
+                    #we are live!  Let's tell jicofo and start watching ffmpeg
+                    update_jibri_status('started')
+                    queue_watcher_start(stream_id)
+                    logging.info("queued job for jibri_watcher, startup completed...")
+                    return
+                else:
+                    #we didn't start properly, so let's reset ffmpeg and try again
+                    kill_ffmpeg_process()
+            else:
+                logging.error("start_ffmpeg returned retcode=" + str(retcode))
+                jibri_stop_callback('startup_ffmpeg_error')
+                return
 
-        except Exception as e:
-            #oops it all went awry
-            success = False
-            logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
+        #we made it all the way past the while loop and didn't return for either
+        #a fatal error OR success, so apparently we just never started streaming
+        logging.error("Failed to start ffmpeg streaming 3 times in a row, out of attempts")
+        jibri_stop_callback('startup_ffmpeg_streaming_error')
+        return
+
+    except Exception as e:
+        #oops it all went awry
+        success = False
+        logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
 
 
 def wait_until_ffmpeg_running(attempts=15,interval=1):
@@ -483,7 +565,7 @@ def queue_watcher_start(msg):
     global watcher_queue
     watcher_queue.put(msg)
 
-def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None, displayname=None, email=None):
+def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None, displayname=None, email=None, pjsua_flag=False):
     retcode=0
     global js
 
@@ -497,7 +579,7 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
         "starting jibri selenium, url=%s, google_account=%s, xmpp_login=%s" % (
             url, google_account, xmpp_login))
 
-    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, displayname=displayname, email=email, xmpp_login=xmpp_login, xmpp_password=xmpp_password)
+    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, displayname=displayname, email=email, xmpp_login=xmpp_login, xmpp_password=xmpp_password, pjsua_flag=False)
 
     if not check_selenium_audio_stream(js):
         logging.warn("jibri detected audio issues during startup, bailing out.")
@@ -546,6 +628,11 @@ def check_selenium_audio_stream(js, audio_url=None, audio_delay=1):
         logging.info("Audio levels confirmed OK.")
         return True
 
+def start_pjsua(stream_id, backup=''):
+    logging.info("starting jibri pjsua with sip address=%s" % stream_id)
+    return call([launch_gateway_script, stream_id],
+             shell=False)
+
 
 def start_ffmpeg(stream_id, backup=''):
     logging.info("starting jibri ffmpeg with youtube-stream-id=%s" % stream_id)
@@ -588,6 +675,8 @@ def start_jibri_watcher(queue, loop, finished_callback, timeout=0):
 #main function for jibri_watcher thread: waits on a queue until triggered
 #thread then watches a running ffmpeg process until it completes, then triggers a callback
 def jibri_watcher(queue, loop, finished_callback, timeout=0):
+    global pjsua_flag
+
     while True:
         logging.info("jibri_watcher starting up...")
         msg = queue.get() #blocks waiting on a new job
@@ -634,8 +723,12 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
                     result=False
                     break
 
-            #during ongoing check, ensure that process is running but don't search for frame=
-            result = check_ffmpeg_running(False)
+            if pjsua_flag:
+                #during ongoing check, ensure that pjsua process is running
+                result = check_pjsua_running()
+            else:
+                #during ongoing check, ensure that ffmpeg process is running but don't search for frame=
+                result = check_ffmpeg_running(False)
             selenium_result = check_selenium_running()
 
             if not selenium_result:
@@ -649,12 +742,15 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
                     selenium_result = check_selenium_running()
 
             if result and selenium_result:
-                logging.debug("ffmpeg and selenium still running, sleeping...")
+                logging.debug("ffmpeg/pjsua and selenium still running, sleeping...")
                 time.sleep(5)
             else:                
-                logging.info("ffmpeg or selenium no longer running, triggering callback")
+                logging.info("ffmpeg/pjsua or selenium no longer running, triggering callback")
                 if not result:
-                    reason = 'ffmpeg_died'
+                    if pjsua_flag:
+                        reason = 'pjsua_died'
+                    else:
+                        reason = 'ffmpeg_died'
                 if not selenium_result:
                     reason = 'selenium_died'
                 loop.call_soon_threadsafe(finished_callback, reason)
@@ -707,6 +803,29 @@ def check_ffmpeg_running(include_frame_check=True):
         #quit chrome
         return False
 
+#utility function called by jibri_watcher, checks for the pjsua process, returns true if the pidfile can be found and the process exists
+def check_pjsua_running():
+    pjsua_pid_file = "/var/run/jibri/pjsua.pid"
+    pjsua_output_file="/tmp/jibri-pjsua.log"
+    try:
+        with open(pjsua_pid_file) as f:
+            pjsua_pid = int(f.read().strip())
+    except Exception:
+        #oops it all went awry
+        return None
+
+    try:
+        #check that pjsua is running
+        os.kill(pjsua_pid, 0)
+
+#NO OUTPUT CHECK FOR PJSUA YET
+#@TODO: FIND OUTPUT THAT INDICATES PJSUA IS WORKING/BROKEN
+        #nothing is wrong, so wait a bit
+        return True
+    except:
+        #oops it all went awry
+        #quit chrome
+        return False
 
 #function to start sleekxmpp from within its own thread
 def start_sleekxmpp(hostname, loop, recording_lock, signal_queue,port=5222):
@@ -971,6 +1090,10 @@ if __name__ == '__main__':
             #path to chrome binary
             if 'chrome_binary_path' in config_data:
                 default_client_opts['chrome_binary_path'] = config_data['chrome_binary_path']
+
+            #switch to use pjsua instead of ffmpeg
+            if 'pjsua_flag' in config_data:
+                pjsua_flag = config_data['pjsua_flag']
 
             #google account to log in to for selenium chrome session
             if 'google_account' in config_data:
