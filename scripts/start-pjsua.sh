@@ -4,6 +4,7 @@
 
 
 SIP_ADDRESS=$1
+DISPLAY_NAME="${2:-Meeting Room}"
 
 CONFIG_FILE=/home/jibri/pjsua.config
 
@@ -16,7 +17,14 @@ LOG_FILE=/tmp/jibri-pjsua.log
 
 export DISPLAY=:1
 
-pjsua --capture-dev=$CAPTURE_DEV --playback-dev=$PLAYBACK_DEV --config-file $CONFIG_FILE sip:$SIP_ADDRESS --log-file=$LOG_FILE
+pjsua \
+    --capture-dev=$CAPTURE_DEV \
+    --playback-dev=$PLAYBACK_DEV \
+    --id "$DISPLAY_NAME <sip:jibri@127.0.0.1>" \
+    --config-file $CONFIG_FILE
+    --log-file=$LOG_FILE \
+    sip:$SIP_ADDRESS
+
 RETURN=$?
 
 if [ "$RETURN" -eq 0 ]; then
