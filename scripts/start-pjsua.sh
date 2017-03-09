@@ -16,4 +16,9 @@ LOG_FILE=/tmp/jibri-pjsua.log
 
 export DISPLAY=:1
 
-pjsua --capture-dev=$CAPTURE_DEV --playback-dev=$PLAYBACK_DEV --config-file $CONFIG_FILE sip:$SIP_ADDRESS --log-file=$LOG_FILE
+pjsua \
+    --capture-dev=$CAPTURE_DEV \
+    --playback-dev=$PLAYBACK_DEV \
+    --config-file $CONFIG_FILE
+    --log-file=$LOG_FILE \
+    sip:$SIP_ADDRESS
