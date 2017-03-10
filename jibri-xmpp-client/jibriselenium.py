@@ -60,6 +60,8 @@ class JibriSeleniumDriver():
       #use microphone if provided
       if self.pjsua_flag:
         self.options.add_argument('--alsa-input-device=plughw:1,1')
+        self.xmpp_login=None
+        self.xmpp_password=None
 
       if binary_location:
         self.options.binary_location = binary_location
