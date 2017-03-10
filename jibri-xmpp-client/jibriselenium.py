@@ -282,9 +282,11 @@ if __name__ == '__main__':
   URL = ''
   token = ''
   loglevel='DEBUG'
+  pjsua_flag=False
+  timeout=60
 
   try:
-    opts, args = getopt.getopt(argv,"hu:t:d:",["meeting_url=","token=","loglevel="])
+    opts, args = getopt.getopt(argv,"phu:t:d:w:",["meeting_url=","token=","loglevel=","wait="])
   except getopt.GetoptError:
     print(app+' -u <meetingurl> -t <authtoken>')
     sys.exit(2)
@@ -292,12 +294,16 @@ if __name__ == '__main__':
     if opt == '-h':
        print(app+' -u <meetingurl> -t <authtoken>')
        sys.exit()
+    elif opt == '-p':
+       pjsua_flag = True
     elif opt in ("-u", "--meeting_url"):
        URL = arg
     elif opt in ("-t", "--token"):
        token = arg
     elif opt in ("-d", "--debug"):
        loglevel = arg
+    elif opt in ("-w", "--wait"):
+       timeout = int(arg)
 
   if not URL:
       print('No meeting URL provided.')
@@ -306,7 +312,7 @@ if __name__ == '__main__':
   logging.basicConfig(level=loglevel,
                         format='%(asctime)s %(levelname)-8s %(message)s')
   signal.signal(signal.SIGTERM, sigterm_handler)
-  js = JibriSeleniumDriver(URL,token)
+  js = JibriSeleniumDriver(URL,token,pjsua_flag=pjsua_flag)
   # js.xmpp_login = 'user@xmpp-domain.com'
   # js.xmpp_password = 'password'
   # js.google_account='user@gmail.com'
@@ -318,7 +324,6 @@ if __name__ == '__main__':
       if js.waitDownloadBitrate()>0:
         print('Successfully receving data in meet, waiting 60 seconds for fun')
         interval=1
-        timeout=60
         sleep_clock=0
         while sleep_clock < timeout:
           br=js.getDownloadBitrate()

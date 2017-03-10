@@ -21,7 +21,7 @@ pjsua \
     --capture-dev=$CAPTURE_DEV \
     --playback-dev=$PLAYBACK_DEV \
     --id "$DISPLAY_NAME <sip:jibri@127.0.0.1>" \
-    --config-file $CONFIG_FILE
+    --config-file $CONFIG_FILE \
     --log-file=$LOG_FILE \
     sip:$SIP_ADDRESS
 
