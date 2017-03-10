@@ -397,7 +397,7 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
     while attempt_count<attempt_max:
         retcode=9999
         attempt_count=attempt_count+1
-        logging.info("Starting selenium attempt %d/%d"%(attempt_count,attempt_max))
+        logging.info("Starting selenium attempt %d/%d pjsua_flag:%s"%(attempt_count,attempt_max,pjsua_flag))
         try:
             #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
             t = threading.Timer(selenium_timeout, stop_selenium)
@@ -439,6 +439,28 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
         else:
             launch_ffmpeg(stream_id, backup)
 
+def wait_until_pjsua_running(attempts=3,interval=1):
+    success = False
+    try:
+        #first try to start pjsua
+        success = check_pjsua_running()
+        attempt_count=0
+        while not success:
+            if attempt_count >= attempts:
+                logging.warn("PJSUA failed to connect/run after %s checks"%attempt_count)
+                success = False
+                raise ValueError('PJSUA Failed to connect/run after %s checks'%attempt_count)
+                break
+
+            time.sleep(interval)
+            success = check_pjsua_running()
+            attempt_count=attempt_count+1
+    except Exception as e:
+        #oops it all went awry
+        success = False
+        logging.warn("Exception occured waiting for pjsua running: %s"%e)
+
+    return success    
 
 def launch_pjsua(sipaddress, displayname=''):
     #we only attempt to launch pjsua
@@ -458,21 +480,24 @@ def launch_pjsua(sipaddress, displayname=''):
                 jibri_stop_callback('pjsua_startup_exception')
                 return
 
-                #now that we have a pid, let's make sure ffmpeg is really streaming
-                success = wait_until_pjsua_running()
-                if success:
-                    #we are live!  Let's tell jicofo and start watching ffmpeg
-                    update_jibri_status('started')
-                    queue_watcher_start(sipaddress)
-                    logging.info("queued job for jibri_watcher, startup completed...")
-                    return
-                else:
-                    #we didn't start properly, so let's reset pjsua
-                    kill_pjsua_process()
-            else:
-                logging.error("start_pjsua returned retcode=" + str(retcode))
-                jibri_stop_callback('startup_pjsua_error')
+            #now that we have a pid, let's make sure pjsua is really connected
+            logging.info("Waiting for pjsua connection")
+            success = wait_until_pjsua_running()
+            if success:
+                #we are live!  Let's tell jicofo and start watching ffmpeg
+                update_jibri_status('started')
+                queue_watcher_start(sipaddress)
+                logging.info("queued job for jibri_watcher, startup completed...")
                 return
+            else:
+                #we didn't start properly, so let's reset pjsua
+                logging.error("wait_until_pjsua_running failed")
+
+                kill_pjsua_process()
+        else:
+            logging.error("start_pjsua returned retcode=" + str(retcode))
+            jibri_stop_callback('startup_pjsua_error')
+            return
 
         #we made it all the way past the while loop and didn't return for either
         #a fatal error OR success, so apparently we just never started streaming
@@ -483,7 +508,7 @@ def launch_pjsua(sipaddress, displayname=''):
     except Exception as e:
         #oops it all went awry
         success = False
-        logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
+        logging.warn("Exception occured waiting for pjsua running: %s"%e)
 
 def launch_ffmpeg(stream_id, backup=''):
     #we will allow the following number of attempts:
@@ -579,7 +604,7 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
         "starting jibri selenium, url=%s, google_account=%s, xmpp_login=%s" % (
             url, google_account, xmpp_login))
 
-    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, displayname=displayname, email=email, xmpp_login=xmpp_login, xmpp_password=xmpp_password, pjsua_flag=False)
+    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, displayname=displayname, email=email, xmpp_login=xmpp_login, xmpp_password=xmpp_password, pjsua_flag=pjsua_flag)
 
     if not check_selenium_audio_stream(js):
         logging.warn("jibri detected audio issues during startup, bailing out.")
@@ -911,6 +936,43 @@ def url_stop_recording():
     success = True
     result = {'success': success}
     return jsonify(result)
+
+#call to begin recording
+@app.route('/jibri/api/v1.0/sipstart', methods=['POST','GET'])
+def url_start_gateway():
+    global rest_token
+    if request.method == 'POST':
+        url = request.json['url']
+        sipaddress = request.json['sipaddress']
+        token = request.json['token']
+        displayname = request.json['displayname']
+        room = request.json['room']
+    else:
+        url = request.args['url']
+        sipaddress = request.args['sipaddress']
+        token = request.args['token']
+        displayname = request.args['displayname']
+        room = request.args['room']
+    if not url or not sipaddress:
+        result = {'success': False, 'error':'Bad Parameters', 'request':request}
+        return jsonify(result)
+    else:
+        if rest_token == token:
+            global recording_lock
+            if recording_lock.acquire(False):
+                retcode=jibri_start_callback(None, url, '', sipaddress=sipaddress, displayname=displayname,room=room)
+                if retcode == 0:
+                    result = {'success': success, 'url':url, 'sipaddress':sipaddress, 'token':token, 'displayname':displayname}
+                else:
+                    success = False
+                    result = {'success': success, 'jibriseleniumerror':True, 'url':url, 'sipaddress':sipaddress, 'token':token, 'displayname':displayname}
+            else:
+                success = False
+                result = {'success': success, 'error': 'Already recording'}                    
+        else:
+            success = False
+            result = {'success': success, 'error': 'Token does not match'}
+        return jsonify(result)
 
 #TODO: make this actually check something?
 @app.route('/jibri/health', methods=['GET'])
