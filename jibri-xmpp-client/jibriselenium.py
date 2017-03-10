@@ -284,9 +284,11 @@ if __name__ == '__main__':
   loglevel='DEBUG'
   pjsua_flag=False
   timeout=60
+  displayname='Live Stream' 
+  email='recorder@jitsi.org'
 
   try:
-    opts, args = getopt.getopt(argv,"phu:t:d:w:",["meeting_url=","token=","loglevel=","wait="])
+    opts, args = getopt.getopt(argv,"phu:t:d:w:n:e:",["meeting_url=","token=","loglevel=","wait=","displayname=","email="])
   except getopt.GetoptError:
     print(app+' -u <meetingurl> -t <authtoken>')
     sys.exit(2)
@@ -304,6 +306,10 @@ if __name__ == '__main__':
        loglevel = arg
     elif opt in ("-w", "--wait"):
        timeout = int(arg)
+    elif opt in ("-e", "--email"):
+       email = arg
+    elif opt in ("-n", "--displayname"):
+       displayname = arg
 
   if not URL:
       print('No meeting URL provided.')
@@ -312,7 +318,7 @@ if __name__ == '__main__':
   logging.basicConfig(level=loglevel,
                         format='%(asctime)s %(levelname)-8s %(message)s')
   signal.signal(signal.SIGTERM, sigterm_handler)
-  js = JibriSeleniumDriver(URL,token,pjsua_flag=pjsua_flag)
+  js = JibriSeleniumDriver(URL,token,displayname=displayname,email=email,pjsua_flag=pjsua_flag)
   # js.xmpp_login = 'user@xmpp-domain.com'
   # js.xmpp_password = 'password'
   # js.google_account='user@gmail.com'
