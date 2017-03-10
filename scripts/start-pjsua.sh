@@ -28,7 +28,9 @@ pjsua \
 RETURN=$?
 
 if [ "$RETURN" -eq 0 ]; then
+    echo "PJSUA GRACEFUL EXIT: $0"
     #graceful exit, so don't write to error
 else
+    echo "PJSUA ERROR EXIT: $0"
     #do something to restart?
 fi
