@@ -440,11 +440,11 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
             launch_ffmpeg(stream_id, backup)
 
 
-def launch_pjsua(stream_id):
+def launch_pjsua(sipaddress, displayname=''):
     #we only attempt to launch pjsua
     try:
         logging.info("Starting pjsua")
-        retcode = start_pjsua(stream_id)
+        retcode = start_pjsua(sipaddress, displayname)
         if retcode == 0:
             #make sure we wrote a pid, so that we can track this ffmpeg process
             pjsua_pid_file = "/var/run/jibri/pjsua.pid"
@@ -463,7 +463,7 @@ def launch_pjsua(stream_id):
                 if success:
                     #we are live!  Let's tell jicofo and start watching ffmpeg
                     update_jibri_status('started')
-                    queue_watcher_start(stream_id)
+                    queue_watcher_start(sipaddress)
                     logging.info("queued job for jibri_watcher, startup completed...")
                     return
                 else:
@@ -628,9 +628,9 @@ def check_selenium_audio_stream(js, audio_url=None, audio_delay=1):
         logging.info("Audio levels confirmed OK.")
         return True
 
-def start_pjsua(stream_id, backup=''):
-    logging.info("starting jibri pjsua with sip address=%s" % stream_id)
-    return call([launch_gateway_script, stream_id],
+def start_pjsua(sipaddress, displayname=''):
+    logging.info("starting jibri pjsua with sip address=%s displayname=%s" % (sipaddress,displayname))
+    return call([launch_gateway_script, sipaddress, displayname],
              shell=False)
 
 
