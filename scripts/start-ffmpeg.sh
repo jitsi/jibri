@@ -9,7 +9,7 @@ STREAM=$1
 : ${QUEUE_SIZE:=4096}
 
 #use alsa directly
-: ${INPUT_DEVICE:='hw:0,1,0'}
+: ${INPUT_DEVICE:='plug:jibri'}
 : ${MAX_BITRATE:='2976'}
 : ${BUFSIZE:=$(($MAX_BITRATE * 2))}
 : ${CRF:=25}
@@ -20,7 +20,7 @@ STREAM=$1
 
 DISPLAY=:0
 
-#Record the output of display :0 plus the ALSA loopback device hw:0,1,0
+#Record the output of display :0 plus the ALSA loopback device plug:jibri
 exec ffmpeg -y -v info \
     -f x11grab -draw_mouse 0 -r $RATE -s $RESOLUTION -thread_queue_size $QUEUE_SIZE -i :0.0+0,0 \
     -f alsa -thread_queue_size $QUEUE_SIZE -i $INPUT_DEVICE -acodec libmp3lame -ar 44100 \

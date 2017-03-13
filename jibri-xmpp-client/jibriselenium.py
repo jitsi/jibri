@@ -15,14 +15,14 @@ from selenium.webdriver.support import expected_conditions as EC # available sin
 
 
 class JibriSeleniumDriver():
-    def __init__(self, 
-            url, 
-            authtoken=None, 
-            xmpp_connect_timeout=60, 
-            binary_location=None, 
+    def __init__(self,
+            url,
+            authtoken=None,
+            xmpp_connect_timeout=60,
+            binary_location=None,
             google_account=None,
-            google_account_password=None, 
-            displayname='Live Stream', 
+            google_account_password=None,
+            displayname='Live Stream',
             email='recorder@jitsi.org',
             xmpp_login = None,
             xmpp_password = None,
@@ -55,7 +55,7 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enabled')
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
-      self.options.add_argument('--alsa-output-device=plug:amix')
+      self.options.add_argument('--alsa-output-device=plug:jibri_input')
 
       #use microphone if provided
       if self.pjsua_flag:
@@ -193,10 +193,10 @@ class JibriSeleniumDriver():
     def isXMPPConnected(self):
       response=''
       response = self.execute_async_script('return APP.conference._room.xmpp.connection.connected;')
-      
+
       print('isXMPPConnected:%s'%response)
       return response
-    
+
     def getDownloadBitrate(self):
       try:
         stats = self.execute_async_script("return APP.conference.getStats();")
@@ -269,7 +269,7 @@ class JibriSeleniumDriver():
         print("Failed to click hangup button")
         pprint.pprint(e)
 
-      self.driver.quit()      
+      self.driver.quit()
 
 
 def sigterm_handler(a, b):
@@ -286,7 +286,7 @@ if __name__ == '__main__':
   loglevel='DEBUG'
   pjsua_flag=False
   timeout=60
-  displayname='Live Stream' 
+  displayname='Live Stream'
   email='recorder@jitsi.org'
 
   try:
