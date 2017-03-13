@@ -1,22 +1,23 @@
-# playback PCM device: using loopback subdevice 0,0
-pcm.amix {
+# playback PCM device: using loopback subdevice Loopback,0
+pcm.jibri_input {
   type dmix
   ipc_key 219345
   slave.pcm "hw:Loopback,0,0"
 }
 
-# capture PCM device: using loopback subdevice 0,1
-pcm.asnoop {
+# capture PCM device: using loopback subdevice Loopback,1
+pcm.jibri_output {
   type dsnoop
   ipc_key 219346
-  slave.pcm "hw:Loopback,0,1"
+  slave.pcm "hw:Loopback,1,0"
 }
 
 # duplex device combining our PCM devices defined above
-pcm.aduplex {
+# do not insert the duplex device in an input, because echo may occur
+pcm.jibri {
   type asym
-  playback.pcm "amix"
-  capture.pcm "asnoop"
+  playback.pcm "jibri_input"
+  capture.pcm "jibri_output"
 }
 
 # ------------------------------------------------------
@@ -26,10 +27,10 @@ pcm.ploop {
   slave.pcm "hw:Loopback,1,1"
 }
 
-pcm.cloop {
+pcm.pjsua_output {
   type dsnoop
   ipc_key 219348
-  slave.pcm "hw:Loopback,1,0"
+  slave.pcm "hw:Loopback,0,1"
 }
 
 # ------------------------------------------------------
@@ -37,5 +38,5 @@ pcm.cloop {
 
 pcm.!default {
   type plug
-  slave.pcm "aduplex"
+  slave.pcm "jibri"
 }
