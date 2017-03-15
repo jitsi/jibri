@@ -265,8 +265,14 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             error_text='Streaming Error: Selenium died'
         elif error == 'ffmpeg_died':
             error_text='Streaming Error: ffmpeg died'
+        elif error == 'timelimit':
+            error_text='Streaming Time Limited Reached'
         elif error == 'pjsua_died':
             error_text='Gateway Error: pjsua died'
+        elif error == 'pjsua_startup_error':
+            error_text='Gateway Startup Error: pjsua startup failed'
+        elif error == 'pjsua_startup_exception':
+            error_text='Gateway Startup Error: pjsua startup exception'
         else:
             error_text='Unknown error'
 
