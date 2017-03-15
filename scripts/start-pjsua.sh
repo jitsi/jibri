@@ -13,7 +13,10 @@ PLAYBACK_DEV=24
 
 PID_DIR=/var/run/jibri/
 LOG_FILE=/tmp/jibri-pjsua.log
+EXIT_FILE=/tmp/jibri-pjsua.result
 
+#clear out the exit code if there's a leftover file
+[ -e "$EXIT_FILE" ] && rm $EXIT_FILE
 
 export DISPLAY=:1
 
@@ -27,10 +30,4 @@ pjsua \
 
 RETURN=$?
 
-if [ "$RETURN" -eq 0 ]; then
-    echo "PJSUA GRACEFUL EXIT: $0"
-    #graceful exit, so don't write to error
-else
-    echo "PJSUA ERROR EXIT: $0"
-    #do something to restart?
-fi
+echo $RETURN > $EXIT_FILE
