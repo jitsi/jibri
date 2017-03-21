@@ -510,6 +510,8 @@ def launch_pjsua(sipaddress, displayname=''):
 
                 kill_pjsua_process()
         else:
+            #look up whatever the failure code was
+            handle_pjsua_failure()
             if pjsua_failure_code:
                 reason = 'pjsua_'+pjsua_failure_code
             else:
@@ -527,7 +529,8 @@ def launch_pjsua(sipaddress, displayname=''):
     except Exception as e:
         #oops it all went awry
         success = False
-        logging.warn("Exception occured waiting for pjsua running: %s"%e)
+        logging.warn("Exception occured launching pjsua: %s"%e)
+        jibri_stop_callback('pjsua_startup_streaming_exception')
 
 def launch_ffmpeg(stream_id, backup=''):
     #we will allow the following number of attempts:
@@ -905,14 +908,8 @@ def handle_pjsua_failure():
         return False
 
     #486 is busy/call rejected, so no need to retry
-    if pjsua_failure == 486:
+    if pjsua_failure == 2:
         pjsua_failure_code = 'busy'
-        return False
-
-
-    #408 is timeout, TBD
-    if pjsua_failure == 408:
-        pjsua_failure_code = 'timeout'
         return False
 
     #default to failing

@@ -22,6 +22,10 @@ class JibriStatusElement(ElementBase):
     name = 'jibri-status'
     namespace = 'http://jitsi.org/protocol/jibri'
     plugin_attrib = 'jibri-status'
+class JibriRetryElement(ElementBase):
+    name = 'retry'
+    namespace = 'http://jitsi.org/protocol/jibri'
+    plugin_attrib = 'jibri-retry'
 
 class JibriXMPPClient(sleekxmpp.ClientXMPP):
 
@@ -247,6 +251,8 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         iq['to'] = self.controllerJid
         iq._setAttr('type','set')
 
+        jicofo_retry = True
+
         if error == 'selenium_start_stuck':
             error_text='Startup error: Selenium stuck'
         elif error == 'startup_exception':
@@ -255,8 +261,10 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             error_text='Startup error: Selenium error'
         elif error == 'ffmpeg_startup_exception':
             error_text='Startup error: FFMPEG fatal exception'
+            jicofo_retry = False
         elif error == 'startup_ffmpeg_error':
             error_text='Startup error: FFMPEG fatal error'
+            jicofo_retry = False
         elif error == 'startup_ffmpeg_streaming_error':
             error_text='Youtube request timeout'
         elif error == 'selenium_stuck':
@@ -267,19 +275,40 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             error_text='Streaming Error: ffmpeg died'
         elif error == 'timelimit':
             error_text='Streaming Time Limited Reached'
+            jicofo_retry = False
         elif error == 'pjsua_died':
             error_text='Gateway Error: pjsua died'
+            jicofo_retry = False
+        elif error == 'pjsua_busy':
+            error_text='Gateway Error: pjsua returned busy'
+            jicofo_retry = False
         elif error == 'pjsua_startup_error':
             error_text='Gateway Startup Error: pjsua startup failed'
+            jicofo_retry = False
         elif error == 'pjsua_startup_exception':
             error_text='Gateway Startup Error: pjsua startup exception'
+            jicofo_retry = False
         else:
             error_text='Unknown error'
 
         iq_error = self.make_iq_error(iq['id'], type='wait', condition='remote-server-timeout', text=error_text, ito=self.controllerJid)
         iq_error['error']['code']='504'
 
+
+        if jicofo_retry:
+            iq_error['error'].append(JibriRetryElement())
+
         iq['jibri'].append(iq_error['error'])
+
+        #example IQ in XML:
+        #<iq id="82fee416-0e71-4f6a-90de-8d9b3755ef5b-7" type="set" to="sipbreweryfe5a1a8993c07edc1a63@conference.shipit.jitsi.net/focus">
+        #    <jibri xmlns="http://jitsi.org/protocol/jibri" status="failed">
+        #       <error xmlns="jabber:client" code="504" type="wait">
+        #        <remote-server-timeout xmlns="urn:ietf:params:xml:ns:xmpp-stanzas" />
+        #        <text xmlns="urn:ietf:params:xml:ns:xmpp-stanzas">Unknown error</text>
+        #       </error>
+        #    </jibri>
+        #</iq>
 
         logging.info('sending status update: %s' % iq)
         try:
