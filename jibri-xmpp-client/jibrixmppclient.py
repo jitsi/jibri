@@ -282,6 +282,9 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         elif error == 'pjsua_busy':
             error_text='Gateway Error: pjsua returned busy'
             jicofo_retry = False
+        elif error == 'pjsua_hangup':
+            error_text='Gateway Error: pjsua returned hangup'
+            jicofo_retry = False
         elif error == 'pjsua_startup_error':
             error_text='Gateway Startup Error: pjsua startup failed'
             jicofo_retry = False
