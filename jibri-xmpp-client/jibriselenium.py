@@ -55,6 +55,7 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enabled')
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
+      self.options.add_argument("--disable-infobars")      
       self.options.add_argument('--alsa-output-device=plug:amix')
 
       #use microphone if provided
