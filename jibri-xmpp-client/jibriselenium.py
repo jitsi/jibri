@@ -225,7 +225,7 @@ class JibriSeleniumDriver():
             return True
           if wait_time >= timeout:
             logging.info('Timed out waiting for download bitrate')
-            return False
+            return None
 
     def waitXMPPConnected(self,timeout=None, interval=5):
       logging.info('starting to wait for XMPPConnected')

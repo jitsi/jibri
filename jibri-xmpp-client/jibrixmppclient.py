@@ -273,6 +273,9 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             error_text='Streaming Error: Selenium died'
         elif error == 'ffmpeg_died':
             error_text='Streaming Error: ffmpeg died'
+        elif error == 'selenium_hangup':
+            error_text='Conference Ended, no data received within timelimit'
+            jicofo_retry = False
         elif error == 'timelimit':
             error_text='Streaming Time Limited Reached'
             jicofo_retry = False

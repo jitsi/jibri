@@ -809,7 +809,10 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
                     else:
                         reason = 'ffmpeg_died'
                 if not selenium_result:
-                    reason = 'selenium_died'
+                    if selenium_result == None:
+                        reason = 'selenium_hangup'
+                    else:
+                        reason = 'selenium_died'
                 loop.call_soon_threadsafe(finished_callback, reason)
         logging.info("jibri_watcher finished loop...")
 
