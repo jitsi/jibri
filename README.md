@@ -6,7 +6,7 @@ It is currently very experimental.
 It works by launching a Chrome instance rendered in a virtual framebuffer and
 capturing and encoding the output with ffmpeg. It is intended to be run on a
 separate machine (or a VM), with no other applications using the display or
-audio devices.
+audio devices.  Only one recording at a time is supported on a single jibri.
 
 Jibri consists of several pieces:
 
