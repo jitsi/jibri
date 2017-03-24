@@ -29,7 +29,7 @@ there, and accepts commands (start/stop recording) coming from a controlling
 agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 
 
-# Using Jibri
+# Installing Jibri
 
 ### Installation Notes
 
@@ -42,11 +42,11 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 
 * Perform the following tasks as the root user
 
-* Set up the module to be loaded on boot: echo "snd-aloop" >> /etc/modules
+  - Set up the module to be loaded on boot: echo "snd-aloop" >> /etc/modules
 
-* Load the module into the running kernel: modprobe snd-aloop
+  - Load the module into the running kernel: modprobe snd-aloop
 
-* Check to see that the module is already loaded:  lsmod | grep snd-aloop
+  - Check to see that the module is already loaded:  lsmod | grep snd-aloop
 
 * If the output shows the snd-aloop module loaded, then the ALSA loopback configuration step is complete.
 
@@ -57,19 +57,19 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 
 * If building Jibri for Ubuntu 14 (trust), he mc3man repo provides packages.  They can be used by the following in Ubuntu 16:
 
-    add-apt-repository ppa:mc3man/trusty-media
-    apt-get update
-    apt-get install ffmpeg
+  - add-apt-repository ppa:mc3man/trusty-media
+  - apt-get update
+  - apt-get install ffmpeg
 
 
 ### Google Chrome Stable
 
 * The latest google chrome stable build should be used.  These steps work for installing on Ubuntu 16:
-  wget https://dl.google.com/linux/linux_signing_key.pub
-  apt-key add linux_signing_key.pub
-  echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/dl_google_com_linux_chrome_deb.list
-  apt-get update
-  apt-get install google-chrome-stable
+  - wget https://dl.google.com/linux/linux_signing_key.pub
+  - apt-key add linux_signing_key.pub
+  - echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/dl_google_com_linux_chrome_deb.list
+  - apt-get update
+  - apt-get install google-chrome-stable
 
 
 ### Miscellaneous required tools
@@ -130,27 +130,26 @@ chromedriver_linux64.zip
 ### Python dependencies
 
 * Use pip3 to install all the python related dependencies
-   pip3 install setuptools
-   pip3 install -r jibri/requirements.txt
+  - pip3 install setuptools
+  - pip3 install -r jibri/requirements.txt
 
 
 ### Support daemon systemd configurations
 
 * Jibri expects XOrg and icewm to be running as daemons.  To accomplish this, copy the example systemd files from the ```systemd``` directory into the appropriate place (/etc/systemd/system/ on Ubuntu 16).
 
-   cp jibri/systemd/*.service /etc/systemd/system/
+  - cp jibri/systemd/*.service /etc/systemd/system/
 
 * To start the supporting services
 
-   service jibri-xorg start
-   service jibri-icewm start
+  - service jibri-xorg start
+  - service jibri-icewm start
 
 * To start the jibri controller daemon (will not start properly until config.json is properly configured for your Jitsi Meet install)
 
-   service jibri-xmpp start
+  - service jibri-xmpp start
 
-## Running Jibri
-
+## Configuring Jibri
 
 ### Connecting Jibri to Jitsi Meet
 
@@ -160,7 +159,7 @@ chromedriver_linux64.zip
 
 * Prosody: Create the recorder virtual host entry in /etc/prosody/prosody.cfg.  Restart prosody after adding the virtual host entry
 
-VirtualHost “recorder.yourdomain.com"
+  VirtualHost “recorder.yourdomain.com"
     modules_enabled = {
       "ping";
     }
@@ -169,8 +168,8 @@ VirtualHost “recorder.yourdomain.com"
 
 * Prosody: create accounts for the two methods Jibri uses to connect
 
-prosodyctl register jibri auth.yourdomain.com jibripass
-prosodyctl register recorder recorder.yourdomain.com jibripass
+    prosodyctl register jibri auth.yourdomain.com jibripass
+    prosodyctl register recorder recorder.yourdomain.com jibripass
 
 The first account is the jibri username and password.  The second account is the selenium username and password.  Record the passwords you choose, as they will be used in config.json below.
 
@@ -182,13 +181,19 @@ The first account is the jibri username and password.  The second account is the
 * Jitsi Meet: Edit the /etc/jitsi/meet/yourdomain.config.js file, add/set the following properties:
 
    recordingType: 'jibri',
+
    enableRecording: true,
+
    hiddenDomain: ‘recorder.yourdomain.com',
 
 Once recording is enabled in config.js, the recording button will become available in the user interface.  However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed.  Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
 * Final Jibri configuration: edit /home/jibri/config.json and enter the IP Address or DNS name of your host in the "servers" section of the JSON.  Also update the password, xmpp_domain, selenium_xmpp_password as appropriate for your install.
 
+* Start the jibri daemon
+  - service jibri-xmpp start
+
+* Open a new Jitsi Meet URL and see if the recording option is enabled and prompts for a stream key.  Congratulations, you've got a jibri!
 
 ### Manually testing Jibri
 
