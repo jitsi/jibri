@@ -1,0 +1,22 @@
+[Unit]
+Description=Jibri XMPP Control Process
+Requires=jibri-icewm.service jibri-xorg.service
+After=network.target
+
+[Service]
+User=jibri
+Group=jibri
+WorkingDirectory=/home/jibri/scripts
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/run/jibri
+ExecStartPre=/bin/chown jibri /var/run/jibri
+ExecStart=/home/jibri/jibri-xmpp-client/app.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=always
+RestartPreventExitStatus=255
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
+Alias=jibri.service
