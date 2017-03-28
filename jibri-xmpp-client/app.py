@@ -307,12 +307,19 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
     global default_email
     global pjsua_flag
 
+    #by default assume there's no subdomain for URL
+    subdomain=''
     #make sure we remove whitespace from all input parameters
     room=room.strip()
     url=url.strip()
     stream_id=stream_id.strip()
     sipaddress=sipaddress.strip()
 
+    #set a room_name default
+    room_name=room
+
+    mucserver_prefix='conference.'
+    xmpp_domain=None
     c_google_account=None
     c_google_account_password=None
     c_chrome_binary_path=None
@@ -366,6 +373,10 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
         if 'environment' in co:
             current_environment = co['environment']
 
+        if 'xmpp_domain' in co:
+            xmpp_domain = co['xmpp_domain']
+            logging.info("Setting xmpp_domain from client options %s"%xmpp_domain)
+
         if 'displayname' in co:
             c_display_name = co['displayname']
 
@@ -375,6 +386,11 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
         if 'pjsua_flag' in co:
             pjsua_flag = co['pjsua_flag']
             logging.info("Setting pjsua_flag from client options %s"%pjsua_flag)
+
+        if 'mucserver_prefix' in co:
+            mucserver_prefix = co['mucserver_prefix']
+            logging.info("Setting mucserver_prefix from client options %s"%mucserver_prefix)
+
 
     #when we're using pjsua, override the default display name to be the sip address or passed in display name
     if pjsua_flag:
@@ -387,7 +403,17 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
     if room:
         at_index = room.rfind('@')
         if at_index > 0:
-            room = room[0:at_index]
+            #truncate the room name to just the name part of the JID
+            room_name = room[0:at_index]
+            room_host = room[at_index+1:]
+            if room_host and room_host.startswith(mucserver_prefix) and room_host.endswith(xmpp_domain) and room_host != '%s%s'%(mucserver_prefix,xmpp_domain):
+                #detect a subdomain if our room host matches the xmpp_domain and mucserver_prefix but also contains more information
+                #example is conference.foo.xmpp_domain.org
+                subdomain = room_host.split('.')[1]
+                #if we found a subdomain, then append a period to separate it from the rest of the URL
+                if subdomain:
+                    subdomain = subdomain+'.'
+
         #no url was passed in explicitly, so look it up by client
         if client and not url:
             if client.hostname in client_opts:
@@ -395,7 +421,8 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
                 if 'url' in co and co['url']:
                     url = co['url']
 
-        url = url.replace('%ROOM%',room)
+        url = url.replace('%SUBDOMAIN%',subdomain)
+        url = url.replace('%ROOM%',room_name)
 
     logging.info("Start recording callback")
     #mark everyone else as busy
@@ -449,7 +476,7 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
     else:
         #we got a selenium, so start ffmpeg or ffmpeg
         if pjsua_flag:
-            launch_pjsua(sipaddress, room)
+            launch_pjsua(sipaddress, room_name)
         else:
             launch_ffmpeg(stream_id, backup)
 
@@ -1422,7 +1449,7 @@ if __name__ == '__main__':
 
         if not 'url' in client_opts[hostname]:
             if 'xmpp_domain' in client_opts[hostname]:
-                client_opts[hostname]['url'] = 'https://%s/'%client_opts[hostname]['xmpp_domain']+'%ROOM%'
+                client_opts[hostname]['url'] = 'https://%SUBDOMAIN%'+'%s/'%client_opts[hostname]['xmpp_domain']+'%ROOM%'
             else:
                 logging.warn('No URL specified in client option, removing from list: %s'%client_opts[hostname])
                 del client_opts[hostname]
