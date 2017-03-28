@@ -157,14 +157,17 @@ chromedriver_linux64.zip
 
 * Network: Make sure that port 5222 on your Jicofo instance is open to the Jibri instance.  This may means some combination of Security Groups (if in AWS), or local firewall configuration.
 
-* Prosody: Create the recorder virtual host entry in /etc/prosody/prosody.cfg.  Restart prosody after adding the virtual host entry
+* Prosody
 
-  VirtualHost “recorder.yourdomain.com"
-    modules_enabled = {
-      "ping";
-    }
-    authentication = "internal_plain"
+  - Create the recorder virtual host entry in /etc/prosody/prosody.cfg.lua :
 
+    VirtualHost “recorder.yourdomain.com"
+      modules_enabled = {
+        "ping";
+      }
+      authentication = "internal_plain"
+
+  - Restart prosody daemon after edits are complete
 
 * Prosody: create accounts for the two methods Jibri uses to connect
 
@@ -173,10 +176,10 @@ chromedriver_linux64.zip
 
 The first account is the jibri username and password.  The second account is the selenium username and password.  Record the passwords you choose, as they will be used in config.json below.
 
-* Jicofo: Edit /etc/jitsi/jicofo/sip-communicator.properties (or similar), set the appropriate MUC to look for the Jibri Controllers.  Restart Jicofo after setting this property.
+* Jicofo: Edit /etc/jitsi/jicofo/sip-communicator.properties (or similar), set the appropriate MUC to look for the Jibri Controllers.  This should be the same MUC as is referenced in jibri's config.json file.  Restart Jicofo after setting this property.  It's also suggested to set the PENDING_TIMEOUT to 90 seconds, to allow the Jibri some time to start up before being marked as failed.
 
-  org.jitsi.jicofo.jibri.BREWERY=TheBrewery
-
+  org.jitsi.jicofo.jibri.BREWERY=TheBrewery@conference.yourdomain.com
+  org.jitsi.jicofo.jibri.PENDING_TIMEOUT=90
 
 * Jitsi Meet: Edit the /etc/jitsi/meet/yourdomain.config.js file, add/set the following properties:
 
