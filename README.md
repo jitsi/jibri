@@ -168,10 +168,10 @@ chromedriver_linux64.zip
 ```
 
 * Prosody: create accounts for the two methods Jibri uses to connect
-
+```
     prosodyctl register jibri auth.yourdomain.com jibripass
     prosodyctl register recorder recorder.yourdomain.com jibripass
-
+```
 The first account is the jibri username and password.  The second account is the selenium username and password.  Record the passwords you choose, as they will be used in config.json below.
 
 * Jicofo: Edit /etc/jitsi/jicofo/sip-communicator.properties (or similar), set the appropriate MUC to look for the Jibri Controllers.  Restart Jicofo after setting this property.
