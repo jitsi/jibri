@@ -619,7 +619,7 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
 
     if pjsua_flag:
         #pjsua is enabled, so set the gateway flag
-        url = "%s#config.iAmSipGateway=true"%(url)
+        url = "%s#config.iAmSipGateway=true&config.ignoreStartMuted=true"%(url)
     else:
         #only set the iAmRecorder flag if the pjsua functionality is not enabled
         url = "%s#config.iAmRecorder=true&config.externalConnectUrl=null"%(url)
