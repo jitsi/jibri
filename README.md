@@ -57,19 +57,19 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 
 * If building Jibri for Ubuntu 14 (trust), he mc3man repo provides packages.  They can be used by the following in Ubuntu 16:
 
-  - add-apt-repository ppa:mc3man/trusty-media
-  - apt-get update
-  - apt-get install ffmpeg
+  - `add-apt-repository ppa:mc3man/trusty-media`
+  - `apt-get update`
+  - `apt-get install ffmpeg`
 
 
 ### Google Chrome Stable
 
 * The latest google chrome stable build should be used.  These steps work for installing on Ubuntu 16:
-  - wget https://dl.google.com/linux/linux_signing_key.pub
-  - apt-key add linux_signing_key.pub
-  - echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/dl_google_com_linux_chrome_deb.list
-  - apt-get update
-  - apt-get install google-chrome-stable
+  - `wget https://dl.google.com/linux/linux_signing_key.pub`
+  - `apt-key add linux_signing_key.pub`
+  - `echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/dl_google_com_linux_chrome_deb.list`
+  - `apt-get update`
+  - `apt-get install google-chrome-stable`
 
 
 ### Miscellaneous required tools
@@ -91,9 +91,9 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 
 * A newer Chromedriver is also required.  It can be downloaded from google (https://sites.google.com/a/chromium.org/chromedriver/downloads).  Grab the one labeled 
 chromedriver_linux64.zip 
-   wget https://chromedriver.storage.googleapis.com/2.28/chromedriver_linux64.zip
-   unzip chromedriver_linux64.zip
-   cp chromedriver /usr/bin/chromedriver
+   `wget https://chromedriver.storage.googleapis.com/2.28/chromedriver_linux64.zip`
+   `unzip chromedriver_linux64.zip`
+   `cp chromedriver /usr/bin/chromedriver`
 
 
 
@@ -108,46 +108,46 @@ chromedriver_linux64.zip
 
 * Set up the jibri home directory (for example /home/jibri)
 
-* Check out the jibri source code: git clone https://github.com/jitsi/jibri.git
+* Check out the jibri source code: `git clone https://github.com/jitsi/jibri.git`
 
 * Copy the two main directories into place.  In this example install, the ```jibri-xmpp-client``` and ```scripts``` directories should be copied to /home/jibri/ so that they are siblings.  Many scripts referenced in the jibri daemon currently assume the scripts directory to be available from ../scripts/
 
-  cp -a jibri/jibri-xmpp-client /home/jibri
-  cp -a jibri/scripts /home/jibri
+  `cp -a jibri/jibri-xmpp-client /home/jibri`
+  `cp -a jibri/scripts /home/jibri`
 
 
 * Copy the asoundrc file to /home/jibri/.asoundrc to ensure that the ALSA loopback driver is configured properly for the jibri user.
-   cp jibri/asoundrc /home/jibri/.asoundrc
+   `cp jibri/asoundrc /home/jibri/.asoundrc`
 
 * Copy the icewm.preferences connecting.png files to /home/jibri/.icewm/ for the startup/stop desktop experience with jibri.
-   mkdir /home/jibri/.icewm
-   cp jibri/icewm.preferences /home/jibri/.icewm/preferences
-   cp jibri/connecting.png /home/jibri/.icewm/connecting.png
+   `mkdir /home/jibri/.icewm`
+   `cp jibri/icewm.preferences /home/jibri/.icewm/preferences`
+   `cp jibri/connecting.png /home/jibri/.icewm/connecting.png`
 
 * Copy the config.json into place, then modify it to connect to your existing Jitsi Meet install.  Refer to the section ```Connecting Jibri to Jitsi Meet``` for details on contents of config.json
-   cp jibri/config.json /home/jibri/config.json
+   `cp jibri/config.json /home/jibri/config.json`
 
 ### Python dependencies
 
 * Use pip3 to install all the python related dependencies
-  - pip3 install setuptools
-  - pip3 install -r jibri/requirements.txt
+  - `pip3 install setuptools`
+  - `pip3 install -r jibri/requirements.txt`
 
 
 ### Support daemon systemd configurations
 
 * Jibri expects XOrg and icewm to be running as daemons.  To accomplish this, copy the example systemd files from the ```systemd``` directory into the appropriate place (/etc/systemd/system/ on Ubuntu 16).
 
-  - cp jibri/systemd/*.service /etc/systemd/system/
+  - `cp jibri/systemd/*.service /etc/systemd/system/`
 
 * To start the supporting services
 
-  - service jibri-xorg start
-  - service jibri-icewm start
+  - `service jibri-xorg start`
+  - `service jibri-icewm start`
 
 * To start the jibri controller daemon (will not start properly until config.json is properly configured for your Jitsi Meet install)
 
-  - service jibri-xmpp start
+  - `service jibri-xmpp start`
 
 ## Configuring Jibri
 
@@ -200,35 +200,35 @@ Once recording is enabled in config.js, the recording button will become availab
 * Final Jibri configuration: edit /home/jibri/config.json and enter the IP Address or DNS name of your host in the "servers" section of the JSON.  Also update the password, xmpp_domain, selenium_xmpp_password as appropriate for your install.
 
 * Start the jibri daemon
-  - service jibri-xmpp start
+  - `service jibri-xmpp start`
 
 * Open a new Jitsi Meet URL and see if the recording option is enabled and prompts for a stream key.  Congratulations, you've got a jibri!
 
 ### Manually testing Jibri
 
 * To test the selenium side of Jibri (can it connect to a Jitsi Meet conference) you can use the following:
-  - Become the ```jibri``` user: sudo su - jibri
-  - cd /home/jibri/jibri-xmpp-client
-  - DISPLAY=:0 ./jibriselenium.py -u https://URL-TO-MEETING
+  - Become the ```jibri``` user: `sudo su - jibri`
+  - `cd /home/jibri/jibri-xmpp-client`
+  - `DISPLAY=:0 ./jibriselenium.py -u https://URL-TO-MEETING`
 
   This will start up a selenium session with chrome, and connect to your jitsi meeting, detect if it's receiving any audio/video, wait 60 seconds and then exit.
 
 * To test the ffmpeg capture component of Jibri (can it read from X11, stream to a file, for example filename.flv)
 
-  - Become the ```jibri``` user: sudo su - jibri
-  - cd /home/jibri/scripts
-  - ./start-ffmpeg.sh filename.flv
-  - if it starts OK, wait some time then kill it: ./stop_recording.sh
-  - examine the output file /tmp/jibri-ffmpeg.out for success
-  - Download and play filename.flv to test recording success
+  - Become the ```jibri``` user: `sudo su - jibri`
+  - `cd /home/jibri/scripts`
+  - `./start-ffmpeg.sh filename.flv`
+  - if it starts OK, wait some time then kill it: `./stop_recording.sh`
+  - examine the output file `/tmp/jibri-ffmpeg.out` for success
+  - Download and play `filename.flv` to test recording success
 
 * To test the youtube streaming side of Jibri (after ffmpeg is confirmed to work), first find a valid youtube stream key (https://jitsi.org/live for details), replace STREAM_KEY below
 
-   - Become the ```jibri``` user: sudo su - jibri
-   - cd /home/jibri/scritps
-   - ./launch_recording.sh null null null STREAM_KEY
+   - Become the ```jibri``` user: `sudo su - jibri`
+   - `cd /home/jibri/scritps`
+   - `./launch_recording.sh null null null STREAM_KEY`
    - check your youtube livestreaming dashboard for the status (https://youtube.com/live_dashboard)
-   - ./stop_recording.sh to kill the stream
+   - `./stop_recording.sh` to kill the stream
 
 
 # Troubleshooting
