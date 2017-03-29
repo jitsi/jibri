@@ -42,11 +42,11 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 
 * Perform the following tasks as the root user
 
-  - Set up the module to be loaded on boot: echo "snd-aloop" >> /etc/modules
+  - Set up the module to be loaded on boot: `echo "snd-aloop" >> /etc/modules`
 
-  - Load the module into the running kernel: modprobe snd-aloop
+  - Load the module into the running kernel: `modprobe snd-aloop`
 
-  - Check to see that the module is already loaded:  lsmod | grep snd-aloop
+  - Check to see that the module is already loaded:  `lsmod | grep snd_aloop`
 
 * If the output shows the snd-aloop module loaded, then the ALSA loopback configuration step is complete.
 
@@ -77,17 +77,17 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 * Jibri scripts make use of certain other external libraries and tools.
 
 * The following packages in Ubuntu 16:
-  - python3
-  - python3-pip
-  - ffmpeg
   - alsa-utils
-  - xserver-xorg-input-void
-  - xserver-xorg-video-dummy
-  - xdotool
+  - ffmpeg
+  - icewm  
   - jq
   - python-pip
+  - python3
   - python3-pip
-  - icewm
+  - xdotool
+  - xserver-xorg-input-void
+  - xserver-xorg-video-dummy
+
 
 * A newer Chromedriver is also required.  It can be downloaded from google (https://sites.google.com/a/chromium.org/chromedriver/downloads).  Grab the one labeled 
 chromedriver_linux64.zip 
@@ -108,7 +108,7 @@ chromedriver_linux64.zip
 
 * Set up the jibri home directory (for example /home/jibri)
 
-* Check out the jibri source code: git pull https://github.com/jitsi/jibri.git
+* Check out the jibri source code: git clone https://github.com/jitsi/jibri.git
 
 * Copy the two main directories into place.  In this example install, the ```jibri-xmpp-client``` and ```scripts``` directories should be copied to /home/jibri/ so that they are siblings.  Many scripts referenced in the jibri daemon currently assume the scripts directory to be available from ../scripts/
 
@@ -159,12 +159,13 @@ chromedriver_linux64.zip
 
 * Prosody: Create the recorder virtual host entry in /etc/prosody/prosody.cfg.  Restart prosody after adding the virtual host entry
 
+```
   VirtualHost “recorder.yourdomain.com"
     modules_enabled = {
       "ping";
     }
     authentication = "internal_plain"
-
+```
 
 * Prosody: create accounts for the two methods Jibri uses to connect
 
@@ -174,18 +175,18 @@ chromedriver_linux64.zip
 The first account is the jibri username and password.  The second account is the selenium username and password.  Record the passwords you choose, as they will be used in config.json below.
 
 * Jicofo: Edit /etc/jitsi/jicofo/sip-communicator.properties (or similar), set the appropriate MUC to look for the Jibri Controllers.  Restart Jicofo after setting this property.
-
+```
   org.jitsi.jicofo.jibri.BREWERY=TheBrewery
-
+```
 
 * Jitsi Meet: Edit the /etc/jitsi/meet/yourdomain.config.js file, add/set the following properties:
-
+```
    recordingType: 'jibri',
 
    enableRecording: true,
 
    hiddenDomain: ‘recorder.yourdomain.com',
-
+```
 Once recording is enabled in config.js, the recording button will become available in the user interface.  However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed.  Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
 * Final Jibri configuration: edit /home/jibri/config.json and enter the IP Address or DNS name of your host in the "servers" section of the JSON.  Also update the password, xmpp_domain, selenium_xmpp_password as appropriate for your install.
