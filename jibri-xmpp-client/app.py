@@ -447,11 +447,32 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
         jibri_stop_callback('startup_selenium_error')
 
     else:
-        #we got a selenium, so start ffmpeg or ffmpeg
+        #we got a selenium, so start ffmpeg or pjsua
         if pjsua_flag:
-            launch_pjsua(sipaddress, room)
+            watcher_value="%s|%s"%(sipaddress,room)
+            launch_err = launch_pjsua(sipaddress, room)
         else:
-            launch_ffmpeg(stream_id, backup)
+            watcher_value="%s|%s"%(stream_id,backup)
+            launch_err = launch_ffmpeg(stream_id, backup)
+
+
+        if launch_err == True:
+            #launch went smoothly, so now trigger the watcher thread
+            update_jibri_status('started')
+            queue_watcher_start(watcher_value)
+            logging.info("queued job for jibri_watcher.")
+        elif launch_err:
+            #launch failed, return is the error code
+            logging.error("startup failed: %s"%launch_err)
+            jibri_stop_callback(launch_err)
+        else:
+            #launch went so poorly we didn't even return, error unknown
+            logging.error("startup failed, unknown error")
+            jibri_stop_callback('startup_failed')
+
+    logging.info("jibri_start_callback completed...")
+
+
 
 def wait_until_pjsua_running(attempts=3,interval=1):
     success = False
@@ -492,22 +513,17 @@ def launch_pjsua(sipaddress, displayname=''):
                 #oops it all went awry while starting up ffmpeg, something is seriously wrong so no retries
                 #clean up pjsua and kill off any last pieces
                 logging.error("start_pjsua had an exception %s"%e)
-                jibri_stop_callback('pjsua_startup_exception')
-                return
+                return 'pjsua_startup_exception'
 
             #now that we have a pid, let's make sure pjsua is really connected
             logging.info("Waiting for pjsua connection")
             success = wait_until_pjsua_running()
             if success:
-                #we are live!  Let's tell jicofo and start watching pjsua
-                update_jibri_status('started')
-                queue_watcher_start(sipaddress)
-                logging.info("queued job for jibri_watcher, startup completed...")
-                return
+                logging.info("Successful pjsua startup")
+                return True
             else:
                 #we didn't start properly, so let's reset pjsua
                 logging.error("wait_until_pjsua_running failed")
-
                 kill_pjsua_process()
         else:
             #look up whatever the failure code was
@@ -517,20 +533,18 @@ def launch_pjsua(sipaddress, displayname=''):
             else:
                 reason = 'pjsua_startup_error'
             logging.error("start_pjsua returned retcode=%s reason=%s"%(str(retcode),reason))
-            jibri_stop_callback(reason)
-            return
+            return reason
 
         #we made it all the way past the while loop and didn't return for either
         #a fatal error OR success, so apparently we just never started streaming
         logging.error("Failed to start pjsua client")
-        jibri_stop_callback('pjsua_startup_streaming_error')
-        return
+        return 'pjsua_startup_streaming_error'
 
     except Exception as e:
         #oops it all went awry
         success = False
         logging.warn("Exception occured launching pjsua: %s"%e)
-        jibri_stop_callback('pjsua_startup_streaming_exception')
+        return 'pjsua_startup_streaming_exception'
 
 def launch_ffmpeg(stream_id, backup=''):
     #we will allow the following number of attempts:
@@ -551,35 +565,31 @@ def launch_ffmpeg(stream_id, backup=''):
                     #oops it all went awry while starting up ffmpeg, something is seriously wrong so no retries
                     #clean up ffmpeg and kill off any last pieces
                     logging.error("start_ffmpeg had an exception %s"%e)
-                    jibri_stop_callback('ffmpeg_startup_exception')
-                    return
+                    return 'ffmpeg_startup_exception'
 
                 #now that we have a pid, let's make sure ffmpeg is really streaming
                 success = wait_until_ffmpeg_running()
                 if success:
                     #we are live!  Let's tell jicofo and start watching ffmpeg
-                    update_jibri_status('started')
-                    queue_watcher_start(stream_id)
-                    logging.info("queued job for jibri_watcher, startup completed...")
-                    return
+                    logging.info("ffmpeg process started successfully")
+                    return True
                 else:
                     #we didn't start properly, so let's reset ffmpeg and try again
                     kill_ffmpeg_process()
             else:
                 logging.error("start_ffmpeg returned retcode=" + str(retcode))
-                jibri_stop_callback('startup_ffmpeg_error')
-                return
+                return 'startup_ffmpeg_error'
 
         #we made it all the way past the while loop and didn't return for either
         #a fatal error OR success, so apparently we just never started streaming
         logging.error("Failed to start ffmpeg streaming 3 times in a row, out of attempts")
-        jibri_stop_callback('startup_ffmpeg_streaming_error')
-        return
+        return 'startup_ffmpeg_streaming_error'
 
     except Exception as e:
         #oops it all went awry
         success = False
         logging.warn("Exception occured waiting for ffmpeg running: %s"%e)
+        return 'startup_ffmpeg_streaming_exception'
 
 
 def wait_until_ffmpeg_running(attempts=15,interval=1):
@@ -745,6 +755,8 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
             result = False
         else:
             logging.debug("jibri_watcher got msg from main: %s" % msg)
+            #save the parameter for use in retry logic
+            retry_value = msg
 
         queue.task_done()
         #now start looping to watch this ffmpeg process
@@ -783,6 +795,18 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
             else:
                 #during ongoing check, ensure that ffmpeg process is running but don't search for frame=
                 result = check_ffmpeg_running(False)
+
+                if not result:
+                    logging.error("ffmpeg process no longer running, attempting a retry")
+                    #a negative result here means that ffmpeg WAS running fine and has now died
+                    #try to restart it before returning control back to jicofo
+                    result = retry_ffmpeg(retry_value)
+                    if result:
+                        logging.info("ffmpeg process restarted succcessfully")
+                    else:
+                        logging.error("ffmpeg retry process failed")
+
+
             selenium_result = check_selenium_running()
 
             if not selenium_result:
@@ -815,6 +839,26 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
                         reason = 'selenium_died'
                 loop.call_soon_threadsafe(finished_callback, reason)
         logging.info("jibri_watcher finished loop...")
+
+def retry_ffmpeg(retry_value):
+    result = False
+    retry_values = retry_value.split('|')
+    if len(retry_values)>1:
+        stream_id=retry_values[0]
+        backup=retry_values[1]
+    else:
+        stream_id=retry_values[0]
+        backup=''
+
+    launch_err = launch_ffmpeg(stream_id,backup)
+    if launch_err == True:
+        #a restart of ffmpeg was successful, so lets do our running check and move on
+        result = check_ffmpeg_running(False)
+    else:
+        #ffmpeg failed to start after dying on us, so result stays false
+        result = False
+
+    return result
 
 
 #utility function called by jibri_watcher, checks for the selenium process, returns true if the driver object is defined and shows connected to selenium
