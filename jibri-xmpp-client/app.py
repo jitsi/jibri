@@ -1493,7 +1493,7 @@ if __name__ == '__main__':
 
         if not 'url' in client_opts[hostname]:
             if 'xmpp_domain' in client_opts[hostname]:
-                client_opts[hostname]['url'] = 'https://%s/%%SUBDOMAIN%%/%%ROOM%%'%client_opts[hostname]['xmpp_domain']
+                client_opts[hostname]['url'] = 'https://%s/%%SUBDOMAIN%%%%ROOM%%'%client_opts[hostname]['xmpp_domain']
             else:
                 logging.warn('No URL specified in client option, removing from list: %s'%client_opts[hostname])
                 del client_opts[hostname]
