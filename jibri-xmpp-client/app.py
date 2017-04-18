@@ -410,9 +410,9 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
                 #detect a subdomain if our room host matches the xmpp_domain and mucserver_prefix but also contains more information
                 #example is conference.foo.xmpp_domain.org
                 subdomain = room_host.split('.')[1]
-                #if we found a subdomain, then append a period to separate it from the rest of the URL
+                #if we found a subdomain, then append a / to separate it from the rest of the URL
                 if subdomain:
-                    subdomain = subdomain+'.'
+                    subdomain = subdomain+'/'
 
         #no url was passed in explicitly, so look it up by client
         if client and not url:
@@ -1493,7 +1493,7 @@ if __name__ == '__main__':
 
         if not 'url' in client_opts[hostname]:
             if 'xmpp_domain' in client_opts[hostname]:
-                client_opts[hostname]['url'] = 'https://%SUBDOMAIN%'+'%s/'%client_opts[hostname]['xmpp_domain']+'%ROOM%'
+                client_opts[hostname]['url'] = 'https://'+'%s/%%SUBDOMAIN%%'%client_opts[hostname]['xmpp_domain']+'%ROOM%'
             else:
                 logging.warn('No URL specified in client option, removing from list: %s'%client_opts[hostname])
                 del client_opts[hostname]
