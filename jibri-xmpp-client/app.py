@@ -1331,6 +1331,10 @@ if __name__ == '__main__':
             if 'mucserver_prefix' in config_data:
                 default_client_opts['mucserver_prefix'] = config_data['mucserver_prefix']
 
+            #start of host part of muc server
+            if 'brewery_prefix' in config_data:
+                default_client_opts['brewery_prefix'] = config_data['brewery_prefix']
+
             #start of host part of bosh server
             if 'boshdomain_prefix' in config_data:
                 default_client_opts['boshdomain_prefix'] = config_data['boshdomain_prefix']
@@ -1441,6 +1445,8 @@ if __name__ == '__main__':
         default_client_opts['jidserver_prefix'] = opts.jidserverprefix
     if opts.mucserverprefix:
         default_client_opts['mucserver_prefix'] = opts.mucserverprefix
+    if opts.breweryprefix:
+        default_client_opts['brewery_prefix'] = opts.breweryprefix
     if opts.boshdomainprefix:
         default_client_opts['boshdomain_prefix'] = opts.boshdomainprefix
     if opts.boshdomain:
@@ -1453,6 +1459,9 @@ if __name__ == '__main__':
         default_client_opts['google_account_password'] = opts.google_account_password
     if opts.timeout is not None:
         default_client_opts['usage_timeout'] = opts.timeout
+
+    if not 'brewery_prefix' in default_client_opts OR not default_client_opts['brewery_prefix']:
+        default_client_opts['brewery_prefix'] = default_client_opts['mucserver_prefix']
     #finally build up server configurations from all the above pieces
     #first walk through the default servers specified in config or command line
     for hostname in default_servers:
@@ -1500,8 +1509,8 @@ if __name__ == '__main__':
                 continue
 
         if not 'room' in client_opts[hostname]:
-            if 'roomname' in client_opts[hostname] and 'mucserver_prefix' in client_opts[hostname] and 'xmpp_domain' in client_opts[hostname]:
-                client_opts[hostname]['room'] = '%s@%s%s'%(client_opts[hostname]['roomname'],client_opts[hostname]['mucserver_prefix'],client_opts[hostname]['xmpp_domain'])
+            if 'roomname' in client_opts[hostname] and 'brewery_prefix' in client_opts[hostname] and 'xmpp_domain' in client_opts[hostname]:
+                client_opts[hostname]['room'] = '%s@%s%s'%(client_opts[hostname]['roomname'],client_opts[hostname]['brewery_prefix'],client_opts[hostname]['xmpp_domain'])
             else:
                 logging.warn('No ROOM specified in client option, removing from list: %s'%client_opts[hostname])
                 del client_opts[hostname]
