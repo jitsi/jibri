@@ -1195,9 +1195,10 @@ if __name__ == '__main__':
     optp.add_option("-p", "--password", dest="password", help="password to use")
     optp.add_option("-r", "--room", dest="room", help="MUC room to join")
     optp.add_option("", "--room-name", dest="roomname", help="MUC room name to join (combined with MUC server if room isn't provided)")
-    optp.add_option("", "--muc-server-prefix", dest="mucserverprefix", help="MUC server prefix to join (combined with xmpp domain and room name if room isn't provided)")
+    optp.add_option("", "--muc-server-prefix", dest="mucserverprefix", help="MUC server prefix to search fro subdomains (combined with xmpp domain and room name if room isn't provided)")
     optp.add_option("", "--jid-server-prefix", dest="jidserverprefix", help="JID server prefix to auth (combined with xmpp domain and username if room isn't provided)")
     optp.add_option("", "--bosh-domain-prefix", dest="boshdomainprefix", help="BOSH domain prefix to auth (combined with xmpp domain if boshdomain isn't provided)")
+    optp.add_option("", "--brewery-prefix", dest="breweryprefix", help="MUC server prefix to join (combined with xmpp domain and room name if room isn't provided)")
     optp.add_option("", "--bosh-domain", dest="boshdomain", help="BOSH domain to override default for site")
     optp.add_option("", "--jid-username", dest="jidusername", help="JID user to auth (combined with xmpp domain and username if room isn't provided)")
     optp.add_option("-x", "--xmpp-domain", dest="xmppdomain", help="XMPP domain, used to generate other parameters")
@@ -1460,7 +1461,7 @@ if __name__ == '__main__':
     if opts.timeout is not None:
         default_client_opts['usage_timeout'] = opts.timeout
 
-    if not 'brewery_prefix' in default_client_opts OR not default_client_opts['brewery_prefix']:
+    if not 'brewery_prefix' in default_client_opts or not default_client_opts['brewery_prefix']:
         default_client_opts['brewery_prefix'] = default_client_opts['mucserver_prefix']
     #finally build up server configurations from all the above pieces
     #first walk through the default servers specified in config or command line
