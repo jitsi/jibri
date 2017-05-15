@@ -267,6 +267,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             jicofo_retry = False
         elif error == 'startup_ffmpeg_streaming_error':
             error_text='Youtube request timeout'
+            jicofo_retry = False
         elif error == 'selenium_stuck':
             error_text='Streaming Error: Selenium stuck'
         elif error == 'selenium_died':
