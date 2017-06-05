@@ -6,7 +6,8 @@ TOKEN=$3
 YOUTUBE_STREAM_ID=$4
 
 
-export DISPLAY=:0
+[ -z "$DISPLAY" ] && DISPLAY=":0"
+export DISPLAY
 
 xdotool mousemove 1280 0
 

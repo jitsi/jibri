@@ -73,12 +73,16 @@ selenium_xmpp_login=None
 selenium_xmpp_password=None
 
 
-ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
-ffmpeg_output_file="/tmp/jibri-ffmpeg.out"
+pid_dir = os.environ.get('PID_DIR', '/var/run/jibri')
+output_dir = os.environ.get('OUTPUT_DIR', '/tmp')
+flask_port = int(os.environ.get('FLASK_PORT', '5000'))
 
-pjsua_pid_file = "/var/run/jibri/pjsua.pid"
-pjsua_output_file="/tmp/jibri-pjsua.log"
-pjsua_result_file="/tmp/jibri-pjsua.result"
+ffmpeg_pid_file = os.path.join(pid_dir, "ffmpeg.pid")
+ffmpeg_output_file = os.path.join(output_dir, "jibri-ffmpeg.out")
+
+pjsua_pid_file = os.path.join(pid_dir, "pjsua.pid")
+pjsua_output_file = os.path.join(output_dir, "jibri-pjsua.log")
+pjsua_result_file = os.path.join(output_dir, "jibri-pjsua.result")
 
 
 #initialize our collections
@@ -104,8 +108,7 @@ stop_selenium_script = os.getcwd() + "/../scripts/stop_selenium.sh"
 check_audio_script = os.getcwd() + "/../scripts/check_audio.sh"
 
 #our pidfile
-#@TODO: make this more dynamic
-pidfile = '/var/run/jibri/jibri-xmpp.pid'
+pidfile = os.path.join(pid_dir, "jibri-xmpp.pid")
 
 #utility function for writing pid on startup
 #includes a registration of the delete pid function on atexit for cleanup
@@ -218,7 +221,7 @@ def kill_ffmpeg_process():
 
 #this attempts to kill the pjsua process that jibri launched gracefully via os.kill
 def kill_pjsua_process():
-    pjsua_pid_file = "/var/run/jibri/pjsua.pid"
+    pjsua_pid_file = os.path.join(pid_dir, "pjsua.pid")
     try:
         with open(pjsua_pid_file) as f:
             pjsua_pid = int(f.read().strip())
@@ -275,7 +278,7 @@ def kill_theworld(loop=None):
         clients[c].disconnect(wait=True)
         clients[c].abort()
     #end the final asyncio loop
-    requests.post('http://localhost:5000/jibri/kill')
+    requests.post("http://localhost:{0}/jibri/kill".format(flask_port))
     loop.stop()
 
 #this function is meant to be run by the XMPP client thread upon receipt of a 'health' message on the queue
@@ -532,7 +535,7 @@ def launch_pjsua(sipaddress, displayname=''):
         retcode = start_pjsua(sipaddress, displayname)
         if retcode == 0:
             #make sure we wrote a pid, so that we can track this ffmpeg process
-            pjsua_pid_file = "/var/run/jibri/pjsua.pid"
+            pjsua_pid_file = os.path.join(pid_dir, "pjsua.pid")
             try:
                 with open(pjsua_pid_file) as f:
                     pjsua_pid = int(f.read().strip())
@@ -1575,7 +1578,7 @@ if __name__ == '__main__':
         loop.run_in_executor(None, start_sleekxmpp, hostname, loop, recording_lock, queues[hostname])
 
     #now start flask
-    loop.run_in_executor(None, functools.partial(app.run, host='0.0.0.0'))
+    loop.run_in_executor(None, functools.partial(app.run, host='0.0.0.0', port=flask_port))
     loop.run_in_executor(None, start_jibri_watcher, watcher_queue, loop, jibri_stop_callback, default_client_opts['usage_timeout'])
     loop.run_forever()
     loop.close()

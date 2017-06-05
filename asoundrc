@@ -1,5 +1,5 @@
 # playback PCM device: using loopback subdevice 0,0
-pcm.amix {
+pcm.amix_0 {
   type dmix
   ipc_key 219345
   slave.pcm "hw:Loopback,0,0"

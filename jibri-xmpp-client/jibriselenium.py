@@ -13,6 +13,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait # available since 2.4.0
 from selenium.webdriver.support import expected_conditions as EC # available since 2.26.0
 
+alsa_card = os.environ.get('ALSA_CARD', '0')
 
 class JibriSeleniumDriver():
     def __init__(self, 
@@ -56,11 +57,11 @@ class JibriSeleniumDriver():
       self.options.add_argument('--enable-logging')
       self.options.add_argument('--vmodule=*=3')
       self.options.add_argument("--disable-infobars")      
-      self.options.add_argument('--alsa-output-device=plug:amix')
+      self.options.add_argument("--alsa-output-device=plug:amix_{0}".format(alsa_card))
 
       #use microphone if provided
       if self.pjsua_flag:
-        self.options.add_argument('--alsa-input-device=plughw:1,1')
+        self.options.add_argument("--alsa-input-device={0}:1,1".format(alsa_card))
         self.xmpp_login=None
         self.xmpp_password=None
 

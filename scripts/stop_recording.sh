@@ -1,5 +1,5 @@
 #!/bin/bash
-PID_DIR=/var/run/jibri/
+[ -z "$PID_DIR" ] && PID_DIR="/var/run/jibri"
 ./stop-ffmpeg.sh
 ./stop-pjsua.sh
 ./stop_selenium.sh

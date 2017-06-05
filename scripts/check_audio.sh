@@ -2,9 +2,11 @@
 #fail if anything goes wrong in the meantime
 set -e
 
+[ -z "$OUTPUT_DIR" ] && OUTPUT_DIR="/tmp"
+
 INPUT_DEVICE='hw:0,1'
-OUTPUT_FILE='/tmp/jibri-audio_check.wav'
-LOGFILE='/tmp/jibri-audio_check.log'
+OUTPUT_FILE="$OUTPUT_DIR/jibri-audio_check.wav"
+LOGFILE="/$OUTPUT_DIR/jibri-audio_check.log"
 RECORD_TIME=1
 
 RECORD_BIN='/usr/bin/arecord'

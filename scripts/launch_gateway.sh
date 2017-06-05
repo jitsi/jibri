@@ -2,7 +2,7 @@
 
 # SCRIPT TO LAUNCH PJSUA FROM PARAMETERS
 #Directory for storing pids (should be writeable by jibri user)
-PID_DIR=/var/run/jibri/
+[ -z "$PID_DIR" ] && PID_DIR="/var/run/jibri"
 
 
 SIP_ADDRESS=$1

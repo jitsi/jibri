@@ -230,6 +230,28 @@ Once recording is enabled in config.js, the recording button will become availab
    - check your youtube livestreaming dashboard for the status (https://youtube.com/live_dashboard)
    - `./stop_recording.sh` to kill the stream
 
+# Running more than one Jibri per host
+
+* To have multiple instances of ALSA Loopback, add the following lines to the `/etc/modprobe.d/alsa-base.conf` (this adds 5 loopback devices):
+
+  ```
+  alias snd-card-0 snd-aloop
+  options snd-aloop enable=1,1,1,1,1 index=0,1,2,3,4
+  ```
+
+  For each card, add a mixer into the `.asoundrc`. This is a sample block for a card with index 3:
+
+  ```
+  pcm.amix_3 {
+    type dmix
+    ipc_key 219345
+    slave.pcm "hw:3,0,0"
+  }
+  ```
+
+* Run as many Xorg instances as required, each with a different DISPLAY id.
+
+* To run Jibri, use `cd scripts; DISPLAY=:0 ALSA_CARD=0 FLASK_PORT=5000 OUTPUT_DIR=/tmp/jibri_0 PID_DIR=/var/run/jibri_0 python3 ../jibri-xmpp-client/app.py`.
 
 # Troubleshooting
 

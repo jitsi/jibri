@@ -1,7 +1,8 @@
 #!/bin/bash
 OUTPUT_PATH=$1
 
-[ -z "$OUTPUT_PATH" ] && OUTPUT_PATH="/tmp/jibri-ffmpeg.out"
+[ -z "$OUTPUT_DIR" ] && OUTPUT_DIR="/tmp"
+[ -z "$OUTPUT_PATH" ] && OUTPUT_PATH="$OUTPUT_DIR/jibri-ffmpeg.out"
 
 if [ ! -e "$OUTPUT_PATH" ]; then
     echo "No file found $OUTPUT_PATH"

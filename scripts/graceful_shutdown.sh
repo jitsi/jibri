@@ -18,9 +18,12 @@
 #   NOTE: script depends on the tool jq, used to parse json
 #
 
+[ -z "$PID_DIR" ] && PID_DIR="/var/run/jibri"
+[ -z "$FLASK_PORT" ] && FLASK_PORT="5000"
+
 # Initialize arguments
-hostUrl="http://localhost:5000"
-pidFile="/var/run/jibri/jibri-xmpp.pid"
+hostUrl="http://localhost:$FLASK_PORT"
+pidFile="$PID_DIR/jibri-xmpp.pid"
 timeout=25
 verbose=1
 restart=0

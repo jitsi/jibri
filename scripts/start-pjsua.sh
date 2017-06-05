@@ -11,9 +11,10 @@ CONFIG_FILE=/home/jibri/pjsua.config
 CAPTURE_DEV=23
 PLAYBACK_DEV=24
 
-PID_DIR=/var/run/jibri/
-LOG_FILE=/tmp/jibri-pjsua.log
-EXIT_FILE=/tmp/jibri-pjsua.result
+[ -z "$PID_DIR" ] && PID_DIR="/var/run/jibri"
+[ -z "$OUTPUT_DIR" ] && OUTPUT_DIR="/tmp"
+LOG_FILE="$OUTPUT_DIR/jibri-pjsua.log"
+EXIT_FILE="$OUTPUT_DIR/jibri-pjsua.result"
 
 #clear out the exit code if there's a leftover file
 [ -e "$EXIT_FILE" ] && rm $EXIT_FILE
