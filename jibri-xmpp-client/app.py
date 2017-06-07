@@ -15,6 +15,7 @@ import functools
 import atexit
 import requests
 import json
+import psutil
 
 from optparse import OptionParser
 from subprocess import call
@@ -104,7 +105,6 @@ launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
 launch_gateway_script = os.getcwd() + "/../scripts/launch_gateway.sh"
 check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
 stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
-stop_selenium_script = os.getcwd() + "/../scripts/stop_selenium.sh"
 check_audio_script = os.getcwd() + "/../scripts/check_audio.sh"
 
 #our pidfile
@@ -207,7 +207,12 @@ def stop_recording():
 
 #this calls a bash scripts which kills only chrome/chromedriver
 def stop_selenium():
-     call([stop_selenium_script])
+    try:
+      for pid in filter(lambda x: "chrome" in x, psutil.Process().children(recursive=True)):
+        os.kill(pid)
+    except:
+      return False
+    return True
 
 #this attempts to kill the ffmpeg process that jibri launched gracefully via os.kill
 def kill_ffmpeg_process():
