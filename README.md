@@ -193,7 +193,7 @@ The first account is the jibri username and password.  The second account is the
 
    enableRecording: true,
 
-   hiddenDomain: ‘recorder.yourdomain.com',
+   hiddenDomain: 'recorder.yourdomain.com',
 ```
 Once recording is enabled in config.js, the recording button will become available in the user interface.  However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed.  Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
