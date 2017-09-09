@@ -619,7 +619,7 @@ def launch_pjsua(sipaddress, displayname=''):
         return 'pjsua_startup_streaming_exception'
 
 def launch_ffmpeg(url,recording_path='',token='',stream_id='', backup=''):
-    recording_file = recording_path + datetime.now().strftime('/%Y%m%d%H%M%S.flv')
+    recording_file = recording_path + datetime.now().strftime('/%Y%m%d%H%M%S.mp4')
     #we will allow the following number of attempts:
     try:
         #first try to start ffmpeg
