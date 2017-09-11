@@ -337,9 +337,6 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
     if not recording_mode:
         recording_mode = 'file'
 
-    #DEBUG: REMOVE, forces file recording
-#    recording_mode='file'
-
     #clear stream id if file mode is set
     if recording_mode == 'file':
         stream_id = ''

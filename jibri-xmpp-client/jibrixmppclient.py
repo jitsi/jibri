@@ -81,9 +81,9 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
                 reply['error']['code']='503'
                 start = False
             else:
-                if not iq['jibri']._getAttr('streamid') and not iq['jibri']._getAttr('sipaddress'):
+                if not iq['jibri']._getAttr('streamid') and not iq['jibri']._getAttr('sipaddress') and not iq['jibri']._getAttr('recording_mode'):
                     logging.info("No stream provided")
-                    reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No streamid or sipaddress specified.', ito=iq['from'], iq=reply)
+                    reply = self.make_iq_error(iq['id'], condition='service-unavailable', text='No streamid or sipaddress specified and no recording mode set.', ito=iq['from'], iq=reply)
                     reply['error']['code']='501'
                     self.recording_lock.release()
                     start = False
