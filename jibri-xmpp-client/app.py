@@ -55,6 +55,8 @@ global default_email
 #flag to control whether we launch with ffmpeg or pjsua
 global pjsua_flag
 
+global recording_directory
+
 #return code storage for sip signaling
 #TBD: do this a better way
 global pjsua_failure_code
@@ -71,7 +73,7 @@ google_account=None
 google_account_password=None
 selenium_xmpp_login=None
 selenium_xmpp_password=None
-
+recording_directory='./recordings'
 
 ffmpeg_pid_file = "/var/run/jibri/ffmpeg.pid"
 ffmpeg_output_file="/tmp/jibri-ffmpeg.out"
@@ -100,6 +102,7 @@ launch_recording_script = os.getcwd() + "/../scripts/launch_recording.sh"
 launch_gateway_script = os.getcwd() + "/../scripts/launch_gateway.sh"
 check_ffmpeg_script = os.getcwd() + "/../scripts/check_ffmpeg.sh"
 stop_recording_script = os.getcwd() + "/../scripts/stop_recording.sh"
+finalize_recording_script = os.getcwd() + "/../scripts/finalize_recording.sh"
 stop_selenium_script = os.getcwd() + "/../scripts/stop_selenium.sh"
 check_audio_script = os.getcwd() + "/../scripts/check_audio.sh"
 
@@ -188,6 +191,16 @@ def reset_recording():
     #final catchall, run the killall shell scripts to FORCE stop anything that didn't die gracefully above
     stop_recording()
 
+#this calls a bash scripts which finalizes any recording transfers
+def finalize_recording():
+    global pjsua_flag
+    global recording_directory
+    #run any final processing tasks before finishing up, if not in pjsua mode
+    if not pjsua_flag:
+        call([finalize_recording_script,recording_directory])
+
+def release_recording():
+    global recording_lock
     #let the XMPP clients know we're stopped now
     update_jibri_status('stopped')
 
@@ -291,7 +304,7 @@ def jibri_health_callback(client):
         logging.debug('Exception releasing health lock: %s'%e)
 
 #main callback to start jibri: meant to be run in the main thread, kicked off using a loop.call_soon_threadsafe() from within another thread (XMPP or REST thread)
-def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=None, room=None, token='token', backup=''):
+def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipaddress=None, displayname=None, room=None, token='token', backup='', recording_name=''):
     global js
     global loop
     global opts
@@ -306,6 +319,7 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
     global default_display_name
     global default_email
     global pjsua_flag
+    global recording_directory
 
     #by default assume there's no subdomain for URL
     subdomain=''
@@ -314,6 +328,18 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
     url=url.strip()
     stream_id=stream_id.strip()
     sipaddress=sipaddress.strip()
+
+    #assume we're streaming if a stream_id is provided
+    if stream_id:
+        recording_mode='stream'
+
+    #default to file-based recording if none is specified
+    if not recording_mode:
+        recording_mode = 'file'
+
+    #clear stream id if file mode is set
+    if recording_mode == 'file':
+        stream_id = ''
 
     #set a room_name default
     room_name=room
@@ -391,6 +417,10 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
             mucserver_prefix = co['mucserver_prefix']
             logging.info("Setting mucserver_prefix from client options %s"%mucserver_prefix)
 
+        if 'recording_directory' in co:
+            recording_directory = co['recording_directory']
+            logging.info("Setting recording_directory from client options %s"%recording_directory)
+
 
     #when we're using pjsua, override the default display name to be the sip address or passed in display name
     if pjsua_flag:
@@ -423,6 +453,18 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
 
         url = url.replace('%SUBDOMAIN%',subdomain)
         url = url.replace('%ROOM%',room_name)
+
+    if not recording_name:
+        recording_name = url[len('https://'):]
+
+    recording_path = recording_directory + '/'+recording_name
+    try:
+        os.makedirs(recording_path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(recording_path):
+            pass
+        else:
+            raise
 
     logging.info("Start recording callback")
     #mark everyone else as busy
@@ -476,11 +518,11 @@ def jibri_start_callback(client, url, stream_id, sipaddress=None, displayname=No
     else:
         #we got a selenium, so start ffmpeg or pjsua
         if pjsua_flag:
-            watcher_value="%s|%s"%(sipaddress,room_name)
+            watcher_value="%s-|-%s"%(sipaddress,room_name)
             launch_err = launch_pjsua(sipaddress, room_name)
         else:
-            watcher_value="%s|%s"%(stream_id,backup)
-            launch_err = launch_ffmpeg(stream_id, backup)
+            watcher_value="%s-|-%s-|-%s-|-%s-|-%s-|-%s"%(recording_mode,url,recording_path,token,stream_id,backup)
+            launch_err = launch_ffmpeg(url=url,recording_path=recording_path,token=token,stream_id=stream_id, backup=backup)
 
 
         if launch_err == True:
@@ -573,7 +615,8 @@ def launch_pjsua(sipaddress, displayname=''):
         logging.warn("Exception occured launching pjsua: %s"%e)
         return 'pjsua_startup_streaming_exception'
 
-def launch_ffmpeg(stream_id, backup=''):
+def launch_ffmpeg(url,recording_path='',token='',stream_id='', backup=''):
+    recording_file = recording_path + datetime.now().strftime('/%Y%m%d%H%M%S.mp4')
     #we will allow the following number of attempts:
     try:
         #first try to start ffmpeg
@@ -582,7 +625,7 @@ def launch_ffmpeg(stream_id, backup=''):
         while attempt_count<attempt_max:
             attempt_count=attempt_count+1
             logging.info("Starting ffmpeg attempt %d/%d"%(attempt_count,attempt_max))
-            retcode = start_ffmpeg(stream_id, backup)
+            retcode = start_ffmpeg(url,recording_file,token,stream_id, backup)
             if retcode == 0:
                 #make sure we wrote a pid, so that we can track this ffmpeg process
                 try:
@@ -724,9 +767,9 @@ def start_pjsua(sipaddress, displayname=''):
              shell=False)
 
 
-def start_ffmpeg(stream_id, backup=''):
+def start_ffmpeg(url='ignore', recording_path='ignore', token='ignore', stream_id='ignore', backup=''):
     logging.info("starting jibri ffmpeg with youtube-stream-id=%s" % stream_id)
-    return call([launch_recording_script, 'ignore', 'ignore', 'ignore', stream_id, backup],
+    return call([launch_recording_script, url, recording_path, token, stream_id, backup],
              shell=False)
 
 def jibri_stop_callback(status=None):
@@ -743,6 +786,8 @@ def jibri_stop_callback(status=None):
     current_environment = ''
     active_client = None
     reset_recording()
+    finalize_recording()
+    release_recording()
     #report ourselves idle
     update_jibri_status('idle')
 
@@ -869,15 +914,24 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
 
 def retry_ffmpeg(retry_value):
     result = False
-    retry_values = retry_value.split('|')
+    retry_values = retry_value.split('-|-')
+    url=''
+    recording_path=''
+    token=''
+    stream_id=''
+    backup=''
     if len(retry_values)>1:
-        stream_id=retry_values[0]
-        backup=retry_values[1]
+        recording_mode=retry_values[0]
+        url=retry_values[1]
+        recording_path=retry_values[2]
+        token=retry_values[3]
+        stream_id=retry_values[4]
+        backup=retry_values[5]
     else:
         stream_id=retry_values[0]
         backup=''
 
-    launch_err = launch_ffmpeg(stream_id,backup)
+    launch_err = launch_ffmpeg(url,recording_path,token,stream_id,backup)
     if launch_err == True:
         #a restart of ffmpeg was successful, so lets do our running check and move on
         result = check_ffmpeg_running(False)
@@ -1069,6 +1123,8 @@ def kill():
 def url_stop_recording():
     global recording_lock
     reset_recording()
+    finalize_recording()
+    release_recording()
 
     success = True
     result = {'success': success}
@@ -1232,7 +1288,18 @@ if __name__ == '__main__':
                         format='%(asctime)s %(levelname)-8s %(message)s')
 
     #now parse and handle configuration params from the file, and build client config
-    default_client_opts = {'jid_username':'jibri', 'jidserver_prefix':'', 'mucserver_prefix':'conference.', 'boshdomain_prefix':'', 'selenium_xmpp_prefix':'', 'boshdomain':'', 'roompass':'','nick':'jibri', 'usage_timeout': 0}
+    default_client_opts = {
+        'jid_username':'jibri',
+        'jidserver_prefix':'',
+        'mucserver_prefix':'conference.',
+        'boshdomain_prefix':'',
+        'selenium_xmpp_prefix':'',
+        'boshdomain':'',
+        'roompass':'',
+        'nick':'jibri',
+        'usage_timeout': 0,
+        'recording_directory':'./recordings'
+    }
     default_servers = []
     client_opts = {}
     config_environments = {}

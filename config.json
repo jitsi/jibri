@@ -3,6 +3,7 @@
     "mucserver_prefix":"conference.",
     "boshdomain_prefix":"recorder.",
     "password":"jibri",
+    "recording_directory":"./recordings",
     "jid_username":"jibri",
     "roomname":"TheBrewery",
     "xmpp_domain":"xmpp.domain.name",

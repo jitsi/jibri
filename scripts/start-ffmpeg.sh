@@ -4,6 +4,12 @@ PID_DIR=/var/run/jibri/
 
 STREAM=$1
 
+if [[ $STREAM == rtmp://* ]]; then
+  FORMAT='flv'
+else
+  FORMAT='mp4'
+fi
+
 : ${RESOLUTION:=1280x720}
 : ${FRAMERATE:=30}
 : ${PRESET:=veryfast}
@@ -20,9 +26,17 @@ STREAM=$1
 
 DISPLAY=:0
 
+if [[ $STREAM == rtmp://* ]]; then
+  FORMAT='flv'
+  STREAM_OPTIONS="-maxrate ${MAX_BITRATE}k -bufsize ${BUFSIZE}k"
+else
+  STREAM_OPTIONS="-profile:v main -level 3.1"
+  FORMAT='mp4'
+fi
+
 #Record the output of display :0 plus the ALSA loopback device hw:0,1,0
 ffmpeg -y -v info -f x11grab -draw_mouse 0 -r $FRAMERATE -s $RESOLUTION -thread_queue_size $QUEUE_SIZE -i ${DISPLAY}.0+0,0 \
-    -f alsa -thread_queue_size $QUEUE_SIZE -i $INPUT_DEVICE  -acodec libmp3lame -ar 44100 \
-    -c:v libx264 -preset $PRESET -maxrate ${MAX_BITRATE}k -bufsize ${BUFSIZE}k -pix_fmt yuv420p -r $FRAMERATE -crf $CRF -g $G  -tune zerolatency \
-    -f flv $STREAM > /tmp/jibri-ffmpeg.out 2>&1 &
+    -f alsa -thread_queue_size $QUEUE_SIZE -i $INPUT_DEVICE  -acodec aac -strict -2 -ar 44100 \
+    -c:v libx264 -preset $PRESET $STREAM_OPTIONS -pix_fmt yuv420p -r $FRAMERATE -crf $CRF -g $G  -tune zerolatency \
+    -f $FORMAT $STREAM > /tmp/jibri-ffmpeg.out 2>&1 &
 echo $! > $PID_DIR/ffmpeg.pid
