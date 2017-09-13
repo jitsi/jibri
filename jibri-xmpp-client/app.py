@@ -31,7 +31,7 @@ default_timeout = None
 default_rest_token='abc123'
 
 #nggyu, video used to check for audio levels from loopback
-default_audio_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+default_audio_url = 'https://cdn-recordings.jitsi.net/test/piano2.wav'
 
 
 #collection of queues for use with each client
