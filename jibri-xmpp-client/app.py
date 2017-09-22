@@ -51,6 +51,7 @@ global selenium_xmpp_login
 global selenium_xmpp_password
 global active_client
 global default_display_name
+global display_names_by_mode
 global default_email
 #flag to control whether we launch with ffmpeg or pjsua
 global pjsua_flag
@@ -67,7 +68,9 @@ pjsua_flag=False
 
 active_client=None
 current_environment=''
-default_display_name='Live Stream'
+display_names_by_mode={}
+display_names_by_mode['stream']='Live Stream'
+display_names_by_mode['file']='Recorder'
 default_email='recorder@jitsi.org'
 google_account=None
 google_account_password=None
@@ -329,18 +332,20 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
     stream_id=stream_id.strip()
     sipaddress=sipaddress.strip()
 
-    #assume we're streaming if a stream_id is provided
-    if stream_id:
-        recording_mode='stream'
 
     #default to file-based recording if none is specified
     if not recording_mode:
-        recording_mode = 'file'
+        #assume we're streaming if a stream_id is provided
+        if stream_id:
+            recording_mode = 'stream'
+        else:
+            recording_mode = 'file'
 
     #clear stream id if file mode is set
     if recording_mode == 'file':
         stream_id = ''
 
+    default_display_name = display_names_by_mode[recording_mode]
     #set a room_name default
     room_name=room
 

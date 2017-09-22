@@ -46,6 +46,8 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         self.controllerJid = ''
         self.asyncio_init_flag = False
 
+        self.reconnect_max_attempts = 30
+
         self.add_event_handler("session_start", self.start)
         self.add_event_handler("muc::%s::got_online"%self.room,
                                self.muc_online)
