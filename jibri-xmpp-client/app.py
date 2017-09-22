@@ -465,8 +465,8 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
     recording_path = recording_directory + '/'+recording_name
     try:
         os.makedirs(recording_path)
-    except OSError as exc:  # Python >2.5
-        if exc.errno == errno.EEXIST and os.path.isdir(recording_path):
+    except FileExistsError as exc:
+        if os.path.isdir(recording_path):
             pass
         else:
             raise
@@ -708,10 +708,10 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
     else:
         #only set the iAmRecorder flag if the pjsua functionality is not enabled
         url = "%s#config.iAmRecorder=true&config.externalConnectUrl=null"%(url)
+        if boshdomain:
+            logging.info('overriding config.hosts.domain with boshdomain: %s'%boshdomain)
+            url = "%s&config.hosts.domain=\"%s\""%(url,boshdomain)
 
-    if boshdomain:
-        logging.info('overriding config.hosts.domain with boshdomain: %s'%boshdomain)
-        url = "%s&config.hosts.domain=\"%s\""%(url,boshdomain)
 
     logging.info(
         "starting jibri selenium, url=%s, google_account=%s, xmpp_login=%s" % (
