@@ -50,6 +50,7 @@ global current_environment
 global selenium_xmpp_login
 global selenium_xmpp_password
 global active_client
+global active_call
 global default_display_name
 global display_names_by_mode
 global default_email
@@ -313,6 +314,7 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
     global opts
     global client_opts
     global active_client
+    global active_call
     global google_account_password
     global google_account
     global current_environment
@@ -476,48 +478,28 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
     update_jibri_status('busy',client)
 
     logging.info("Starting jibri")
-    #wait 30 seconds for start of selenium, otherwise kill it
-    selenium_timeout=30
+
+    #build the active call object for re-use when restarting jibri
+    active_call = {}
+    active_call['url'] = url
+    active_call['token'] = token
+    active_call['binary_location'] = c_chrome_binary_path
+    active_call['google_account'] = c_google_account
+    active_call['google_account_password'] = c_google_account_password
+    active_call['xmpp_login'] = c_xmpp_login
+    active_call['xmpp_password'] = c_xmpp_password
+    active_call['boshdomain'] = boshdomain
+    active_call['displayname'] = c_display_name
+    active_call['email'] = c_email
+    active_call['pjsua_flag'] = pjsua_flag
 
     #begin attempting to launch selenium
-    attempt_count=0
     attempt_max=3
-    while attempt_count<attempt_max:
-        retcode=9999
-        attempt_count=attempt_count+1
-        logging.info("Starting selenium attempt %d/%d pjsua_flag:%s"%(attempt_count,attempt_max,pjsua_flag))
-        try:
-            #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
-            t = threading.Timer(selenium_timeout, stop_selenium)
-            t.start()
-            retcode = start_jibri_selenium(url, token, chrome_binary_path=c_chrome_binary_path, google_account=c_google_account, google_account_password=c_google_account_password, xmpp_login=c_xmpp_login, xmpp_password=c_xmpp_password, boshdomain=boshdomain, displayname=c_display_name, email=c_email, pjsua_flag=pjsua_flag)
-            try:
-                t.cancel()
-            except Exception as e:
-                logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
-
-            if retcode == 0:
-                #ok so we launched the URL, now wait for XMPP connection to be established, download bitrate to be seen
-                retcode = connect_confirm_bitrate_jibri_selenium()
-
-        except Exception as e:
-            #oops it all went awry, so try again?
-            #quit chrome (should already be handled by above)
-            logging.error("Jibri Startup exception during attempt %d/%d: %s"%(attempt_count,attempt_max,e))
-            #make sure our retcode isn't 0, since we hit an exception here
-            retcode=9999
-
-        if retcode > 0:
-            # We failed to start, bail.
-            logging.info("start_jibri_selenium returned retcode=%s during attempt %d/%d"%(str(retcode),attempt_count,attempt_max))
-        else:
-            #success, so don't try again, and just move on
-            logging.info("Selenium started successfully on attempt %d/%d"%(attempt_count,attempt_max))
-            break
+    retcode=start_jibri_selenium_with_retry(active_call,attempt_max=attempt_max)
 
     if retcode > 0:
         #final failure handling
-        logging.info("start_jibri_selenium returned retcode=" + str(retcode))
+        logging.info("start_jibri_selenium_with_retry returned retcode=" + str(retcode))
         jibri_stop_callback('startup_selenium_error')
 
     else:
@@ -547,6 +529,45 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
     logging.info("jibri_start_callback completed...")
 
 
+
+def start_jibri_selenium_with_retry(active_call,attempt_max=3):
+    #wait 30 seconds for start of selenium, otherwise kill it
+    selenium_timeout=30
+
+    attempt_count=0
+    while attempt_count<attempt_max:
+        retcode=9999
+        attempt_count=attempt_count+1
+        logging.info("Starting selenium attempt %d/%d pjsua_flag:%s"%(attempt_count,attempt_max,active_call['pjsua_flag']))
+        try:
+            #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
+            t = threading.Timer(selenium_timeout, stop_selenium)
+            t.start()
+            retcode = start_jibri_selenium(**active_call)
+            try:
+                t.cancel()
+            except Exception as e:
+                logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
+
+            if retcode == 0:
+                #ok so we launched the URL, now wait for XMPP connection to be established, download bitrate to be seen
+                retcode = connect_confirm_bitrate_jibri_selenium()
+
+        except Exception as e:
+            #oops it all went awry, so try again?
+            #quit chrome (should already be handled by above)
+            logging.error("Jibri Startup exception during attempt %d/%d: %s"%(attempt_count,attempt_max,e))
+            #make sure our retcode isn't 0, since we hit an exception here
+            retcode=9999
+
+        if retcode > 0:
+            # We failed to start, bail.
+            logging.info("start_jibri_selenium returned retcode=%s during attempt %d/%d"%(str(retcode),attempt_count,attempt_max))
+        else:
+            #success, so don't try again, and just move on
+            logging.info("Selenium started successfully on attempt %d/%d"%(attempt_count,attempt_max))
+            break
+    return retcode
 
 def wait_until_pjsua_running(attempts=3,interval=1):
     success = False
@@ -696,12 +717,7 @@ def queue_watcher_start(msg):
     global watcher_queue
     watcher_queue.put(msg)
 
-def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None, displayname=None, email=None, pjsua_flag=False):
-    retcode=0
-    global js
-
-    token='abc'
-
+def append_url_params(url,pjsua_flag,boshdomain):
     if pjsua_flag:
         #pjsua is enabled, so set the gateway flag
         url = "%s#config.iAmSipGateway=true&config.ignoreStartMuted=true"%(url)
@@ -712,14 +728,28 @@ def start_jibri_selenium(url,token='token',chrome_binary_path=None,google_accoun
             logging.info('overriding config.hosts.domain with boshdomain: %s'%boshdomain)
             url = "%s&config.hosts.domain=\"%s\""%(url,boshdomain)
 
+    return url
+
+def start_jibri_selenium(url,token='token',binary_location=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None, displayname=None, email=None, pjsua_flag=False, skip_check_audio_stream=False):
+    retcode=0
+    global js
+
+    token='abc'
+    url = append_url_params(url, pjsua_flag,boshdomain)
+
 
     logging.info(
         "starting jibri selenium, url=%s, google_account=%s, xmpp_login=%s" % (
             url, google_account, xmpp_login))
 
-    js = JibriSeleniumDriver(url,token,binary_location=chrome_binary_path, google_account=google_account, google_account_password=google_account_password, displayname=displayname, email=email, xmpp_login=xmpp_login, xmpp_password=xmpp_password, pjsua_flag=pjsua_flag)
+    js = JibriSeleniumDriver(url,token,binary_location=binary_location, google_account=google_account, google_account_password=google_account_password, displayname=displayname, email=email, xmpp_login=xmpp_login, xmpp_password=xmpp_password, pjsua_flag=pjsua_flag)
 
-    if not check_selenium_audio_stream(js):
+    if skip_check_audio_stream:
+        selenium_audio_status=True
+    else:
+        selenium_audio_status=check_selenium_audio_stream(js)
+
+    if not selenium_audio_status:
         logging.warn("jibri detected audio issues during startup, bailing out.")
         retcode=3
     else:
@@ -776,6 +806,37 @@ def start_ffmpeg(url='ignore', recording_path='ignore', token='ignore', stream_i
     logging.info("starting jibri ffmpeg with youtube-stream-id=%s" % stream_id)
     return call([launch_recording_script, url, recording_path, token, stream_id, backup],
              shell=False)
+
+def jibri_selenium_restart():
+    global current_environment
+    global active_call
+    global js
+    retcode=0
+    logging.info("jibri_selenium_restart run")
+
+    logging.warn("killing selenium driver")
+    kill_selenium_driver()
+
+    logging.info("restarting selenium")
+
+    #don't run the audio checks during a restart
+    active_call['skip_check_audio_stream']=True
+    retcode = start_jibri_selenium_with_retry(active_call)
+
+    if not js:
+        logging.warn("jibri detected selenium driver went away, bailing out.")
+        retcode=9999
+
+    if retcode == 0:
+        retcode=connect_confirm_bitrate_jibri_selenium()
+
+
+    if retcode == 0:
+        logging.info("Successfully restarted selenium, continuing")
+        return True
+    else:
+        logging.warn("jibri failed to restart")
+        return False
 
 def jibri_stop_callback(status=None):
     global current_environment
@@ -896,10 +957,13 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
                     time.sleep(1)
                     selenium_result = check_selenium_running()
 
+                    if not selenium_result:
+                        selenium_result = jibri_selenium_restart()
+
             if result and selenium_result:
                 logging.debug("ffmpeg/pjsua and selenium still running, sleeping...")
                 time.sleep(5)
-            else:                
+            else:
                 logging.info("ffmpeg/pjsua or selenium no longer running, triggering callback")
                 if not result:
                     if pjsua_flag:
@@ -955,13 +1019,18 @@ def check_selenium_running():
         return False
     else:
         #first start a thread to ensure we stop everything if needed
-        t = threading.Timer(selenium_timeout, jibri_stop_callback, kwargs=dict(status='selenium_stuck'))
+        t = threading.Timer(selenium_timeout, stop_selenium, kwargs=dict(status='selenium_stuck'))
         t.start()
-        running= js.checkRunning()
+        try:
+            running= js.checkRunning()
+        except Exception as e:
+            logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
+
         try:
             t.cancel()
         except Exception as e:
             logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
+
         return running
 
 
