@@ -828,10 +828,6 @@ def jibri_selenium_restart():
         retcode=9999
 
     if retcode == 0:
-        retcode=connect_confirm_bitrate_jibri_selenium()
-
-
-    if retcode == 0:
         logging.info("Successfully restarted selenium, continuing")
         return True
     else:
@@ -944,22 +940,39 @@ def jibri_watcher(queue, loop, finished_callback, timeout=0):
                     else:
                         logging.error("ffmpeg retry process failed")
 
+            selenium_retries=2
+            selenium_retry=0
 
             selenium_result = check_selenium_running()
 
             if not selenium_result:
                 logging.info("Received a failure checking if selenium is running, checking again in 1 second...")
-                time.sleep(1)
-                #try at least 2 more times
-                selenium_result = check_selenium_running()
-                if not selenium_result:
-                    logging.info("Received a second failure checking if selenium is running, checking again in 1 second...")
+                while selenium_retry<selenium_retries:
+                    selenium_retry=selenium_retry+1
                     time.sleep(1)
+                    #try again
                     selenium_result = check_selenium_running()
+                    if selenium_result:
+                        #success, so stop looping
+                        selenium_retry=0;
+                        break; #break out of selenium_retry while loop
+                    else:
+                        if selenium_result == None:
+                            #received no data
+                            logging.info("Received no incoming bandwidth checking while selenium is running, checking again in 1 second to a max of %s..."%selenium_retries)
+                        else:
+                            logging.info("Received another failure checking if selenium is running, checking again in 1 second to a max of %s..."%selenium_retries)
+            #done looping on selenium checks, now handle the final failure if there is one
+            if not selenium_result:
+                #only try to restart if selenium result is False (error occurred)
+                if selenium_result == False:
+                    #restart success is our last chance before failing entirely
+                    selenium_result = jibri_selenium_restart()
+                else:
+                    logging.info("Selenium check received no incoming video bandwidth, hanging up");
 
-                    if not selenium_result:
-                        selenium_result = jibri_selenium_restart()
 
+            #final AND'd check of selenium and ffmpeg/pjsua for this loop of the watcher
             if result and selenium_result:
                 logging.debug("ffmpeg/pjsua and selenium still running, sleeping...")
                 time.sleep(5)
@@ -1015,6 +1028,7 @@ def retry_ffmpeg(retry_value):
 def check_selenium_running():
     global js
     selenium_timeout=10
+    running=False
     if not js:
         return False
     else:
@@ -1022,10 +1036,10 @@ def check_selenium_running():
         t = threading.Timer(selenium_timeout, stop_selenium, kwargs=dict(status='selenium_stuck'))
         t.start()
         try:
-            running= js.checkRunning()
+            running = js.checkRunning()
         except Exception as e:
-            logging.info("Failed to cancel stop callback thread timer inside check_selenum_running: %s"%e)
-
+            logging.info("Failed to check running selenium: %s"%e)
+            running = False
         try:
             t.cancel()
         except Exception as e:
