@@ -242,10 +242,10 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
 
     def report_jibri_error(self, error):
         iq = self.Iq()
-        iq['jibri']._setAttr('status', 'failed')
         iq['to'] = self.controllerJid
         iq._setAttr('type','set')
 
+        jibri_status = 'failed'
         jicofo_retry = True
 
         if error == 'selenium_start_stuck':
@@ -272,9 +272,11 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         elif error == 'selenium_hangup':
             error_text='Conference Ended, no data received within timelimit'
             jicofo_retry = False
+            jibri_status = 'off'
         elif error == 'timelimit':
             error_text='Streaming Time Limited Reached'
             jicofo_retry = False
+            jibri_status = 'off'
         elif error == 'pjsua_died':
             error_text='Gateway Error: pjsua died'
             jicofo_retry = False
@@ -284,6 +286,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         elif error == 'pjsua_hangup':
             error_text='Gateway Error: pjsua returned hangup'
             jicofo_retry = False
+            jibri_status = 'off'
         elif error == 'pjsua_startup_error':
             error_text='Gateway Startup Error: pjsua startup failed'
             jicofo_retry = False
@@ -293,6 +296,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         else:
             error_text='Unknown error'
 
+        iq['jibri']._setAttr('status', jibri_status)
         iq_error = self.make_iq_error(iq['id'], type='wait', condition='remote-server-timeout', text=error_text, ito=self.controllerJid)
         iq_error['error']['code']='504'
 
