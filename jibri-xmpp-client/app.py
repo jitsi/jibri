@@ -551,7 +551,15 @@ def start_jibri_selenium_with_retry(active_call,attempt_max=3):
 
             if retcode == 0:
                 #ok so we launched the URL, now wait for XMPP connection to be established, download bitrate to be seen
+                #don't want to get stuck in here, so add a timer thread and run a process to kill chrome/chromedriver in another thread if we fail to start after N seconds
+                t = threading.Timer(selenium_timeout, stop_selenium)
+                t.start()
                 retcode = connect_confirm_bitrate_jibri_selenium()
+                try:
+                    t.cancel()
+                except Exception as e:
+                    logging.info("Failed to cancel stop callback thread timer inside connect_confirm_bitrate_jibri_selenium: %s"%e)
+
 
         except Exception as e:
             #oops it all went awry, so try again?

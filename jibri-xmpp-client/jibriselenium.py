@@ -200,7 +200,7 @@ class JibriSeleniumDriver():
     
     def getDownloadBitrate(self):
       try:
-        stats = self.execute_async_script("return APP.conference.getStats();")
+        stats = self.execute_async_script("return APP.conference._room.room ? APP.conference.getStats() : undefined;")
         if stats == None:
           return 0
         return stats['bitrate']['download']
