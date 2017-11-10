@@ -18,7 +18,7 @@ class JibriSeleniumDriver():
     def __init__(self, 
             url, 
             authtoken=None, 
-            xmpp_connect_timeout=60, 
+            xmpp_connect_timeout=10, 
             binary_location=None, 
             google_account=None,
             google_account_password=None, 
@@ -207,7 +207,7 @@ class JibriSeleniumDriver():
       except:
         return 0
 
-    def waitDownloadBitrate(self,timeout=None, interval=5):
+    def waitDownloadBitrate(self,timeout=None, interval=2):
       logging.info('starting to wait for DownloadBitrate')
       if not timeout:
         timeout = self.xmpp_connect_timeout
