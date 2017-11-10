@@ -727,8 +727,8 @@ def queue_watcher_start(msg):
 
 def append_url_params(url,pjsua_flag,boshdomain):
     if pjsua_flag:
-        #pjsua is enabled, so set the gateway flag
-        url = "%s#config.iAmSipGateway=true&config.ignoreStartMuted=true"%(url)
+        #pjsua is enabled, so set the gateway flag as well as recorder flag
+        url = "%s#config.iAmRecorder=true&config.iAmSipGateway=true&config.ignoreStartMuted=true"%(url)
     else:
         #only set the iAmRecorder flag if the pjsua functionality is not enabled
         url = "%s#config.iAmRecorder=true&config.externalConnectUrl=null"%(url)
