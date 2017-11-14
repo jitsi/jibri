@@ -91,7 +91,8 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
 
 * A newer Chromedriver is also required.  It can be downloaded from google (https://sites.google.com/a/chromium.org/chromedriver/downloads).  Grab the one labeled 
 chromedriver_linux64.zip 
-   `wget https://chromedriver.storage.googleapis.com/2.28/chromedriver_linux64.zip`
+   `CHD_VER=`curl -L http://chromedriver.storage.googleapis.com/LATEST_RELEASE`` 
+   `wget https://chromedriver.storage.googleapis.com/$CHD_VER/chromedriver_linux64.zip`
    `unzip chromedriver_linux64.zip`
    `cp chromedriver /usr/bin/chromedriver`
 
