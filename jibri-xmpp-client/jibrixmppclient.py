@@ -309,7 +309,9 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         if jicofo_retry:
             iq_error['error'].append(JibriRetryElement())
 
-        iq['jibri'].append(iq_error['error'])
+        # dirty skip of error extension in case of off
+        if jibri_status != 'off':
+            iq['jibri'].append(iq_error['error'])
 
         #example IQ in XML:
         #<iq id="82fee416-0e71-4f6a-90de-8d9b3755ef5b-7" type="set" to="sipbreweryfe5a1a8993c07edc1a63@conference.shipit.jitsi.net/focus">
