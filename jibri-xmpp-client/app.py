@@ -205,8 +205,6 @@ def finalize_recording():
 
 def release_recording():
     global recording_lock
-    #let the XMPP clients know we're stopped now
-    update_jibri_status('stopped')
 
     #if we were locked, we shouldn't be anymore so unlock us
     try:
@@ -847,11 +845,16 @@ def jibri_stop_callback(status=None):
     global current_environment
     global active_client
     logging.info("jibri_stop_callback run with status %s"%status)
-    if active_client and not status == 'xmpp_stop':
-        #the stop wasn't specifically requested, so report this error to jicofo
-        status = 'error|'+status
-        logging.info("queueing error %s for host %s"%(status,active_client.hostname))
-        queues[active_client.hostname].put(status)
+    if active_client:
+        if not status == 'xmpp_stop':
+            #the stop wasn't specifically requested, so report this error to jicofo
+            status = 'error|'+status
+            if 'sipaddress' in active_call:
+                status = status + '|' + active_call['sipaddress']
+            logging.info("queueing error %s for host %s"%(status,active_client.hostname))
+            queues[active_client.hostname].put(status)
+        else:
+            update_jibri_status('stopped')
 
     #no longer report ourselves as recording in the last environment, clear our active client
     current_environment = ''

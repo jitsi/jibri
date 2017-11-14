@@ -159,16 +159,19 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         if msg:
             msg_parts = msg.split('|')
             msg_extra = None
-            if len(msg_parts) == 2:
+            msg_extra2 = None
+            if len(msg_parts) >= 2:
                 msg=msg_parts[0]
                 msg_extra=msg_parts[1]
+                if len(msg_parts) > 2:
+                    msg_extra2=msg_parts[2]
 
             if msg == 'error':
                 if msg_extra is not None:
                     error_type=msg_extra
                 else:
                     error_type='unknown'
-                self.report_jibri_error(error_type)
+                self.report_jibri_error(error_type, msg_extra2)
             if msg == 'health':
                  self.loop.call_soon_threadsafe(self.jibri_health_callback, self)
             if msg == 'idle':
@@ -245,7 +248,7 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         logging.info('sending presence: %s' % presence)
         presence.send()
 
-    def report_jibri_error(self, error):
+    def report_jibri_error(self, error, sipaddress=None):
         iq = self.Iq()
         iq['to'] = self.controllerJid
         iq._setAttr('type','set')
@@ -305,6 +308,8 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         iq_error = self.make_iq_error(iq['id'], type='wait', condition='remote-server-timeout', text=error_text, ito=self.controllerJid)
         iq_error['error']['code']='504'
 
+        if sipaddress is not None:
+            iq['jibri']._setAttr('sipaddress', sipaddress)
 
         if jicofo_retry:
             iq_error['error'].append(JibriRetryElement())
