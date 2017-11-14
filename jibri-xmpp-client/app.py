@@ -428,6 +428,8 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
             recording_directory = co['recording_directory']
             logging.info("Setting recording_directory from client options %s"%recording_directory)
 
+    #build the active call object for re-use when restarting jibri
+    active_call = {}
 
     #when we're using pjsua, override the default display name to be the sip address or passed in display name
     if pjsua_flag:
@@ -436,6 +438,7 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
         else:
             c_display_name = sipaddress
         c_email = sipaddress
+        active_call['sipaddress']=sipaddress
 
     if room:
         at_index = room.rfind('@')
@@ -479,8 +482,6 @@ def jibri_start_callback(client, url, recording_mode='file', stream_id='', sipad
 
     logging.info("Starting jibri")
 
-    #build the active call object for re-use when restarting jibri
-    active_call = {}
     active_call['url'] = url
     active_call['token'] = token
     active_call['binary_location'] = c_chrome_binary_path
@@ -738,7 +739,7 @@ def append_url_params(url,pjsua_flag,boshdomain):
 
     return url
 
-def start_jibri_selenium(url,token='token',binary_location=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None, displayname=None, email=None, pjsua_flag=False, skip_check_audio_stream=False):
+def start_jibri_selenium(url,token='token',binary_location=None,google_account=None,google_account_password=None, xmpp_login=None, xmpp_password=None, boshdomain=None, displayname=None, email=None, pjsua_flag=False, skip_check_audio_stream=False, sipaddress=None):
     retcode=0
     global js
 
@@ -865,10 +866,13 @@ def jibri_stop_callback(status=None):
 def update_jibri_status(status, c=None):
     logging.info("update_jibri_status")
     global queues
+    global active_call
     for hostname in queues:
         logging.info("looping through queue for host %s"%hostname)
         if not c or c.hostname != hostname:
             logging.info("queueing status %s for host %s"%(status,hostname))
+            if status is not None and 'sipaddress' in active_call:
+                status = status + '|' + active_call['sipaddress']
             queues[hostname].put(status)
 
 #function to start the ffmpeg watcher thread..only meant to be run once
@@ -1269,6 +1273,8 @@ def url_health_check():
     global recording_lock
     global health_lock
     global current_environment
+    global active_call
+    active_call = {}
 
     #put an item on the XMPP queue, and watch for a return by callback
     result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False, 'environment':current_environment}

@@ -157,10 +157,15 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             return
 
         if msg:
-            if msg.startswith('error'):
-                error_parts = msg.split('|')
-                if len(error_parts) == 2:
-                    error_type=error_parts[1]
+            msg_parts = msg.split('|')
+            msg_extra = None
+            if len(msg_parts) == 2:
+                msg=msg_parts[0]
+                msg_extra=msg_parts[1]
+
+            if msg == 'error':
+                if msg_extra is not None:
+                    error_type=msg_extra
                 else:
                     error_type='unknown'
                 self.report_jibri_error(error_type)
@@ -171,17 +176,17 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
             elif msg == 'busy': 
                 self.presence_busy()
             elif msg == 'off':
-                self.update_jibri_status('off')
+                self.update_jibri_status('off', msg_extra)
             elif msg == 'on':
-                self.update_jibri_status('on')
+                self.update_jibri_status('on', msg_extra)
             elif msg == 'stopped':
                 try:
                     recording_lock.release()
                 except Exception:
                     pass
-                self.update_jibri_status('off')
+                self.update_jibri_status('off', msg_extra)
             elif msg == 'started':
-                self.update_jibri_status('on')
+                self.update_jibri_status('on', msg_extra)
 
     def from_main_thread_nonblocking(self):
 #        logging.info("Checking queue")
@@ -322,11 +327,13 @@ class JibriXMPPClient(sleekxmpp.ClientXMPP):
         except Exception as e:
             logging.error("Failed to send status update: %s", str(e))
 
-    def update_jibri_status(self, status):
+    def update_jibri_status(self, status, sipaddress):
         iq = self.Iq()
         iq['to'] = self.controllerJid
         iq['type'] = 'set'
         iq['jibri']._setAttr('status', status)
+        if sipaddress is not None:
+            iq['jibri']._setAttr('sipaddress', sipaddress)
         logging.info('sending status update: %s' % iq)
         try:
             iq.send()
