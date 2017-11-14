@@ -874,7 +874,7 @@ def update_jibri_status(status, c=None):
         logging.info("looping through queue for host %s"%hostname)
         if not c or c.hostname != hostname:
             logging.info("queueing status %s for host %s"%(status,hostname))
-            if status is not None and 'sipaddress' in active_call:
+            if status is not None and 'active_call' in globals() and 'sipaddress' in active_call:
                 status = status + '|' + active_call['sipaddress']
             queues[hostname].put(status)
 
@@ -1276,8 +1276,6 @@ def url_health_check():
     global recording_lock
     global health_lock
     global current_environment
-    global active_call
-    active_call = {}
 
     #put an item on the XMPP queue, and watch for a return by callback
     result={'recording':recording_lock.locked(), 'health':False, 'XMPPConnected':False, 'environment':current_environment}
