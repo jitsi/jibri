@@ -226,7 +226,7 @@ Once recording is enabled in config.js, the recording button will become availab
 * To test the youtube streaming side of Jibri (after ffmpeg is confirmed to work), first find a valid youtube stream key (https://jitsi.org/live for details), replace STREAM_KEY below
 
    - Become the ```jibri``` user: `sudo su - jibri`
-   - `cd /home/jibri/scritps`
+   - `cd /home/jibri/scripts`
    - `./launch_recording.sh null null null STREAM_KEY`
    - check your youtube livestreaming dashboard for the status (https://youtube.com/live_dashboard)
    - `./stop_recording.sh` to kill the stream
