@@ -34,10 +34,8 @@ fun String.runCommand(workingDir: File): Process? {
     }
 }
 
-
-
-class Ffmpeg : Capturer {
-    // Ffmpeg config values
+class FfmpegCapturer : Capturer {
+    // FfmpegCapturer config values
     val resolution: String = "1280x720"
     val framerate: Int = 30
     val videoEncodePreset: String = "veryfast"
@@ -84,7 +82,7 @@ class Ffmpeg : Capturer {
                 "-acodec aac -strict -2 -ar 44100 " +
                 "-c:v libx264 -preset $videoEncodePreset $sinkOptions -pix_fmt yuv420p -r $framerate -crf $h264ConstantRateFactor -g $gopSize -tune zerolatency " +
                 "-f $format $sinkUri"
-        var currentFfmpegProc = ffmpegCommandMac.runCommand(workingDirectory)
+        currentFfmpegProc = ffmpegCommandMac.runCommand(workingDirectory)
         println("ffmpeg is alive? ${currentFfmpegProc?.isAlive()}")
 
         return currentFfmpegProc
@@ -104,11 +102,21 @@ class Ffmpeg : Capturer {
         launchFfmpeg(format, capturerParams.sinkUri, sinkOptions)
     }
 
+    override fun isAlive(): Boolean
+    {
+        return currentFfmpegProc?.isAlive() ?: false
+    }
+
+    override fun getExitCode(): Int {
+        // TODO is this the right default?
+        return currentFfmpegProc?.exitValue() ?: 1
+    }
+
     override fun stop()
     {
-        var inputStream = currentFfmpegProc?.inputStream
+        //var inputStream = currentFfmpegProc?.inputStream
         currentFfmpegProc?.destroyForcibly()?.waitFor()
-        println("Ffmpeg exited with ${currentFfmpegProc?.exitValue()}")
+        println("FfmpegCapturer exited with ${currentFfmpegProc?.exitValue()}")
         //for (line in inputStream?.bufferedReader()?.lines())
     }
 }

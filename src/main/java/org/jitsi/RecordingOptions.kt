@@ -16,6 +16,9 @@ enum class RecordingMode
  * the call url
  * recording name
  */
-data class RecordingOptions(var recordingMode: RecordingMode)
+data class RecordingOptions(
+        var recordingMode: RecordingMode,
+        var callName: String,
+        var useSipGateway: Boolean = false)
 {
 }

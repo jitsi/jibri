@@ -57,11 +57,11 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
         CallPage(chromeDriver).visit(baseUrl, callName)
     }
 
-    fun quitBrowser()
+    fun leaveCallAndQuitBrowser()
     {
         CallPage(chromeDriver).leave()
         chromeDriver.quit()
     }
 
-    //TODO: helpr func to verify connectivity
+    //TODO: helper func to verify connectivity
 }

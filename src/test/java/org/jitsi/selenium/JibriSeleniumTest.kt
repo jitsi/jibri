@@ -1,6 +1,7 @@
 package org.jitsi.selenium
 
-import org.testng.Assert.*
+import org.jitsi.capture.CapturerParams
+import org.jitsi.capture.ffmpeg.FfmpegCapturer
 import org.testng.annotations.Test
 
 class JibriSeleniumTest
@@ -16,5 +17,14 @@ class JibriSeleniumTest
         selenium.joinCall("test")
         Thread.sleep(10000);
         selenium.quitBrowser()
+    }
+
+    @Test
+    fun ffmpegTest()
+    {
+        val ffmpeg = FfmpegCapturer()
+        ffmpeg.start(CapturerParams("dummySinkUri"))
+        Thread.sleep(5000)
+        ffmpeg.stop()
     }
 }

@@ -1,9 +1,20 @@
 package org.jitsi
 
+import org.jitsi.capture.Capturer
+import org.jitsi.capture.CapturerParams
+import org.jitsi.capture.Monitor
+import org.jitsi.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.capture.pjsua.PjSuaCapturer
+import org.jitsi.selenium.JibriSelenium
+import org.jitsi.selenium.JibriSeleniumOptions
+
 /**
  * The main Jibri interface
  */
 class Jibri {
+    lateinit var jibriSelenium: JibriSelenium
+    lateinit var capturer: Capturer
+    lateinit var capturerMonitor: Monitor
     /**
      * TODO: stuff we'll read from here:
      * existing:
@@ -43,10 +54,17 @@ class Jibri {
         }
         // create the path to store the recording (if to a file)
         // launch selenium
+        jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = "https://meet.jit.si"))
+        jibriSelenium.joinCall(recordingOptions.callName)
         // join the call (with jibri credentials -> look to add url params for
         // these so we don't have to do the 'double join')
         // start ffmpeg or pjsua (how does pjsua work here?)
+        capturer = if(recordingOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
+        capturer.start(CapturerParams(sinkUri = "dummySinkUri"))
         // monitor the ffmpeg/pjsua status in some way to watch for issues
+        capturerMonitor = Monitor(capturer) { exitCode ->
+            println("Capturer process is no longer running, exited with code: $exitCode")
+        }
     }
 
     /**
@@ -54,8 +72,10 @@ class Jibri {
      */
     fun stopRecording()
     {
-        // stop the recording
-        // finalize the recording (via the script)
+        // stop the recording and exit the call
+        capturer.stop()
+        jibriSelenium.leaveCallAndQuitBrowser()
+        // finalize the recording
     }
 
     /**
