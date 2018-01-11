@@ -17,13 +17,13 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
                 "--use-fake-ui-for-media-stream",
-                //"--start-maximized",
-                //"--kiosk",
+                "--start-maximized",
+                "--kiosk",
                 "--enabled",
                 "--enable-logging",
-                "--vmodule=*=3"
-                //"--disable-infobars",
-                //"--alsa-output-device=plug:amix"
+                "--vmodule=*=3",
+                "--disable-infobars",
+                "--alsa-output-device=plug:amix"
         )
         if (jibriSeleniumOptions.customBinaryLocation != null)
         {
@@ -46,7 +46,7 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
 
     fun joinCall(callName: String)
     {
-        HomePage.visit(chromeDriver, baseUrl)
+        HomePage(chromeDriver).visit(baseUrl)
         setJibriIdentifiers(
                 Pair("displayname", "TODO"),
                 Pair("email", "TODO"),
@@ -54,13 +54,14 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
                 Pair("xmpp_password_override", "TODO"),
                 Pair("callStatsUserName", "jibri")
         )
-        CallPage.visit(chromeDriver, baseUrl, callName)
+        CallPage(chromeDriver).visit(baseUrl, callName)
     }
 
     fun quitBrowser()
     {
-        println("Closing")
-        chromeDriver.close()
+        CallPage(chromeDriver).leave()
         chromeDriver.quit()
     }
+
+    //TODO: helpr func to verify connectivity
 }

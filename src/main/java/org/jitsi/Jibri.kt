@@ -30,6 +30,17 @@ class Jibri {
      */
     fun startRecording(recordingOptions: RecordingOptions)
     {
+        if (recordingOptions.recordingMode == RecordingMode.STREAM)
+        {
+            // get stream url
+        }
+        else
+        {
+            // generate a filename
+            //TODO: the filename and stream url seemed to be used as the same
+            // argument down the line, is this how ffmpeg's args work? check
+            // with aaron
+        }
         // create the path to store the recording (if to a file)
         // launch selenium
         // join the call (with jibri credentials -> look to add url params for

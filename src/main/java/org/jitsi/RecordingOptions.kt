@@ -16,6 +16,6 @@ enum class RecordingMode
  * the call url
  * recording name
  */
-data class RecordingOptions(var dummy: String?)
+data class RecordingOptions(var recordingMode: RecordingMode)
 {
 }

@@ -3,6 +3,8 @@ package org.jitsi.capture
 /**
  * Parameters to be passed to the capturer
  */
-data class CapturerParams(var dummy: String?)
+data class CapturerParams(var sinkUri: String)
 {
+
 }
+
