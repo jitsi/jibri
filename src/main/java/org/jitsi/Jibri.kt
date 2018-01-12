@@ -2,11 +2,13 @@ package org.jitsi
 
 import org.jitsi.capture.Capturer
 import org.jitsi.capture.CapturerParams
-import org.jitsi.capture.Monitor
+import org.jitsi.capture.ProcessMonitor
 import org.jitsi.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.capture.pjsua.PjSuaCapturer
 import org.jitsi.selenium.JibriSelenium
 import org.jitsi.selenium.JibriSeleniumOptions
+import org.jitsi.sink.Recording
+import org.jitsi.sink.Stream
 import java.io.File
 
 /**
@@ -15,7 +17,7 @@ import java.io.File
 class Jibri {
     private lateinit var jibriSelenium: JibriSelenium
     private lateinit var capturer: Capturer
-    private lateinit var capturerMonitor: Monitor
+    private lateinit var capturerMonitor: ProcessMonitor
     private val recordingsPath = "/tmp/recordings"
     /**
      * TODO: stuff we'll read from here:
@@ -41,42 +43,26 @@ class Jibri {
     /**
      * Start a recording session
      */
-    fun startRecording(recordingOptions: RecordingOptions)
+    fun startRecording(jibriOptions: JibriOptions)
     {
-        println("Starting a recording, options: $recordingOptions")
-        val sink: Sink = {
-            if (recordingOptions.recordingMode == RecordingMode.STREAM)
-            {
-                // Use a stream sink
-                Stream(recordingOptions.callName)
-            }
-            else
-            {
-                println("Creating recording sink")
-                // Use a recording sink
-                Recording(
-                        recordingsPath = File(recordingsPath),
-                        callName = recordingOptions.callName)
-            }
-        }()
+        println("Starting a recording, options: $jibriOptions")
+        val sink = if (jibriOptions.recordingMode == RecordingMode.STREAM) {
+            Stream(jibriOptions.streamUrl!!, 2976, 2976 * 2)
+        } else {
+            Recording(recordingsPath = File(recordingsPath), callName = jibriOptions.callName)
+        }
 
         println("Starting selenium")
         jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = "https://meet.jit.si"))
         println("joining call")
-        jibriSelenium.joinCall(recordingOptions.callName)
+        jibriSelenium.joinCall(jibriOptions.callName)
         // start ffmpeg or pjsua (how does pjsua work here?)
-        capturer = if(recordingOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
+        capturer = if(jibriOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
         println("Starting capturer")
-        sink.getPath()?.let {
-            //NOTE(brian): bummer have to use the '!!' here even though i just
-            // checked the result of getUri
-            capturer.start(CapturerParams(sinkUri = sink.getPath()!!))
-            // monitor the ffmpeg/pjsua status in some way to watch for issues
-            capturerMonitor = Monitor(capturer) { exitCode ->
-                println("Capturer process is no longer running, exited with code: $exitCode")
-            }
-        } ?: run {
-            println("Error creating sink, can't start capturer")
+        capturer.start(CapturerParams(), sink)
+        // monitor the ffmpeg/pjsua status in some way to watch for issues
+        capturerMonitor = ProcessMonitor(capturer) { exitCode ->
+            println("Capturer process is no longer running, exited with code: $exitCode")
         }
     }
 

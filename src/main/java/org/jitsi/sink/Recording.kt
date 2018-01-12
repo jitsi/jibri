@@ -1,7 +1,6 @@
-package org.jitsi
+package org.jitsi.sink
 
 import java.io.File
-import java.net.URI
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -28,6 +27,10 @@ class Recording(val recordingsPath: File, callName: String, extension: String = 
     }
 
     override public fun getPath(): String? = file?.path
+
+    override public fun getFormat(): String? = file?.extension
+
+    override public fun getOptions(): String = "-profile:v main -level 3.1"
 
     override public fun finalize()
     {

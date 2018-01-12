@@ -2,11 +2,8 @@ package org.jitsi.selenium
 
 import org.jitsi.Jibri
 import org.jitsi.RecordingMode
-import org.jitsi.RecordingOptions
-import org.jitsi.capture.CapturerParams
-import org.jitsi.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.JibriOptions
 import org.testng.annotations.Test
-import java.net.URI
 
 class JibriSeleniumTest
 {
@@ -15,7 +12,7 @@ class JibriSeleniumTest
     fun jibriTest()
     {
         val jibri = Jibri()
-        jibri.startRecording(RecordingOptions(
+        jibri.startRecording(JibriOptions(
                 recordingMode = RecordingMode.FILE,
                 callName = "jibritest"
         ))
@@ -38,9 +35,9 @@ class JibriSeleniumTest
     @Test
     fun ffmpegTest()
     {
-        val ffmpeg = FfmpegCapturer()
-        ffmpeg.start(CapturerParams("dummySinkUri"))
-        Thread.sleep(5000)
-        ffmpeg.stop()
+//        val ffmpeg = FfmpegCapturer()
+//        ffmpeg.start(CapturerParams("dummySinkUri"))
+//        Thread.sleep(5000)
+//        ffmpeg.stop()
     }
 }

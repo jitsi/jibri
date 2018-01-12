@@ -1,16 +1,17 @@
 package org.jitsi.capture
 
-import org.jitsi.MonitorableProcess
+import org.jitsi.util.MonitorableProcess
+import org.jitsi.sink.Sink
 
-/**
- * TODO: how to model the 'output'? that seems to be tied to the capturer, i don't
- * think it could be modeled separately?
- */
+class UnsupportedOsException(override var message: String = "Jibri does not support this OS") : Exception()
+{
+}
+
 interface Capturer : MonitorableProcess {
     /**
      * Start the capturer with the given parameters
      */
-    fun start(capturerParams: CapturerParams)
+    fun start(capturerParams: CapturerParams, sink: Sink)
 
     /**
      * Stop the capturer

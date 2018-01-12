@@ -16,9 +16,10 @@ enum class RecordingMode
  * the call url
  * recording name
  */
-data class RecordingOptions(
-        var recordingMode: RecordingMode,
-        var callName: String,
-        var useSipGateway: Boolean = false)
+data class JibriOptions(
+        val recordingMode: RecordingMode,
+        val callName: String,
+        val useSipGateway: Boolean = false,
+        val streamUrl: String? = null)
 {
 }

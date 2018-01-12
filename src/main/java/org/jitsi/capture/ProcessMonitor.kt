@@ -1,17 +1,14 @@
 package org.jitsi.capture
 
-import org.jitsi.MonitorableProcess
+import org.jitsi.util.MonitorableProcess
 import java.util.*
 import kotlin.concurrent.scheduleAtFixedRate
-
-//import java.util.*
-//import kotlin.concurrent.*
 
 /**
  * Monitor a process to verify that it is still alive, if it is found to be
  * dead, invoke a callback
  */
-class Monitor(val processToMonitor: MonitorableProcess, val processIsDeadCallback: (exitCode: Int) -> Unit)
+class ProcessMonitor(val processToMonitor: MonitorableProcess, val processIsDeadCallback: (exitCode: Int?) -> Unit)
 {
     private val timer: Timer = Timer()
 
