@@ -7,14 +7,16 @@ import org.jitsi.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.capture.pjsua.PjSuaCapturer
 import org.jitsi.selenium.JibriSelenium
 import org.jitsi.selenium.JibriSeleniumOptions
+import java.io.File
 
 /**
  * The main Jibri interface
  */
 class Jibri {
-    lateinit var jibriSelenium: JibriSelenium
-    lateinit var capturer: Capturer
-    lateinit var capturerMonitor: Monitor
+    private lateinit var jibriSelenium: JibriSelenium
+    private lateinit var capturer: Capturer
+    private lateinit var capturerMonitor: Monitor
+    private val recordingsPath = "/tmp/recordings"
     /**
      * TODO: stuff we'll read from here:
      * existing:
@@ -41,29 +43,40 @@ class Jibri {
      */
     fun startRecording(recordingOptions: RecordingOptions)
     {
-        if (recordingOptions.recordingMode == RecordingMode.STREAM)
-        {
-            // get stream url
-        }
-        else
-        {
-            // generate a filename
-            //TODO: the filename and stream url seemed to be used as the same
-            // argument down the line, is this how ffmpeg's args work? check
-            // with aaron
-        }
-        // create the path to store the recording (if to a file)
-        // launch selenium
+        println("Starting a recording, options: $recordingOptions")
+        val sink: Sink = {
+            if (recordingOptions.recordingMode == RecordingMode.STREAM)
+            {
+                // Use a stream sink
+                Stream(recordingOptions.callName)
+            }
+            else
+            {
+                println("Creating recording sink")
+                // Use a recording sink
+                Recording(
+                        recordingsPath = File(recordingsPath),
+                        callName = recordingOptions.callName)
+            }
+        }()
+
+        println("Starting selenium")
         jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = "https://meet.jit.si"))
+        println("joining call")
         jibriSelenium.joinCall(recordingOptions.callName)
-        // join the call (with jibri credentials -> look to add url params for
-        // these so we don't have to do the 'double join')
         // start ffmpeg or pjsua (how does pjsua work here?)
         capturer = if(recordingOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
-        capturer.start(CapturerParams(sinkUri = "dummySinkUri"))
-        // monitor the ffmpeg/pjsua status in some way to watch for issues
-        capturerMonitor = Monitor(capturer) { exitCode ->
-            println("Capturer process is no longer running, exited with code: $exitCode")
+        println("Starting capturer")
+        sink.getPath()?.let {
+            //NOTE(brian): bummer have to use the '!!' here even though i just
+            // checked the result of getUri
+            capturer.start(CapturerParams(sinkUri = sink.getPath()!!))
+            // monitor the ffmpeg/pjsua status in some way to watch for issues
+            capturerMonitor = Monitor(capturer) { exitCode ->
+                println("Capturer process is no longer running, exited with code: $exitCode")
+            }
+        } ?: run {
+            println("Error creating sink, can't start capturer")
         }
     }
 
@@ -73,7 +86,9 @@ class Jibri {
     fun stopRecording()
     {
         // stop the recording and exit the call
+        println("Stopping capturer")
         capturer.stop()
+        println("Quitting selenium")
         jibriSelenium.leaveCallAndQuitBrowser()
         // finalize the recording
     }

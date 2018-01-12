@@ -7,6 +7,8 @@ import org.jitsi.capture.ffmpeg.executors.LinuxFfmpegExecutor
 import org.jitsi.capture.ffmpeg.executors.MacFfmpegExecutor
 import java.io.File
 import java.io.IOException
+import java.lang.reflect.Method
+import java.util.concurrent.TimeUnit
 
 fun String.isStreaming(): Boolean {
     return this.startsWith("rtmp://")
@@ -77,13 +79,13 @@ class FfmpegCapturer : Capturer {
 
         // avfoundation docs: https://ffmpeg.org/ffmpeg-devices.html#avfoundation
         val ffmpegCommandMac = "" +
-                "ffmpeg -y -v info -thread_queue_size 4096 -f avfoundation -i 2: -r " +
+                "ffmpeg -y -v info -thread_queue_size 4096 -f avfoundation -r $framerate -i 0:0 -r " +
                 "$framerate -s $resolution " +
                 "-acodec aac -strict -2 -ar 44100 " +
-                "-c:v libx264 -preset $videoEncodePreset $sinkOptions -pix_fmt yuv420p -r $framerate -crf $h264ConstantRateFactor -g $gopSize -tune zerolatency " +
+                "-c:v libx264 -preset $videoEncodePreset $sinkOptions -pix_fmt yuv420p -crf $h264ConstantRateFactor -g $gopSize -tune zerolatency " +
                 "-f $format $sinkUri"
         currentFfmpegProc = ffmpegCommandMac.runCommand(workingDirectory)
-        println("ffmpeg is alive? ${currentFfmpegProc?.isAlive()}")
+        println("launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive()}")
 
         return currentFfmpegProc
     }
@@ -99,7 +101,7 @@ class FfmpegCapturer : Capturer {
             Pair("mp4", "-profile:v main -level 3.1")
         }
 
-        launchFfmpeg(format, capturerParams.sinkUri, sinkOptions)
+        launchFfmpeg(format, capturerParams.sinkUri.toString(), sinkOptions)
     }
 
     override fun isAlive(): Boolean
@@ -114,9 +116,16 @@ class FfmpegCapturer : Capturer {
 
     override fun stop()
     {
-        //var inputStream = currentFfmpegProc?.inputStream
-        currentFfmpegProc?.destroyForcibly()?.waitFor()
+        currentFfmpegProc?.pid().let {
+            println("sending SIGINT to ffmpeg proc ${currentFfmpegProc?.pid()}")
+            Runtime.getRuntime().exec("kill -s SIGINT ${currentFfmpegProc!!.pid()}")
+        }
+        currentFfmpegProc?.waitFor(10, TimeUnit.SECONDS)
+        if (isAlive()) {
+            // This isn't great, as killing ffmpeg this way will corrupt
+            // the entire recording (from what I've seen)
+            currentFfmpegProc?.destroyForcibly()
+        }
         println("FfmpegCapturer exited with ${currentFfmpegProc?.exitValue()}")
-        //for (line in inputStream?.bufferedReader()?.lines())
     }
 }

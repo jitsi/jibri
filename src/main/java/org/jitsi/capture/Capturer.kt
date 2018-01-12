@@ -16,10 +16,4 @@ interface Capturer : MonitorableProcess {
      * Stop the capturer
      */
     fun stop()
-
-    /**
-     * TODO: does this make sense here?  a capturer isn't always doing
-     * a recording
-     */
-    fun finalizeRecording()
 }
