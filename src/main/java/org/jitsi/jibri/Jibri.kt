@@ -1,15 +1,19 @@
 package org.jitsi.jibri
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.pjsua.PjSuaCapturer
+import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.sink.Recording
 import org.jitsi.jibri.sink.Stream
 import java.io.File
+import java.io.FileNotFoundException
 
 /**
  * The main Jibri interface
@@ -18,26 +22,19 @@ class Jibri {
     private lateinit var jibriSelenium: JibriSelenium
     private lateinit var capturer: Capturer
     private lateinit var capturerMonitor: ProcessMonitor
-    private val recordingsPath = "/tmp/recordings"
-    /**
-     * TODO: stuff we'll read from here:
-     * existing:
-     * "jidserver_prefix":"auth.",
-     * "mucserver_prefix":"conference.",
-     * "boshdomain_prefix":"recorder.",
-     * "password":"jibri",
-     * "recording_directory":"./recordings",
-     * "jid_username":"jibri",
-     * "roomname":"TheBrewery",
-     * "xmpp_domain":"xmpp.domain.name",
-     * "selenium_xmpp_prefix":"recorder.",
-     * "selenium_xmpp_username":"recorder",
-     * "selenium_xmpp_password":"recorderpass",
-     * "servers":["10.0.0.10"],
-     * "environments":{...}
-     */
+    private lateinit var config: JibriConfig
+
+    // TODO: force a (successful) call of this in ctor?
     fun loadConfig(configFilePath: String)
     {
+        val mapper = jacksonObjectMapper()
+        try {
+            config = mapper.readValue<JibriConfig>(File(configFilePath))
+        } catch (e: FileNotFoundException) {
+            println("Unable to read config file ${configFilePath}")
+            return
+        }
+        println("Read config: \n ${config}")
     }
 
     /**
@@ -49,7 +46,7 @@ class Jibri {
         val sink = if (jibriOptions.recordingMode == RecordingMode.STREAM) {
             Stream(jibriOptions.streamUrl!!, 2976, 2976 * 2)
         } else {
-            Recording(recordingsPath = File(recordingsPath), callName = jibriOptions.callName)
+            Recording(recordingsDirectory = File(config.recordingDirectory), callName = jibriOptions.callName)
         }
 
         println("Starting selenium")

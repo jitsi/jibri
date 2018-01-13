@@ -6,11 +6,11 @@ import org.testng.annotations.Test
 
 class JibriTest
 {
-
     @Test
     fun jibriTest()
     {
         val jibri = Jibri()
+        jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/")
         jibri.startRecording(JibriOptions(
                 recordingMode = RecordingMode.FILE,
                 callName = "jibritest"
@@ -38,5 +38,11 @@ class JibriTest
 //        ffmpeg.start(CapturerParams("dummySinkUri"))
 //        Thread.sleep(5000)
 //        ffmpeg.stop()
+    }
+
+    @Test
+    fun configTest() {
+        val jibri = Jibri()
+        jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/")
     }
 }
