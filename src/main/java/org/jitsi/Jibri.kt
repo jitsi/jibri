@@ -2,7 +2,7 @@ package org.jitsi
 
 import org.jitsi.capture.Capturer
 import org.jitsi.capture.CapturerParams
-import org.jitsi.capture.ProcessMonitor
+import org.jitsi.util.ProcessMonitor
 import org.jitsi.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.capture.pjsua.PjSuaCapturer
 import org.jitsi.selenium.JibriSelenium
@@ -63,7 +63,9 @@ class Jibri {
         // monitor the ffmpeg/pjsua status in some way to watch for issues
         capturerMonitor = ProcessMonitor(capturer) { exitCode ->
             println("Capturer process is no longer running, exited with code: $exitCode")
+            //TODO:restart it.
         }
+        capturerMonitor.startMonitoring()
     }
 
     /**
@@ -71,6 +73,8 @@ class Jibri {
      */
     fun stopRecording()
     {
+        // stop monitoring
+        capturerMonitor.stopMonitoring()
         // stop the recording and exit the call
         println("Stopping capturer")
         capturer.stop()

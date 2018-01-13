@@ -1,4 +1,4 @@
-package org.jitsi.capture
+package org.jitsi.util
 
 import org.jitsi.util.MonitorableProcess
 import java.util.*

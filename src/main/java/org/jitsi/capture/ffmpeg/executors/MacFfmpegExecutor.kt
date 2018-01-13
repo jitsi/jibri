@@ -31,9 +31,11 @@ class MacFfmpegExecutor : FfmpegExecutor
     override fun getExitCode(): Int? = currentFfmpegProc?.exitValue()
 
     override fun stopFfmpeg() {
-        currentFfmpegProc?.pid().let {
+        currentFfmpegProc?.pid()?.let {
             println("sending SIGINT to ffmpeg proc ${currentFfmpegProc?.pid()}")
             Runtime.getRuntime().exec("kill -s SIGINT ${currentFfmpegProc!!.pid()}")
+        } ?: run {
+            println("stopFfmpeg: ffmpeg had already exited")
         }
         currentFfmpegProc?.waitFor(10, TimeUnit.SECONDS)
         currentFfmpegProc?.isAlive.let {
