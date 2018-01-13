@@ -1,4 +1,4 @@
-package org.jitsi.sink
+package org.jitsi.jibri.sink
 
 interface Sink
 {

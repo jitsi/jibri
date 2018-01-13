@@ -1,13 +1,13 @@
-package org.jitsi.capture.ffmpeg
+package org.jitsi.jibri.capture.ffmpeg
 
-import org.jitsi.sink.Sink
-import org.jitsi.capture.Capturer
-import org.jitsi.capture.CapturerParams
-import org.jitsi.capture.UnsupportedOsException
-import org.jitsi.capture.ffmpeg.executors.FfmpegExecutor
-import org.jitsi.capture.ffmpeg.executors.FfmpegExecutorParams
-import org.jitsi.capture.ffmpeg.executors.LinuxFfmpegExecutor
-import org.jitsi.capture.ffmpeg.executors.MacFfmpegExecutor
+import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.capture.Capturer
+import org.jitsi.jibri.capture.CapturerParams
+import org.jitsi.jibri.capture.UnsupportedOsException
+import org.jitsi.jibri.capture.ffmpeg.executors.FfmpegExecutor
+import org.jitsi.jibri.capture.ffmpeg.executors.FfmpegExecutorParams
+import org.jitsi.jibri.capture.ffmpeg.executors.LinuxFfmpegExecutor
+import org.jitsi.jibri.capture.ffmpeg.executors.MacFfmpegExecutor
 
 // Taken from https://stackoverflow.com/questions/35421699/how-to-invoke-external-command-from-within-kotlin-code
 //TODO: not sure if we'll want to use this or just use the Runtime.getRuntime().exec()

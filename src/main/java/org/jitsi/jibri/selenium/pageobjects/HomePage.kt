@@ -1,4 +1,4 @@
-package org.jitsi.selenium.pageobjects
+package org.jitsi.jibri.selenium.pageobjects
 
 import org.openqa.selenium.WebDriver
 

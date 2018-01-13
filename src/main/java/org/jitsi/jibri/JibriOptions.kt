@@ -1,4 +1,4 @@
-package org.jitsi
+package org.jitsi.jibri
 
 enum class RecordingMode
 {

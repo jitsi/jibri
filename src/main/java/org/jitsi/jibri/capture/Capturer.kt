@@ -1,7 +1,7 @@
-package org.jitsi.capture
+package org.jitsi.jibri.capture
 
-import org.jitsi.util.MonitorableProcess
-import org.jitsi.sink.Sink
+import org.jitsi.jibri.util.MonitorableProcess
+import org.jitsi.jibri.sink.Sink
 
 class UnsupportedOsException(override var message: String = "Jibri does not support this OS") : Exception()
 {

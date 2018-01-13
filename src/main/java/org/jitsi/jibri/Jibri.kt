@@ -1,14 +1,14 @@
-package org.jitsi
+package org.jitsi.jibri
 
-import org.jitsi.capture.Capturer
-import org.jitsi.capture.CapturerParams
-import org.jitsi.util.ProcessMonitor
-import org.jitsi.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.capture.pjsua.PjSuaCapturer
-import org.jitsi.selenium.JibriSelenium
-import org.jitsi.selenium.JibriSeleniumOptions
-import org.jitsi.sink.Recording
-import org.jitsi.sink.Stream
+import org.jitsi.jibri.capture.Capturer
+import org.jitsi.jibri.capture.CapturerParams
+import org.jitsi.jibri.util.ProcessMonitor
+import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.jibri.capture.pjsua.PjSuaCapturer
+import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSeleniumOptions
+import org.jitsi.jibri.sink.Recording
+import org.jitsi.jibri.sink.Stream
 import java.io.File
 
 /**

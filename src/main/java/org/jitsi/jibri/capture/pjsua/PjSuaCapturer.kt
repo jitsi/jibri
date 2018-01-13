@@ -1,8 +1,8 @@
-package org.jitsi.capture.pjsua
+package org.jitsi.jibri.capture.pjsua
 
-import org.jitsi.sink.Sink
-import org.jitsi.capture.Capturer
-import org.jitsi.capture.CapturerParams
+import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.capture.Capturer
+import org.jitsi.jibri.capture.CapturerParams
 
 class PjSuaCapturer : Capturer
 {

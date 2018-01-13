@@ -1,6 +1,6 @@
-package org.jitsi.capture.ffmpeg.executors
+package org.jitsi.jibri.capture.ffmpeg.executors
 
-import org.jitsi.sink.Sink
+import org.jitsi.jibri.sink.Sink
 
 class LinuxFfmpegExecutor : FfmpegExecutor
 {

@@ -1,11 +1,10 @@
-package org.jitsi.selenium
+package org.jitsi.jibri
 
-import org.jitsi.Jibri
-import org.jitsi.RecordingMode
-import org.jitsi.JibriOptions
+import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.testng.annotations.Test
 
-class JibriSeleniumTest
+class JibriTest
 {
 
     @Test
@@ -28,7 +27,7 @@ class JibriSeleniumTest
         val selenium = JibriSelenium(options)
 
         selenium.joinCall("test")
-        Thread.sleep(30000);
+        Thread.sleep(30000)
         selenium.leaveCallAndQuitBrowser()
     }
 

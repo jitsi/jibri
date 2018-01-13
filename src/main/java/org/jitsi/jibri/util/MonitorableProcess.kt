@@ -1,4 +1,4 @@
-package org.jitsi.util
+package org.jitsi.jibri.util
 
 interface MonitorableProcess {
     fun isAlive(): Boolean

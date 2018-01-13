@@ -1,7 +1,7 @@
-package org.jitsi.selenium
+package org.jitsi.jibri.selenium
 
-import org.jitsi.selenium.pageobjects.CallPage
-import org.jitsi.selenium.pageobjects.HomePage
+import org.jitsi.jibri.selenium.pageobjects.CallPage
+import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 

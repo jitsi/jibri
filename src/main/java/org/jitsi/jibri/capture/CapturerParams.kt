@@ -1,4 +1,4 @@
-package org.jitsi.capture
+package org.jitsi.jibri.capture
 
 /**
  * Parameters to be passed to the capturer

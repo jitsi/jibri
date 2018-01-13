@@ -1,6 +1,5 @@
-package org.jitsi.util
+package org.jitsi.jibri.util
 
-import org.jitsi.util.MonitorableProcess
 import java.util.*
 import kotlin.concurrent.scheduleAtFixedRate
 

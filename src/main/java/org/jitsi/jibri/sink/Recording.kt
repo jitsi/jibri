@@ -1,4 +1,4 @@
-package org.jitsi.sink
+package org.jitsi.jibri.sink
 
 import java.io.File
 import java.time.LocalDateTime

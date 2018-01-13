@@ -1,6 +1,6 @@
-package org.jitsi.capture.ffmpeg.executors
+package org.jitsi.jibri.capture.ffmpeg.executors
 
-import org.jitsi.sink.Sink
+import org.jitsi.jibri.sink.Sink
 import java.util.concurrent.TimeUnit
 
 class MacFfmpegExecutor : FfmpegExecutor

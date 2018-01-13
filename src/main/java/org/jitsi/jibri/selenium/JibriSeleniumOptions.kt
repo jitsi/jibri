@@ -1,4 +1,4 @@
-package org.jitsi.selenium
+package org.jitsi.jibri.selenium
 
 /**
  * Options that can be passed to JibriSelenium
