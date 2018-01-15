@@ -17,6 +17,8 @@ import java.io.FileNotFoundException
 
 /**
  * The main Jibri interface
+ * Methods here are not thread safe, and should only be called from
+ * the same thread
  */
 class Jibri {
     private lateinit var jibriSelenium: JibriSelenium
@@ -50,6 +52,7 @@ class Jibri {
         }
 
         println("Starting selenium")
+        //TODO: get url from somewhere
         jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = "https://meet.jit.si"))
         println("joining call")
         jibriSelenium.joinCall(jibriOptions.callName)
@@ -57,10 +60,14 @@ class Jibri {
         capturer = if(jibriOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
         println("Starting capturer")
         capturer.start(CapturerParams(), sink)
-        // monitor the ffmpeg/pjsua status in some way to watch for issues
-        capturerMonitor = ProcessMonitor(capturer) { exitCode ->
+        // monitor the capturer process to watch for issues
+        capturerMonitor = ProcessMonitor(processToMonitor = capturer) { exitCode ->
             println("Capturer process is no longer running, exited with code: $exitCode")
-            //TODO:restart it.
+            //NOTE: even though this will be executed on a separate thread
+            // from the call to 'stopRecording', i don't think we have a
+            // race condition here, since stopRecording will call capturer.stop
+            // after stopping the monitor.
+            capturer.start(CapturerParams(), sink)
         }
         capturerMonitor.startMonitoring()
     }

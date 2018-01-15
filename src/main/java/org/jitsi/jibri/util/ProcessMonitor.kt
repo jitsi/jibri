@@ -6,19 +6,21 @@ import kotlin.concurrent.scheduleAtFixedRate
 /**
  * Monitor a process to verify that it is still alive, if it is found to be
  * dead, invoke a callback
+ * NOTE: this class is not threadsafe
  */
-class ProcessMonitor(val processToMonitor: MonitorableProcess, val processIsDeadCallback: (exitCode: Int?) -> Unit)
+class ProcessMonitor(
+        private val processToMonitor: MonitorableProcess,
+        // If the process never even started, we won't be able to get an
+        // exit code, so this callback needs to support being passed null
+        private val processIsDeadCallback: (exitCode: Int?) -> Unit)
 {
     private val timer: Timer = Timer()
-
     private val aliveCheckIntervalMillis: Long = 60 * 1000
 
     @Volatile
     private var running: Boolean = false
 
-
-    fun startMonitoring()
-    {
+    fun startMonitoring() {
         if (running) {
             return
         }
