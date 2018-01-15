@@ -1,5 +1,6 @@
 package org.jitsi.jibri
 
+import com.fasterxml.jackson.databind.util.JSONPObject
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.capture.Capturer
@@ -8,6 +9,7 @@ import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.pjsua.PjSuaCapturer
 import org.jitsi.jibri.config.JibriConfig
+import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.sink.Recording
@@ -89,9 +91,12 @@ class Jibri {
 
     /**
      * Return some status indicating the health of this jibri
+     * as a json-formatted string
      */
-    fun healthCheck()
+    fun healthCheck(): String
     {
-
+        val health = JibriHealth()
+        val mapper = jacksonObjectMapper()
+        return mapper.writeValueAsString(health)
     }
 }

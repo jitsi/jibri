@@ -45,4 +45,11 @@ class JibriTest
         val jibri = Jibri()
         jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/")
     }
+
+    @Test
+    fun healthTest() {
+        val jibri = Jibri()
+        val healthJson = jibri.healthCheck()
+        println(healthJson)
+    }
 }
