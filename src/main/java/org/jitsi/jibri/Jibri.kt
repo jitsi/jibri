@@ -55,6 +55,17 @@ class Jibri {
 
         println("Starting selenium")
         //TODO: get url from somewhere
+        //TODO: how best to deal with jibriSelenium (and capturer and
+        // captureMonitor)?  they are
+        // member values and cannot be initialized right away so:
+        // 1) could use lateinit, but other code might try to access it before it
+        //  is initialized (like if stop was called before start)
+        // 2) could mark every call with ?., but we do need to cover the 'else'
+        //  case there (if the instance is null for some reason, we should just return)
+        // 3) could introduce a new variable that we know is non-null
+        //  and use that (introducing another variable is a bummer i think)
+        // in every case, if we handle failure for one step we need to make sure
+        //  to do any cleanup necessary
         jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = "https://meet.jit.si"))
         println("joining call")
         jibriSelenium.joinCall(jibriOptions.callName)
