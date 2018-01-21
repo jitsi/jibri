@@ -12,7 +12,7 @@ class JibriTest
         val jibri = Jibri()
         jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/")
         jibri.startRecording(JibriOptions(
-                recordingMode = RecordingMode.FILE,
+                recordingSinkType = RecordingSinkType.FILE,
                 callName = "jibritest"
         ))
         Thread.sleep(10000)

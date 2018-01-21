@@ -1,6 +1,5 @@
 package org.jitsi.jibri
 
-import com.fasterxml.jackson.databind.util.JSONPObject
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.capture.Capturer
@@ -17,18 +16,26 @@ import org.jitsi.jibri.sink.Stream
 import java.io.File
 import java.io.FileNotFoundException
 
+enum class StartRecordingResult {
+    OK,
+    ALREADY_RECORDING,
+    ERROR
+}
+
 /**
  * The main Jibri interface
- * Methods here are not thread safe, and should only be called from
- * the same thread
  */
 class Jibri {
     private lateinit var jibriSelenium: JibriSelenium
     private lateinit var capturer: Capturer
     private lateinit var capturerMonitor: ProcessMonitor
     private lateinit var config: JibriConfig
+    private var recordingActive = false
 
     // TODO: force a (successful) call of this in ctor?
+    // and only load it at start? (require restart to load new config?
+    // must allow a signal to shutting down when possible (now or when
+    // current recording is done)
     fun loadConfig(configFilePath: String)
     {
         val mapper = jacksonObjectMapper()
@@ -44,10 +51,14 @@ class Jibri {
     /**
      * Start a recording session
      */
-    fun startRecording(jibriOptions: JibriOptions)
+    @Synchronized
+    fun startRecording(jibriOptions: JibriOptions): StartRecordingResult
     {
+        if (recordingActive) {
+            return StartRecordingResult.ALREADY_RECORDING
+        }
         println("Starting a recording, options: $jibriOptions")
-        val sink = if (jibriOptions.recordingMode == RecordingMode.STREAM) {
+        val sink = if (jibriOptions.recordingSinkType == RecordingSinkType.STREAM) {
             Stream(jibriOptions.streamUrl!!, 2976, 2976 * 2)
         } else {
             Recording(recordingsDirectory = File(config.recordingDirectory), callName = jibriOptions.callName)
@@ -66,7 +77,8 @@ class Jibri {
         //  and use that (introducing another variable is a bummer i think)
         // in every case, if we handle failure for one step we need to make sure
         //  to do any cleanup necessary
-        jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = "https://meet.jit.si"))
+        //TODO: return error if anything here fails to start up
+        jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = jibriOptions.baseUrl))
         println("joining call")
         jibriSelenium.joinCall(jibriOptions.callName)
         // start ffmpeg or pjsua (how does pjsua work here?)
@@ -83,20 +95,31 @@ class Jibri {
             capturer.start(CapturerParams(), sink)
         }
         capturerMonitor.startMonitoring()
+        return StartRecordingResult.OK
     }
 
     /**
      * Stop the current recording session
      */
+    @Synchronized
     fun stopRecording()
     {
+        if (!recordingActive) {
+            return
+        }
         // stop monitoring
-        capturerMonitor.stopMonitoring()
+        if (this::capturerMonitor.isInitialized) {
+            capturerMonitor.stopMonitoring()
+        }
         // stop the recording and exit the call
-        println("Stopping capturer")
-        capturer.stop()
-        println("Quitting selenium")
-        jibriSelenium.leaveCallAndQuitBrowser()
+        if (this::capturer.isInitialized) {
+            println("Stopping capturer")
+            capturer.stop()
+        }
+        if (this::jibriSelenium.isInitialized) {
+            println("Quitting selenium")
+            jibriSelenium.leaveCallAndQuitBrowser()
+        }
         // finalize the recording
     }
 
@@ -104,6 +127,7 @@ class Jibri {
      * Return some status indicating the health of this jibri
      * as a json-formatted string
      */
+    @Synchronized
     fun healthCheck(): String
     {
         val health = JibriHealth()
