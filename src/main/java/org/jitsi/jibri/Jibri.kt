@@ -15,6 +15,7 @@ import org.jitsi.jibri.sink.Recording
 import org.jitsi.jibri.sink.Stream
 import java.io.File
 import java.io.FileNotFoundException
+import java.util.logging.Logger
 
 enum class StartRecordingResult {
     OK,
@@ -31,6 +32,7 @@ class Jibri {
     private lateinit var capturerMonitor: ProcessMonitor
     private lateinit var config: JibriConfig
     private var recordingActive = false
+    private val logger = Logger.getLogger(Jibri::class.simpleName)
 
     // TODO: force a (successful) call of this in ctor?
     // and only load it at start? (require restart to load new config?
@@ -42,10 +44,10 @@ class Jibri {
         try {
             config = mapper.readValue<JibriConfig>(File(configFilePath))
         } catch (e: FileNotFoundException) {
-            println("Unable to read config file ${configFilePath}")
+            logger.severe("Unable to read config file ${configFilePath}")
             return
         }
-        println("Read config: \n ${config}")
+        logger.info("Read config:\n + $config")
     }
 
     /**
@@ -57,15 +59,15 @@ class Jibri {
         if (recordingActive) {
             return StartRecordingResult.ALREADY_RECORDING
         }
-        println("Starting a recording, options: $jibriOptions")
+        recordingActive = true
+        logger.info("Starting a recording, options: $jibriOptions")
         val sink = if (jibriOptions.recordingSinkType == RecordingSinkType.STREAM) {
             Stream(jibriOptions.streamUrl!!, 2976, 2976 * 2)
         } else {
             Recording(recordingsDirectory = File(config.recordingDirectory), callName = jibriOptions.callName)
         }
 
-        println("Starting selenium")
-        //TODO: get url from somewhere
+        logger.info("Starting selenium")
         //TODO: how best to deal with jibriSelenium (and capturer and
         // captureMonitor)?  they are
         // member values and cannot be initialized right away so:
@@ -79,15 +81,15 @@ class Jibri {
         //  to do any cleanup necessary
         //TODO: return error if anything here fails to start up
         jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = jibriOptions.baseUrl))
-        println("joining call")
+        logger.info("Joining call ${jibriOptions.callName} on base url ${jibriOptions.baseUrl}")
         jibriSelenium.joinCall(jibriOptions.callName)
         // start ffmpeg or pjsua (how does pjsua work here?)
         capturer = if(jibriOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
-        println("Starting capturer")
+        logger.info("Starting capturer")
         capturer.start(CapturerParams(), sink)
         // monitor the capturer process to watch for issues
         capturerMonitor = ProcessMonitor(processToMonitor = capturer) { exitCode ->
-            println("Capturer process is no longer running, exited with code: $exitCode")
+            logger.severe("Capturer process is no longer running, exited with code: $exitCode")
             //NOTE: even though this will be executed on a separate thread
             // from the call to 'stopRecording', i don't think we have a
             // race condition here, since stopRecording will call capturer.stop
@@ -105,6 +107,7 @@ class Jibri {
     fun stopRecording()
     {
         if (!recordingActive) {
+            logger.info("Stop recording request recieved but we weren't recording")
             return
         }
         // stop monitoring
@@ -113,11 +116,11 @@ class Jibri {
         }
         // stop the recording and exit the call
         if (this::capturer.isInitialized) {
-            println("Stopping capturer")
+            logger.info("Stopping capturer")
             capturer.stop()
         }
         if (this::jibriSelenium.isInitialized) {
-            println("Quitting selenium")
+            logger.info("Quitting selenium")
             jibriSelenium.leaveCallAndQuitBrowser()
         }
         // finalize the recording
@@ -131,6 +134,7 @@ class Jibri {
     fun healthCheck(): String
     {
         val health = JibriHealth()
+        health.recording = recordingActive
         val mapper = jacksonObjectMapper()
         return mapper.writeValueAsString(health)
     }

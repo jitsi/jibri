@@ -13,7 +13,8 @@ class JibriTest
         jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/")
         jibri.startRecording(JibriOptions(
                 recordingSinkType = RecordingSinkType.FILE,
-                callName = "jibritest"
+                callName = "jibritest",
+                baseUrl = "https://brian2.jitsi.net"
         ))
         Thread.sleep(10000)
         jibri.stopRecording()

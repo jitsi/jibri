@@ -1,7 +1,9 @@
 package org.jitsi.jibri.api.rest
 
 import org.jitsi.jibri.Jibri
+import org.jitsi.jibri.JibriOptions
 import org.jitsi.jibri.RecordingSinkType
+import org.jitsi.jibri.StartRecordingResult
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -12,7 +14,8 @@ import javax.ws.rs.core.Response
 // https://github.com/FasterXML/jackson-module-kotlin
 // https://craftsmen.nl/kotlin-create-rest-services-using-jersey-and-jackson/
 data class StartRecordingParams(
-        val url: String = "",
+        val baseUrl: String = "",
+        val callName: String = "",
         val sinkType: RecordingSinkType = RecordingSinkType.FILE
 )
 
@@ -22,20 +25,39 @@ class RestApi(val jibri: Jibri) {
     @Path("health")
     @Produces(MediaType.APPLICATION_JSON)
     fun health(): Response {
+        println("Got health request")
         return Response.ok(jibri.healthCheck()).build()
     }
 
+    /**
+     * Start recording will start a new recording using the given params
+     * immediately
+     */
     @POST
     @Path("startRecording")
     @Consumes(MediaType.APPLICATION_JSON)
     fun startRecording(recordingParams: StartRecordingParams): Response {
-        println(recordingParams)
-        return Response.ok().build()
+        println("Got startRecording request with params $recordingParams")
+        val result = jibri.startRecording(JibriOptions(
+                recordingSinkType = recordingParams.sinkType,
+                baseUrl = recordingParams.baseUrl,
+                callName =  recordingParams.callName
+        ))
+        val response = when (result) {
+            StartRecordingResult.OK -> Response.ok().build()
+            StartRecordingResult.ALREADY_RECORDING -> Response.status(Response.Status.PRECONDITION_FAILED).build()
+            StartRecordingResult.ERROR -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
+        }
+        return response
     }
 
+    /**
+     * Stop recording will stop the current recording immediately
+     */
     @POST
     @Path("stopRecording")
     fun stopRecording(): Response {
+        println("Got stop recording request")
         jibri.stopRecording()
         return Response.ok().build()
     }

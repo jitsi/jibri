@@ -12,6 +12,7 @@ import javax.ws.rs.ext.ContextResolver
 
 fun main(args: Array<String>) {
     val jibri = Jibri()
+    jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/config.json")
     val config = ResourceConfig()
     config.register(RestApi(jibri))
             .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })

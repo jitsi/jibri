@@ -29,7 +29,9 @@ data class JibriConfig(
         val seleniumXmppUsername: String,
         @JsonProperty("selenium_xmpp_password")
         val seleniumXmppPassword: String,
-        val servers: List<String>
+        val servers: List<String>,
+        @JsonProperty("finalize_recording_script_path")
+        val finalizeRecordingScriptPath: String
         //TODO: looks like this is a nested object, but need to know what
         // its structure looks like
         //val environments: Any
