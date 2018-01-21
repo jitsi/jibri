@@ -1,14 +1,16 @@
 package org.jitsi.jibri.sink
 
+import org.jitsi.jibri.util.error
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.logging.Logger
 
 /**
  * Model of a jibri recording
  */
-class Recording(val recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink
-{
+class Recording(val recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
+    private val logger = Logger.getLogger(this::class.simpleName)
     val file: File?
     init {
         val currentTime = LocalDateTime.now()
@@ -17,11 +19,11 @@ class Recording(val recordingsDirectory: File, callName: String, extension: Stri
         if (recordingsDirectory.mkdirs() or recordingsDirectory.isDirectory)
         {
             file = File(recordingsDirectory, filename)
-            println("Using recording file " + file.toString())
+            logger.info("Using recording file " + file.toString())
         }
         else
         {
-            println("Error creating directory: $recordingsDirectory")
+            logger.error("Error creating directory: $recordingsDirectory")
             file = null
         }
     }

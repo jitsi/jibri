@@ -4,6 +4,8 @@ import org.jitsi.jibri.Jibri
 import org.jitsi.jibri.JibriOptions
 import org.jitsi.jibri.RecordingSinkType
 import org.jitsi.jibri.StartRecordingResult
+import org.jitsi.jibri.util.debug
+import java.util.logging.Logger
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -21,11 +23,13 @@ data class StartRecordingParams(
 
 @Path("/jibri/api/v1.0")
 class RestApi(val jibri: Jibri) {
+    private val logger = Logger.getLogger(this::class.simpleName)
+
     @GET
     @Path("health")
     @Produces(MediaType.APPLICATION_JSON)
     fun health(): Response {
-        println("Got health request")
+        logger.debug("Got health request")
         return Response.ok(jibri.healthCheck()).build()
     }
 
@@ -37,7 +41,7 @@ class RestApi(val jibri: Jibri) {
     @Path("startRecording")
     @Consumes(MediaType.APPLICATION_JSON)
     fun startRecording(recordingParams: StartRecordingParams): Response {
-        println("Got startRecording request with params $recordingParams")
+        logger.debug("Got startRecording request with params $recordingParams")
         val result = jibri.startRecording(JibriOptions(
                 recordingSinkType = recordingParams.sinkType,
                 baseUrl = recordingParams.baseUrl,
@@ -57,7 +61,7 @@ class RestApi(val jibri: Jibri) {
     @POST
     @Path("stopRecording")
     fun stopRecording(): Response {
-        println("Got stop recording request")
+        logger.debug("Got stop recording request")
         jibri.stopRecording()
         return Response.ok().build()
     }

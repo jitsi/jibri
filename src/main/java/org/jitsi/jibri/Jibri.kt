@@ -13,6 +13,7 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.sink.Recording
 import org.jitsi.jibri.sink.Stream
+import org.jitsi.jibri.util.error
 import java.io.File
 import java.io.FileNotFoundException
 import java.util.logging.Logger
@@ -32,7 +33,7 @@ class Jibri {
     private lateinit var capturerMonitor: ProcessMonitor
     private lateinit var config: JibriConfig
     private var recordingActive = false
-    private val logger = Logger.getLogger(Jibri::class.simpleName)
+    private val logger = Logger.getLogger(this::class.simpleName)
 
     // TODO: force a (successful) call of this in ctor?
     // and only load it at start? (require restart to load new config?
@@ -44,7 +45,7 @@ class Jibri {
         try {
             config = mapper.readValue<JibriConfig>(File(configFilePath))
         } catch (e: FileNotFoundException) {
-            logger.severe("Unable to read config file ${configFilePath}")
+            logger.error("Unable to read config file ${configFilePath}")
             return
         }
         logger.info("Read config:\n + $config")
@@ -89,7 +90,7 @@ class Jibri {
         capturer.start(CapturerParams(), sink)
         // monitor the capturer process to watch for issues
         capturerMonitor = ProcessMonitor(processToMonitor = capturer) { exitCode ->
-            logger.severe("Capturer process is no longer running, exited with code: $exitCode")
+            logger.error("Capturer process is no longer running, exited with code: $exitCode")
             //NOTE: even though this will be executed on a separate thread
             // from the call to 'stopRecording', i don't think we have a
             // race condition here, since stopRecording will call capturer.stop

@@ -8,6 +8,8 @@ import org.jitsi.jibri.capture.ffmpeg.executors.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executors.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.executors.LinuxFfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executors.MacFfmpegExecutor
+import org.jitsi.jibri.util.debug
+import java.util.logging.Logger
 
 // Taken from https://stackoverflow.com/questions/35421699/how-to-invoke-external-command-from-within-kotlin-code
 //TODO: not sure if we'll want to use this or just use the Runtime.getRuntime().exec()
@@ -33,11 +35,12 @@ import org.jitsi.jibri.capture.ffmpeg.executors.MacFfmpegExecutor
 //}
 
 class FfmpegCapturer : Capturer {
+    private val logger = Logger.getLogger(this::class.simpleName)
     val ffmpegExecutor: FfmpegExecutor
 
     init
     {
-        println("OS: ${System.getProperty("os.name")}")
+        logger.debug("OS: ${System.getProperty("os.name")}")
         ffmpegExecutor = when (System.getProperty("os.name"))
         {
             "Mac OS X" -> MacFfmpegExecutor()

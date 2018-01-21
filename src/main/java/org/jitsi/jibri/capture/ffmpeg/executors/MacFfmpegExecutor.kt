@@ -1,10 +1,13 @@
 package org.jitsi.jibri.capture.ffmpeg.executors
 
 import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.util.debug
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 class MacFfmpegExecutor : FfmpegExecutor
 {
+    private val logger = Logger.getLogger(this::class.simpleName)
     var currentFfmpegProc: Process? = null
 
     override fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink)
@@ -23,7 +26,7 @@ class MacFfmpegExecutor : FfmpegExecutor
                 "-f ${sink.getFormat()} ${sink.getPath()}"
 
         currentFfmpegProc = Runtime.getRuntime().exec(ffmpegCommandMac)
-        println("launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive()}")
+        logger.debug("launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive()}")
     }
 
     override fun isAlive(): Boolean = currentFfmpegProc?.isAlive ?: false
@@ -32,10 +35,10 @@ class MacFfmpegExecutor : FfmpegExecutor
 
     override fun stopFfmpeg() {
         currentFfmpegProc?.pid()?.let {
-            println("sending SIGINT to ffmpeg proc ${currentFfmpegProc?.pid()}")
+            logger.info("sending SIGINT to ffmpeg proc ${currentFfmpegProc?.pid()}")
             Runtime.getRuntime().exec("kill -s SIGINT ${currentFfmpegProc!!.pid()}")
         } ?: run {
-            println("stopFfmpeg: ffmpeg had already exited")
+            logger.info("stopFfmpeg: ffmpeg had already exited")
         }
         currentFfmpegProc?.waitFor(10, TimeUnit.SECONDS)
         currentFfmpegProc?.isAlive.let {
@@ -43,6 +46,6 @@ class MacFfmpegExecutor : FfmpegExecutor
             // the entire recording (from what I've seen)
             currentFfmpegProc?.destroyForcibly()
         }
-        println("FfmpegCapturer exited with ${currentFfmpegProc?.exitValue()}")
+        logger.info("FfmpegCapturer exited with ${currentFfmpegProc?.exitValue()}")
     }
 }
