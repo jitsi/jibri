@@ -8,7 +8,7 @@ class Stream(val url: String, val streamingMaxBitrate: Int, val streamingBufSize
 
     override fun getOptions(): String = "-maxrate ${streamingMaxBitrate}k -bufsize ${streamingBufSize}k"
 
-    override fun finalize(): Unit
+    override fun finalize(finalizeScriptPath: String)
     {
         //TODO: anything to do here?
     }

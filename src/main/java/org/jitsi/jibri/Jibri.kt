@@ -12,10 +12,13 @@ import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.sink.Recording
+import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.Stream
+import org.jitsi.jibri.util.debug
 import org.jitsi.jibri.util.error
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.util.logging.Logger
 
 enum class StartRecordingResult {
@@ -32,6 +35,7 @@ class Jibri {
     private lateinit var capturer: Capturer
     private lateinit var capturerMonitor: ProcessMonitor
     private lateinit var config: JibriConfig
+    private lateinit var sink: Sink
     private var recordingActive = false
     private val logger = Logger.getLogger(this::class.simpleName)
 
@@ -62,7 +66,7 @@ class Jibri {
         }
         recordingActive = true
         logger.info("Starting a recording, options: $jibriOptions")
-        val sink = if (jibriOptions.recordingSinkType == RecordingSinkType.STREAM) {
+        sink = if (jibriOptions.recordingSinkType == RecordingSinkType.STREAM) {
             Stream(jibriOptions.streamUrl!!, 2976, 2976 * 2)
         } else {
             Recording(recordingsDirectory = File(config.recordingDirectory), callName = jibriOptions.callName)
@@ -124,7 +128,9 @@ class Jibri {
             logger.info("Quitting selenium")
             jibriSelenium.leaveCallAndQuitBrowser()
         }
-        // finalize the recording
+        sink.finalize(config.finalizeRecordingScriptPath)
+
+        recordingActive = false
     }
 
     /**

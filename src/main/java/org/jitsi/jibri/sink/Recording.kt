@@ -2,6 +2,7 @@ package org.jitsi.jibri.sink
 
 import org.jitsi.jibri.util.error
 import java.io.File
+import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.logging.Logger
@@ -28,15 +29,22 @@ class Recording(val recordingsDirectory: File, callName: String, extension: Stri
         }
     }
 
-    override public fun getPath(): String? = file?.path
+    override fun getPath(): String? = file?.path
 
-    override public fun getFormat(): String? = file?.extension
+    override fun getFormat(): String? = file?.extension
 
-    override public fun getOptions(): String = "-profile:v main -level 3.1"
+    override fun getOptions(): String = "-profile:v main -level 3.1"
 
-    override public fun finalize()
+    override fun finalize(finalizeScriptPath: String)
     {
-        TODO()
+        logger.info("Finalizing the recording")
+        try {
+            val finalizeProc = Runtime.getRuntime().exec(finalizeScriptPath)
+            finalizeProc.waitFor()
+            logger.info("Recording finalize script finished with exit " +
+                    "value: ${finalizeProc.exitValue()})")
+        } catch (e: IOException) {
+            logger.error("Failed to run finalize script: $e")
+        }
     }
-
 }
