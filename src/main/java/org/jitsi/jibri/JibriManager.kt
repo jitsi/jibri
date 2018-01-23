@@ -28,7 +28,7 @@ class JibriManager(val config: JibriConfig) {
         //TODO: this logic will need to change a bit once the gateway stuff
         // comes in.  hoping there's a better structure for the params
         // here we can use (or, even better, separate calls for the different
-        // types...file recording, streaming, gateway
+        // types...file recording, streaming, gateway)
         currentActiveService = when (jibriServiceOptions.recordingSinkType) {
             RecordingSinkType.FILE -> JibriFileRecording(
                 RecordingOptions(

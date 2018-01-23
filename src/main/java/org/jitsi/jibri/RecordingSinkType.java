@@ -20,7 +20,7 @@ import org.codehaus.jackson.annotate.*;
 /**
  * @author bbaldino
  * NOTE: this file had to be in java, I couldn't get it to recognize the
- * custom JsonCreator constructor to handle case-agnosticisim in kotlin
+ * custom JsonCreator constructor to handle enum-case-agnosticisim in kotlin
  */
 public enum RecordingSinkType
 {

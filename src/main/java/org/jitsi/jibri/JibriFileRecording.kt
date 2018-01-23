@@ -29,8 +29,10 @@ class JibriFileRecording(val recordingOptions: RecordingOptions) : JibriService 
     private val finalizeScriptPath: String = recordingOptions.finalizeScriptPath
     private var capturerMonitor: ProcessMonitor? = null
     init {
-        sink = FileSink(recordingsDirectory = recordingOptions.recordingDirectory,
-                callName = recordingOptions.callName)
+        sink = FileSink(
+                recordingsDirectory = recordingOptions.recordingDirectory,
+                callName = recordingOptions.callName
+        )
         jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = recordingOptions.baseUrl))
         capturer = FfmpegCapturer()
     }
