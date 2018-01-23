@@ -16,6 +16,7 @@ import java.util.logging.Logger
 data class RecordingOptions(
         // The directory in which recordings should be created
         val recordingDirectory: File,
+        //TODO: these get used a lot, add a 'CallUrlInfo' class?
         val baseUrl: String,
         val callName: String,
         val finalizeScriptPath: String
@@ -46,13 +47,18 @@ class JibriFileRecording(val recordingOptions: RecordingOptions) : JibriService 
         capturerMonitor = ProcessMonitor(processToMonitor = capturer) { exitCode ->
             logger.error("Capturer process is no longer running, exited " +
                     "with code $exitCode")
+            //TODO: will this append to the existing file? or will it overwrite?
+            // does ffmpeg support appending? or do we need to use a different file?
             capturer.start(capturerParams, sink)
+            capturerMonitor!!.startMonitoring()
         }
+        capturerMonitor!!.startMonitoring()
     }
 
     @Synchronized
     override fun stop() {
         capturerMonitor?.stopMonitoring()
+        capturerMonitor = null
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")

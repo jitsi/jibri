@@ -6,7 +6,6 @@ import kotlin.concurrent.scheduleAtFixedRate
 /**
  * Monitor a process to verify that it is still alive, if it is found to be
  * dead, invoke a callback
- * NOTE: this class is not threadsafe
  */
 class ProcessMonitor(
         private val processToMonitor: MonitorableProcess,
@@ -20,6 +19,7 @@ class ProcessMonitor(
     @Volatile
     private var running: Boolean = false
 
+    @Synchronized
     fun startMonitoring() {
         if (running) {
             return
@@ -30,6 +30,7 @@ class ProcessMonitor(
         }
     }
 
+    @Synchronized
     private fun checkAlive()
     {
         if (running)
@@ -43,6 +44,7 @@ class ProcessMonitor(
         }
     }
 
+    @Synchronized
     fun stopMonitoring()
     {
         running = false

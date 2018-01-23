@@ -11,12 +11,12 @@ import org.glassfish.jersey.server.*
 import org.glassfish.jersey.servlet.*
 import org.jitsi.jibri.api.rest.RestApi
 import org.jitsi.jibri.config.JibriConfig
-import org.jitsi.jibri.util.error
 import java.io.File
 import java.io.FileNotFoundException
 import javax.ws.rs.ext.ContextResolver
 
 fun main(args: Array<String>) {
+    //TODO: change this to a program arg
     val configFilePath = "/Users/bbaldino/jitsi/jibri-new/config.json"
     val jibriConfig = try {
         jacksonObjectMapper().readValue<JibriConfig>(File(configFilePath))
