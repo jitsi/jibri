@@ -5,5 +5,4 @@ interface Sink
     fun getPath(): String?
     fun getFormat(): String?
     fun getOptions(): String
-    fun finalize(finalizeScriptPath: String)
 }

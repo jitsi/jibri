@@ -8,10 +8,10 @@ import com.fasterxml.jackson.annotation.JsonProperty
 // 2) whether or not it's currently recording
 // (the rest has been less useful)
 data class JibriHealth(
-        var health: Boolean = false,
-        var recording: Boolean = false,
-        @JsonProperty("XMPPConnected")
-        var xmppConnected: Boolean = false,
-        // e.g. "meetjitsi", "hipchat", "stride", etc.
-        var environment: Map<String, String> = mapOf()
+        var busy: Boolean = false
+//        var health: Boolean = false,
+//        @JsonProperty("XMPPConnected")
+//        var xmppConnected: Boolean = false,
+//        // e.g. "meetjitsi", "hipchat", "stride", etc.
+//        var environment: Map<String, String> = mapOf()
 )

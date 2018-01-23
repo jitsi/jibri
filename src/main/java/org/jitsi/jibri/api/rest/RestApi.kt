@@ -1,9 +1,6 @@
 package org.jitsi.jibri.api.rest
 
-import org.jitsi.jibri.Jibri
-import org.jitsi.jibri.JibriOptions
-import org.jitsi.jibri.RecordingSinkType
-import org.jitsi.jibri.StartRecordingResult
+import org.jitsi.jibri.*
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
 import javax.ws.rs.*
@@ -22,7 +19,7 @@ data class StartRecordingParams(
 )
 
 @Path("/jibri/api/v1.0")
-class RestApi(val jibri: Jibri) {
+class RestApi(val jibri: JibriManager) {
     private val logger = Logger.getLogger(this::class.simpleName)
 
     @GET
@@ -41,16 +38,15 @@ class RestApi(val jibri: Jibri) {
     @Path("startRecording")
     @Consumes(MediaType.APPLICATION_JSON)
     fun startRecording(recordingParams: StartRecordingParams): Response {
-        logger.debug("Got startRecording request with params $recordingParams")
-        val result = jibri.startRecording(JibriOptions(
-                recordingSinkType = recordingParams.sinkType,
+        val result = jibri.startService(JibriServiceOptions(
+            recordingSinkType = recordingParams.sinkType,
                 baseUrl = recordingParams.baseUrl,
-                callName =  recordingParams.callName
+                callName = recordingParams.callName
         ))
         val response = when (result) {
-            StartRecordingResult.OK -> Response.ok().build()
-            StartRecordingResult.ALREADY_RECORDING -> Response.status(Response.Status.PRECONDITION_FAILED).build()
-            StartRecordingResult.ERROR -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
+            StartServiceResult.SUCCESS -> Response.ok().build()
+            StartServiceResult.BUSY -> Response.status(Response.Status.PRECONDITION_FAILED).build()
+            StartServiceResult.ERROR -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
         }
         return response
     }
@@ -62,7 +58,7 @@ class RestApi(val jibri: Jibri) {
     @Path("stopRecording")
     fun stopRecording(): Response {
         logger.debug("Got stop recording request")
-        jibri.stopRecording()
+        jibri.stopService()
         return Response.ok().build()
     }
 

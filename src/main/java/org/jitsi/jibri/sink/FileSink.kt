@@ -10,7 +10,7 @@ import java.util.logging.Logger
 /**
  * Model of a jibri recording
  */
-class Recording(val recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
+class FileSink(val recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
     private val logger = Logger.getLogger(this::class.simpleName)
     val file: File?
     init {
@@ -34,17 +34,4 @@ class Recording(val recordingsDirectory: File, callName: String, extension: Stri
     override fun getFormat(): String? = file?.extension
 
     override fun getOptions(): String = "-profile:v main -level 3.1"
-
-    override fun finalize(finalizeScriptPath: String)
-    {
-        logger.info("Finalizing the recording")
-        try {
-            val finalizeProc = Runtime.getRuntime().exec(finalizeScriptPath)
-            finalizeProc.waitFor()
-            logger.info("Recording finalize script finished with exit " +
-                    "value: ${finalizeProc.exitValue()})")
-        } catch (e: IOException) {
-            logger.error("Failed to run finalize script: $e")
-        }
-    }
 }

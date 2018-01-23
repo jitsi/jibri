@@ -11,14 +11,12 @@ import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
-import org.jitsi.jibri.sink.Recording
+import org.jitsi.jibri.sink.FileSink
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.sink.Stream
-import org.jitsi.jibri.util.debug
+import org.jitsi.jibri.sink.StreamSink
 import org.jitsi.jibri.util.error
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.IOException
 import java.util.logging.Logger
 
 enum class StartRecordingResult {
@@ -59,17 +57,17 @@ class Jibri {
      * Start a recording session
      */
     @Synchronized
-    fun startRecording(jibriOptions: JibriOptions): StartRecordingResult
+    fun startRecording(jibriServiceOptions: JibriServiceOptions): StartRecordingResult
     {
         if (recordingActive) {
             return StartRecordingResult.ALREADY_RECORDING
         }
         recordingActive = true
-        logger.info("Starting a recording, options: $jibriOptions")
-        sink = if (jibriOptions.recordingSinkType == RecordingSinkType.STREAM) {
-            Stream(jibriOptions.streamUrl!!, 2976, 2976 * 2)
+        logger.info("Starting a recording, options: $jibriServiceOptions")
+        sink = if (jibriServiceOptions.recordingSinkType == RecordingSinkType.STREAM) {
+            StreamSink(jibriServiceOptions.streamUrl!!, 2976, 2976 * 2)
         } else {
-            Recording(recordingsDirectory = File(config.recordingDirectory), callName = jibriOptions.callName)
+            FileSink(recordingsDirectory = File(config.recordingDirectory), callName = jibriServiceOptions.callName)
         }
 
         logger.info("Starting selenium")
@@ -85,11 +83,11 @@ class Jibri {
         // in every case, if we handle failure for one step we need to make sure
         //  to do any cleanup necessary
         //TODO: return error if anything here fails to start up
-        jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = jibriOptions.baseUrl))
-        logger.info("Joining call ${jibriOptions.callName} on base url ${jibriOptions.baseUrl}")
-        jibriSelenium.joinCall(jibriOptions.callName)
+        jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = jibriServiceOptions.baseUrl))
+        logger.info("Joining call ${jibriServiceOptions.callName} on base url ${jibriServiceOptions.baseUrl}")
+        jibriSelenium.joinCall(jibriServiceOptions.callName)
         // start ffmpeg or pjsua (how does pjsua work here?)
-        capturer = if(jibriOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
+        capturer = if(jibriServiceOptions.useSipGateway) PjSuaCapturer() else FfmpegCapturer()
         logger.info("Starting capturer")
         capturer.start(CapturerParams(), sink)
         // monitor the capturer process to watch for issues
@@ -128,7 +126,7 @@ class Jibri {
             logger.info("Quitting selenium")
             jibriSelenium.leaveCallAndQuitBrowser()
         }
-        sink.finalize(config.finalizeRecordingScriptPath)
+        //sink.finalize(config.finalizeRecordingScriptPath)
 
         recordingActive = false
     }
@@ -140,9 +138,10 @@ class Jibri {
     @Synchronized
     fun healthCheck(): String
     {
-        val health = JibriHealth()
-        health.recording = recordingActive
-        val mapper = jacksonObjectMapper()
-        return mapper.writeValueAsString(health)
+        TODO()
+//        val health = JibriHealth()
+//        health.recording = recordingActive
+//        val mapper = jacksonObjectMapper()
+//        return mapper.writeValueAsString(health)
     }
 }

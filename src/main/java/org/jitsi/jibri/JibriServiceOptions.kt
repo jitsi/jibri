@@ -3,7 +3,7 @@ package org.jitsi.jibri
 /**
  * Contains the various configuration values needed when starting a recording
  */
-data class JibriOptions(
+data class JibriServiceOptions(
         /**
          * The sink type (where the captured media will be written to) for
          * this recording
@@ -36,5 +36,3 @@ data class JibriOptions(
          *  streamed
          */
         val streamUrl: String? = null)
-{
-}

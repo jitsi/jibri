@@ -11,7 +11,7 @@ class JibriTest
     {
         val jibri = Jibri()
         jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/")
-        jibri.startRecording(JibriOptions(
+        jibri.startRecording(JibriServiceOptions(
                 recordingSinkType = RecordingSinkType.FILE,
                 callName = "jibritest",
                 baseUrl = "https://brian2.jitsi.net"
