@@ -1,4 +1,6 @@
-package org.jitsi.jibri
+package org.jitsi.jibri.service
+
+import org.jitsi.jibri.RecordingSinkType
 
 /**
  * Contains the various configuration values needed when starting a recording

@@ -1,8 +1,11 @@
 package org.jitsi.jibri
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.health.JibriHealth
+import org.jitsi.jibri.service.JibriFileRecordingService
+import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceOptions
+import org.jitsi.jibri.service.RecordingOptions
 import org.jitsi.jibri.util.error
 import java.io.File
 import java.util.logging.Logger
@@ -30,13 +33,13 @@ class JibriManager(val config: JibriConfig) {
         // here we can use (or, even better, separate calls for the different
         // types...file recording, streaming, gateway)
         currentActiveService = when (jibriServiceOptions.recordingSinkType) {
-            RecordingSinkType.FILE -> JibriFileRecording(
-                RecordingOptions(
-                        recordingDirectory = File(config.recordingDirectory),
-                        baseUrl = jibriServiceOptions.baseUrl,
-                        callName = jibriServiceOptions.callName,
-                        finalizeScriptPath = config.finalizeRecordingScriptPath
-                )
+            RecordingSinkType.FILE -> JibriFileRecordingService(
+                    RecordingOptions(
+                            recordingDirectory = File(config.recordingDirectory),
+                            baseUrl = jibriServiceOptions.baseUrl,
+                            callName = jibriServiceOptions.callName,
+                            finalizeScriptPath = config.finalizeRecordingScriptPath
+                    )
             )
             else -> TODO()
         }

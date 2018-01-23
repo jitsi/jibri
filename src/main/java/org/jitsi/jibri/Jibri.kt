@@ -8,9 +8,9 @@ import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.pjsua.PjSuaCapturer
 import org.jitsi.jibri.config.JibriConfig
-import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
+import org.jitsi.jibri.service.JibriServiceOptions
 import org.jitsi.jibri.sink.FileSink
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.StreamSink

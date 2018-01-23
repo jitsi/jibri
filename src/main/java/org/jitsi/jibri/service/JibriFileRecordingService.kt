@@ -1,4 +1,4 @@
-package org.jitsi.jibri
+package org.jitsi.jibri.service
 
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.CapturerParams
@@ -22,7 +22,7 @@ data class RecordingOptions(
         val finalizeScriptPath: String
 )
 
-class JibriFileRecording(val recordingOptions: RecordingOptions) : JibriService {
+class JibriFileRecordingService(val recordingOptions: RecordingOptions) : JibriService {
     private val logger = Logger.getLogger(this::class.simpleName)
     private val sink: Sink
     private val jibriSelenium: JibriSelenium

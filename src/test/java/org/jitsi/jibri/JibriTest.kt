@@ -2,6 +2,7 @@ package org.jitsi.jibri
 
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
+import org.jitsi.jibri.service.JibriServiceOptions
 import org.testng.annotations.Test
 
 class JibriTest

@@ -1,6 +1,7 @@
 package org.jitsi.jibri.api.rest
 
 import org.jitsi.jibri.*
+import org.jitsi.jibri.service.JibriServiceOptions
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
 import javax.ws.rs.*
@@ -39,7 +40,7 @@ class RestApi(val jibri: JibriManager) {
     @Consumes(MediaType.APPLICATION_JSON)
     fun startRecording(recordingParams: StartRecordingParams): Response {
         val result = jibri.startService(JibriServiceOptions(
-            recordingSinkType = recordingParams.sinkType,
+                recordingSinkType = recordingParams.sinkType,
                 baseUrl = recordingParams.baseUrl,
                 callName = recordingParams.callName
         ))
