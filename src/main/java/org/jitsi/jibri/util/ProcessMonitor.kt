@@ -1,6 +1,7 @@
 package org.jitsi.jibri.util
 
 import java.util.*
+import java.util.logging.Logger
 import kotlin.concurrent.scheduleAtFixedRate
 
 /**
@@ -13,6 +14,7 @@ class ProcessMonitor(
         // exit code, so this callback needs to support being passed null
         private val processIsDeadCallback: (exitCode: Int?) -> Unit)
 {
+    private val logger = Logger.getLogger(this::class.simpleName)
     private val timer: Timer = Timer()
     private val aliveCheckIntervalMillis: Long = 60 * 1000
 
@@ -35,9 +37,12 @@ class ProcessMonitor(
     {
         if (running)
         {
+            logger.info("Process monitor checking if alive")
             if (!processToMonitor.isAlive())
             {
+                logger.info("Process is dead")
                 running = false
+                //TODO: this prevents us from calling scheduleAtFixedRate again
                 timer.cancel()
                 processIsDeadCallback(processToMonitor.getExitCode())
             }

@@ -2,6 +2,7 @@ package org.jitsi.jibri.capture.ffmpeg.executors
 
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.debug
+import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
@@ -16,16 +17,23 @@ class MacFfmpegExecutor : FfmpegExecutor
                 "ffmpeg -y -v info " +
                 "-thread_queue_size ${ffmpegExecutorParams.queueSize} " +
                 "-f avfoundation " +
-                "-r ${ffmpegExecutorParams.framerate} " +
-                "-i 0:0 " +
-                "-s ${ffmpegExecutorParams.resolution} " +
+                "-framerate ${ffmpegExecutorParams.framerate} " +
+                "-video_size ${ffmpegExecutorParams.resolution} " +
+                "-i ${ffmpegExecutorParams.videoInputDevice}:${ffmpegExecutorParams.audioInputDevice} " +
+                "-vsync 2 " +
                 "-acodec aac -strict -2 -ar 44100 " +
                 "-c:v libx264 -preset ${ffmpegExecutorParams.videoEncodePreset} " +
                 "${sink.getOptions()} -pix_fmt yuv420p -crf ${ffmpegExecutorParams.h264ConstantRateFactor} " +
                 "-g ${ffmpegExecutorParams.gopSize} -tune zerolatency " +
                 "-f ${sink.getFormat()} ${sink.getPath()}"
 
-        currentFfmpegProc = Runtime.getRuntime().exec(ffmpegCommandMac)
+        val pb = ProcessBuilder(ffmpegCommandMac.split(" "))
+        pb.redirectOutput(File("/tmp/ffmpeg.out"))
+        pb.redirectError(File("/tmp/ffmpeg.out"))
+
+        logger.info("running ffmpeg command:\n $ffmpegCommandMac")
+        //currentFfmpegProc = Runtime.getRuntime().exec(ffmpegCommandMac)
+        currentFfmpegProc = pb.start()
         logger.debug("launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive()}")
     }
 

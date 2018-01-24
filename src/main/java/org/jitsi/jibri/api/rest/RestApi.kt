@@ -14,9 +14,9 @@ import javax.ws.rs.core.Response
 // https://github.com/FasterXML/jackson-module-kotlin
 // https://craftsmen.nl/kotlin-create-rest-services-using-jersey-and-jackson/
 data class StartRecordingParams(
-        val baseUrl: String = "",
-        val callName: String = "",
-        val sinkType: RecordingSinkType = RecordingSinkType.FILE
+        val callUrlInfo: CallUrlInfo = CallUrlInfo(),
+        val sinkType: RecordingSinkType = RecordingSinkType.FILE,
+        val streamUrl: String = ""
 )
 
 @Path("/jibri/api/v1.0")
@@ -41,8 +41,8 @@ class RestApi(val jibri: JibriManager) {
     fun startRecording(recordingParams: StartRecordingParams): Response {
         val result = jibri.startService(JibriServiceOptions(
                 recordingSinkType = recordingParams.sinkType,
-                baseUrl = recordingParams.baseUrl,
-                callName = recordingParams.callName
+                callUrlInfo = recordingParams.callUrlInfo,
+                streamUrl = recordingParams.streamUrl
         ))
         val response = when (result) {
             StartServiceResult.SUCCESS -> Response.ok().build()

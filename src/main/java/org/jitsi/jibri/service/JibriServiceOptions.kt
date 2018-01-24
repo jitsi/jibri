@@ -1,5 +1,6 @@
 package org.jitsi.jibri.service
 
+import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.RecordingSinkType
 
 /**
@@ -12,18 +13,9 @@ data class JibriServiceOptions(
          */
         val recordingSinkType: RecordingSinkType,
         /**
-         * The base url of the video service.  This assumes the call url
-         * will be created via combining the [baseUrl] and [callName] options
-         * like so: [baseUrl] + "/" + [callName].  The [baseUrl] is used to set
-         * localstorage variables jibri relies on without having to fully
-         * join the call.
+         * The url information for the call to be joined.
          */
-        val baseUrl: String,
-        /**
-         * The call name to join, see the comment above about the usage of
-         * baseUrl and callName
-         */
-        val callName: String,
+        val callUrlInfo: CallUrlInfo,
         /**
          * Whether or not this session will connect using a sip gateway.  If
          * this value is true, the recordingSinkType and streamUrl values
@@ -37,4 +29,5 @@ data class JibriServiceOptions(
          *  parameter will contain the url to which the media should be
          *  streamed
          */
-        val streamUrl: String? = null)
+        val streamUrl: String? = null
+)

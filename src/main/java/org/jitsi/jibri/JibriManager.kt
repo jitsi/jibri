@@ -2,10 +2,7 @@ package org.jitsi.jibri
 
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.health.JibriHealth
-import org.jitsi.jibri.service.JibriFileRecordingService
-import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceOptions
-import org.jitsi.jibri.service.RecordingOptions
+import org.jitsi.jibri.service.*
 import org.jitsi.jibri.util.error
 import java.io.File
 import java.util.logging.Logger
@@ -36,9 +33,14 @@ class JibriManager(val config: JibriConfig) {
             RecordingSinkType.FILE -> JibriFileRecordingService(
                     RecordingOptions(
                             recordingDirectory = File(config.recordingDirectory),
-                            baseUrl = jibriServiceOptions.baseUrl,
-                            callName = jibriServiceOptions.callName,
+                            callUrlInfo = jibriServiceOptions.callUrlInfo,
                             finalizeScriptPath = config.finalizeRecordingScriptPath
+                    )
+            )
+            RecordingSinkType.STREAM -> JibriStreamingService(
+                    StreamingOptions(
+                            streamUrl = jibriServiceOptions.streamUrl!!,
+                            callUrlInfo = jibriServiceOptions.callUrlInfo
                     )
             )
             else -> TODO()
