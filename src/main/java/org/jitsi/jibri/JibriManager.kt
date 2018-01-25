@@ -13,6 +13,15 @@ enum class StartServiceResult {
     ERROR
 }
 
+data class FileRecordingParams(
+        val callUrlInfo: CallUrlInfo
+)
+
+data class StreamingParams(
+        val streamUrl: String,
+        val callUrlInfo: CallUrlInfo
+)
+
 /**
  * The manager to create Jibri recording/streaming instances.
  */
@@ -21,31 +30,37 @@ class JibriManager(val config: JibriConfig) {
     private var currentActiveService: JibriService? = null
 
     @Synchronized
-    fun startService(jibriServiceOptions: JibriServiceOptions): StartServiceResult {
+    fun startFileRecording(fileRecordingParams: FileRecordingParams): StartServiceResult {
         if (busy()) {
             return StartServiceResult.BUSY
         }
-        //TODO: this logic will need to change a bit once the gateway stuff
-        // comes in.  hoping there's a better structure for the params
-        // here we can use (or, even better, separate calls for the different
-        // types...file recording, streaming, gateway)
-        currentActiveService = when (jibriServiceOptions.recordingSinkType) {
-            RecordingSinkType.FILE -> JibriFileRecordingService(
-                    RecordingOptions(
-                            recordingDirectory = File(config.recordingDirectory),
-                            callUrlInfo = jibriServiceOptions.callUrlInfo,
-                            finalizeScriptPath = config.finalizeRecordingScriptPath
-                    )
-            )
-            RecordingSinkType.STREAM -> JibriStreamingService(
-                    StreamingOptions(
-                            streamUrl = jibriServiceOptions.streamUrl!!,
-                            callUrlInfo = jibriServiceOptions.callUrlInfo
-                    )
-            )
-            else -> TODO()
+        currentActiveService = JibriFileRecordingService(RecordingOptions(
+                recordingDirectory = File(config.recordingDirectory),
+                callUrlInfo = fileRecordingParams.callUrlInfo,
+                finalizeScriptPath = config.finalizeRecordingScriptPath
+        ))
+        return startService(currentActiveService)
+    }
+
+    @Synchronized
+    fun startStreaming(streamingParams: StreamingParams): StartServiceResult {
+        if (busy()) {
+            return StartServiceResult.BUSY
         }
-        currentActiveService?.let {
+        currentActiveService = JibriStreamingService(StreamingOptions(
+                streamUrl = streamingParams.streamUrl,
+                callUrlInfo = streamingParams.callUrlInfo
+        ))
+        return startService(currentActiveService)
+    }
+
+    @Synchronized
+    fun startSipGateway(): StartServiceResult {
+        TODO()
+    }
+
+    private fun startService(jibriService: JibriService?): StartServiceResult {
+        jibriService?.let {
             it.start()
             return StartServiceResult.SUCCESS
         } ?: run {

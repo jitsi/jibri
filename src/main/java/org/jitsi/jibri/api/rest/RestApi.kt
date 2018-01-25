@@ -2,6 +2,7 @@ package org.jitsi.jibri.api.rest
 
 import org.jitsi.jibri.*
 import org.jitsi.jibri.service.JibriServiceOptions
+import org.jitsi.jibri.service.RecordingOptions
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
 import javax.ws.rs.*
@@ -39,11 +40,22 @@ class RestApi(val jibri: JibriManager) {
     @Path("startRecording")
     @Consumes(MediaType.APPLICATION_JSON)
     fun startRecording(recordingParams: StartRecordingParams): Response {
-        val result = jibri.startService(JibriServiceOptions(
-                recordingSinkType = recordingParams.sinkType,
-                callUrlInfo = recordingParams.callUrlInfo,
-                streamUrl = recordingParams.streamUrl
-        ))
+        // Map the single call into the specific service type, in the future
+        // look at different REST calls for this
+        val result: StartServiceResult = when (recordingParams.sinkType) {
+            RecordingSinkType.FILE -> {
+                jibri.startFileRecording(FileRecordingParams(
+                        callUrlInfo = recordingParams.callUrlInfo
+                ))
+            }
+            RecordingSinkType.STREAM -> {
+                jibri.startStreaming(StreamingParams(
+                        callUrlInfo = recordingParams.callUrlInfo,
+                        streamUrl = recordingParams.streamUrl
+                ))
+            }
+            else -> TODO()
+        }
         val response = when (result) {
             StartServiceResult.SUCCESS -> Response.ok().build()
             StartServiceResult.BUSY -> Response.status(Response.Status.PRECONDITION_FAILED).build()
