@@ -16,6 +16,9 @@
         are missing, you'll see complaints about HDK2 service
         reification issues-->
         <jvm.options>--add-modules java.activation,java.xml.bind</jvm.options>
+        <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
+        <maven.compiler.source>1.9</maven.compiler.source>
+        <maven.compiler.target>1.9</maven.compiler.target>
     </properties>
 
 
@@ -146,6 +149,36 @@
                 <configuration>
                     <jvmTarget>1.8</jvmTarget>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>exec-exec</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>java</executable>
+                            <arguments>
+                                <argument>-classpath</argument>
+                                <classpath />
+                                <!--argument>-Djava.util.logging.config.file=${project.basedir}/lib/logging.properties</argument-->
+                                <argument>${exec.mainClass}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>exec-java</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>${exec.mainClass}</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
