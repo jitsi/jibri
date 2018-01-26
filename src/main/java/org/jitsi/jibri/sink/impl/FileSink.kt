@@ -8,7 +8,8 @@ import java.time.format.DateTimeFormatter
 import java.util.logging.Logger
 
 /**
- * Model of a jibri recording
+ * [FileSink] represents a sink which will write to a media file on the
+ * filesystem
  */
 class FileSink(val recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
     private val logger = Logger.getLogger(this::class.simpleName)
@@ -29,9 +30,18 @@ class FileSink(val recordingsDirectory: File, callName: String, extension: Strin
         }
     }
 
+    /**
+     * See [Sink.getPath]
+     */
     override fun getPath(): String? = file?.path
 
+    /**
+     * See [Sink.getFormat]
+     */
     override fun getFormat(): String? = file?.extension
 
+    /**
+     * See [Sink.getOptions]
+     */
     override fun getOptions(): String = "-profile:v main -level 3.1"
 }

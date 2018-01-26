@@ -34,6 +34,10 @@ import java.util.logging.Logger
 //    }
 //}
 
+/**
+ * [FfmpegCapturer] is responsible for launching ffmpeg, capturing from the
+ * configured audio and video devices, and writing to the given [Sink]
+ */
 class FfmpegCapturer : Capturer {
     private val logger = Logger.getLogger(this::class.simpleName)
     val ffmpegExecutor: FfmpegExecutor
@@ -49,15 +53,27 @@ class FfmpegCapturer : Capturer {
         }
     }
 
+    /**
+     * see [Capturer.start]
+     */
     override fun start(capturerParams: CapturerParams, sink: Sink)
     {
         ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
     }
 
+    /**
+     * see [MonitorableProcess.isAlive]
+     */
     override fun isAlive(): Boolean = ffmpegExecutor.isAlive()
 
+    /**
+     * see [MonitorableProcess.getExitCode]
+     */
     override fun getExitCode(): Int? = ffmpegExecutor.getExitCode()
 
+    /**
+     * see [Capturer.stop]
+     */
     override fun stop()
     {
         ffmpegExecutor.stopFfmpeg()

@@ -1,5 +1,8 @@
 package org.jitsi.jibri.capture.ffmpeg.executor
 
+/**
+ * Paramaters which will be passed to ffmpeg
+ */
 data class FfmpegExecutorParams(
         val resolution: String = "1280x720",
         val framerate: Int = 30,

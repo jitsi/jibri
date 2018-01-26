@@ -1,16 +1,26 @@
 package org.jitsi.jibri.selenium
 
+import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
 
+/**
+ * The [JibriSelenium] class is responsible for all of the interactions with
+ * Selenium.  It:
+ * 1) Owns the webdriver
+ * 2) Handles passing the proper options to Chrome
+ * 3) Sets the necessary localstorage variables before joining a call
+ */
 class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
 {
     var chromeDriver: ChromeDriver
     var baseUrl: String
 
-    // Set up default chrome driver options (using fake device, etc.)
+    /**
+     * Set up default chrome driver options (using fake device, etc.)
+      */
     init {
         baseUrl = jibriSeleniumOptions.baseUrl
         System.setProperty("webdriver.chrome.driver", "/usr/local/Cellar/chromedriver/2.34/bin/chromedriver")
@@ -44,9 +54,12 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
         }
     }
 
+    /**
+     * Join a
+     */
     fun joinCall(callName: String)
     {
-        HomePage(chromeDriver).visit(baseUrl)
+        HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
         setJibriIdentifiers(
                 Pair("displayname", "TODO"),
                 Pair("email", "TODO"),
@@ -54,7 +67,7 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
                 Pair("xmpp_password_override", "TODO"),
                 Pair("callStatsUserName", "jibri")
         )
-        CallPage(chromeDriver).visit(baseUrl, callName)
+        CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callName))
     }
 
     fun leaveCallAndQuitBrowser()

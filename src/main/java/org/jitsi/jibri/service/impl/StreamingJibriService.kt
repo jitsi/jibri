@@ -18,26 +18,49 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 data class StreamingOptions(
+        /**
+         * The url to which we'll stream the media.  Note that this should be
+         * the *complete* url, i.e. it should include any stream key necessary
+         * in its path
+         */
         val streamUrl: String,
+        /**
+         * The url and call name for the web call to record from
+         */
         val callUrlInfo: CallUrlInfo
 )
 
-class JibriStreamingService(val streamingOptions: StreamingOptions) : JibriService {
+/**
+ * [StreamingJibriService] is the [JibriService] responsible for joining a
+ * web call, capturing its audio and video, and streaming that audio and video
+ * to a url
+ */
+class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriService {
     private val logger = Logger.getLogger(this::class.simpleName)
     private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = streamingOptions.callUrlInfo.baseUrl))
     private val capturer = FfmpegCapturer()
     private val sink: Sink
     private val STREAMING_MAX_BITRATE = 2976
+    /**
+     * The [ScheduledExecutorService] we'll use to run the process monitor
+     */
     private val executor = Executors.newSingleThreadScheduledExecutor()
+    /**
+     * The handle to the scheduled process monitor task, which we use to
+     * cancel the task
+     */
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
         sink = StreamSink(
-                url = streamingOptions.streamUrl + "/" + "gx3c-aw44-hkda-5wrt",
+                url = streamingOptions.streamUrl,
                 streamingMaxBitrate = STREAMING_MAX_BITRATE,
                 streamingBufSize = 2 * STREAMING_MAX_BITRATE)
     }
 
+    /**
+     * @see [JibriService.start]
+     */
     override fun start() {
         jibriSelenium.joinCall(streamingOptions.callUrlInfo.callName)
         val capturerParams = CapturerParams()
@@ -52,12 +75,14 @@ class JibriStreamingService(val streamingOptions: StreamingOptions) : JibriServi
                 action = processMonitor)
     }
 
+    /**
+     * @see [JibriService.stop]
+     */
     override fun stop() {
         processMonitorTask?.cancel(true)
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")
         jibriSelenium.leaveCallAndQuitBrowser()
-
     }
 }

@@ -4,6 +4,9 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.sink.Sink
 
+/**
+ * Ffmpeg execution specific to Linux
+ */
 class LinuxFfmpegExecutor : FfmpegExecutor
 {
 //        val ffmpegCommandLinux = "" +

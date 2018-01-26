@@ -8,6 +8,9 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
+/**
+ * Ffmpeg execution specific to Mac OS
+ */
 class MacFfmpegExecutor : FfmpegExecutor
 {
     private val logger = Logger.getLogger(this::class.simpleName)

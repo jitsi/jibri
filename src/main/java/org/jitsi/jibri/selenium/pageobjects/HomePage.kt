@@ -4,12 +4,6 @@ import org.openqa.selenium.WebDriver
 
 /**
  * This class represents a page object for the home page (i.e. on the domain
- * but not in a call)
+ * but not in a call) for a jitsi-meet server
  */
-class HomePage(private val driver: WebDriver)
-{
-    fun visit(baseDomain: String)
-    {
-        driver.get(baseDomain)
-    }
-}
+class HomePage(driver: WebDriver) : AbstractPageObject(driver)

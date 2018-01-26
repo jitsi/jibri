@@ -4,6 +4,15 @@ package org.jitsi.jibri.selenium
  * Options that can be passed to JibriSelenium
  */
 data class JibriSeleniumOptions(
-        var baseUrl: String, // The base url of the server i.e. https://meet.jit.si
-        var customBinaryLocation: String? = null, // Custom location for the chrome binary
-        var display: String? = null) // which X11 display to use
+        /**
+         *  The base url of the server i.e. https://meet.jit.si
+         */
+        var baseUrl: String,
+        /**
+         *  Custom location for the chrome binary
+         */
+        var customBinaryLocation: String? = null,
+        /**
+         *  Which X11 display to use
+         */
+        var display: String? = null)
