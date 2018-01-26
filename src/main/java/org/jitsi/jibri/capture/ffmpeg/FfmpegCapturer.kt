@@ -4,10 +4,10 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.UnsupportedOsException
-import org.jitsi.jibri.capture.ffmpeg.executors.FfmpegExecutor
-import org.jitsi.jibri.capture.ffmpeg.executors.FfmpegExecutorParams
-import org.jitsi.jibri.capture.ffmpeg.executors.LinuxFfmpegExecutor
-import org.jitsi.jibri.capture.ffmpeg.executors.MacFfmpegExecutor
+import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
+import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
+import org.jitsi.jibri.capture.ffmpeg.executor.impl.LinuxFfmpegExecutor
+import org.jitsi.jibri.capture.ffmpeg.executor.impl.MacFfmpegExecutor
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
 

@@ -1,4 +1,4 @@
-package org.jitsi.jibri.capture.ffmpeg.executors
+package org.jitsi.jibri.capture.ffmpeg.executor
 
 data class FfmpegExecutorParams(
         val resolution: String = "1280x720",

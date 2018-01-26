@@ -1,14 +1,13 @@
 package org.jitsi.jibri
 
-import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.jibri.capture.ffmpeg.executors.FfmpegExecutorParams
-import org.jitsi.jibri.capture.ffmpeg.executors.MacFfmpegExecutor
+import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
+import org.jitsi.jibri.capture.ffmpeg.executor.impl.MacFfmpegExecutor
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.JibriServiceOptions
-import org.jitsi.jibri.service.JibriStreamingService
-import org.jitsi.jibri.service.StreamingOptions
-import org.jitsi.jibri.sink.FileSink
+import org.jitsi.jibri.service.impl.JibriStreamingService
+import org.jitsi.jibri.service.impl.StreamingOptions
+import org.jitsi.jibri.sink.impl.FileSink
 import org.testng.annotations.Test
 import java.io.File
 

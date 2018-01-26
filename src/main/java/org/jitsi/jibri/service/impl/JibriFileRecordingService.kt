@@ -1,11 +1,12 @@
-package org.jitsi.jibri.service
+package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
-import org.jitsi.jibri.sink.FileSink
+import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.Duration
 import org.jitsi.jibri.util.ProcessMonitor

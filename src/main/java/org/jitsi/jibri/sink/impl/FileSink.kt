@@ -1,8 +1,8 @@
-package org.jitsi.jibri.sink
+package org.jitsi.jibri.sink.impl
 
+import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.error
 import java.io.File
-import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.logging.Logger

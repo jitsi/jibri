@@ -1,4 +1,4 @@
-package org.jitsi.jibri.capture.ffmpeg.executors
+package org.jitsi.jibri.capture.ffmpeg.executor
 
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.MonitorableProcess

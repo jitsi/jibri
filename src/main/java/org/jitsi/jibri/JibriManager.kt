@@ -3,6 +3,10 @@ package org.jitsi.jibri
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.service.*
+import org.jitsi.jibri.service.impl.JibriFileRecordingService
+import org.jitsi.jibri.service.impl.JibriStreamingService
+import org.jitsi.jibri.service.impl.RecordingOptions
+import org.jitsi.jibri.service.impl.StreamingOptions
 import org.jitsi.jibri.util.error
 import java.io.File
 import java.util.logging.Logger

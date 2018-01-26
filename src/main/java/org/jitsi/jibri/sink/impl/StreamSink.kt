@@ -1,4 +1,6 @@
-package org.jitsi.jibri.sink
+package org.jitsi.jibri.sink.impl
+
+import org.jitsi.jibri.sink.Sink
 
 class StreamSink(val url: String, val streamingMaxBitrate: Int, val streamingBufSize: Int) : Sink
 {
