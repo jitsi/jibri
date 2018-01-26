@@ -4,7 +4,6 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.MacFfmpegExecutor
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
-import org.jitsi.jibri.service.JibriServiceOptions
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.StreamingOptions
 import org.jitsi.jibri.sink.impl.FileSink

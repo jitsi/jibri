@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import net.sourceforge.argparse4j.ArgumentParsers
+import net.sourceforge.argparse4j.inf.Namespace
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.servlet.*
 import org.glassfish.jersey.jackson.*
@@ -16,8 +18,18 @@ import java.io.FileNotFoundException
 import javax.ws.rs.ext.ContextResolver
 
 fun main(args: Array<String>) {
-    //TODO: change this to a program arg
-    val configFilePath = "/Users/bbaldino/jitsi/jibri-new/config.json"
+    val argParser = ArgumentParsers.newFor("Jibri").build()
+            .defaultHelp(true)
+            .description("Start Jibri")
+    argParser.addArgument("-c", "--config")
+            .required(true)
+            .type(String::class.java)
+            .help("Path to the jibri config file")
+
+    val ns = argParser.parseArgs(args)
+    val configFilePath = ns.getString("config")
+    println("Using config file $configFilePath")
+
     val jibriConfig = try {
         jacksonObjectMapper().readValue<JibriConfig>(File(configFilePath))
     } catch (e: FileNotFoundException) {

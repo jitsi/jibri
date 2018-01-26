@@ -1,7 +1,6 @@
 package org.jitsi.jibri.api.rest
 
 import org.jitsi.jibri.*
-import org.jitsi.jibri.service.JibriServiceOptions
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
 import javax.ws.rs.*
