@@ -103,6 +103,10 @@ class JibriManager(val config: JibriConfig) {
      */
     @Synchronized
     fun stopService() {
+        //TODO: do we need to block the call on stopping everything?
+        // this ends up blocking the request until everything is done
+        // (finalize script, etc.) and it's not clear we want to block
+        // sending the response on all of that (maybe yes, maybe no)
         currentActiveService?.stop()
         currentActiveService = null
     }
