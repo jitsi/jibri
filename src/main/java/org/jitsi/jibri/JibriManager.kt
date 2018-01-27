@@ -46,12 +46,12 @@ class JibriManager(val config: JibriConfig) {
         if (busy()) {
             return StartServiceResult.BUSY
         }
-        currentActiveService = FileRecordingJibriService(RecordingOptions(
+        val service = FileRecordingJibriService(RecordingOptions(
                 recordingDirectory = File(config.recordingDirectory),
                 callUrlInfo = fileRecordingParams.callUrlInfo,
                 finalizeScriptPath = config.finalizeRecordingScriptPath
         ))
-        return startService(currentActiveService)
+        return startService(service)
     }
 
     /**
@@ -64,11 +64,11 @@ class JibriManager(val config: JibriConfig) {
         if (busy()) {
             return StartServiceResult.BUSY
         }
-        currentActiveService = StreamingJibriService(StreamingOptions(
+        val service = StreamingJibriService(StreamingOptions(
                 streamUrl = streamingParams.streamUrl,
                 callUrlInfo = streamingParams.callUrlInfo
         ))
-        return startService(currentActiveService)
+        return startService(service)
     }
 
     /**
@@ -88,14 +88,10 @@ class JibriManager(val config: JibriConfig) {
      * Returns a [StartServiceResult] to denote whether the service was
      * started successfully or not.
      */
-    private fun startService(jibriService: JibriService?): StartServiceResult {
-        jibriService?.let {
-            it.start()
-            return StartServiceResult.SUCCESS
-        } ?: run {
-            logger.error("Error starting requested service")
-            return StartServiceResult.ERROR
-        }
+    private fun startService(jibriService: JibriService): StartServiceResult {
+        jibriService.start()
+        currentActiveService = jibriService
+        return StartServiceResult.SUCCESS
     }
 
     /**

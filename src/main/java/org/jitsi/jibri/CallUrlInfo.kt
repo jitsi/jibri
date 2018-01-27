@@ -9,8 +9,5 @@ data class CallUrlInfo(
         val baseUrl: String = "",
         val callName: String = ""
 ) {
-
-    fun getCallUrl(): String {
-        return baseUrl + "/" + callName
-    }
+    val callUrl = "$baseUrl/$callName"
 }

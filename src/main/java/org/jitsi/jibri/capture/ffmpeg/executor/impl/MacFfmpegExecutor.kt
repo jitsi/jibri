@@ -18,19 +18,20 @@ class MacFfmpegExecutor : FfmpegExecutor
 
     override fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink)
     {
-        val ffmpegCommandMac = "" +
-                "ffmpeg -y -v info " +
-                "-thread_queue_size ${ffmpegExecutorParams.queueSize} " +
-                "-f avfoundation " +
-                "-framerate ${ffmpegExecutorParams.framerate} " +
-                "-video_size ${ffmpegExecutorParams.resolution} " +
-                "-i ${ffmpegExecutorParams.videoInputDevice}:${ffmpegExecutorParams.audioInputDevice} " +
-                "-vsync 2 " +
-                "-acodec aac -strict -2 -ar 44100 " +
-                "-c:v libx264 -preset ${ffmpegExecutorParams.videoEncodePreset} " +
-                "${sink.getOptions()} -pix_fmt yuv420p -crf ${ffmpegExecutorParams.h264ConstantRateFactor} " +
-                "-g ${ffmpegExecutorParams.gopSize} -tune zerolatency " +
-                "-f ${sink.getFormat()} ${sink.getPath()}"
+        val ffmpegCommandMac = """
+                ffmpeg -y -v info
+                -thread_queue_size ${ffmpegExecutorParams.queueSize}
+                -f avfoundation
+                -framerate ${ffmpegExecutorParams.framerate}
+                -video_size ${ffmpegExecutorParams.resolution}
+                -i ${ffmpegExecutorParams.videoInputDevice}:${ffmpegExecutorParams.audioInputDevice}
+                -vsync 2
+                -acodec aac -strict -2 -ar 44100
+                -c:v libx264 -preset ${ffmpegExecutorParams.videoEncodePreset}
+                ${sink.getOptions()} -pix_fmt yuv420p -crf ${ffmpegExecutorParams.h264ConstantRateFactor}
+                -g ${ffmpegExecutorParams.gopSize} -tune zerolatency
+                -f ${sink.getFormat()} ${sink.getPath()}
+                """.trimIndent().replace("\n", " ")
 
         val pb = ProcessBuilder(ffmpegCommandMac.split(" "))
         pb.redirectOutput(File("/tmp/ffmpeg.out"))
@@ -48,8 +49,8 @@ class MacFfmpegExecutor : FfmpegExecutor
 
     override fun stopFfmpeg() {
         currentFfmpegProc?.pid()?.let {
-            logger.info("sending SIGINT to ffmpeg proc ${currentFfmpegProc?.pid()}")
-            Runtime.getRuntime().exec("kill -s SIGINT ${currentFfmpegProc!!.pid()}")
+            logger.info("sending SIGINT to ffmpeg proc ${it}")
+            Runtime.getRuntime().exec("kill -s SIGINT ${it}")
         } ?: run {
             logger.info("stopFfmpeg: ffmpeg had already exited")
         }
