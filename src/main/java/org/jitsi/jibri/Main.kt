@@ -5,7 +5,6 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import net.sourceforge.argparse4j.ArgumentParsers
-import net.sourceforge.argparse4j.inf.Namespace
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.servlet.*
 import org.glassfish.jersey.jackson.*
@@ -30,13 +29,13 @@ fun main(args: Array<String>) {
     val configFilePath = ns.getString("config")
     println("Using config file $configFilePath")
 
-    val jibriConfig = try {
-        jacksonObjectMapper().readValue<JibriConfig>(File(configFilePath))
-    } catch (e: FileNotFoundException) {
-        println("Unable to read config file ${configFilePath}")
-        return
+    val jibriConfigFile = File(configFilePath)
+    if (!jibriConfigFile.exists()) {
+        println("Error: Config file $configFilePath doesn't exist")
+        System.exit(1)
     }
-    val jibri = JibriManager(jibriConfig)
+
+    val jibri = JibriManager(jibriConfigFile)
     val jerseyConfig = ResourceConfig()
     jerseyConfig.register(RestApi(jibri))
             .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
@@ -52,7 +51,7 @@ fun main(args: Array<String>) {
         server.start()
         server.join()
     } catch (e: Exception) {
-
+        println("Error with server: ${e}")
     } finally {
         server.destroy()
     }

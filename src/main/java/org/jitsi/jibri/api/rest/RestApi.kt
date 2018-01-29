@@ -3,6 +3,7 @@ package org.jitsi.jibri.api.rest
 import org.jitsi.jibri.*
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
+import javax.annotation.PostConstruct
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -72,6 +73,15 @@ class RestApi(val jibri: JibriManager) {
         jibri.stopService()
         return Response.ok().build()
     }
+
+    @POST
+    @Path("reloadConfig")
+    fun reloadConfig(): Response {
+        logger.debug("Got reload config reuest")
+        jibri.reloadConfig()
+        return Response.ok().build()
+    }
+
 
 //    @GET
 //    @Path("hello")

@@ -1,5 +1,7 @@
 package org.jitsi.jibri
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.service.*
@@ -9,6 +11,7 @@ import org.jitsi.jibri.service.impl.RecordingOptions
 import org.jitsi.jibri.service.impl.StreamingOptions
 import org.jitsi.jibri.util.error
 import java.io.File
+import java.io.FileNotFoundException
 import java.util.logging.Logger
 
 enum class StartServiceResult {
@@ -32,9 +35,19 @@ data class StreamingParams(
  * instance.  NOTE: currently Jibri only runs a single service at a time, so
  * if one is running, the Jibri will describe itself as busy
  */
-class JibriManager(val config: JibriConfig) {
+class JibriManager(private val configFile: File) {
     private val logger = Logger.getLogger(this::class.simpleName)
+    private lateinit var config: JibriConfig
     private var currentActiveService: JibriService? = null
+    private var configReloadPending = false
+
+    init {
+        loadConfig(configFile)
+    }
+
+    private fun loadConfig(configFile: File) {
+        config = jacksonObjectMapper().readValue(configFile)
+    }
 
     /**
      * Starts a [FileRecordingJibriService] to record the call described
@@ -43,7 +56,9 @@ class JibriManager(val config: JibriConfig) {
      */
     @Synchronized
     fun startFileRecording(fileRecordingParams: FileRecordingParams): StartServiceResult {
+        logger.info("Starting a file recording with params: $fileRecordingParams")
         if (busy()) {
+            logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
         val service = FileRecordingJibriService(RecordingOptions(
@@ -61,7 +76,9 @@ class JibriManager(val config: JibriConfig) {
      */
     @Synchronized
     fun startStreaming(streamingParams: StreamingParams): StartServiceResult {
+        logger.info("Starting a stream with params: $streamingParams")
         if (busy()) {
+            logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
         val service = StreamingJibriService(StreamingOptions(
@@ -99,12 +116,18 @@ class JibriManager(val config: JibriConfig) {
      */
     @Synchronized
     fun stopService() {
+        logger.info("Stopping the current service")
         //TODO: do we need to block the call on stopping everything?
         // this ends up blocking the request until everything is done
         // (finalize script, etc.) and it's not clear we want to block
         // sending the response on all of that (maybe yes, maybe no)
         currentActiveService?.stop()
         currentActiveService = null
+        if (configReloadPending) {
+            logger.info("Reloading configuration file")
+            loadConfig(configFile)
+            configReloadPending = false
+        }
     }
 
     /**
@@ -115,6 +138,23 @@ class JibriManager(val config: JibriConfig) {
         return JibriHealth(
                 busy = busy()
         )
+    }
+
+    /**
+     * Reload the current Jibri configuration as soon as possible.  If a
+     * service is currently active, the config will not be reloaded until
+     * it finishes
+     */
+    @Synchronized
+    fun reloadConfig() {
+        logger.info("Scheduling a config reload")
+        if (!busy()) {
+            logger.info("Jibri not busy, reloading config now")
+            loadConfig(configFile)
+        } else {
+            logger.info("Scheduling config reload for the next time we're not busy")
+            configReloadPending = true
+        }
     }
 
     /**
