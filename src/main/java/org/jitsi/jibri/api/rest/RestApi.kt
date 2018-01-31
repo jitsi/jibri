@@ -3,7 +3,6 @@ package org.jitsi.jibri.api.rest
 import org.jitsi.jibri.*
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
-import javax.annotation.PostConstruct
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -20,7 +19,7 @@ data class StartRecordingParams(
 )
 
 @Path("/jibri/api/v1.0")
-class RestApi(val jibri: JibriManager) {
+class RestApi(val jibriManager: JibriManager) {
     private val logger = Logger.getLogger(this::class.simpleName)
 
     @GET
@@ -28,7 +27,7 @@ class RestApi(val jibri: JibriManager) {
     @Produces(MediaType.APPLICATION_JSON)
     fun health(): Response {
         logger.debug("Got health request")
-        return Response.ok(jibri.healthCheck()).build()
+        return Response.ok(jibriManager.healthCheck()).build()
     }
 
     /**
@@ -43,12 +42,12 @@ class RestApi(val jibri: JibriManager) {
         // look at different REST calls for this
         val result: StartServiceResult = when (recordingParams.sinkType) {
             RecordingSinkType.FILE -> {
-                jibri.startFileRecording(FileRecordingParams(
+                jibriManager.startFileRecording(FileRecordingParams(
                         callUrlInfo = recordingParams.callUrlInfo
                 ))
             }
             RecordingSinkType.STREAM -> {
-                jibri.startStreaming(StreamingParams(
+                jibriManager.startStreaming(StreamingParams(
                         callUrlInfo = recordingParams.callUrlInfo,
                         streamUrl = recordingParams.streamUrl
                 ))
@@ -70,7 +69,7 @@ class RestApi(val jibri: JibriManager) {
     @Path("stopRecording")
     fun stopRecording(): Response {
         logger.debug("Got stop recording request")
-        jibri.stopService()
+        jibriManager.stopService()
         return Response.ok().build()
     }
 
@@ -78,7 +77,7 @@ class RestApi(val jibri: JibriManager) {
     @Path("reloadConfig")
     fun reloadConfig(): Response {
         logger.debug("Got reload config reuest")
-        jibri.reloadConfig()
+        jibriManager.reloadConfig()
         return Response.ok().build()
     }
 
