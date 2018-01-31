@@ -57,7 +57,7 @@ class JibriTest
     fun streamTest() {
         val jibriStreamingService = StreamingJibriService(
                 StreamingOptions(
-                        streamUrl = "rtmp://a.rtmp.youtube.com/live2",
+                        youTubeStreamKey = "rtmp://a.rtmp.youtube.com/live2",
                         callUrlInfo = CallUrlInfo("https://meet.jit.si", "brianTest")
                 )
         )

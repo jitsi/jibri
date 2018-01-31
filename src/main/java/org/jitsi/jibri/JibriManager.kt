@@ -9,9 +9,7 @@ import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.RecordingOptions
 import org.jitsi.jibri.service.impl.StreamingOptions
-import org.jitsi.jibri.util.error
 import java.io.File
-import java.io.FileNotFoundException
 import java.util.logging.Logger
 
 enum class StartServiceResult {
@@ -25,7 +23,7 @@ data class FileRecordingParams(
 )
 
 data class StreamingParams(
-        val streamUrl: String,
+        val youTubeStreamKey: String,
         val callUrlInfo: CallUrlInfo
 )
 
@@ -82,7 +80,7 @@ class JibriManager(private val configFile: File) {
             return StartServiceResult.BUSY
         }
         val service = StreamingJibriService(StreamingOptions(
-                streamUrl = streamingParams.streamUrl,
+                youTubeStreamKey = streamingParams.youTubeStreamKey,
                 callUrlInfo = streamingParams.callUrlInfo
         ))
         return startService(service)

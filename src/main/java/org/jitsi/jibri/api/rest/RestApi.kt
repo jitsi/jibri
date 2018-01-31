@@ -49,7 +49,7 @@ class RestApi(val jibriManager: JibriManager) {
             RecordingSinkType.STREAM -> {
                 jibriManager.startStreaming(StreamingParams(
                         callUrlInfo = recordingParams.callUrlInfo,
-                        streamUrl = recordingParams.streamUrl
+                        youTubeStreamKey = recordingParams.streamUrl
                 ))
             }
             else -> TODO()

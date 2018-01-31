@@ -19,11 +19,9 @@ import java.util.logging.Logger
 
 data class StreamingOptions(
         /**
-         * The url to which we'll stream the media.  Note that this should be
-         * the *complete* url, i.e. it should include any stream key necessary
-         * in its path
+         * The YouTube stream key to use for this stream
          */
-        val streamUrl: String,
+        val youTubeStreamKey: String,
         /**
          * The url and call name for the web call to record from
          */
@@ -41,6 +39,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
     private val capturer = FfmpegCapturer()
     private val sink: Sink
     private val STREAMING_MAX_BITRATE = 2976
+    private val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
     /**
      * The [ScheduledExecutorService] we'll use to run the process monitor
      */
@@ -53,7 +52,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
 
     init {
         sink = StreamSink(
-                url = streamingOptions.streamUrl,
+                url = "$YOUTUBE_URL/${streamingOptions.youTubeStreamKey}",
                 streamingMaxBitrate = STREAMING_MAX_BITRATE,
                 streamingBufSize = 2 * STREAMING_MAX_BITRATE)
     }
