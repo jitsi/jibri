@@ -67,6 +67,8 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
                 Pair("xmpp_password_override", "TODO"),
                 Pair("callStatsUserName", "jibri")
         )
+        //TODO: add config.iAmRecorder=true&config.externalConnectUrl=null
+        // could iAmRecorder also signal externalConnectURl? (externalConnectUrl is about preventing jiconop)
         CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callName))
     }
 

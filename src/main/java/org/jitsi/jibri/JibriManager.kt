@@ -1,5 +1,6 @@
 package org.jitsi.jibri
 
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.config.JibriConfig
@@ -44,7 +45,8 @@ class JibriManager(private val configFile: File) {
     }
 
     private fun loadConfig(configFile: File) {
-        config = jacksonObjectMapper().readValue(configFile)
+        config = jacksonObjectMapper().configure(JsonParser.Feature.ALLOW_COMMENTS, true).readValue(configFile)
+        logger.info("Parsed config:\n$config")
     }
 
     /**
@@ -164,5 +166,4 @@ class JibriManager(private val configFile: File) {
     private fun busy(): Boolean {
         return currentActiveService != null
     }
-
 }
