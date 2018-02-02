@@ -11,6 +11,7 @@ import org.glassfish.jersey.jackson.*
 import org.glassfish.jersey.server.*
 import org.glassfish.jersey.servlet.*
 import org.jitsi.jibri.api.rest.RestApi
+import org.jitsi.jibri.api.xmpp.XmppApi
 import org.jitsi.jibri.config.JibriConfig
 import java.io.File
 import java.io.FileNotFoundException
@@ -36,23 +37,25 @@ fun main(args: Array<String>) {
     }
 
     val jibri = JibriManager(jibriConfigFile)
-    val jerseyConfig = ResourceConfig()
-    jerseyConfig.register(RestApi(jibri))
-            .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
-            .register(JacksonFeature::class.java)
-
-    val servlet = ServletHolder(ServletContainer(jerseyConfig))
-
-    val server = Server(2222)
-    val context = ServletContextHandler(server, "/*")
-    context.addServlet(servlet, "/*")
-
-    try {
-        server.start()
-        server.join()
-    } catch (e: Exception) {
-        println("Error with server: ${e}")
-    } finally {
-        server.destroy()
-    }
+    val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibri.config.xmppEnvironments)
+    Thread.sleep(Long.MAX_VALUE)
+//    val jerseyConfig = ResourceConfig()
+//    jerseyConfig.register(RestApi(jibri))
+//            .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
+//            .register(JacksonFeature::class.java)
+//
+//    val servlet = ServletHolder(ServletContainer(jerseyConfig))
+//
+//    val server = Server(2222)
+//    val context = ServletContextHandler(server, "/*")
+//    context.addServlet(servlet, "/*")
+//
+//    try {
+//        server.start()
+//        server.join()
+//    } catch (e: Exception) {
+//        println("Error with server: ${e}")
+//    } finally {
+//        server.destroy()
+//    }
 }

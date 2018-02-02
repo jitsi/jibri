@@ -36,7 +36,9 @@ data class StreamingParams(
  */
 class JibriManager(private val configFile: File) {
     private val logger = Logger.getLogger(this::class.simpleName)
-    private lateinit var config: JibriConfig
+    //TODO: public so main can get to it and pass the xmpp stuff to the xmpp api,
+    //  need to figure out a better way for that
+    public lateinit var config: JibriConfig
     private var currentActiveService: JibriService? = null
     private var configReloadPending = false
 
@@ -70,8 +72,8 @@ class JibriManager(private val configFile: File) {
     }
 
     /**
-     * Starts a [StreamingJibriService] to capture the call described
-     * in the params and stream it to a url.  Returns a [StartServiceResult] to
+     * Starts a [StreamingJibriService] to capture the call according
+     * to [streamingParams].  Returns a [StartServiceResult] to
      * denote whether the service was started successfully or not.
      */
     @Synchronized
@@ -163,7 +165,7 @@ class JibriManager(private val configFile: File) {
      * service"
      */
     @Synchronized
-    private fun busy(): Boolean {
+    fun busy(): Boolean {
         return currentActiveService != null
     }
 }
