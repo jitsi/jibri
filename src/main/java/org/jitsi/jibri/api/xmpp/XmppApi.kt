@@ -50,10 +50,7 @@ class XmppApi(
                         logger.info("Received start request")
                         // Immediately respond that the request is pending
                         //TODO: is there any good way to create a custom iq result?
-                        val initialResponse = JibriIq()
-                        initialResponse.type = IQ.Type.result
-                        initialResponse.stanzaId = jibriIq.stanzaId
-                        initialResponse.to = jibriIq.from
+                        val initialResponse = JibriIqHelper.createResult(jibriIq)
                         initialResponse.status = JibriIq.Status.PENDING
                         // Start the actual service and send an IQ once we get the result
                         executor.submit {
@@ -75,7 +72,7 @@ class XmppApi(
                     JibriIq.Action.STOP -> {
                         jibriManager.stopService()
                         // By this point the service has been fully stopped
-                        val response = IQ.createResultIQ(jibriIq) as JibriIq
+                        val response = JibriIqHelper.createResult(jibriIq)
                         response.status = JibriIq.Status.OFF
                         return response
                     }
