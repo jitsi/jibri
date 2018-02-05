@@ -10,15 +10,15 @@ class StreamSink(val url: String, val streamingMaxBitrate: Int, val streamingBuf
     /**
      * See [Sink.getPath]
      */
-    override fun getPath(): String? = url
+    override val path: String = url
 
     /**
      * See [Sink.getFormat]
      */
-    override fun getFormat(): String = "flv"
+    override val format: String = "flv"
 
     /**
      * See [Sink.getOptions]
      */
-    override fun getOptions(): String = "-maxrate ${streamingMaxBitrate}k -bufsize ${streamingBufSize}k"
+    override val options: String = "-maxrate ${streamingMaxBitrate}k -bufsize ${streamingBufSize}k"
 }

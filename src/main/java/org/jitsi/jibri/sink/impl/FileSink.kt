@@ -33,15 +33,15 @@ class FileSink(val recordingsDirectory: File, callName: String, extension: Strin
     /**
      * See [Sink.getPath]
      */
-    override fun getPath(): String? = file?.path
+    override val path: String? = file?.path
 
     /**
      * See [Sink.getFormat]
      */
-    override fun getFormat(): String? = file?.extension
+    override val format: String? = file?.extension
 
     /**
      * See [Sink.getOptions]
      */
-    override fun getOptions(): String = "-profile:v main -level 3.1"
+    override val options: String = "-profile:v main -level 3.1"
 }

@@ -28,9 +28,9 @@ class MacFfmpegExecutor : FfmpegExecutor
                 -vsync 2
                 -acodec aac -strict -2 -ar 44100
                 -c:v libx264 -preset ${ffmpegExecutorParams.videoEncodePreset}
-                ${sink.getOptions()} -pix_fmt yuv420p -crf ${ffmpegExecutorParams.h264ConstantRateFactor}
+                ${sink.options} -pix_fmt yuv420p -crf ${ffmpegExecutorParams.h264ConstantRateFactor}
                 -g ${ffmpegExecutorParams.gopSize} -tune zerolatency
-                -f ${sink.getFormat()} ${sink.getPath()}
+                -f ${sink.format} ${sink.path}
                 """.trimIndent().replace("\n", " ")
 
         val pb = ProcessBuilder(ffmpegCommandMac.split(" "))

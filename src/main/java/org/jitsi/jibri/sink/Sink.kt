@@ -10,17 +10,17 @@ package org.jitsi.jibri.sink
 interface Sink
 {
     /**
-     * Return the path to which this [Sink] has been designated to write
+     * The path to which this [Sink] has been designated to write
      */
-    fun getPath(): String?
+    val path: String?
 
     /**
-     * Return the format of the container which this [Sink] will use
+     * The format of the container which this [Sink] will use
      */
-    fun getFormat(): String?
+    val format: String?
 
     /**
-     * Return any ffmpeg command-line options this [Sink] requires
+     * Any ffmpeg command-line options this [Sink] requires
      */
-    fun getOptions(): String
+    val options: String
 }
