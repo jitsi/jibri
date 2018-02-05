@@ -1,5 +1,6 @@
 package org.jitsi.jibri.service.impl
 
+import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
@@ -22,10 +23,7 @@ data class StreamingOptions(
          * The YouTube stream key to use for this stream
          */
         val youTubeStreamKey: String,
-        /**
-         * The url and call name for the web call to record from
-         */
-        val callUrlInfo: CallUrlInfo
+        val callParams: CallParams
 )
 
 /**
@@ -35,7 +33,7 @@ data class StreamingOptions(
  */
 class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriService {
     private val logger = Logger.getLogger(this::class.simpleName)
-    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = streamingOptions.callUrlInfo.baseUrl))
+    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = streamingOptions.callParams))
     private val capturer = FfmpegCapturer()
     private val sink: Sink
     private val STREAMING_MAX_BITRATE = 2976
@@ -61,7 +59,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
      * @see [JibriService.start]
      */
     override fun start() {
-        jibriSelenium.joinCall(streamingOptions.callUrlInfo.callName)
+        jibriSelenium.joinCall(streamingOptions.callParams.callUrlInfo.callName)
         val capturerParams = CapturerParams()
         capturer.start(capturerParams, sink)
         val processMonitor = ProcessMonitor(capturer) { exitCode ->

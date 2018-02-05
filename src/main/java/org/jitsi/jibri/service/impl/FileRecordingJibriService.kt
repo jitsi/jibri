@@ -1,5 +1,6 @@
 package org.jitsi.jibri.service.impl
 
+import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
@@ -24,10 +25,7 @@ data class RecordingOptions(
          * The directory in which recordings should be created
          */
         val recordingDirectory: File,
-        /**
-         * The url and call name for the web call to record from
-         */
-        val callUrlInfo: CallUrlInfo,
+        val callParams: CallParams,
         /**
          * The filesystem path to the script which should be executed when
          *  the recording is finished.
@@ -42,7 +40,7 @@ data class RecordingOptions(
  */
 class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriService {
     private val logger = Logger.getLogger(this::class.simpleName)
-    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(baseUrl = recordingOptions.callUrlInfo.baseUrl))
+    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = recordingOptions.callParams))
     private val capturer = FfmpegCapturer()
     private var sink: Sink
     /**
@@ -57,7 +55,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
     init {
         sink = createSink(
                 recordingsDirectory = recordingOptions.recordingDirectory,
-                callName = recordingOptions.callUrlInfo.callName
+                callName = recordingOptions.callParams.callUrlInfo.callName
         )
     }
 
@@ -65,7 +63,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      * @see [JibriService.start]
      */
     override fun start() {
-        jibriSelenium.joinCall(recordingOptions.callUrlInfo.callName)
+        jibriSelenium.joinCall(recordingOptions.callParams.callUrlInfo.callName)
         val capturerParams = CapturerParams()
         capturer.start(capturerParams, sink)
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
@@ -74,7 +72,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             // Re-create the sink here because we want a new filename
             sink = createSink(
                     recordingsDirectory = recordingOptions.recordingDirectory,
-                    callName = recordingOptions.callUrlInfo.callName
+                    callName = recordingOptions.callParams.callUrlInfo.callName
             )
             capturer.start(capturerParams, sink)
         }

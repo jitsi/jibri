@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response
 // https://github.com/FasterXML/jackson-module-kotlin
 // https://craftsmen.nl/kotlin-create-rest-services-using-jersey-and-jackson/
 data class StartRecordingParams(
-        val callUrlInfo: CallUrlInfo = CallUrlInfo(),
+        val callParams: CallParams = CallParams(),
         val sinkType: RecordingSinkType = RecordingSinkType.FILE,
         val streamUrl: String = ""
 )
@@ -43,12 +43,12 @@ class RestApi(val jibriManager: JibriManager) {
         val result: StartServiceResult = when (recordingParams.sinkType) {
             RecordingSinkType.FILE -> {
                 jibriManager.startFileRecording(FileRecordingParams(
-                        callUrlInfo = recordingParams.callUrlInfo
+                        callParams = recordingParams.callParams
                 ))
             }
             RecordingSinkType.STREAM -> {
                 jibriManager.startStreaming(StreamingParams(
-                        callUrlInfo = recordingParams.callUrlInfo,
+                        callParams = recordingParams.callParams,
                         youTubeStreamKey = recordingParams.streamUrl
                 ))
             }
@@ -76,7 +76,7 @@ class RestApi(val jibriManager: JibriManager) {
     @POST
     @Path("reloadConfig")
     fun reloadConfig(): Response {
-        logger.debug("Got reload config reuest")
+        logger.debug("Got reload config reset")
         jibriManager.reloadConfig()
         return Response.ok().build()
     }

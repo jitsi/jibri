@@ -2,6 +2,7 @@ package org.jitsi.jibri
 
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.MacFfmpegExecutor
+import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.impl.StreamingJibriService
@@ -29,13 +30,13 @@ class JibriTest
     @Test
     fun jibriSeleniumTest()
     {
-        val options = JibriSeleniumOptions(
-                baseUrl = "https://meet.jit.si")
-        val selenium = JibriSelenium(options)
-
-        selenium.joinCall("test")
-        Thread.sleep(30000)
-        selenium.leaveCallAndQuitBrowser()
+//        val options = JibriSeleniumOptions()
+//
+//        val selenium = JibriSelenium(options)
+//
+//        selenium.joinCall("test1")
+//        Thread.sleep(Long.MAX_VALUE)
+//        selenium.leaveCallAndQuitBrowser()
     }
 
     @Test
@@ -55,15 +56,15 @@ class JibriTest
 
     @Test
     fun streamTest() {
-        val jibriStreamingService = StreamingJibriService(
-                StreamingOptions(
-                        youTubeStreamKey = "rtmp://a.rtmp.youtube.com/live2",
-                        callUrlInfo = CallUrlInfo("https://meet.jit.si", "brianTest")
-                )
-        )
-        jibriStreamingService.start()
-        Thread.sleep(Long.MAX_VALUE)
-        jibriStreamingService.stop()
+//        val jibriStreamingService = StreamingJibriService(
+//                StreamingOptions(
+//                        youTubeStreamKey = "rtmp://a.rtmp.youtube.com/live2",
+//                        callUrlInfo = CallUrlInfo("https://meet.jit.si", "brianTest")
+//                )
+//        )
+//        jibriStreamingService.start()
+//        Thread.sleep(Long.MAX_VALUE)
+//        jibriStreamingService.stop()
     }
 
     @Test

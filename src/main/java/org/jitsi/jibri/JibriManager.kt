@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.config.JibriConfig
+import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.service.*
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
@@ -19,13 +20,18 @@ enum class StartServiceResult {
     ERROR
 }
 
+data class CallParams(
+    val callUrlInfo: CallUrlInfo = CallUrlInfo(),
+    val callLoginParams: XmppCredentials = XmppCredentials()
+)
+
 data class FileRecordingParams(
-        val callUrlInfo: CallUrlInfo
+    val callParams: CallParams
 )
 
 data class StreamingParams(
-        val youTubeStreamKey: String,
-        val callUrlInfo: CallUrlInfo
+    val callParams: CallParams,
+    val youTubeStreamKey: String
 )
 
 /**
@@ -65,7 +71,7 @@ class JibriManager(private val configFile: File) {
         }
         val service = FileRecordingJibriService(RecordingOptions(
                 recordingDirectory = File(config.recordingDirectory),
-                callUrlInfo = fileRecordingParams.callUrlInfo,
+                callParams = fileRecordingParams.callParams,
                 finalizeScriptPath = config.finalizeRecordingScriptPath
         ))
         return startService(service)
@@ -85,7 +91,7 @@ class JibriManager(private val configFile: File) {
         }
         val service = StreamingJibriService(StreamingOptions(
                 youTubeStreamKey = streamingParams.youTubeStreamKey,
-                callUrlInfo = streamingParams.callUrlInfo
+                callParams= streamingParams.callParams
         ))
         return startService(service)
     }

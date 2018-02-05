@@ -13,7 +13,7 @@ import org.openqa.selenium.chrome.ChromeOptions
  * 2) Handles passing the proper options to Chrome
  * 3) Sets the necessary localstorage variables before joining a call
  */
-class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
+class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
 {
     var chromeDriver: ChromeDriver
     var baseUrl: String
@@ -22,7 +22,7 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
      * Set up default chrome driver options (using fake device, etc.)
       */
     init {
-        baseUrl = jibriSeleniumOptions.baseUrl
+        baseUrl = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
         System.setProperty("webdriver.chrome.driver", "/usr/local/Cellar/chromedriver/2.34/bin/chromedriver")
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
@@ -50,12 +50,12 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
     {
         for ((key, value) in keyValues)
         {
-            chromeDriver.executeScript("window.localStorage.setItem('" + key + "', '" + value + "')");
+            chromeDriver.executeScript("window.localStorage.setItem('$key', '$value')");
         }
     }
 
     /**
-     * Join a
+     * Join a a web call with Selenium
      */
     fun joinCall(callName: String)
     {
@@ -63,18 +63,19 @@ class JibriSelenium(jibriSeleniumOptions: JibriSeleniumOptions)
         setJibriIdentifiers(
                 Pair("displayname", "TODO"),
                 Pair("email", "TODO"),
-                Pair("xmpp_username_override", "TODO"),
-                Pair("xmpp_password_override", "TODO"),
+                Pair("xmpp_username_override", "${jibriSeleniumOptions.callParams.callLoginParams.username}@${jibriSeleniumOptions.callParams.callLoginParams.domain}"),
+                Pair("xmpp_password_override", jibriSeleniumOptions.callParams.callLoginParams.password),
                 Pair("callStatsUserName", "jibri")
         )
-        //TODO: add config.iAmRecorder=true&config.externalConnectUrl=null
-        // could iAmRecorder also signal externalConnectURl? (externalConnectUrl is about preventing jiconop)
-        CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callName))
+        CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#config.iAmRecorder=true&config.externalConnectUrl=null"))
     }
 
     fun leaveCallAndQuitBrowser()
     {
-        CallPage(chromeDriver).leave()
+        //TODO: we can't leave the call cleanly via clicking the 'leave call' button
+        // because they are hidden from the UI when jibri joins.  Should we issue a js
+        // command to leave cleanly rather than just qutting the driver?
+        //CallPage(chromeDriver).leave()
         chromeDriver.quit()
     }
 

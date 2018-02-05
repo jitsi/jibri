@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 
 data class XmppCredentials(
-        val domain: String,
-        val username: String,
-        val password: String
+        val domain: String = "",
+        val username: String = "",
+        val password: String = ""
 )
 
 data class XmppMuc(
@@ -42,6 +42,11 @@ data class XmppEnvironmentConfig(
         @JsonProperty("control_muc")
         val controlMuc: XmppMuc,
         /**
+         * The login information the selenium web client will use
+         */
+        @JsonProperty("call_login")
+        val callLogin: XmppCredentials,
+        /**
          * The value we'll strip from the room jid domain to derive
          * the call url
          */
@@ -56,12 +61,6 @@ data class JibriConfig(
         val recordingDirectory: String,
         @JsonProperty("finalize_recording_script_path")
         val finalizeRecordingScriptPath: String,
-        /**
-         * The login information for the jibri selenium user
-         * joining the call
-         */
-        @JsonProperty("call_login")
-        val callLogin: XmppCredentials,
         @JsonProperty("xmpp_environments")
         val xmppEnvironments: List<XmppEnvironmentConfig>
 )

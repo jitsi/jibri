@@ -77,10 +77,10 @@ class XmppApi(
                         StartServiceResult.BUSY -> JibriIq.Status.BUSY
                         StartServiceResult.ERROR -> JibriIq.Status.FAILED
                     }
-                    logger.info("Sending started response")
+                    logger.info("Sending 'on' iq")
                     mucClient.sendStanza(resultIq)
                 }
-                logger.info("Sending start pending response")
+                logger.info("Sending 'pending' response to start IQ")
                 return initialResponse
             }
             JibriIq.Action.STOP -> {
@@ -110,20 +110,26 @@ class XmppApi(
         //  at this point before the configured xmpp domain
         val subdomain = domain.subSequence(0, domain.indexOf(xmppEnvironment.xmppDomain))
 
-        // Now just grab the callname
+        // Now just grab the call name
         val callName = startIq.room.localpart.toString()
         val callUrlInfo = CallUrlInfo("https://$domain/$subdomain/", callName)
         logger.info("Generated call info: $callUrlInfo")
         return when (startIq.recordingMode) {
             JibriIq.RecordingMode.FILE -> {
                 jibriManager.startFileRecording(FileRecordingParams(
-                        callUrlInfo = callUrlInfo
+                        callParams = CallParams(
+                            callUrlInfo = callUrlInfo,
+                            callLoginParams = xmppEnvironment.callLogin
+                        )
                 ))
             }
             JibriIq.RecordingMode.STREAM -> {
                 jibriManager.startStreaming(StreamingParams(
+                    callParams = CallParams(
                         callUrlInfo = callUrlInfo,
-                        youTubeStreamKey = startIq.streamId
+                        callLoginParams = xmppEnvironment.callLogin
+                    ),
+                    youTubeStreamKey = startIq.streamId
                 ))
             }
             else -> {

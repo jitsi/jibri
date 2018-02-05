@@ -1,13 +1,11 @@
 package org.jitsi.jibri.selenium
 
+import org.jitsi.jibri.CallParams
+
 /**
  * Options that can be passed to JibriSelenium
  */
 data class JibriSeleniumOptions(
-        /**
-         *  The base url of the server i.e. https://meet.jit.si
-         */
-        var baseUrl: String,
         /**
          *  Custom location for the chrome binary
          */
@@ -15,4 +13,9 @@ data class JibriSeleniumOptions(
         /**
          *  Which X11 display to use
          */
-        var display: String? = null)
+        var display: String? = null,
+        /**
+         * The xmpp login information for the web client
+         */
+        val callParams: CallParams
+)
