@@ -79,19 +79,6 @@ class HttpApi(private val jibriManager: JibriManager) {
         return Response.ok().build()
     }
 
-    /**
-     * Signal this Jibri to reload its config file at the soonest opportunity
-     * (when it does not have a currently running service)
-     */
-    @POST
-    @Path("reloadConfig")
-    fun reloadConfig(): Response {
-        logger.debug("Got reload config reset")
-        jibriManager.reloadConfig()
-        return Response.ok().build()
-    }
-
-
 //    @GET
 //    @Path("hello")
 //    @Produces(MediaType.TEXT_PLAIN)

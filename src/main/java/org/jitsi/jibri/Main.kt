@@ -10,6 +10,7 @@ import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
+import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
 import java.io.File
 import javax.ws.rs.ext.ContextResolver
@@ -34,25 +35,55 @@ fun main(args: Array<String>) {
     }
 
     val jibri = JibriManager(jibriConfigFile)
-//    val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibri.config.xmppEnvironments)
-//    Thread.sleep(Long.MAX_VALUE)
-    val jerseyConfig = ResourceConfig()
-    jerseyConfig.register(HttpApi(jibri))
+    // InternalHttpApi
+    val internalApiThread = Thread {
+        val jerseyConfig = ResourceConfig()
+        jerseyConfig.register(InternalHttpApi(jibri))
             .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
             .register(JacksonFeature::class.java)
 
-    val servlet = ServletHolder(ServletContainer(jerseyConfig))
+        val servlet = ServletHolder(ServletContainer(jerseyConfig))
 
-    val server = Server(2222)
-    val context = ServletContextHandler(server, "/*")
-    context.addServlet(servlet, "/*")
+        val server = Server(3333)
+        val context = ServletContextHandler(server, "/*")
+        context.addServlet(servlet, "/*")
 
-    try {
-        server.start()
-        server.join()
-    } catch (e: Exception) {
-        println("Error with server: ${e}")
-    } finally {
-        server.destroy()
+        try {
+            server.start()
+            server.join()
+        } catch (e: Exception) {
+            println("Error with server: ${e}")
+        } finally {
+            server.destroy()
+        }
     }
+    internalApiThread.start()
+    // XmppApi
+    val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibri.config.xmppEnvironments)
+
+    // HttpApi
+    Thread {
+        val jerseyConfig = ResourceConfig()
+        jerseyConfig.register(HttpApi(jibri))
+            .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
+            .register(JacksonFeature::class.java)
+
+        val servlet = ServletHolder(ServletContainer(jerseyConfig))
+
+        val server = Server(2222)
+        val context = ServletContextHandler(server, "/*")
+        context.addServlet(servlet, "/*")
+
+        try {
+            server.start()
+            server.join()
+        } catch (e: Exception) {
+            println("Error with server: ${e}")
+        } finally {
+            server.destroy()
+        }
+    }.start()
+
+    // Wait on the internal API thread to prevent Main from exiting
+    internalApiThread.join()
 }
