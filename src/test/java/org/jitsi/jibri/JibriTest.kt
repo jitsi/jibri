@@ -18,13 +18,13 @@ class JibriTest
     {
 //        val jibri = Jibri()
 //        jibri.loadConfig("/Users/bbaldino/jitsi/jibri-new/")
-//        jibri.startRecording(JibriServiceOptions(
+//        jibri.startService(JibriServiceOptions(
 //                recordingSinkType = RecordingSinkType.FILE,
 //                callName = "jibritest",
 //                baseUrl = "https://brian2.jitsi.net"
 //        ))
 //        Thread.sleep(10000)
-//        jibri.stopRecording()
+//        jibri.stopService()
     }
 
     @Test

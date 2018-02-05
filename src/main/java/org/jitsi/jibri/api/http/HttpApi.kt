@@ -1,4 +1,4 @@
-package org.jitsi.jibri.api.rest
+package org.jitsi.jibri.api.http
 
 import org.jitsi.jibri.*
 import org.jitsi.jibri.util.debug
@@ -12,16 +12,24 @@ import javax.ws.rs.core.Response
 // shouldn't be necessary?
 // https://github.com/FasterXML/jackson-module-kotlin
 // https://craftsmen.nl/kotlin-create-rest-services-using-jersey-and-jackson/
-data class StartRecordingParams(
+data class StartServiceParams(
         val callParams: CallParams = CallParams(),
         val sinkType: RecordingSinkType = RecordingSinkType.FILE,
-        val streamUrl: String = ""
+        val youTubeStreamKey: String = ""
 )
 
+/**
+ * The [HttpApi] is for starting and stopping the various Jibri services via the
+ * [JibriManager], as well as retrieving the health and status of this Jibri
+ */
 @Path("/jibri/api/v1.0")
-class RestApi(val jibriManager: JibriManager) {
+class HttpApi(private val jibriManager: JibriManager) {
     private val logger = Logger.getLogger(this::class.simpleName)
 
+    /**
+     * Get the health of this Jibri in the format of a json-encoded
+     * [JibriHealth] object
+     */
     @GET
     @Path("health")
     @Produces(MediaType.APPLICATION_JSON)
@@ -31,48 +39,50 @@ class RestApi(val jibriManager: JibriManager) {
     }
 
     /**
-     * Start recording will start a new recording using the given params
-     * immediately
+     * [startService] will start a new service using the given [serviceParams].
+     * Returns a response with [Response.Status.OK] on success, [Response.Status.PRECONDITION_FAILED]
+     * if this Jibri is already busy and [Response.Status.INTERNAL_SERVER_ERROR] on error
      */
     @POST
-    @Path("startRecording")
+    @Path("startService")
     @Consumes(MediaType.APPLICATION_JSON)
-    fun startRecording(recordingParams: StartRecordingParams): Response {
-        // Map the single call into the specific service type, in the future
-        // look at different REST calls for this
-        val result: StartServiceResult = when (recordingParams.sinkType) {
+    fun startService(serviceParams: StartServiceParams): Response {
+        logger.debug("Got a start service request with params $serviceParams")
+        val result: StartServiceResult = when (serviceParams.sinkType) {
             RecordingSinkType.FILE -> {
                 jibriManager.startFileRecording(FileRecordingParams(
-                        callParams = recordingParams.callParams
+                        callParams = serviceParams.callParams
                 ))
             }
             RecordingSinkType.STREAM -> {
                 jibriManager.startStreaming(StreamingParams(
-                        callParams = recordingParams.callParams,
-                        youTubeStreamKey = recordingParams.streamUrl
+                        callParams = serviceParams.callParams,
+                        youTubeStreamKey = serviceParams.youTubeStreamKey
                 ))
             }
-            else -> TODO()
         }
-        val response = when (result) {
+        return when (result) {
             StartServiceResult.SUCCESS -> Response.ok().build()
             StartServiceResult.BUSY -> Response.status(Response.Status.PRECONDITION_FAILED).build()
             StartServiceResult.ERROR -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
         }
-        return response
     }
 
     /**
-     * Stop recording will stop the current recording immediately
+     * [stopService] will stop the current service immediately
      */
     @POST
-    @Path("stopRecording")
-    fun stopRecording(): Response {
-        logger.debug("Got stop recording request")
+    @Path("stopService")
+    fun stopService(): Response {
+        logger.debug("Got stop service request")
         jibriManager.stopService()
         return Response.ok().build()
     }
 
+    /**
+     * Signal this Jibri to reload its config file at the soonest opportunity
+     * (when it does not have a currently running service)
+     */
     @POST
     @Path("reloadConfig")
     fun reloadConfig(): Response {
