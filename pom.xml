@@ -4,6 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.jitsi</groupId>
+        <artifactId>jitsi-universe</artifactId>
+        <version>1.0-20160405.235512-16</version>
+    </parent>
+
     <groupId>org.jitsi</groupId>
     <artifactId>jibri</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -214,6 +220,33 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>jitsi-maven-repository-releases</id>
+            <layout>default</layout>
+            <name>Jitsi Maven Repository (Releases)</name>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/releases/</url>
+        </repository>
+        <repository>
+            <id>jitsi-maven-repository-snapshots</id>
+            <layout>default</layout>
+            <name>Jitsi Maven Repository (Snapshots)</name>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
+        </repository>
+    </repositories>
 
 
 </project>
