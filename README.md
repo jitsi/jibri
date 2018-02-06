@@ -89,13 +89,12 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
   - xserver-xorg-video-dummy
 
 
-* A newer Chromedriver is also required.  It can be downloaded from google (https://sites.google.com/a/chromium.org/chromedriver/downloads).  Grab the one labeled 
-chromedriver_linux64.zip 
-   `CHD_VER=`curl -L http://chromedriver.storage.googleapis.com/LATEST_RELEASE`` 
-   `wget https://chromedriver.storage.googleapis.com/$CHD_VER/chromedriver_linux64.zip`
-   `unzip chromedriver_linux64.zip`
-   `cp chromedriver /usr/bin/chromedriver`
-
+* A newer Chromedriver is also required.  It can be downloaded from google (https://sites.google.com/a/chromium.org/chromedriver/downloads).  Grab the one labeled chromedriver_linux64.zip - the following will download, and copy to the correct folder:
+  
+  - `CHD_VER=curl -L http://chromedriver.storage.googleapis.com/LATEST_RELEASE` 
+  - `wget https://chromedriver.storage.googleapis.com/$CHD_VER/chromedriver_linux64.zip`
+  - `unzip chromedriver_linux64.zip`
+  - `cp chromedriver /usr/bin/chromedriver`
 
 
 ### User, Group
@@ -104,6 +103,8 @@ chromedriver_linux64.zip
 
 * Ensure that the jibri user is in the correct groups to make full access of the audio and video devices.  The example jibri account in Ubuntu 16 are: "adm","audio","video","plugdev"
 
+* The following will add the 'jibri' user with the appropriate groups. Run as root:
+  - `useradd -G adm,audio,vido,plugdev jibri`
 
 ### Jibri directory
 
