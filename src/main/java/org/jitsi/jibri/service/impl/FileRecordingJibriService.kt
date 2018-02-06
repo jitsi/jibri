@@ -39,12 +39,25 @@ data class RecordingOptions(
  * to a file to be replayed later.
  */
 class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriService {
+    /**
+     * The [Logger] for this class
+     */
     private val logger = Logger.getLogger(this::class.simpleName)
+    /**
+     * The [JibriSelenium] this class will use for joining a web call
+     */
     private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = recordingOptions.callParams))
+    /**
+     * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
+     */
     private val capturer = FfmpegCapturer()
+    /**
+     * The [Sink] this class will use to model the file on the filesystem
+     */
     private var sink: Sink
     /**
-     * The [ScheduledExecutorService] we'll use to run the process monitor
+     * If ffmpeg dies for some reason, we want to restart it.  This [ScheduledExecutorService]
+     * will run the process monitor in a separate thread so it can check that it's running on its own
      */
     private val executor = Executors.newSingleThreadScheduledExecutor()
     /**
