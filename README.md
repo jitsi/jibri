@@ -200,6 +200,24 @@ The first account is the jibri username and password.  The second account is the
 Once recording is enabled in config.js, the recording button will become available in the user interface.  However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed.  Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
 * Final Jibri configuration: edit /home/jibri/config.json and enter the IP Address or DNS name of your host in the "servers" section of the JSON.  Also update the password, xmpp_domain, selenium_xmpp_password as appropriate for your install.
+  ```
+  {
+    "jidserver_prefix":"auth.",
+    "mucserver_prefix":"conference.",
+    "boshdomain_prefix":"recorder.",
+    "password":"jibri_password",
+    "recording_directory":"./recordings",
+    "jid_username":"jibri",
+    "roomname":"TheBrewery",
+    "xmpp_domain":"your_jitsi_domain",
+    "selenium_xmpp_prefix":"recorder.",
+    "selenium_xmpp_username":"jibri",
+    "selenium_xmpp_password":"recorder_password",
+    "servers":["server_ip_or_domainname"],
+    "environments":{
+    }
+}
+  ```
 
 * Start the jibri daemon
   - `service jibri-xmpp start`
