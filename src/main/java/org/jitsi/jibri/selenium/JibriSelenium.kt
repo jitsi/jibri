@@ -4,6 +4,7 @@ import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.openqa.selenium.chrome.ChromeDriver
+import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
 
 /**
@@ -23,7 +24,9 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
       */
     init {
         baseUrl = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
-        System.setProperty("webdriver.chrome.driver", "/usr/local/Cellar/chromedriver/2.34/bin/chromedriver")
+        System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver")
+        System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log");
+        System.setProperty("webdriver.chrome.verboseLogging", "true");
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
                 "--use-fake-ui-for-media-stream",
@@ -35,11 +38,14 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
                 "--disable-infobars",
                 "--alsa-output-device=plug:amix"
         )
+        val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
+            mapOf("DISPLAY" to ":0")
+        ).build()
         if (jibriSeleniumOptions.customBinaryLocation != null)
         {
             chromeOptions.addArguments(jibriSeleniumOptions.customBinaryLocation)
         }
-        chromeDriver = ChromeDriver(chromeOptions)
+        chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
     }
 
     /**
