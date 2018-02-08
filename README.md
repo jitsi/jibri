@@ -89,13 +89,12 @@ agent (i.e. jicofo).  This daemon is the main controller for the Jibri Recorder.
   - xserver-xorg-video-dummy
 
 
-* A newer Chromedriver is also required.  It can be downloaded from google (https://sites.google.com/a/chromium.org/chromedriver/downloads).  Grab the one labeled 
-chromedriver_linux64.zip 
-   `CHD_VER=`curl -L http://chromedriver.storage.googleapis.com/LATEST_RELEASE`` 
-   `wget https://chromedriver.storage.googleapis.com/$CHD_VER/chromedriver_linux64.zip`
-   `unzip chromedriver_linux64.zip`
-   `cp chromedriver /usr/bin/chromedriver`
-
+* A newer Chromedriver is also required.  It can be downloaded from google (https://sites.google.com/a/chromium.org/chromedriver/downloads).  Grab the one labeled chromedriver_linux64.zip - the following will download, and copy to the correct folder:
+  
+  - `CHD_VER=curl -L http://chromedriver.storage.googleapis.com/LATEST_RELEASE` 
+  - `wget https://chromedriver.storage.googleapis.com/$CHD_VER/chromedriver_linux64.zip`
+  - `unzip chromedriver_linux64.zip`
+  - `cp chromedriver /usr/bin/chromedriver`
 
 
 ### User, Group
@@ -104,6 +103,8 @@ chromedriver_linux64.zip
 
 * Ensure that the jibri user is in the correct groups to make full access of the audio and video devices.  The example jibri account in Ubuntu 16 are: "adm","audio","video","plugdev"
 
+* The following will add the 'jibri' user with the appropriate groups. Run as root:
+  - `useradd -G adm,audio,vido,plugdev jibri`
 
 ### Jibri directory
 
@@ -199,6 +200,24 @@ The first account is the jibri username and password.  The second account is the
 Once recording is enabled in config.js, the recording button will become available in the user interface.  However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed.  Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
 * Final Jibri configuration: edit /home/jibri/config.json and enter the IP Address or DNS name of your host in the "servers" section of the JSON.  Also update the password, xmpp_domain, selenium_xmpp_password as appropriate for your install.
+  ```
+  {
+    "jidserver_prefix":"auth.",
+    "mucserver_prefix":"conference.",
+    "boshdomain_prefix":"recorder.",
+    "password":"jibri_password",
+    "recording_directory":"./recordings",
+    "jid_username":"jibri",
+    "roomname":"TheBrewery",
+    "xmpp_domain":"your_jitsi_domain",
+    "selenium_xmpp_prefix":"recorder.",
+    "selenium_xmpp_username":"jibri",
+    "selenium_xmpp_password":"recorder_password",
+    "servers":["server_ip_or_domainname"],
+    "environments":{
+    }
+}
+  ```
 
 * Start the jibri daemon
   - `service jibri-xmpp start`
