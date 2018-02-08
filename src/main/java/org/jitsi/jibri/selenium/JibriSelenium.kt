@@ -24,9 +24,9 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
       */
     init {
         baseUrl = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
-        System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver")
+        //System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver")
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log");
-        System.setProperty("webdriver.chrome.verboseLogging", "true");
+        //System.setProperty("webdriver.chrome.verboseLogging", "true");
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
                 "--use-fake-ui-for-media-stream",

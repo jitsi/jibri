@@ -8,8 +8,6 @@ data class FfmpegExecutorParams(
         val framerate: Int = 30,
         val videoEncodePreset: String = "veryfast",
         val queueSize: Int = 4096,
-        val videoInputDevice: String = "0", //"Capturescreen0",
-        val audioInputDevice: String = "0", //"Built",
         val streamingMaxBitrate: Int = 2976,
         val streamingBufSize: Int = streamingMaxBitrate * 2,
         // The range of the CRF scale is 0–51, where 0 is lossless,
@@ -20,9 +18,5 @@ data class FfmpegExecutorParams(
         // isn't technically lossless.
         // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
         val h264ConstantRateFactor: Int = 25,
-        // TODO: if we want to make some of these nullable, we can still
-        // assign a default by doing something here like:
-        // val gopSize: Int = framerate?.times( 2) ?: 30 * 2,
-        val gopSize: Int = framerate * 2,
-        val display: String = ":0"
+        val gopSize: Int = framerate * 2
 )

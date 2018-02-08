@@ -5,6 +5,7 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqPr
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.*
 import org.jitsi.jibri.config.XmppEnvironmentConfig
+import org.jitsi.jibri.util.error
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.XMPPError
@@ -71,14 +72,21 @@ class XmppApi(
                     val resultIq = JibriIq()
                     resultIq.to = jibriIq.from
                     resultIq.type = IQ.Type.set
-                    logger.info("Starting service")
-                    resultIq.status = when (handleStartService(jibriIq, xmppEnvironment)) {
-                        StartServiceResult.SUCCESS -> JibriIq.Status.ON
-                        StartServiceResult.BUSY -> JibriIq.Status.BUSY
-                        StartServiceResult.ERROR -> JibriIq.Status.FAILED
+                    try {
+                        logger.info("Starting service")
+                        resultIq.status = when (handleStartService(jibriIq, xmppEnvironment)) {
+                            StartServiceResult.SUCCESS -> JibriIq.Status.ON
+                            StartServiceResult.BUSY -> JibriIq.Status.BUSY
+                            StartServiceResult.ERROR -> JibriIq.Status.FAILED
+                        }
+                        logger.info("Sending 'on' iq")
+                        mucClient.sendStanza(resultIq)
+                    } catch (e: Throwable) {
+                        logger.error("Error in startService task: $e")
+                        resultIq.status = JibriIq.Status.FAILED
+                        logger.info("Sending 'failed' iq")
+                        mucClient.sendStanza(resultIq)
                     }
-                    logger.info("Sending 'on' iq")
-                    mucClient.sendStanza(resultIq)
                 }
                 logger.info("Sending 'pending' response to start IQ")
                 return initialResponse
