@@ -5,6 +5,8 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqPr
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.*
 import org.jitsi.jibri.config.XmppEnvironmentConfig
+import org.jitsi.jibri.util.Status
+import org.jitsi.jibri.util.StatusHandler
 import org.jitsi.jibri.util.error
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.packet.IQ
@@ -17,7 +19,7 @@ import java.util.concurrent.Executors
 import java.util.logging.Logger
 
 /**
- * [XmppApi] connects to an XMPP MUC according to the given [xmppConfig] and listens
+ * [XmppApi] connects to XMPP MUCs according to the given [xmppConfigs] and listens
  * for IQ messages which contain Jibri commands, which it relays
  * to the given [jibriManager].  It takes care of translating the XMPP commands into the appropriate
  * [JibriManager] API calls and translates the results into XMPP IQ responses.
@@ -60,51 +62,72 @@ class XmppApi(
     }
 
     private fun handleJibriIq(jibriIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient): IQ {
-        logger.info("Received JibriIq")
-        when (jibriIq.action) {
-            JibriIq.Action.START -> {
-                logger.info("Received start request")
-                // Immediately respond that the request is pending
-                val initialResponse = JibriIqHelper.createResult(jibriIq)
-                initialResponse.status = JibriIq.Status.PENDING
-                // Start the actual service and send an IQ once we get the result
-                executor.submit {
-                    val resultIq = JibriIq()
-                    resultIq.to = jibriIq.from
-                    resultIq.type = IQ.Type.set
-                    try {
-                        logger.info("Starting service")
-                        resultIq.status = when (handleStartService(jibriIq, xmppEnvironment)) {
-                            StartServiceResult.SUCCESS -> JibriIq.Status.ON
-                            StartServiceResult.BUSY -> JibriIq.Status.BUSY
-                            StartServiceResult.ERROR -> JibriIq.Status.FAILED
-                        }
-                        logger.info("Sending 'on' iq")
-                        mucClient.sendStanza(resultIq)
-                    } catch (e: Throwable) {
-                        logger.error("Error in startService task: $e")
-                        resultIq.status = JibriIq.Status.FAILED
-                        logger.info("Sending 'failed' iq")
-                        mucClient.sendStanza(resultIq)
-                    }
-                }
-                logger.info("Sending 'pending' response to start IQ")
-                return initialResponse
-            }
-            JibriIq.Action.STOP -> {
-                jibriManager.stopService()
-                // By this point the service has been fully stopped
-                val response = JibriIqHelper.createResult(jibriIq)
-                response.status = JibriIq.Status.OFF
-                return response
-            }
-            else -> {
-                return IQ.createErrorResponse(jibriIq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
-            }
+        logger.info("Received JibriIq $jibriIq from environment ${xmppEnvironment.name}")
+        return when (jibriIq.action) {
+            JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
+            JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)
+            else -> IQ.createErrorResponse(jibriIq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
         }
     }
 
-    private fun handleStartService(startIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig): StartServiceResult {
+    private fun handleStartJibriIq(startJibriIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient): IQ {
+        logger.info("Received start request")
+        // Immediately respond that the request is pending
+        val initialResponse = JibriIqHelper.createResult(startJibriIq)
+        initialResponse.status = JibriIq.Status.PENDING
+        // Start the actual service and send an IQ once we get the result
+        executor.submit {
+            val resultIq = JibriIq()
+            resultIq.to = startJibriIq.from
+            resultIq.type = IQ.Type.set
+            try {
+                logger.info("Starting service")
+
+                // If there is an issue with the service while it's running, we need to send an IQ
+                // to notify the caller who invoked the service of its status, so we'll listen
+                // for the service's status while it's running and this method will be invoked
+                // if it changes
+                val serviceStatusHandler: StatusHandler = { serviceStatus ->
+                    when (serviceStatus) {
+                        Status.ERROR -> {
+                            val errorIq = JibriIq()
+                            errorIq.to = startJibriIq.from
+                            errorIq.type = IQ.Type.set
+                            errorIq.status = JibriIq.Status.FAILED
+                            mucClient.sendStanza(errorIq)
+                        }
+                        else -> {} // I don't think we need to handle any other status here
+                    }
+                }
+                val startServiceResult = handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
+
+                resultIq.status = when (startServiceResult) {
+                    StartServiceResult.SUCCESS -> JibriIq.Status.ON
+                    StartServiceResult.BUSY -> JibriIq.Status.BUSY
+                    StartServiceResult.ERROR -> JibriIq.Status.FAILED
+                }
+                logger.info("Sending 'on' iq")
+                mucClient.sendStanza(resultIq)
+            } catch (e: Throwable) {
+                logger.error("Error in startService task: $e")
+                resultIq.status = JibriIq.Status.FAILED
+                logger.info("Sending 'failed' iq")
+                mucClient.sendStanza(resultIq)
+            }
+        }
+        logger.info("Sending 'pending' response to start IQ")
+        return initialResponse
+    }
+
+    private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
+        jibriManager.stopService()
+        // By this point the service has been fully stopped
+        val response = JibriIqHelper.createResult(stopJibriIq)
+        response.status = JibriIq.Status.OFF
+        return response
+    }
+
+    private fun handleStartService(startIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, serviceStatusHandler: StatusHandler): StartServiceResult {
         val jibriDisplayName = startIq.displayName
         /**
          * The call url is constructed from the xmpp domain, an optional subdomain, and a callname like so:
@@ -124,21 +147,27 @@ class XmppApi(
         logger.info("Generated call info: $callUrlInfo")
         return when (startIq.recordingMode) {
             JibriIq.RecordingMode.FILE -> {
-                jibriManager.startFileRecording(FileRecordingParams(
+                jibriManager.startFileRecording(
+                    FileRecordingParams(
                         callParams = CallParams(
                             callUrlInfo = callUrlInfo,
                             callLoginParams = xmppEnvironment.callLogin
                         )
-                ))
+                    ),
+                    serviceStatusHandler
+                )
             }
             JibriIq.RecordingMode.STREAM -> {
-                jibriManager.startStreaming(StreamingParams(
-                    callParams = CallParams(
-                        callUrlInfo = callUrlInfo,
-                        callLoginParams = xmppEnvironment.callLogin
+                jibriManager.startStreaming(
+                    StreamingParams(
+                        callParams = CallParams(
+                            callUrlInfo = callUrlInfo,
+                            callLoginParams = xmppEnvironment.callLogin
+                        ),
+                        youTubeStreamKey = startIq.streamId
                     ),
-                    youTubeStreamKey = startIq.streamId
-                ))
+                    serviceStatusHandler
+                )
             }
             else -> {
                 StartServiceResult.ERROR

@@ -9,10 +9,7 @@ import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.Duration
-import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.error
-import org.jitsi.jibri.util.scheduleAtFixedRate
+import org.jitsi.jibri.util.*
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
@@ -38,7 +35,7 @@ data class RecordingOptions(
  * a web call, capturing its audio and video, and writing that audio and video
  * to a file to be replayed later.
  */
-class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriService {
+class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriService() {
     /**
      * The [Logger] for this class
      */
@@ -79,15 +76,24 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
         jibriSelenium.joinCall(recordingOptions.callParams.callUrlInfo.callName)
         val capturerParams = CapturerParams()
         capturer.start(capturerParams, sink)
+        var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
             logger.error("Capturer process is no longer running, exited " +
                     "with code $exitCode.  Restarting")
-            // Re-create the sink here because we want a new filename
-            sink = createSink(
+            if (numRestarts == 1) {
+                logger.error("Giving up on restarting the capturer")
+                publishStatus(Status.ERROR)
+                processMonitorTask?.cancel(false)
+            } else {
+                numRestarts++
+                // Re-create the sink here because we want a new filename
+                sink = createSink(
                     recordingsDirectory = recordingOptions.recordingDirectory,
                     callName = recordingOptions.callParams.callUrlInfo.callName
-            )
-            capturer.start(capturerParams, sink)
+                )
+                capturer.start(capturerParams, sink)
+            }
+
         }
         processMonitorTask = executor.scheduleAtFixedRate(
                 period = Duration( 10, TimeUnit.SECONDS),

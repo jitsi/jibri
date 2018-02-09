@@ -9,10 +9,7 @@ import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
-import org.jitsi.jibri.util.Duration
-import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.error
-import org.jitsi.jibri.util.scheduleAtFixedRate
+import org.jitsi.jibri.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -31,7 +28,7 @@ data class StreamingOptions(
  * web call, capturing its audio and video, and streaming that audio and video
  * to a url
  */
-class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriService {
+class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriService() {
     private val logger = Logger.getLogger(this::class.simpleName)
     private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = streamingOptions.callParams))
     private val capturer = FfmpegCapturer()
@@ -62,10 +59,18 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
         jibriSelenium.joinCall(streamingOptions.callParams.callUrlInfo.callName)
         val capturerParams = CapturerParams()
         capturer.start(capturerParams, sink)
+        var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
             logger.error("Capturer process is no longer running, exited " +
                     "with code $exitCode.  Restarting.")
-            capturer.start(capturerParams, sink)
+            if (numRestarts == 1) {
+                logger.error("Giving up on restarting the capturer")
+                publishStatus(Status.ERROR)
+                stop()
+            } else {
+                numRestarts++
+                capturer.start(capturerParams, sink)
+            }
         }
         processMonitorTask = executor.scheduleAtFixedRate(
                 period = Duration( 10, TimeUnit.SECONDS),

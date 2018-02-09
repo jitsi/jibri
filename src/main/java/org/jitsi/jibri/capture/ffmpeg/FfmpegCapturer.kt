@@ -11,29 +11,6 @@ import org.jitsi.jibri.capture.ffmpeg.executor.impl.MacFfmpegExecutor
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
 
-// Taken from https://stackoverflow.com/questions/35421699/how-to-invoke-external-command-from-within-kotlin-code
-//TODO: not sure if we'll want to use this or just use the Runtime.getRuntime().exec()
-//fun String.runCommand(workingDir: File): Process? {
-//    try {
-//        println("raw command string: $this")
-//        val parts = this.split("\\s".toRegex())
-//        println("parts: $parts")
-//        val proc = ProcessBuilder(*parts.toTypedArray())
-//                .directory(workingDir)
-//                .redirectOutput(ProcessBuilder.Redirect.to(File("/tmp/jibri-ffmpeg.out")))
-//                .redirectErrorStream(true)
-//                //.redirectError(ProcessBuilder.Redirect.PIPE)
-//                .start()
-//
-//        return proc
-//        //proc.waitFor(60, TimeUnit.MINUTES)
-//        //return proc.inputStream.bufferedReader().readText()
-//    } catch (e: IOException) {
-//        e.printStackTrace()
-//        return null
-//    }
-//}
-
 /**
  * [FfmpegCapturer] is responsible for launching ffmpeg, capturing from the
  * configured audio and video devices, and writing to the given [Sink]
