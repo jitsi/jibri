@@ -97,18 +97,6 @@ class JibriManager(private val configFile: File) {
     }
 
     /**
-     * Starts a [SipGatewayStreamingService] to capture the call described
-     * in the params and stream it to a SIP call, as well as capturing the media
-     * from the SIP call and streaming it to the other side.  Returns a
-     * [StartServiceResult] to denote whether the service was started
-     * successfully or not.
-     */
-    @Synchronized
-    fun startSipGateway(): StartServiceResult {
-        TODO()
-    }
-
-    /**
      * Helper method to handle the boilerplate of starting a [JibriService].
      * Returns a [StartServiceResult] to denote whether the service was
      * started successfully or not.
