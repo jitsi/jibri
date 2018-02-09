@@ -24,9 +24,7 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
       */
     init {
         baseUrl = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
-        //System.setProperty("webdriver.chrome.driver", "/usr/bin/chromedriver")
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log");
-        //System.setProperty("webdriver.chrome.verboseLogging", "true");
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
                 "--use-fake-ui-for-media-stream",
@@ -41,10 +39,6 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
             mapOf("DISPLAY" to ":0")
         ).build()
-        if (jibriSeleniumOptions.customBinaryLocation != null)
-        {
-            chromeOptions.addArguments(jibriSeleniumOptions.customBinaryLocation)
-        }
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
     }
 
