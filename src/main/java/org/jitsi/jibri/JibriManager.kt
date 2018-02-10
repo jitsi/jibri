@@ -3,6 +3,7 @@ package org.jitsi.jibri
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
@@ -11,6 +12,7 @@ import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.RecordingOptions
 import org.jitsi.jibri.service.impl.StreamingOptions
+import org.jitsi.jibri.util.StatusPublisher
 import java.io.File
 import java.util.logging.Logger
 
@@ -40,7 +42,7 @@ data class StreamingParams(
  * instance.  NOTE: currently Jibri only runs a single service at a time, so
  * if one is running, the Jibri will describe itself as busy
  */
-class JibriManager(private val configFile: File) {
+class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPacketExt.Status>() {
     private val logger = Logger.getLogger(this::class.simpleName)
     //TODO: public so main can get to it and pass the xmpp stuff to the xmpp api,
     //  need to figure out a better way for that
@@ -102,6 +104,7 @@ class JibriManager(private val configFile: File) {
      * started successfully or not.
      */
     private fun startService(jibriService: JibriService, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
+        publishStatus(JibriStatusPacketExt.Status.BUSY)
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
         }
@@ -113,6 +116,7 @@ class JibriManager(private val configFile: File) {
 
         jibriService.start()
         currentActiveService = jibriService
+
         return StartServiceResult.SUCCESS
     }
 
@@ -133,6 +137,7 @@ class JibriManager(private val configFile: File) {
             loadConfig(configFile)
             configReloadPending = false
         }
+        publishStatus(JibriStatusPacketExt.Status.IDLE)
     }
 
     /**
