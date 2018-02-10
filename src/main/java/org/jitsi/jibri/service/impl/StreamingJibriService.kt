@@ -7,6 +7,7 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.util.*
@@ -65,7 +66,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
                     "with code $exitCode.  Restarting.")
             if (numRestarts == 1) {
                 logger.error("Giving up on restarting the capturer")
-                publishStatus(Status.ERROR)
+                publishStatus(JibriServiceStatus.ERROR)
                 stop()
             } else {
                 numRestarts++

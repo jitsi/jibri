@@ -1,19 +1,12 @@
 package org.jitsi.jibri.util
 
-enum class Status {
-    FINISHED,
-    ERROR
-}
-
-typealias StatusHandler = (Status) -> Unit
-
-open class StatusPublisher {
-    private val handlers: MutableList<StatusHandler> = mutableListOf()
-    fun addStatusHandler(handler: StatusHandler) {
+open class StatusPublisher<T> {
+    private val handlers: MutableList<(T) -> Unit> = mutableListOf()
+    fun addStatusHandler(handler: (T) -> Unit) {
         handlers.add(handler)
     }
 
-    protected fun publishStatus(status: Status) {
+    protected fun publishStatus(status: T) {
         handlers.forEach { handler ->
             handler(status)
         }

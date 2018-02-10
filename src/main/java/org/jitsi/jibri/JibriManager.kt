@@ -11,8 +11,6 @@ import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.RecordingOptions
 import org.jitsi.jibri.service.impl.StreamingOptions
-import org.jitsi.jibri.util.StatusHandler
-import org.jitsi.jibri.util.StatusPublisher
 import java.io.File
 import java.util.logging.Logger
 
@@ -65,7 +63,7 @@ class JibriManager(private val configFile: File) {
      * whether the service was started successfully or not.
      */
     @Synchronized
-    fun startFileRecording(fileRecordingParams: FileRecordingParams, serviceStatusHandler: StatusHandler? = null): StartServiceResult {
+    fun startFileRecording(fileRecordingParams: FileRecordingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a file recording with params: $fileRecordingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
@@ -85,7 +83,7 @@ class JibriManager(private val configFile: File) {
      * denote whether the service was started successfully or not.
      */
     @Synchronized
-    fun startStreaming(streamingParams: StreamingParams, serviceStatusHandler: StatusHandler? = null): StartServiceResult {
+    fun startStreaming(streamingParams: StreamingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a stream with params: $streamingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
@@ -103,7 +101,7 @@ class JibriManager(private val configFile: File) {
      * Returns a [StartServiceResult] to denote whether the service was
      * started successfully or not.
      */
-    private fun startService(jibriService: JibriService, serviceStatusHandler: StatusHandler? = null): StartServiceResult {
+    private fun startService(jibriService: JibriService, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
         }

@@ -5,8 +5,8 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqPr
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.*
 import org.jitsi.jibri.config.XmppEnvironmentConfig
-import org.jitsi.jibri.util.Status
-import org.jitsi.jibri.util.StatusHandler
+import org.jitsi.jibri.service.JibriServiceStatus
+import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.util.error
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.packet.IQ
@@ -87,9 +87,9 @@ class XmppApi(
                 // to notify the caller who invoked the service of its status, so we'll listen
                 // for the service's status while it's running and this method will be invoked
                 // if it changes
-                val serviceStatusHandler: StatusHandler = { serviceStatus ->
+                val serviceStatusHandler: JibriServiceStatusHandler = { serviceStatus ->
                     when (serviceStatus) {
-                        Status.ERROR -> {
+                        JibriServiceStatus.ERROR -> {
                             val errorIq = JibriIq()
                             errorIq.to = startJibriIq.from
                             errorIq.type = IQ.Type.set
@@ -127,7 +127,7 @@ class XmppApi(
         return response
     }
 
-    private fun handleStartService(startIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, serviceStatusHandler: StatusHandler): StartServiceResult {
+    private fun handleStartService(startIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, serviceStatusHandler: JibriServiceStatusHandler): StartServiceResult {
         val jibriDisplayName = startIq.displayName
         /**
          * The call url is constructed from the xmpp domain, an optional subdomain, and a callname like so:
