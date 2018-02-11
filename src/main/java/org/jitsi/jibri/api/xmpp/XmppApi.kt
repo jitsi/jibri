@@ -113,12 +113,11 @@ class XmppApi(
                     StartServiceResult.BUSY -> JibriIq.Status.BUSY
                     StartServiceResult.ERROR -> JibriIq.Status.FAILED
                 }
-                logger.info("Sending 'on' iq")
-                mucClient.sendStanza(resultIq)
             } catch (e: Throwable) {
                 logger.error("Error in startService task: $e")
                 resultIq.status = JibriIq.Status.FAILED
-                logger.info("Sending 'failed' iq")
+            } finally {
+                logger.info("Sending start service response iq: $resultIq")
                 mucClient.sendStanza(resultIq)
             }
         }

@@ -1,7 +1,6 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.CallParams
-import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.selenium.JibriSelenium
