@@ -18,6 +18,11 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
 {
     var chromeDriver: ChromeDriver
     var baseUrl: String
+    val URL_OPTIONS = listOf(
+        "config.iAmRecorder=true",
+        "config.externalConnectUrl=null",
+        "interfaceConfig.APP_NAME=\"Jibri\""
+        )
 
     /**
      * Set up default chrome driver options (using fake device, etc.)
@@ -67,7 +72,7 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
                 Pair("xmpp_password_override", jibriSeleniumOptions.callParams.callLoginParams.password),
                 Pair("callStatsUserName", "jibri")
         )
-        CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#config.iAmRecorder=true&config.externalConnectUrl=null"))
+        CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${URL_OPTIONS.joinToString("&")}"))
     }
 
     fun leaveCallAndQuitBrowser()
