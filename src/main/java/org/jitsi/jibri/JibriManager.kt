@@ -8,6 +8,7 @@ import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.StreamingJibriService
@@ -68,7 +69,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun startFileRecording(fileRecordingParams: FileRecordingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a file recording with params: $fileRecordingParams")
-        if (busy()) {
+        if (busy) {
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
@@ -88,7 +89,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun startStreaming(streamingParams: StreamingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a stream with params: $streamingParams")
-        if (busy()) {
+        if (busy) {
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
@@ -112,7 +113,9 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
         // The manager adds its own status handler so that it can stop
         // the error'd service and update presence appropriately
         jibriService.addStatusHandler {
-            stopService()
+            when (it) {
+                JibriServiceStatus.ERROR, JibriServiceStatus.FINISHED -> stopService()
+            }
         }
 
         jibriService.start()
@@ -127,10 +130,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun stopService() {
         logger.info("Stopping the current service")
-        //TODO: do we need to block the call on stopping everything?
-        // this ends up blocking the request until everything is done
-        // (finalize script, etc.) and it's not clear we want to block
-        // sending the response on all of that (maybe yes, maybe no)
+        // Note that this will block until the service is completely stopped
         currentActiveService?.stop()
         currentActiveService = null
         if (configReloadPending) {
@@ -147,7 +147,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun healthCheck(): JibriHealth {
         return JibriHealth(
-                busy = busy()
+                busy = busy
         )
     }
 
@@ -159,7 +159,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun reloadConfig() {
         logger.info("Scheduling a config reload")
-        if (!busy()) {
+        if (!busy) {
             logger.info("Jibri not busy, reloading config now")
             loadConfig(configFile)
         } else {
@@ -173,8 +173,5 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
      * is defined as "does not currently have the capacity to spin up another
      * service"
      */
-    @Synchronized
-    fun busy(): Boolean {
-        return currentActiveService != null
-    }
+    val busy: Boolean = currentActiveService != null
 }
