@@ -50,7 +50,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     //  need to figure out a better way for that
     public lateinit var config: JibriConfig
     private var currentActiveService: JibriService? = null
-    private var configReloadPending = false
+    private var pendingIdleFunc: () -> Unit = {}
 
     init {
         loadConfig(configFile)
@@ -69,7 +69,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun startFileRecording(fileRecordingParams: FileRecordingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a file recording with params: $fileRecordingParams")
-        if (busy) {
+        if (busy()) {
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
@@ -89,7 +89,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun startStreaming(streamingParams: StreamingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a stream with params: $streamingParams")
-        if (busy) {
+        if (busy()) {
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
@@ -133,11 +133,10 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
         // Note that this will block until the service is completely stopped
         currentActiveService?.stop()
         currentActiveService = null
-        if (configReloadPending) {
-            logger.info("Reloading configuration file")
-            loadConfig(configFile)
-            configReloadPending = false
-        }
+        // Invoke the function we've been told to next time we're idle
+        // and reset it
+        pendingIdleFunc()
+        pendingIdleFunc = {}
         publishStatus(JibriStatusPacketExt.Status.IDLE)
     }
 
@@ -147,31 +146,27 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun healthCheck(): JibriHealth {
         return JibriHealth(
-                busy = busy
+                busy = busy()
         )
     }
 
     /**
-     * Reload the current Jibri configuration as soon as possible.  If a
-     * service is currently active, the config will not be reloaded until
-     * it finishes
-     */
+    * Returns whether or not this Jibri is currently "busy".   "Busy" is
+    * is defined as "does not currently have the capacity to spin up another
+    * service"
+    */
     @Synchronized
-    fun reloadConfig() {
-        logger.info("Scheduling a config reload")
-        if (!busy) {
-            logger.info("Jibri not busy, reloading config now")
-            loadConfig(configFile)
-        } else {
-            logger.info("Scheduling config reload for the next time we're not busy")
-            configReloadPending = true
-        }
-    }
+    fun busy(): Boolean = currentActiveService != null
 
     /**
-     * Returns whether or not this Jibri is currently "busy".   "Busy" is
-     * is defined as "does not currently have the capacity to spin up another
-     * service"
+     * Execute the given function the next time Jibri is idle
      */
-    val busy: Boolean = currentActiveService != null
+    @Synchronized
+    fun executeWhenIdle(func: () -> Unit) {
+        if (!busy()) {
+            func()
+        } else {
+            pendingIdleFunc = func
+        }
+    }
 }

@@ -2,6 +2,7 @@ package org.jitsi.jibri
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import net.sourceforge.argparse4j.ArgumentParsers
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -13,9 +14,12 @@ import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
 import java.io.File
+import java.util.logging.Logger
 import javax.ws.rs.ext.ContextResolver
 
 fun main(args: Array<String>) {
+    val logger = Logger.getLogger("JibriMain")
+
     val argParser = ArgumentParsers.newFor("Jibri").build()
             .defaultHelp(true)
             .description("Start Jibri")
@@ -35,10 +39,19 @@ fun main(args: Array<String>) {
     }
 
     val jibri = JibriManager(jibriConfigFile)
+
     // InternalHttpApi
     val internalApiThread = Thread {
+        val internalHttpApi = InternalHttpApi {
+            logger.info("The config file has changed, waiting for Jibri to be idle before exiting")
+            jibri.executeWhenIdle {
+                logger.info("Jibri is idle and there are config file changes, exiting")
+                // Exit so we can be restarted and load the new config
+                System.exit(0)
+            }
+        }
         val jerseyConfig = ResourceConfig()
-        jerseyConfig.register(InternalHttpApi(jibri))
+        jerseyConfig.register(internalHttpApi)
             .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
             .register(JacksonFeature::class.java)
 
