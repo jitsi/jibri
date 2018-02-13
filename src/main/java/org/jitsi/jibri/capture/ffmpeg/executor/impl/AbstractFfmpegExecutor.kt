@@ -35,8 +35,8 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
 
     override fun stopFfmpeg() {
         currentFfmpegProc?.pid()?.let {
-            logger.info("sending SIGINT to ffmpeg proc ${it}")
-            Runtime.getRuntime().exec("kill -s SIGINT ${it}")
+            logger.info("sending SIGINT to ffmpeg proc $it")
+            Runtime.getRuntime().exec("kill -s SIGINT $it")
         } ?: run {
             logger.info("stopFfmpeg: ffmpeg had already exited")
         }

@@ -9,7 +9,10 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.*
+import org.jitsi.jibri.util.Duration
+import org.jitsi.jibri.util.ProcessMonitor
+import org.jitsi.jibri.util.error
+import org.jitsi.jibri.util.scheduleAtFixedRate
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
@@ -93,7 +96,6 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
                 )
                 capturer.start(capturerParams, sink)
             }
-
         }
         processMonitorTask = executor.scheduleAtFixedRate(
                 period = Duration( 10, TimeUnit.SECONDS),

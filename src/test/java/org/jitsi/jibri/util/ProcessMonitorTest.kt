@@ -40,5 +40,4 @@ class ProcessMonitorTest {
         for (i in 1..5) processMonitor.run()
         assertEquals(0, exitCodes.size)
     }
-
 }

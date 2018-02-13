@@ -8,9 +8,7 @@ import org.openqa.selenium.WebDriver
  * all page object instances
  */
 open class AbstractPageObject(protected val driver: WebDriver) {
-
-    fun visit(callUrlInfo: CallUrlInfo)
-    {
+    fun visit(callUrlInfo: CallUrlInfo) {
         driver.get(callUrlInfo.callUrl)
     }
 }

@@ -18,13 +18,10 @@ class FileSink(val recordingsDirectory: File, callName: String, extension: Strin
         val currentTime = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
         val filename = callName + currentTime.format(formatter) + extension
-        if (recordingsDirectory.mkdirs() or recordingsDirectory.isDirectory)
-        {
+        if (recordingsDirectory.mkdirs() or recordingsDirectory.isDirectory) {
             file = File(recordingsDirectory, filename)
             logger.info("Using recording file " + file.toString())
-        }
-        else
-        {
+        } else {
             logger.error("Error creating directory: $recordingsDirectory")
             file = null
         }

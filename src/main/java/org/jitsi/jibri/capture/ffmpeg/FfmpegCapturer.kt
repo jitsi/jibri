@@ -22,8 +22,7 @@ class FfmpegCapturer : Capturer {
     init
     {
         logger.debug("OS: ${System.getProperty("os.name")}")
-        ffmpegExecutor = when (System.getProperty("os.name"))
-        {
+        ffmpegExecutor = when (System.getProperty("os.name")) {
             "Mac OS X" -> MacFfmpegExecutor()
             "Linux" -> LinuxFfmpegExecutor()
             else -> throw UnsupportedOsException()
@@ -33,8 +32,7 @@ class FfmpegCapturer : Capturer {
     /**
      * see [Capturer.start]
      */
-    override fun start(capturerParams: CapturerParams, sink: Sink)
-    {
+    override fun start(capturerParams: CapturerParams, sink: Sink) {
         ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
     }
 
@@ -51,8 +49,7 @@ class FfmpegCapturer : Capturer {
     /**
      * see [Capturer.stop]
      */
-    override fun stop()
-    {
+    override fun stop() {
         ffmpegExecutor.stopFfmpeg()
     }
 }

@@ -1,7 +1,6 @@
 package org.jitsi.jibri.config
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 
 data class XmppCredentials(
         val domain: String = "",

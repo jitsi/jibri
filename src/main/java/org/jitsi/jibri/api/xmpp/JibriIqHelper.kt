@@ -5,7 +5,6 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStat
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.Presence
 import org.jxmpp.jid.Jid
-import org.jxmpp.jid.impl.JidCreate
 
 //TODO: this functionality should be added to JibriIq
 

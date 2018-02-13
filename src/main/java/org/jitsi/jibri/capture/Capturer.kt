@@ -4,8 +4,6 @@ import org.jitsi.jibri.util.MonitorableProcess
 import org.jitsi.jibri.sink.Sink
 
 class UnsupportedOsException(override var message: String = "Jibri does not support this OS") : Exception()
-{
-}
 
 /**
  * [Capturer] represents a process which will capture media.  It implements

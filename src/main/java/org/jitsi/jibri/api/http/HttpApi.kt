@@ -1,9 +1,18 @@
 package org.jitsi.jibri.api.http
 
-import org.jitsi.jibri.*
+import org.jitsi.jibri.CallParams
+import org.jitsi.jibri.FileRecordingParams
+import org.jitsi.jibri.JibriManager
+import org.jitsi.jibri.RecordingSinkType
+import org.jitsi.jibri.StartServiceResult
+import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -13,9 +22,9 @@ import javax.ws.rs.core.Response
 // https://github.com/FasterXML/jackson-module-kotlin
 // https://craftsmen.nl/kotlin-create-rest-services-using-jersey-and-jackson/
 data class StartServiceParams(
-        val callParams: CallParams = CallParams(),
-        val sinkType: RecordingSinkType = RecordingSinkType.FILE,
-        val youTubeStreamKey: String = ""
+    val callParams: CallParams = CallParams(),
+    val sinkType: RecordingSinkType = RecordingSinkType.FILE,
+    val youTubeStreamKey: String = ""
 )
 
 /**
@@ -50,15 +59,19 @@ class HttpApi(private val jibriManager: JibriManager) {
         logger.debug("Got a start service request with params $serviceParams")
         val result: StartServiceResult = when (serviceParams.sinkType) {
             RecordingSinkType.FILE -> {
-                jibriManager.startFileRecording(FileRecordingParams(
+                jibriManager.startFileRecording(
+                    FileRecordingParams(
                         callParams = serviceParams.callParams
-                ))
+                    )
+                )
             }
             RecordingSinkType.STREAM -> {
-                jibriManager.startStreaming(StreamingParams(
+                jibriManager.startStreaming(
+                    StreamingParams(
                         callParams = serviceParams.callParams,
                         youTubeStreamKey = serviceParams.youTubeStreamKey
-                ))
+                    )
+                )
             }
         }
         return when (result) {

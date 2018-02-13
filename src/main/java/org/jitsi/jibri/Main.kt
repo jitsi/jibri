@@ -52,7 +52,7 @@ fun main(args: Array<String>) {
             server.start()
             server.join()
         } catch (e: Exception) {
-            println("Error with server: ${e}")
+            println("Error with server: $e")
         } finally {
             server.destroy()
         }
@@ -78,7 +78,7 @@ fun main(args: Array<String>) {
             server.start()
             server.join()
         } catch (e: Exception) {
-            println("Error with server: ${e}")
+            println("Error with server: $e")
         } finally {
             server.destroy()
         }

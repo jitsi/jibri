@@ -7,7 +7,8 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStat
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
-import org.jitsi.jibri.service.*
+import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.RecordingOptions
@@ -93,7 +94,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
         }
         val service = StreamingJibriService(StreamingOptions(
                 youTubeStreamKey = streamingParams.youTubeStreamKey,
-                callParams= streamingParams.callParams
+                callParams = streamingParams.callParams
         ))
         return startService(service, serviceStatusHandler)
     }

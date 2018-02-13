@@ -14,8 +14,7 @@ import org.openqa.selenium.chrome.ChromeOptions
  * 2) Handles passing the proper options to Chrome
  * 3) Sets the necessary localstorage variables before joining a call
  */
-class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
-{
+class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions) {
     var chromeDriver: ChromeDriver
     var baseUrl: String
     val URL_OPTIONS = listOf(
@@ -29,7 +28,7 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
       */
     init {
         baseUrl = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
-        System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log");
+        System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
                 "--use-fake-ui-for-media-stream",
@@ -51,19 +50,16 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
      * Set various values to be put in local storage.  NOTE: the driver
      * should have already navigated to the desired page
      */
-    private fun setJibriIdentifiers(vararg keyValues: Pair<String, String>)
-    {
-        for ((key, value) in keyValues)
-        {
-            chromeDriver.executeScript("window.localStorage.setItem('$key', '$value')");
+    private fun setJibriIdentifiers(vararg keyValues: Pair<String, String>) {
+        for ((key, value) in keyValues) {
+            chromeDriver.executeScript("window.localStorage.setItem('$key', '$value')")
         }
     }
 
     /**
      * Join a a web call with Selenium
      */
-    fun joinCall(callName: String)
-    {
+    fun joinCall(callName: String) {
         HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
         setJibriIdentifiers(
                 Pair("displayname", "TODO"),
@@ -75,8 +71,7 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions)
         CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${URL_OPTIONS.joinToString("&")}"))
     }
 
-    fun leaveCallAndQuitBrowser()
-    {
+    fun leaveCallAndQuitBrowser() {
         //TODO: we can't leave the call cleanly via clicking the 'leave call' button
         // because they are hidden from the UI when jibri joins.  Should we issue a js
         // command to leave cleanly rather than just qutting the driver?

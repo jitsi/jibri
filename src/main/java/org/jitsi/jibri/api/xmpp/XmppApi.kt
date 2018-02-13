@@ -3,7 +3,12 @@ package org.jitsi.jibri.api.xmpp
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqProvider
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
-import org.jitsi.jibri.*
+import org.jitsi.jibri.CallParams
+import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.FileRecordingParams
+import org.jitsi.jibri.JibriManager
+import org.jitsi.jibri.StartServiceResult
+import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
@@ -25,8 +30,8 @@ import java.util.logging.Logger
  * [JibriManager] API calls and translates the results into XMPP IQ responses.
  */
 class XmppApi(
-        private val jibriManager: JibriManager,
-        xmppConfigs: List<XmppEnvironmentConfig>
+    private val jibriManager: JibriManager,
+    xmppConfigs: List<XmppEnvironmentConfig>
 ) {
     private val logger = Logger.getLogger(this::class.simpleName)
     private val executor = Executors.newSingleThreadExecutor()
@@ -46,7 +51,7 @@ class XmppApi(
                     .setXmppDomain(config.controlLogin.domain)
                     .setUsernameAndPassword(config.controlLogin.username, config.controlLogin.password)
                     .build())
-                mucClient.addIqRequestHandler(object: JibriSyncIqRequestHandler() {
+                mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
                     override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
                         return handleJibriIq(jibriIq, config, mucClient)
                     }

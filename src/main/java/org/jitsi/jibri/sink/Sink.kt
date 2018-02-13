@@ -7,8 +7,7 @@ package org.jitsi.jibri.sink
  * TODO: currently this is modeled as generic, but really it's an
  * "FfmpegSink", so maybe it should be named as such?
  */
-interface Sink
-{
+interface Sink {
     /**
      * The path to which this [Sink] has been designated to write
      */

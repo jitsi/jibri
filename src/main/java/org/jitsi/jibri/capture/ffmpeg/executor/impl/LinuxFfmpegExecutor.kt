@@ -6,8 +6,7 @@ import org.jitsi.jibri.sink.Sink
 /**
  * Ffmpeg execution specific to Linux
  */
-class LinuxFfmpegExecutor : AbstractFfmpegExecutor()
-{
+class LinuxFfmpegExecutor : AbstractFfmpegExecutor() {
     override fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String {
         return """
             ffmpeg -y -v info

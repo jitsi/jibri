@@ -6,8 +6,7 @@ import org.jitsi.jibri.sink.Sink
 /**
  * Ffmpeg execution specific to Mac OS
  */
-class MacFfmpegExecutor : AbstractFfmpegExecutor()
-{
+class MacFfmpegExecutor : AbstractFfmpegExecutor() {
     override fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String {
         return """
             ffmpeg -y -v info
