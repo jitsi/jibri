@@ -2,6 +2,7 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
+import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.PageFactory
 
@@ -14,6 +15,20 @@ class CallPage(driver: WebDriver) : AbstractPageObject(driver) {
 
     init {
         PageFactory.initElements(driver, this)
+    }
+
+    fun getNumParticipants(driver: RemoteWebDriver): Long {
+        val result = driver.executeScript("""
+            try {
+                return APP.conference.membersCount
+            } catch (e) {
+                return e.message;
+            }
+        """.trimMargin())
+        return when (result) {
+            is Long -> result
+            else -> 1
+        }
     }
 
     fun leave() {

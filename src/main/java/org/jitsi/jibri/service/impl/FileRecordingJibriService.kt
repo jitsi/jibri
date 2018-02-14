@@ -46,7 +46,10 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
     /**
      * The [JibriSelenium] this class will use for joining a web call
      */
-    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = recordingOptions.callParams))
+    private val jibriSelenium = JibriSelenium(
+        JibriSeleniumOptions(callParams = recordingOptions.callParams),
+        Executors.newSingleThreadScheduledExecutor()
+    )
     /**
      * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
      */
@@ -70,6 +73,9 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
                 recordingsDirectory = recordingOptions.recordingDirectory,
                 callName = recordingOptions.callParams.callUrlInfo.callName
         )
+        jibriSelenium.addStatusHandler {
+            publishStatus(it)
+        }
     }
 
     /**

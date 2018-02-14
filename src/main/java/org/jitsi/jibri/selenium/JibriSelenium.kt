@@ -3,9 +3,18 @@ package org.jitsi.jibri.selenium
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
+import org.jitsi.jibri.service.JibriServiceStatus
+import org.jitsi.jibri.util.Duration
+import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.debug
+import org.jitsi.jibri.util.scheduleAtFixedRate
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 /**
  * The [JibriSelenium] class is responsible for all of the interactions with
@@ -14,7 +23,11 @@ import org.openqa.selenium.chrome.ChromeOptions
  * 2) Handles passing the proper options to Chrome
  * 3) Sets the necessary localstorage variables before joining a call
  */
-class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions) {
+class JibriSelenium(
+        private val jibriSeleniumOptions: JibriSeleniumOptions,
+        private val executor: ScheduledExecutorService
+) : StatusPublisher<JibriServiceStatus>() {
+    private val logger = Logger.getLogger(this::class.simpleName)
     var chromeDriver: ChromeDriver
     var baseUrl: String
     val URL_OPTIONS = listOf(
@@ -22,6 +35,7 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions) {
         "config.externalConnectUrl=null",
         "interfaceConfig.APP_NAME=\"Jibri\""
         )
+    private var emptyCallTask: ScheduledFuture<*>? = null
 
     /**
      * Set up default chrome driver options (using fake device, etc.)
@@ -56,6 +70,28 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions) {
         }
     }
 
+    private fun addEmptyCallDetector() {
+        var numTimesEmpty = 0
+        emptyCallTask = executor.scheduleAtFixedRate(
+            period = Duration( 15, TimeUnit.SECONDS),
+            action = object : Runnable {
+                override fun run() {
+                    // >1 since the count will include jibri itself
+                    if (CallPage(chromeDriver).getNumParticipants(chromeDriver) > 1) {
+                        numTimesEmpty = 0
+                    } else {
+                        numTimesEmpty++
+                    }
+                    if (numTimesEmpty >= 2) {
+                        logger.info("Jibri has been in a lonely call for 30 seconds, marking as finished")
+                        emptyCallTask?.cancel(false)
+                        publishStatus(JibriServiceStatus.FINISHED)
+                    }
+                }
+            }
+        )
+    }
+
     /**
      * Join a a web call with Selenium
      */
@@ -69,6 +105,7 @@ class JibriSelenium(val jibriSeleniumOptions: JibriSeleniumOptions) {
                 Pair("callStatsUserName", "jibri")
         )
         CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${URL_OPTIONS.joinToString("&")}"))
+        addEmptyCallDetector()
     }
 
     fun leaveCallAndQuitBrowser() {

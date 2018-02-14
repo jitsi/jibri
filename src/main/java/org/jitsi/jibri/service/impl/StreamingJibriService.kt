@@ -33,7 +33,6 @@ data class StreamingOptions(
  */
 class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriService() {
     private val logger = Logger.getLogger(this::class.simpleName)
-    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = streamingOptions.callParams))
     private val capturer = FfmpegCapturer()
     private val sink: Sink
     private val STREAMING_MAX_BITRATE = 2976
@@ -47,12 +46,17 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
      * cancel the task
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
+    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = streamingOptions.callParams), executor)
 
     init {
         sink = StreamSink(
                 url = "$YOUTUBE_URL/${streamingOptions.youTubeStreamKey}",
                 streamingMaxBitrate = STREAMING_MAX_BITRATE,
                 streamingBufSize = 2 * STREAMING_MAX_BITRATE)
+
+        jibriSelenium.addStatusHandler {
+            publishStatus(it)
+        }
     }
 
     /**
