@@ -17,13 +17,9 @@
         <testng.version>6.13.1</testng.version>
         <selenium.version>3.8.1</selenium.version>
         <kotlin.version>1.2.20</kotlin.version>
-        <!-- These options are required to make jersey work with jdk9, if they
-        are missing, you'll see complaints about HDK2 service
-        reification issues-->
-        <jvm.options>--add-modules java.activation,java.xml.bind</jvm.options>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
-        <maven.compiler.source>1.9</maven.compiler.source>
-        <maven.compiler.target>1.9</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <smack.version>4.2.1</smack.version>
     </properties>
 
@@ -49,8 +45,6 @@
             <artifactId>guava</artifactId>
             <version>23.0</version>
         </dependency>
-
-
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -81,7 +75,6 @@
             <artifactId>jetty-servlet</artifactId>
             <version>9.2.3.v20140905</version>
         </dependency>
-
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
@@ -107,7 +100,6 @@
             <artifactId>argparse4j</artifactId>
             <version>0.8.1</version>
         </dependency>
-
         <dependency>
             <groupId>org.igniterealtime.smack</groupId>
             <artifactId>smack-core</artifactId>

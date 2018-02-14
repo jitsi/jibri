@@ -4,6 +4,7 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.debug
+import org.jitsi.jibri.util.pid
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -34,9 +35,10 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
     override fun isAlive(): Boolean = currentFfmpegProc?.isAlive ?: false
 
     override fun stopFfmpeg() {
-        currentFfmpegProc?.pid()?.let {
-            logger.info("sending SIGINT to ffmpeg proc $it")
-            Runtime.getRuntime().exec("kill -s SIGINT $it")
+        currentFfmpegProc?.let {
+            val pid = pid(it)
+            logger.info("sending SIGINT to ffmpeg proc $pid")
+            Runtime.getRuntime().exec("kill -s SIGINT $pid")
         } ?: run {
             logger.info("stopFfmpeg: ffmpeg had already exited")
         }
