@@ -2,7 +2,6 @@ package org.jitsi.jibri
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import net.sourceforge.argparse4j.ArgumentParsers
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler

@@ -13,7 +13,7 @@ fun pid(p: Process): Long {
             field.isAccessible = false
         }
     } catch (e: Exception ) {
-        pid = -1;
+        pid = -1
     }
-    return pid;
+    return pid
 }

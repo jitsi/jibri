@@ -1,6 +1,5 @@
 package org.jitsi.jibri.api.http.internal
 
-import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.util.debug
 import java.util.logging.Logger
 import javax.ws.rs.POST

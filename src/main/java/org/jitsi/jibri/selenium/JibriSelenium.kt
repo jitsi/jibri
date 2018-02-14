@@ -6,7 +6,6 @@ import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.util.Duration
 import org.jitsi.jibri.util.StatusPublisher
-import org.jitsi.jibri.util.debug
 import org.jitsi.jibri.util.scheduleAtFixedRate
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
