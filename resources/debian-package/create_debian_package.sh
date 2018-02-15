@@ -1,5 +1,12 @@
 #!/bin/bash
 
+die () {
+    echo >&2 "$@"
+    exit 1
+}
+
+[ "$#" -eq 1 ] || die "Usage: $0 <path to jibri jar>"
+
 JIBRI_JAR_PATH=$1
 echo "Copying $JIBRI_JAR_PATH into package location"
 
