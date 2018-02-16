@@ -139,7 +139,6 @@ class XmppApi(
     }
 
     private fun handleStartService(startIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, serviceStatusHandler: JibriServiceStatusHandler): StartServiceResult {
-        val jibriDisplayName = startIq.displayName
         /**
          * The call url is constructed from the xmpp domain, an optional subdomain, and a callname like so:
          * https://domain/subdomain/callName
