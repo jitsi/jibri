@@ -1,0 +1,13 @@
+#!/bin/bash
+
+echo "Creating jibri user and group"
+# Create the Jibri user and group
+useradd --system jibri
+groupadd jibri
+usermod -a -G jibri jibri
+echo "Done creating jibri user and group"
+
+# Start the jibri service
+echo "Starting jibri"
+service jibri start
+echo "Done starting jibri"
