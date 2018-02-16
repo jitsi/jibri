@@ -12,7 +12,7 @@ import java.util.logging.Logger
  * filesystem
  */
 class FileSink(val recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     val file: File?
     init {
         val currentTime = LocalDateTime.now()

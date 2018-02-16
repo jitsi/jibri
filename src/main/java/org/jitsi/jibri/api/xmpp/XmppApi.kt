@@ -33,7 +33,7 @@ class XmppApi(
     private val jibriManager: JibriManager,
     xmppConfigs: List<XmppEnvironmentConfig>
 ) {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     private val executor = Executors.newSingleThreadExecutor()
 
     init {

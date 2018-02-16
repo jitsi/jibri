@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 abstract class AbstractFfmpegExecutor : FfmpegExecutor {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     var currentFfmpegProc: Process? = null
 
     /**

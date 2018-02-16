@@ -33,7 +33,7 @@ data class StartServiceParams(
  */
 @Path("/jibri/api/v1.0")
 class HttpApi(private val jibriManager: JibriManager) {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
 
     /**
      * Get the health of this Jibri in the format of a json-encoded

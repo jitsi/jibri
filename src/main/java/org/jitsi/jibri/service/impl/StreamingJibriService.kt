@@ -32,7 +32,7 @@ data class StreamingOptions(
  * to a url
  */
 class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriService() {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     private val capturer = FfmpegCapturer()
     private val sink: Sink
     private val STREAMING_MAX_BITRATE = 2976

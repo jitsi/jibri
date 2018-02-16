@@ -42,7 +42,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
     /**
      * The [Logger] for this class
      */
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     /**
      * The [JibriSelenium] this class will use for joining a web call
      */

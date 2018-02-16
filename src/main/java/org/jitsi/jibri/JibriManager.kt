@@ -45,7 +45,7 @@ data class StreamingParams(
  * if one is running, the Jibri will describe itself as busy
  */
 class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPacketExt.Status>() {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     //TODO: public so main can get to it and pass the xmpp stuff to the xmpp api,
     //  need to figure out a better way for that
     public lateinit var config: JibriConfig

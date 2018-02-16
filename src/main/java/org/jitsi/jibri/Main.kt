@@ -12,12 +12,13 @@ import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
+import org.jitsi.jibri.util.error
 import java.io.File
 import java.util.logging.Logger
 import javax.ws.rs.ext.ContextResolver
 
 fun main(args: Array<String>) {
-    val logger = Logger.getLogger("JibriMain")
+    val logger = Logger.getLogger("org.jitsi.jibri.Main")
 
     val argParser = ArgumentParsers.newFor("Jibri").build()
             .defaultHelp(true)
@@ -29,11 +30,11 @@ fun main(args: Array<String>) {
 
     val ns = argParser.parseArgs(args)
     val configFilePath = ns.getString("config")
-    println("Using config file $configFilePath")
+    logger.info("Using config file $configFilePath")
 
     val jibriConfigFile = File(configFilePath)
     if (!jibriConfigFile.exists()) {
-        println("Error: Config file $configFilePath doesn't exist")
+        logger.error("Error: Config file $configFilePath doesn't exist")
         System.exit(1)
     }
 
@@ -64,7 +65,7 @@ fun main(args: Array<String>) {
             server.start()
             server.join()
         } catch (e: Exception) {
-            println("Error with server: $e")
+            logger.error("Error with internal HTTP API server: $e")
         } finally {
             server.destroy()
         }
@@ -90,7 +91,7 @@ fun main(args: Array<String>) {
             server.start()
             server.join()
         } catch (e: Exception) {
-            println("Error with server: $e")
+            logger.error("Error with HTTP API server: $e")
         } finally {
             server.destroy()
         }

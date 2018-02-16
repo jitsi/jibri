@@ -26,7 +26,7 @@ class JibriSelenium(
         private val jibriSeleniumOptions: JibriSeleniumOptions,
         private val executor: ScheduledExecutorService
 ) : StatusPublisher<JibriServiceStatus>() {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     var chromeDriver: ChromeDriver
     var baseUrl: String
     val URL_OPTIONS = listOf(

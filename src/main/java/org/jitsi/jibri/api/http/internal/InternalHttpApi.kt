@@ -8,7 +8,7 @@ import javax.ws.rs.core.Response
 
 @Path("/jibri/api/internal/v1.0")
 class InternalHttpApi(private val configChangedHandler: () -> Unit) {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     /**
      * Signal this Jibri to reload its config file at the soonest opportunity
      * (when it does not have a currently running service)

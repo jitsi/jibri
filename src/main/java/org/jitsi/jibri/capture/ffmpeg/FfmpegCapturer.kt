@@ -16,7 +16,7 @@ import java.util.logging.Logger
  * configured audio and video devices, and writing to the given [Sink]
  */
 class FfmpegCapturer : Capturer {
-    private val logger = Logger.getLogger(this::class.simpleName)
+    private val logger = Logger.getLogger(this::class.qualifiedName)
     val ffmpegExecutor: FfmpegExecutor
 
     init
