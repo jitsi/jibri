@@ -123,11 +123,6 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>jicoco</artifactId>
-            <version>1.2-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-protocol-jabber</artifactId>
             <version>${jitsi-desktop.version}</version>
         </dependency>
