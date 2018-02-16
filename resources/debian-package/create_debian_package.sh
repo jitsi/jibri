@@ -12,6 +12,8 @@ echo "Copying $JIBRI_JAR_PATH into package location"
 
 # Copy the built jar into the expected location
 cp $JIBRI_JAR_PATH jibri/opt/jitsi/jibri/jibri.jar
+# Copy the logging config into its location
+cp ../../lib/logging.properties jibri/etc/jitsi/jibri/
 
 # Build the package
 dpkg-deb --build jibri
