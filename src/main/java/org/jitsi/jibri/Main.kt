@@ -73,6 +73,7 @@ fun main(args: Array<String>) {
     internalApiThread.start()
     // XmppApi
     val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibri.config.xmppEnvironments)
+    xmppApi.start()
 
     // HttpApi
     Thread {

@@ -31,12 +31,12 @@ import java.util.logging.Logger
  */
 class XmppApi(
     private val jibriManager: JibriManager,
-    xmppConfigs: List<XmppEnvironmentConfig>
+    private val xmppConfigs: List<XmppEnvironmentConfig>
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val executor = Executors.newSingleThreadExecutor()
 
-    init {
+    fun start() {
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
