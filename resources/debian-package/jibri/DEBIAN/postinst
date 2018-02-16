@@ -1,5 +1,10 @@
 #!/bin/bash
 
+die () {
+    echo >&2 "$@"
+    exit 1
+}
+
 echo "Creating jibri user and group"
 # Create the Jibri user and group
 useradd --system jibri
@@ -10,4 +15,5 @@ echo "Done creating jibri user and group"
 # Start the jibri service
 echo "Starting jibri"
 service jibri start
+rc=$?; if [[ $rc != 0 ]]; then die "Error starting Jibri"; fi
 echo "Done starting jibri"
