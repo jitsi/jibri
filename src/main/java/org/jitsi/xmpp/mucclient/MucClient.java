@@ -22,6 +22,7 @@ import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
+import org.jivesoftware.smackx.ping.PingManager;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.parts.Resourcepart;
 
@@ -54,6 +55,7 @@ public class MucClient
     public MucClient(XMPPTCPConnectionConfiguration config)
         throws Exception
     {
+        PingManager.setDefaultPingInterval(30);
         xmppConnection = new XMPPTCPConnection(config);
         xmppConnection.connect().login();
     }
