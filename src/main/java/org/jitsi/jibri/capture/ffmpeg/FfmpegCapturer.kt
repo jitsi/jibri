@@ -8,7 +8,7 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.LinuxFfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.MacFfmpegExecutor
-import org.jitsi.jibri.util.debug
+import org.jitsi.jibri.util.extensions.debug
 import java.util.logging.Logger
 
 /**

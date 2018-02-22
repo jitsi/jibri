@@ -12,7 +12,7 @@ import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
-import org.jitsi.jibri.util.error
+import org.jitsi.jibri.util.extensions.error
 import java.io.File
 import java.util.logging.Logger
 import javax.ws.rs.ext.ContextResolver

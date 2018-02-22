@@ -1,6 +1,6 @@
 package org.jitsi.jibri.api.http.internal
 
-import org.jitsi.jibri.util.debug
+import org.jitsi.jibri.util.extensions.debug
 import java.util.logging.Logger
 import javax.ws.rs.POST
 import javax.ws.rs.Path

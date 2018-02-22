@@ -1,7 +1,7 @@
 package org.jitsi.jibri.sink.impl
 
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.error
+import org.jitsi.jibri.util.extensions.error
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

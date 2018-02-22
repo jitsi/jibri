@@ -6,7 +6,7 @@ import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.StreamingParams
-import org.jitsi.jibri.util.debug
+import org.jitsi.jibri.util.extensions.debug
 import java.util.logging.Logger
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
@@ -48,7 +48,7 @@ class HttpApi(private val jibriManager: JibriManager) {
     }
 
     /**
-     * [startService] will start a new service using the given [serviceParams].
+     * [startService] will start a new service using the given [StartServiceParams].
      * Returns a response with [Response.Status.OK] on success, [Response.Status.PRECONDITION_FAILED]
      * if this Jibri is already busy and [Response.Status.INTERNAL_SERVER_ERROR] on error
      */

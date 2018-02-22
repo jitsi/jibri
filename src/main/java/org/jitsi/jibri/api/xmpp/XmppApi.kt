@@ -11,7 +11,7 @@ import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
-import org.jitsi.jibri.util.error
+import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.packet.IQ

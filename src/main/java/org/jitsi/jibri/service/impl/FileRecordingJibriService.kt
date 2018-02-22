@@ -11,8 +11,8 @@ import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.Duration
 import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.error
-import org.jitsi.jibri.util.scheduleAtFixedRate
+import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors

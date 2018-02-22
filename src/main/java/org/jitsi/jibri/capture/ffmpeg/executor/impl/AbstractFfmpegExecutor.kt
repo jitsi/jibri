@@ -3,7 +3,7 @@ package org.jitsi.jibri.capture.ffmpeg.executor.impl
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.debug
+import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.pid
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -27,12 +27,12 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
 
         logger.info("running ffmpeg command:\n $command")
         currentFfmpegProc = pb.start()
-        logger.debug("launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive()}")
+        logger.debug("launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive}")
     }
 
     override fun getExitCode(): Int? = currentFfmpegProc?.exitValue()
 
-    override fun isAlive(): Boolean = currentFfmpegProc?.isAlive ?: false
+    override fun isAlive(): Boolean = currentFfmpegProc?.isAlive == true
 
     override fun stopFfmpeg() {
         currentFfmpegProc?.let {
