@@ -1,9 +1,9 @@
 # Jibri
----
+
 JItsi BRoadcasting Infrastructure
 
 # What is Jibri
----
+
 Jibri provides services for recording or streaming a Jitsi Meet conference.
 
 It works by launching a Chrome instance rendered in a virtual framebuffer and capturing and encoding the output with ffmpeg. It is intended to be run on a separate machine (or a VM), with no other applications using the display or audio devices. Only one recording at a time is supported on a single jibri.
@@ -11,7 +11,7 @@ It works by launching a Chrome instance rendered in a virtual framebuffer and ca
 
 
 # Installing Jibri
----
+
 ### Installation notes
 * Jibri was built on ubuntu 16 (Xenial), and has been tested with the pre-built kernel and extra kernel modules ( linux-image-extra-virtual package). Any other distribution or kernel configuration MAY work but has not been tested.
 
@@ -32,14 +32,26 @@ It works by launching a Chrome instance rendered in a virtual framebuffer and ca
   * apt-get install ffmpeg
 
 ### Google chrome stable & Chromedriver
-* The latest google chrome stable build should be used. Chrome will be installed as part of the debian package.  You can look at the calls it makes to install chrome stable [here](TODO).
-* Chromedriver will also be installed as part of the debian package.  You can look at the calls it makes to install chromedriver [here](TODO).
+The latest google chrome stable build should be used. It may be able to be installed direclty via apt, but the manual instructions for installing it are as follows:
+```
+curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add
+echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+apt-get -y update
+apt-get -y install google-chrome-stable
+```
+Chromedriver is also required and can be installed like so:
+```
+CHROME_DRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`
+wget -N http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip -P ~/
+unzip ~/chromedriver_linux64.zip -d ~/
+rm ~/chromedriver_linux64.zip
+sudo mv -f ~/chromedriver /usr/local/bin/chromedriver
+sudo chown root:root /usr/local/bin/chromedriver
+sudo chmod 0755 /usr/local/bin/chromedriver
+```
 
 ### Miscelaneous required tools
-Jibri makes use of certain other external libraries and tools:
-* alsa-utils
-* ffmpeg
-* TODO (what else?)
+See the debian [control file](resources/debian-package-jibri/DEBIAN/control) for the dependencies that are required.
 
 ### User, group
 * Jibri is currently meant to be run as a regular system user. This example creatively uses username 'jibri' and group name 'jibri', but any user will do. This has not been tested with the root user.
@@ -47,8 +59,10 @@ Jibri makes use of certain other external libraries and tools:
 
 ### Config files
 * Copy the asoundrc file to /home/jibri/.asoundrc to ensure that the ALSA loopback driver is configured properly for the jibri user.
-* Copy the icewm.preferences connecting.png files to /home/jibri/.icewm/ for the startup/stop desktop experience with jibri. mkdir /home/jibri/.icewm cp jibri/icewm.preferences /home/jibri/.icewm/preferences cp jibri/connecting.png /home/jibri/.icewm/connecting.png
 * Edit the config.json file (installed to /etc/jitsi/jibri/config.json by default) appropriately.
+
+### Logging
+By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the debian package, you'll need to make sure this directory exists (or change the location to which Jibri logs by editing the [log config](lib/logging.properties)
 
 ### Support daemon systemd configurations
 * Jibri expects XOrg and icewm to be running as daemons. To accomplish this, copy the example systemd files from the systemd directory into the appropriate place (/etc/systemd/system/ on Ubuntu 16).
@@ -60,7 +74,7 @@ Jibri makes use of certain other external libraries and tools:
   * `service jibri start`
 
 # Configuring a Jitsi Meet environment for Jibri
----
+
 Jibri requires some settings to be enabled within a Jitsi Meet configuration. This changes include virtualhosts and accounts in Prosody, settings for the jitsi meet web (within config.js) as well as jicofo sip-communicator.properties.
 
 ## Prosody
