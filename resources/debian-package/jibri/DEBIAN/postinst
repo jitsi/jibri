@@ -17,9 +17,3 @@ mv /etc/jitsi/jibri/asoundrc /home/jibri/.asoundrc
 
 mkdir /home/jibri/.icewm
 mv /etc/jitsi/jibri/icewm.preferences /home/jibri/.icewm/preferences
-
-# Start the jibri service
-echo "Starting jibri"
-service jibri start
-rc=$?; if [[ $rc != 0 ]]; then die "Error starting Jibri"; fi
-echo "Done starting jibri"
