@@ -1,6 +1,6 @@
 [Unit]
 Description=Jibri Process
-Requires=jibri-icewm.service jibri-xorg.service jibri-warmup.service
+Requires=jibri-icewm.service jibri-xorg.service
 After=network.target
 
 [Service]
@@ -21,4 +21,3 @@ Type=simple
 
 [Install]
 WantedBy=multi-user.target
-Alias=jibri.service

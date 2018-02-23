@@ -2,6 +2,6 @@ Package: Jibri
 Version: 0.1
 Maintainer: team@jitsi.net
 Architecture: all
-Depends: default-jre-headless | java8-runtime-headless | java8-runtime, ffmpeg, curl
+Depends: default-jre-headless | java8-runtime-headless | java8-runtime, ffmpeg, curl, alsa-utils, icewm, xdotool, xserver-xorg-input-void, xserver-xorg-video-dummy
 Description: Jibri
  Jibri can be used to capture data from a Jitsi Meet conference and record it to a file or stream it to a url
