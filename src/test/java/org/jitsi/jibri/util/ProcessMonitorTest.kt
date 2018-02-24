@@ -2,7 +2,7 @@ package org.jitsi.jibri.util
 
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
-import org.testng.annotations.BeforeTest
+import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 import kotlin.test.assertEquals
 
@@ -14,8 +14,9 @@ class ProcessMonitorTest {
         exitCodes.add(exitCode)
     }
 
-    @BeforeTest
+    @BeforeMethod
     fun setUp() {
+        exitCodes.clear()
         mockProcess = mock()
         processMonitor = ProcessMonitor(mockProcess, deadCallback)
     }

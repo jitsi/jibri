@@ -4,10 +4,10 @@ package org.jitsi.jibri.util
 
 val digit = """\d"""
 val oneOrMoreDigits = "$digit+"
-val decimal =  """${oneOrMoreDigits}\.${oneOrMoreDigits}"""
+val decimal = """$oneOrMoreDigits\.$oneOrMoreDigits"""
 val string = """[a-zA-Z]+"""
 val dataSize = "$oneOrMoreDigits$string"
-val timestamp = """${oneOrMoreDigits}\:${oneOrMoreDigits}\:${oneOrMoreDigits}\.${oneOrMoreDigits}"""
+val timestamp = """$oneOrMoreDigits\:$oneOrMoreDigits\:$oneOrMoreDigits\.$oneOrMoreDigits"""
 val bitrate = """$decimal$string\/$string"""
 val speed = "${decimal}x"
 val space = """\s"""

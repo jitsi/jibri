@@ -32,7 +32,7 @@ class OutputParser {
             // Format each field name and value to how they appear in the output line, with support for any number
             // of spaces in between (and name each regex group according to the field name)
             // <fieldName>= value
-            .map { (fieldName, value) -> "$fieldName=${zeroOrMoreSpaces}(?<$fieldName>$value)${zeroOrMoreSpaces}" }
+            .map { (fieldName, value) -> "$fieldName=$zeroOrMoreSpaces(?<$fieldName>$value)$zeroOrMoreSpaces" }
             // Concatenate all the individual fields into one regex pattern string
             .fold("") { pattern, currentField -> "$pattern$currentField" }
         encodingLinePattern = Pattern.compile(encodingLineRegex)
@@ -42,7 +42,7 @@ class OutputParser {
         val result = mutableMapOf<String, Any>()
         val matcher = encodingLinePattern.matcher(outputLine)
         if (matcher.find()) {
-            encodingLineFields.forEach {(fieldName, _) ->
+            encodingLineFields.forEach { (fieldName, _) ->
                 result.put(fieldName, matcher.group(fieldName))
             }
         }

@@ -8,11 +8,6 @@ import org.jitsi.jibri.util.Tail
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.pid
-import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.InputStream
-import java.io.StringBufferInputStream
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 

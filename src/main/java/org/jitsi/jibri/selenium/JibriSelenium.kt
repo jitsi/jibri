@@ -4,7 +4,6 @@ import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.service.JibriServiceStatus
-import org.jitsi.jibri.util.Duration
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate

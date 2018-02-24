@@ -9,7 +9,6 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
-import org.jitsi.jibri.util.Duration
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.extensions.error

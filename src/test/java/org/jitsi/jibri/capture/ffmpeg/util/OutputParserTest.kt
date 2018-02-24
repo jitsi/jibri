@@ -1,14 +1,15 @@
 package org.jitsi.jibri.capture.ffmpeg.util
 
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertTrue
 import org.testng.annotations.Test
 
-import org.testng.Assert.*
-import org.testng.annotations.BeforeTest
+import org.testng.annotations.BeforeMethod
 
 class OutputParserTest {
     lateinit var parser: OutputParser
 
-    @BeforeTest
+    @BeforeMethod
     fun setUp() {
         parser = OutputParser()
     }
@@ -29,7 +30,7 @@ class OutputParserTest {
         val result = parser.parse(outputLine)
 
         assertEquals(result.size, expectedValues.size)
-        expectedValues.forEach {(field, value) ->
+        expectedValues.forEach { (field, value) ->
             assertTrue(result.contains(field))
             assertEquals(result[field], value)
         }
