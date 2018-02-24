@@ -87,8 +87,12 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
         capturer.start(capturerParams, sink)
         var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
-            logger.error("Capturer process is no longer running, exited " +
-                    "with code $exitCode.  Restarting")
+            if (exitCode != null) {
+                logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
+            } else {
+                logger.error("Capturer process is no longer healthy, but it is still running, stopping it now")
+                capturer.stop()
+            }
             if (numRestarts == 1) {
                 logger.error("Giving up on restarting the capturer")
                 publishStatus(JibriServiceStatus.ERROR)
@@ -104,8 +108,9 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(
-                period = Duration( 10, TimeUnit.SECONDS),
-                action = processMonitor)
+            period = 10,
+            unit = TimeUnit.SECONDS,
+            action = processMonitor)
     }
 
     /**

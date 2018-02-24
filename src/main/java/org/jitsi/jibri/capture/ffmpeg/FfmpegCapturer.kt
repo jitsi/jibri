@@ -39,7 +39,7 @@ class FfmpegCapturer : Capturer {
     /**
      * see [MonitorableProcess.isAlive]
      */
-    override fun isAlive(): Boolean = ffmpegExecutor.isAlive()
+    override fun isHealthy(): Boolean = ffmpegExecutor.isHealthy()
 
     /**
      * see [MonitorableProcess.getExitCode]

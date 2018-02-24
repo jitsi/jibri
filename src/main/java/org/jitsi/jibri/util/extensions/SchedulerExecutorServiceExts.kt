@@ -11,8 +11,9 @@ import java.util.concurrent.TimeUnit
  * (which requires milliseconds)
  */
 fun ScheduledExecutorService.scheduleAtFixedRate(
-    delay: Duration = Duration(0, TimeUnit.SECONDS),
-    period: Duration,
+    delay: Long = 0,
+    period: Long,
+    unit: TimeUnit,
     action: Runnable): ScheduledFuture<*> {
-    return this.scheduleAtFixedRate(action, delay.unit.toMillis(delay.duration), period.duration, period.unit)
+    return this.scheduleAtFixedRate(action, delay, period, unit)
 }

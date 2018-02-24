@@ -1,30 +1,33 @@
 package org.jitsi.jibri.util
 
+import org.jitsi.jibri.util.extensions.error
+import java.util.logging.Logger
+
 /**
  * [ProcessMonitor] takes in a [MonitorableProcess] and a callback.  When
- * its [run] method is executed, it will check the status of the monitored
- * process and, if it is no longer alive, will invoke the given callback
+ * its [run] method is executed it will check the status of the monitored
+ * process and, if it is no longer 'healthy' (the definition of 'healthy'
+ * is left to the [MonitorableProcess]'s implementation), [ProcessMonitor]
+ * will invoke the given [processUnhealthyCallback].
  */
 class ProcessMonitor(
-        /**
-         * The process to monitor
-         */
         private val processToMonitor: MonitorableProcess,
-        /**
-         * The callback to invoke if [processToMonitor] is found to be dead.
-         * If the process never even started, we won't be able to get an
-         * exit code, so this callback needs to support being passed null
-         */
-        private val processIsDeadCallback: (exitCode: Int?) -> Unit) : Runnable {
+        private val processUnhealthyCallback: (exitCode: Int?) -> Unit
+    ) : Runnable {
+    private val logger = Logger.getLogger(this::class.qualifiedName)
 
     /**
      * Run a check of [processToMonitor] to check if it is alive.  If it is
-     * dead, [processIsDeadCallback] will be invoked with the exit code from
+     * dead, [processUnhealthyCallback] will be invoked with the exit code from
      * [processToMonitor] (or null, if there isn't one)
      */
     override fun run() {
-        if (!processToMonitor.isAlive()) {
-            processIsDeadCallback(processToMonitor.getExitCode())
+        try {
+            if (!processToMonitor.isHealthy()) {
+                processUnhealthyCallback(processToMonitor.getExitCode())
+            }
+        } catch (t: Throwable) {
+            logger.error("Error while determining process health: $t")
         }
     }
 }

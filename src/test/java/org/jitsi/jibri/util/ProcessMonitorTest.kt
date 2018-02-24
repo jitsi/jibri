@@ -21,8 +21,8 @@ class ProcessMonitorTest {
     }
 
     @Test
-    fun testProcessDeadInvokesCallback() {
-        whenever(mockProcess.isAlive()).thenReturn(false)
+    fun `test the process dying causes the callback to be invoked`() {
+        whenever(mockProcess.isHealthy()).thenReturn(false)
         whenever(mockProcess.getExitCode()).thenReturn(42)
 
         processMonitor.run()
@@ -35,8 +35,18 @@ class ProcessMonitorTest {
     }
 
     @Test
-    fun testProcessAliveNoCallback() {
-        whenever(mockProcess.isAlive()).thenReturn(true)
+    fun `test passing a null exit code works`() {
+        whenever(mockProcess.isHealthy()).thenReturn(false)
+        whenever(mockProcess.getExitCode()).thenReturn(null)
+
+        processMonitor.run()
+        assertEquals(1, exitCodes.size)
+        assertEquals(null, exitCodes.first())
+    }
+
+    @Test
+    fun `test the callback is not invoked if the process is still alive`() {
+        whenever(mockProcess.isHealthy()).thenReturn(true)
         for (i in 1..5) processMonitor.run()
         assertEquals(0, exitCodes.size)
     }

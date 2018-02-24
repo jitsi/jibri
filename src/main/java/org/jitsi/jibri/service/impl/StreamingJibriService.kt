@@ -10,6 +10,7 @@ import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.util.Duration
+import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
@@ -40,7 +41,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
     /**
      * The [ScheduledExecutorService] we'll use to run the process monitor
      */
-    private val executor = Executors.newSingleThreadScheduledExecutor()
+    private val executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("StreamingJibriService"))
     /**
      * The handle to the scheduled process monitor task, which we use to
      * cancel the task
@@ -64,12 +65,17 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
      */
     override fun start() {
         jibriSelenium.joinCall(streamingOptions.callParams.callUrlInfo.callName)
+        logger.info("Selenium joined the call")
         val capturerParams = CapturerParams()
         capturer.start(capturerParams, sink)
         var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
-            logger.error("Capturer process is no longer running, exited " +
-                    "with code $exitCode.  Restarting.")
+            if (exitCode != null) {
+                logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
+            } else {
+                logger.error("Capturer process is no longer healthy, but it is still running, stopping it now")
+                capturer.stop()
+            }
             if (numRestarts == 1) {
                 logger.error("Giving up on restarting the capturer")
                 publishStatus(JibriServiceStatus.ERROR)
@@ -80,8 +86,10 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(
-                period = Duration( 10, TimeUnit.SECONDS),
-                action = processMonitor)
+            delay = 30,
+            period = 10,
+            unit = TimeUnit.SECONDS,
+            action = processMonitor)
     }
 
     /**

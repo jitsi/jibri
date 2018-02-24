@@ -6,6 +6,7 @@ import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.util.Duration
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
@@ -72,19 +73,24 @@ class JibriSelenium(
     private fun addEmptyCallDetector() {
         var numTimesEmpty = 0
         emptyCallTask = executor.scheduleAtFixedRate(
-            period = Duration( 15, TimeUnit.SECONDS),
+            period = 15,
+            unit = TimeUnit.SECONDS,
             action = object : Runnable {
                 override fun run() {
-                    // >1 since the count will include jibri itself
-                    if (CallPage(chromeDriver).getNumParticipants(chromeDriver) > 1) {
-                        numTimesEmpty = 0
-                    } else {
-                        numTimesEmpty++
-                    }
-                    if (numTimesEmpty >= 2) {
-                        logger.info("Jibri has been in a lonely call for 30 seconds, marking as finished")
-                        emptyCallTask?.cancel(false)
-                        publishStatus(JibriServiceStatus.FINISHED)
+                    try {
+                        // >1 since the count will include jibri itself
+                        if (CallPage(chromeDriver).getNumParticipants(chromeDriver) > 1) {
+                            numTimesEmpty = 0
+                        } else {
+                            numTimesEmpty++
+                        }
+                        if (numTimesEmpty >= 2) {
+                            logger.info("Jibri has been in a lonely call for 30 seconds, marking as finished")
+                            emptyCallTask?.cancel(false)
+                            publishStatus(JibriServiceStatus.FINISHED)
+                        }
+                    } catch (t: Throwable) {
+                        logger.error("Error while checking for empty call state: $t")
                     }
                 }
             }
