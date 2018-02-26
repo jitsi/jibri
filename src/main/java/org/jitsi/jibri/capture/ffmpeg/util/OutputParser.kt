@@ -27,23 +27,48 @@ class OutputParser {
         Pair("bitrate", bitrate),
         Pair("speed", speed)
     )
+    /**
+     * The regex for parsing just the frame= field from the encoding output of ffmpeg.  If parsing using
+     * the above pattern fails, we'll try just this pattern.  We assume that 'frame=' will always be present
+     * if ffmpeg is working correctly, but have less confidence on the other fields
+     */
+    private val encodingLineSimplePattern: Pattern
+    private val encodingLineSimpleFields = listOf(Pair("frame", oneOrMoreDigits))
+
+    private fun generatePatternFromFields(fields: List<Pair<String, String>>): Pattern {
+        val regex = fields
+        // Format each field name and value to how they appear in the output line, with support for any number
+        // of spaces in between (and name each regex group according to the field name)
+        // <fieldName>= value
+        .map { (fieldName, value) -> "$fieldName=$zeroOrMoreSpaces(?<$fieldName>$value)$zeroOrMoreSpaces" }
+        // Concatenate all the individual fields into one regex pattern string
+        // Allow for anything (.*) in between each field because other values (that we don't currently
+        // care about) may be inserted
+        .fold("") { pattern, currentField -> "$pattern.*$currentField" }
+        return Pattern.compile(regex)
+    }
+
     init {
-        val encodingLineRegex = encodingLineFields
-            // Format each field name and value to how they appear in the output line, with support for any number
-            // of spaces in between (and name each regex group according to the field name)
-            // <fieldName>= value
-            .map { (fieldName, value) -> "$fieldName=$zeroOrMoreSpaces(?<$fieldName>$value)$zeroOrMoreSpaces" }
-            // Concatenate all the individual fields into one regex pattern string
-            .fold("") { pattern, currentField -> "$pattern$currentField" }
-        encodingLinePattern = Pattern.compile(encodingLineRegex)
+        encodingLinePattern = generatePatternFromFields(encodingLineFields)
+        encodingLineSimplePattern = generatePatternFromFields(encodingLineSimpleFields)
     }
 
     fun parse(outputLine: String): Map<String, Any> {
         val result = mutableMapOf<String, Any>()
-        val matcher = encodingLinePattern.matcher(outputLine)
+        var matcher = encodingLinePattern.matcher(outputLine)
         if (matcher.find()) {
             encodingLineFields.forEach { (fieldName, _) ->
                 result.put(fieldName, matcher.group(fieldName))
+            }
+        } else {
+            // We don't know all possible formats of the ffmpeg output line, so if it doesn't
+            // match the detailed line we expect, fallback to just checking for the encodingLineSimplePatter
+            // to verify health instead of failing
+            matcher = encodingLineSimplePattern.matcher(outputLine)
+            if (matcher.find()) {
+                encodingLineSimpleFields.forEach { (fieldName, _) ->
+                    result.put(fieldName, matcher.group(fieldName))
+                }
             }
         }
         return result

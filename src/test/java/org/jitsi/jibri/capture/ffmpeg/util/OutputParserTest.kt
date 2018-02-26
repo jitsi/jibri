@@ -57,6 +57,34 @@ class OutputParserTest {
     }
 
     @Test
+    fun `test parse line with extra values`() {
+        val outputLine = "frame=   95 fps= 31 q=27.0 size=     584kB time=00:00:03.60 bitrate=1329.4kbits/s dup=0 drop=1 speed=1x"
+        val expectedValues = mapOf(
+            "frame" to "95",
+            "fps" to "31",
+            "q" to "27.0",
+            "size" to "584kB",
+            "time" to "00:00:03.60",
+            "bitrate" to "1329.4kbits/s",
+            "speed" to "1x"
+        )
+
+        val result = parser.parse(outputLine)
+        verifyHelper(expectedValues, result)
+    }
+
+    @Test
+    fun `test parse falls back to simple when complex fails`() {
+        val outputLine = "frame=   95 dup=0 drop=1 somenewfield=42 someotherfield=xy"
+        val expectedValues = mapOf(
+            "frame" to "95"
+        )
+
+        val result = parser.parse(outputLine)
+        verifyHelper(expectedValues, result)
+    }
+
+    @Test
     fun `test failed parse`() {
         val outputLine = "wrong line"
         val result = parser.parse(outputLine)
