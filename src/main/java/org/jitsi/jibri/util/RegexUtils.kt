@@ -4,7 +4,8 @@ package org.jitsi.jibri.util
 
 val digit = """\d"""
 val oneOrMoreDigits = "$digit+"
-val decimal = """$oneOrMoreDigits\.$oneOrMoreDigits"""
+// "1" is treated as a valid decimal (the decimal point and any trailing numbers are not required)
+val decimal = """$oneOrMoreDigits(\.$oneOrMoreDigits)?"""
 val string = """[a-zA-Z]+"""
 val dataSize = "$oneOrMoreDigits$string"
 val timestamp = """$oneOrMoreDigits\:$oneOrMoreDigits\:$oneOrMoreDigits\.$oneOrMoreDigits"""
