@@ -107,6 +107,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(
+            delay = 30,
             period = 10,
             unit = TimeUnit.SECONDS,
             action = processMonitor)
