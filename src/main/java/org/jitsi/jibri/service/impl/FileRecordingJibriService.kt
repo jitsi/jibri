@@ -3,6 +3,7 @@ package org.jitsi.jibri.service.impl
 import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.JibriService
@@ -92,7 +93,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
                 logger.error("Capturer process is no longer healthy, but it is still running, stopping it now")
                 capturer.stop()
             }
-            if (numRestarts == 1) {
+            if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
                 logger.error("Giving up on restarting the capturer")
                 publishStatus(JibriServiceStatus.ERROR)
                 processMonitorTask?.cancel(false)
