@@ -1,7 +1,6 @@
 package org.jitsi.jibri.util
 
 // Regex definitions for parsing an ffmpeg output line
-
 val digit = """\d"""
 val oneOrMoreDigits = "$digit+"
 // "1" is treated as a valid decimal (the decimal point and any trailing numbers are not required)

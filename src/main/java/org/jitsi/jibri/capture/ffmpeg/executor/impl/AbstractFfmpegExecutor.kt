@@ -65,12 +65,12 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
                 return false
             }
             val ffmpegOutput = ffmpegTail?.mostRecentLine ?: ""
-            val output = OutputParser().parse(ffmpegOutput)
-            if (output.isEmpty()) {
+            val result = OutputParser().parse(ffmpegOutput)
+            if (!result.containsKey("frame")) {
                 logger.error("Ffmpeg is running but doesn't appear to be encoding.  Its most recent line was $ffmpegOutput")
                 return false
             } else {
-                logger.debug("Ffmpeg appears healthy: $output")
+                logger.debug("Ffmpeg appears healthy: $result")
                 return true
             }
         }

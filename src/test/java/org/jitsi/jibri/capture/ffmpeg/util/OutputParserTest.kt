@@ -66,7 +66,9 @@ class OutputParserTest {
             "size" to "584kB",
             "time" to "00:00:03.60",
             "bitrate" to "1329.4kbits/s",
-            "speed" to "1x"
+            "speed" to "1x",
+            "dup" to "0",
+            "drop" to "1"
         )
 
         val result = parser.parse(outputLine)
@@ -74,10 +76,33 @@ class OutputParserTest {
     }
 
     @Test
-    fun `test parse falls back to simple when complex fails`() {
+    fun `test parse line with different order`() {
+        val outputLine = "fps= 31 frame=   95 q=27.0 size=     584kB time=00:00:03.60 bitrate=1329.4kbits/s dup=0 drop=1 speed=1x"
+        val expectedValues = mapOf(
+            "frame" to "95",
+            "fps" to "31",
+            "q" to "27.0",
+            "size" to "584kB",
+            "time" to "00:00:03.60",
+            "bitrate" to "1329.4kbits/s",
+            "speed" to "1x",
+            "dup" to "0",
+            "drop" to "1"
+        )
+
+        val result = parser.parse(outputLine)
+        verifyHelper(expectedValues, result)
+    }
+
+    @Test
+    fun `test random fields`() {
         val outputLine = "frame=   95 dup=0 drop=1 somenewfield=42 someotherfield=xy"
         val expectedValues = mapOf(
-            "frame" to "95"
+            "frame" to "95",
+            "dup" to "0",
+            "drop" to "1",
+            "somenewfield" to "42",
+            "someotherfield" to "xy"
         )
 
         val result = parser.parse(outputLine)
