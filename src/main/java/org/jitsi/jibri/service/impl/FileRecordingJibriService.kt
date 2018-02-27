@@ -132,7 +132,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      */
     private fun finalize() {
         try {
-            val finalizeProc = Runtime.getRuntime().exec(recordingOptions.finalizeScriptPath)
+            val finalizeProc = Runtime.getRuntime().exec("${recordingOptions.finalizeScriptPath} ${recordingOptions.recordingDirectory}")
             finalizeProc.waitFor()
             logger.info("Recording finalize script finished with exit " +
                     "value: ${finalizeProc.exitValue()}")
