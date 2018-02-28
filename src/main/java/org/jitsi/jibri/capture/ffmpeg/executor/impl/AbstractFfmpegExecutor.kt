@@ -2,12 +2,18 @@ package org.jitsi.jibri.capture.ffmpeg.executor.impl
 
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
+import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.capture.ffmpeg.util.OutputParser
 import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.Tail
+import org.jitsi.jibri.util.Tee
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.pid
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
@@ -19,14 +25,26 @@ val FFMPEG_RESTART_ATTEMPTS = 1
  */
 abstract class AbstractFfmpegExecutor : FfmpegExecutor {
     private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val ffmpegOutputLogger = Logger.getLogger("ffmpeg")
+    private val executor = Executors.newFixedThreadPool(3, NameableThreadFactory("AbstractFfmpegExecutor"))
     /**
      * The currently active (if any) Ffmpeg process
      */
     var currentFfmpegProc: Process? = null
     /**
+     * In order to both analyze Ffmpeg's output live and log it to a file, we'll
+     * tee its stdout stream so that both consumers can get all of its output.
+     */
+    var ffmpegOutputTee: Tee? = null
+    /**
      * We'll use this to monitor the stdout output of the Ffmpeg process
      */
     var ffmpegTail: Tail? = null
+
+    init {
+        ffmpegOutputLogger.useParentHandlers = false
+        ffmpegOutputLogger.addHandler(FfmpegFileHandler())
+    }
 
     /**
      * Get the shell command to use to launch ffmpeg
@@ -38,15 +56,25 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
 
         val pb = ProcessBuilder(command.split(" "))
         pb.redirectErrorStream(true)
-        //TODO: if we redirect here, we can't monitor stdout to check on the status of ffmpeg.
-        // if we want to log ffmpeg output (which i think we should), we'll need to "tee" the stdout
-        // stream to go to both a file and to a stream that can be used for monitoring its output directly
-        // via Tail
-        //pb.redirectOutput(File("/tmp/ffmpeg.out"))
-
         logger.info("Running ffmpeg command:\n $command")
         currentFfmpegProc = pb.start()
-        ffmpegTail = Tail(currentFfmpegProc!!.inputStream)
+        // Tee ffmpeg's output so that we can analyze its status and log everything
+        ffmpegOutputTee = Tee(currentFfmpegProc!!.inputStream)
+        // Keep reading from the initial inputstream
+        executor.submit {
+            while (true) {
+                ffmpegOutputTee?.read()
+            }
+        }
+        ffmpegTail = Tail(ffmpegOutputTee!!.addBranch())
+        // Read from a tee branch and log to a file
+        executor.submit {
+            val reader = BufferedReader(InputStreamReader(ffmpegOutputTee!!.addBranch()))
+            while (true) {
+                ffmpegOutputLogger.info(reader.readLine())
+            }
+        }
+
         logger.debug("Launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive}")
     }
 
@@ -79,7 +107,7 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
     }
 
     override fun stopFfmpeg() {
-        ffmpegTail?.stop()
+        executor.shutdown()
         currentFfmpegProc?.let {
             val pid = pid(it)
             logger.info("Sending SIGINT to ffmpeg proc $pid")
