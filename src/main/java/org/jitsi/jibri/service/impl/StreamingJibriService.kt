@@ -85,11 +85,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
                 capturer.start(capturerParams, sink)
             }
         }
-        processMonitorTask = executor.scheduleAtFixedRate(
-            delay = 30,
-            period = 10,
-            unit = TimeUnit.SECONDS,
-            action = processMonitor)
+        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
     }
 
     /**

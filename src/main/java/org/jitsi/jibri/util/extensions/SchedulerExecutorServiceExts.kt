@@ -14,7 +14,7 @@ fun ScheduledExecutorService.scheduleAtFixedRate(
     delay: Long = 0,
     period: Long,
     unit: TimeUnit,
-    action: Runnable): ScheduledFuture<*> {
+    action: () -> Unit): ScheduledFuture<*> {
     return this.scheduleAtFixedRate(action, delay, period, unit)
 }
 
