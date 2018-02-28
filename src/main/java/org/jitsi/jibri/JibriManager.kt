@@ -15,6 +15,7 @@ import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.RecordingOptions
 import org.jitsi.jibri.service.impl.StreamingOptions
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
 import java.io.File
 import java.util.concurrent.Executors
@@ -155,7 +156,11 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
             logger.info("This service will have a usage timeout of ${serviceParams.usageTimeoutMinutes} minute(s)")
             serviceTimeoutTask = executor.schedule(serviceParams.usageTimeoutMinutes.toLong(), TimeUnit.MINUTES) {
                 logger.info("The usage timeout has elapsed, stopping the currently active service")
-                stopService()
+                try {
+                    stopService()
+                } catch (t: Throwable) {
+                    logger.error("Error while stopping service due to usage timeout: $t")
+                }
             }
         }
 
