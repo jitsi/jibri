@@ -14,6 +14,7 @@ import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.RecordingOptions
 import org.jitsi.jibri.service.impl.StreamingOptions
+import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
@@ -72,7 +73,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     public lateinit var config: JibriConfig
     private var currentActiveService: JibriService? = null
     private var pendingIdleFunc: () -> Unit = {}
-    val executor = Executors.newSingleThreadScheduledExecutor()
+    val executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriManager"))
     var serviceTimeoutTask: ScheduledFuture<*>? = null
 
     init {

@@ -12,6 +12,7 @@ import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
 import org.jitsi.xmpp.mucclient.MucClient
@@ -40,7 +41,7 @@ class XmppApi(
     private val xmppConfigs: List<XmppEnvironmentConfig>
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val executor = Executors.newSingleThreadExecutor()
+    private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
 
     /**
      * Start up the XMPP API by connecting and logging in to all the configured XMPP environments.  For each XMPP
@@ -174,6 +175,10 @@ class XmppApi(
         val callUrlInfo = getCallUrlInfoFromJid(startIq.room, xmppEnvironment.stripFromRoomDomain, xmppEnvironment.xmppDomain)
         val callParams = CallParams(callUrlInfo, xmppEnvironment.callLogin)
         logger.info("Parsed call url info: $callUrlInfo")
+        // START TEMP CODE
+        logger.error("HARD CODING SERVICE TO RECORDING")
+        startIq.recordingMode = JibriIq.RecordingMode.FILE
+        // END TEMP CODE
         return when (startIq.recordingMode) {
             JibriIq.RecordingMode.FILE -> {
                 jibriManager.startFileRecording(

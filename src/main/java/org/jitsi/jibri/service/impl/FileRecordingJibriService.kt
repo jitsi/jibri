@@ -10,6 +10,7 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
+import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
@@ -48,7 +49,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      */
     private val jibriSelenium = JibriSelenium(
         JibriSeleniumOptions(callParams = recordingOptions.callParams),
-        Executors.newSingleThreadScheduledExecutor()
+        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
     )
     /**
      * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
@@ -62,7 +63,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      * If ffmpeg dies for some reason, we want to restart it.  This [ScheduledExecutorService]
      * will run the process monitor in a separate thread so it can check that it's running on its own
      */
-    private val executor = Executors.newSingleThreadScheduledExecutor()
+    private val executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
     /**
      * The handle to the scheduled process monitor task, which we use to
      * cancel the task

@@ -21,7 +21,7 @@ class TailLogic(inputStream: InputStream) {
 
 class Tail(inputStream: InputStream) {
     private val tailLogic = TailLogic(inputStream)
-    private val executor = Executors.newSingleThreadExecutor()
+    private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("Tail"))
     private var task: Future<*>
     var mostRecentLine: String = ""
         get() {

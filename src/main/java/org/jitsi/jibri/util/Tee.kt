@@ -54,7 +54,7 @@ class TeeLogic(inputStream: InputStream) {
  */
 class Tee(inputStream: InputStream) {
     private val teeLogic = TeeLogic(inputStream)
-    private val executor = Executors.newSingleThreadExecutor()
+    private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("Tee"))
     private val task: Future<*>
 
     init {
