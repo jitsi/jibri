@@ -84,16 +84,18 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
         //TODO: should we only consider 2 sequential instances of not getting a frame=
         // encoding line "unhealthy"?
         currentFfmpegProc?.let {
+            val ffmpegOutput = ffmpegTail?.mostRecentLine ?: ""
+            val parsedOutputLine = OutputParser().parse(ffmpegOutput)
             if (!it.isAlive) {
+                logger.error("Ffmpeg is no longer running, its most recent output line was: $ffmpegOutput")
                 return false
             }
-            val ffmpegOutput = ffmpegTail?.mostRecentLine ?: ""
-            val result = OutputParser().parse(ffmpegOutput)
-            if (!result.containsKey("frame")) {
-                logger.error("Ffmpeg is running but doesn't appear to be encoding.  Its most recent line was $ffmpegOutput")
+
+            if (!parsedOutputLine.containsKey("frame")) {
+                logger.error("Ffmpeg is running but doesn't appear to be encoding.  Its most recent output line was $ffmpegOutput")
                 return false
             } else {
-                logger.debug("Ffmpeg appears healthy: $result")
+                logger.debug("Ffmpeg appears healthy: $parsedOutputLine")
                 return true
             }
         }
