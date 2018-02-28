@@ -100,10 +100,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             } else {
                 numRestarts++
                 // Re-create the sink here because we want a new filename
-                sink = createSink(
-                    recordingsDirectory = recordingOptions.recordingDirectory,
-                    callName = recordingOptions.callParams.callUrlInfo.callName
-                )
+                sink = createSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
                 capturer.start(capturerParams, sink)
             }
         }

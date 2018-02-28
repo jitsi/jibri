@@ -7,8 +7,6 @@ import java.io.OutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 
 /**
  * Reads from the given [InputStream] and mirrors the read
@@ -25,16 +23,22 @@ class Tee(inputStream: InputStream) {
     val reader = BufferedReader(InputStreamReader(inputStream))
     var branches = CopyOnWriteArrayList<OutputStream>()
 
+    /**
+     * Reads a byte from the original [InputStream] and
+     * writes it to all of the branches
+     */
     fun read() {
         val c = reader.read()
-
         branches.forEach {
-            // Recreate the carriage return so that readLine on the
-            // branched InputStreams works
             it.write(c)
         }
     }
 
+    /**
+     * Returns an [InputStream] that will receive
+     * all data from the original [InputStream]
+     * starting from the time of its creation
+     */
     fun addBranch(): InputStream {
         val outputStream = PipedOutputStream()
         branches.add(outputStream)

@@ -1,12 +1,5 @@
 package org.jitsi.jibri.capture.ffmpeg.util
 
-import org.jitsi.jibri.util.bitrate
-import org.jitsi.jibri.util.dataSize
-import org.jitsi.jibri.util.decimal
-import org.jitsi.jibri.util.oneOrMoreDigits
-import org.jitsi.jibri.util.speed
-import org.jitsi.jibri.util.string
-import org.jitsi.jibri.util.timestamp
 import org.jitsi.jibri.util.zeroOrMoreSpaces
 import java.util.regex.Pattern
 
