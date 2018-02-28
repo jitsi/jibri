@@ -15,7 +15,11 @@ import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.RecordingOptions
 import org.jitsi.jibri.service.impl.StreamingOptions
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.extensions.schedule
 import java.io.File
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 enum class StartServiceResult {
@@ -24,15 +28,31 @@ enum class StartServiceResult {
     ERROR
 }
 
+/**
+ * Parameters needed for joining the call in Selenium
+ */
 data class CallParams(
     val callUrlInfo: CallUrlInfo = CallUrlInfo(),
     val callLoginParams: XmppCredentials = XmppCredentials()
 )
 
+/**
+ * Parameters needed for starting any [JibriService]
+ */
+data class ServiceParams(
+    val usageTimeoutMinutes: Int
+)
+
+/**
+ * Parameters needed for starting a [FileRecordingJibriService]
+ */
 data class FileRecordingParams(
     val callParams: CallParams
 )
 
+/**
+ * Parameters needed for starting a [StreamingJibriService]
+ */
 data class StreamingParams(
     val callParams: CallParams,
     val youTubeStreamKey: String
@@ -51,6 +71,8 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     public lateinit var config: JibriConfig
     private var currentActiveService: JibriService? = null
     private var pendingIdleFunc: () -> Unit = {}
+    val executor = Executors.newSingleThreadScheduledExecutor()
+    var serviceTimeoutTask: ScheduledFuture<*>? = null
 
     init {
         loadConfig(configFile)
@@ -67,7 +89,10 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
      * whether the service was started successfully or not.
      */
     @Synchronized
-    fun startFileRecording(fileRecordingParams: FileRecordingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
+    fun startFileRecording(
+            serviceParams: ServiceParams,
+            fileRecordingParams: FileRecordingParams,
+            serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a file recording with params: $fileRecordingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
@@ -78,7 +103,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
                 callParams = fileRecordingParams.callParams,
                 finalizeScriptPath = config.finalizeRecordingScriptPath
         ))
-        return startService(service, serviceStatusHandler)
+        return startService(service, serviceParams, serviceStatusHandler)
     }
 
     /**
@@ -87,7 +112,10 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
      * denote whether the service was started successfully or not.
      */
     @Synchronized
-    fun startStreaming(streamingParams: StreamingParams, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
+    fun startStreaming(
+            serviceParams: ServiceParams,
+            streamingParams: StreamingParams,
+            serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         logger.info("Starting a stream with params: $streamingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
@@ -97,7 +125,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
                 youTubeStreamKey = streamingParams.youTubeStreamKey,
                 callParams = streamingParams.callParams
         ))
-        return startService(service, serviceStatusHandler)
+        return startService(service, serviceParams, serviceStatusHandler)
     }
 
     /**
@@ -105,7 +133,10 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
      * Returns a [StartServiceResult] to denote whether the service was
      * started successfully or not.
      */
-    private fun startService(jibriService: JibriService, serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
+    private fun startService(
+            jibriService: JibriService,
+            serviceParams: ServiceParams,
+            serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
         publishStatus(JibriStatusPacketExt.Status.BUSY)
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
@@ -120,6 +151,13 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
 
         jibriService.start()
         currentActiveService = jibriService
+        if (serviceParams.usageTimeoutMinutes != 0) {
+            logger.info("This service will have a usage timeout of ${serviceParams.usageTimeoutMinutes} minute(s)")
+            serviceTimeoutTask = executor.schedule(serviceParams.usageTimeoutMinutes.toLong(), TimeUnit.MINUTES) {
+                logger.info("The usage timeout has elapsed, stopping the currently active service")
+                stopService()
+            }
+        }
 
         return StartServiceResult.SUCCESS
     }
@@ -130,6 +168,7 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
     @Synchronized
     fun stopService() {
         logger.info("Stopping the current service")
+        serviceTimeoutTask?.cancel(false)
         // Note that this will block until the service is completely stopped
         currentActiveService?.stop()
         currentActiveService = null

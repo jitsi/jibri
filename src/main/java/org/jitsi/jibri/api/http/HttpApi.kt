@@ -4,6 +4,7 @@ import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.FileRecordingParams
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
+import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.util.extensions.debug
@@ -60,16 +61,14 @@ class HttpApi(private val jibriManager: JibriManager) {
         val result: StartServiceResult = when (serviceParams.sinkType) {
             RecordingSinkType.FILE -> {
                 jibriManager.startFileRecording(
-                    FileRecordingParams(
-                        callParams = serviceParams.callParams
-                    )
+                    ServiceParams(usageTimeoutMinutes = 0),
+                    FileRecordingParams(callParams = serviceParams.callParams)
                 )
             }
             RecordingSinkType.STREAM -> {
                 jibriManager.startStreaming(
-                    StreamingParams(
-                        callParams = serviceParams.callParams,
-                        youTubeStreamKey = serviceParams.youTubeStreamKey
+                    ServiceParams(usageTimeoutMinutes = 0),
+                    StreamingParams(serviceParams.callParams, serviceParams.youTubeStreamKey
                     )
                 )
             }

@@ -6,6 +6,7 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStat
 import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.FileRecordingParams
 import org.jitsi.jibri.JibriManager
+import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.config.XmppEnvironmentConfig
@@ -176,12 +177,14 @@ class XmppApi(
         return when (startIq.recordingMode) {
             JibriIq.RecordingMode.FILE -> {
                 jibriManager.startFileRecording(
+                    ServiceParams(xmppEnvironment.usageTimeoutMins),
                     FileRecordingParams(callParams),
                     serviceStatusHandler
                 )
             }
             JibriIq.RecordingMode.STREAM -> {
                 jibriManager.startStreaming(
+                    ServiceParams(xmppEnvironment.usageTimeoutMins),
                     StreamingParams(callParams, youTubeStreamKey = startIq.streamId),
                     serviceStatusHandler
                 )

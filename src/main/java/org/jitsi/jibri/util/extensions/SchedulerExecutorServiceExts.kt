@@ -17,3 +17,14 @@ fun ScheduledExecutorService.scheduleAtFixedRate(
     action: Runnable): ScheduledFuture<*> {
     return this.scheduleAtFixedRate(action, delay, period, unit)
 }
+
+/**
+ * A version of [ScheduledExecutorService.schedule] that takes a lambda
+ * instead of requiring a Runnable (and moves it to the last argument)
+ */
+fun ScheduledExecutorService.schedule(
+    delay: Long = 0,
+    unit: TimeUnit = TimeUnit.SECONDS,
+    action: () -> Unit): ScheduledFuture<*> {
+    return this.schedule(action, delay, unit)
+}
