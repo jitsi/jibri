@@ -11,9 +11,9 @@ import java.util.logging.Logger
  * [FileSink] represents a sink which will write to a media file on the
  * filesystem
  */
-class FileSink(val recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
+class FileSink(recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    val file: File?
+    val file: File
     init {
         val currentTime = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
@@ -22,20 +22,19 @@ class FileSink(val recordingsDirectory: File, callName: String, extension: Strin
             file = File(recordingsDirectory, filename)
             logger.info("Using recording file " + file.toString())
         } else {
-            logger.error("Error creating directory: $recordingsDirectory")
-            file = null
+            throw Exception("Error creating directory: $recordingsDirectory")
         }
     }
 
     /**
      * See [Sink.getPath]
      */
-    override val path: String? = file?.path
+    override val path: String = file.path
 
     /**
      * See [Sink.getFormat]
      */
-    override val format: String? = file?.extension
+    override val format: String = file.extension
 
     /**
      * See [Sink.getOptions]

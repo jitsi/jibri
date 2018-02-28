@@ -100,12 +100,20 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
-        val service = FileRecordingJibriService(RecordingOptions(
-                recordingDirectory = File(config.recordingDirectory),
-                callParams = fileRecordingParams.callParams,
-                finalizeScriptPath = config.finalizeRecordingScriptPath
-        ))
-        return startService(service, serviceParams, serviceStatusHandler)
+        var service: JibriService? = null
+        try {
+            service = FileRecordingJibriService(
+                RecordingOptions(
+                    recordingDirectory = File(config.recordingDirectory),
+                    callParams = fileRecordingParams.callParams,
+                    finalizeScriptPath = config.finalizeRecordingScriptPath
+                )
+            )
+            return startService(service, serviceParams, serviceStatusHandler)
+        } catch (e: Exception) {
+            logger.error("Error starting file recording service: ${e.message}")
+            return StartServiceResult.ERROR
+        }
     }
 
     /**

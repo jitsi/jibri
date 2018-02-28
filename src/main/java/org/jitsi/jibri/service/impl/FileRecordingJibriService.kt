@@ -45,12 +45,9 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      */
     private val logger = Logger.getLogger(this::class.qualifiedName)
     /**
-     * The [JibriSelenium] this class will use for joining a web call
+     * Used for the selenium interaction
      */
-    private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(callParams = recordingOptions.callParams),
-        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
-    )
+    private val jibriSelenium: JibriSelenium
     /**
      * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
      */
@@ -70,9 +67,15 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
     init {
-        sink = createSink(
-                recordingsDirectory = recordingOptions.recordingDirectory,
-                callName = recordingOptions.callParams.callUrlInfo.callName
+        // The creation of a sink may fail and throw an exception, so it's important that anything
+        // that will not clean up nicely (like selenium, apparently) appear AFTER creating the sink so that
+        // if the sink creation fails, it isn't created in the first place.  We don't swallow the exception
+        // here because we want the exception to bubble up to the caller so they know there was an issue starting
+        // the service.
+        sink = createSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
+        jibriSelenium = JibriSelenium(
+            JibriSeleniumOptions(callParams = recordingOptions.callParams),
+            Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
         )
         jibriSelenium.addStatusHandler {
             publishStatus(it)
@@ -141,9 +144,6 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      * Helper to create the [FileSink] we'll write the media to
      */
     private fun createSink(recordingsDirectory: File, callName: String): Sink {
-        return FileSink(
-                recordingsDirectory = recordingsDirectory,
-                callName = callName
-        )
+        return FileSink(recordingsDirectory, callName)
     }
 }
