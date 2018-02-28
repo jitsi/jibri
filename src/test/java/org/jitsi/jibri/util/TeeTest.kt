@@ -8,16 +8,16 @@ import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 
-class TeeTest {
+class TeeLogicTest {
     private lateinit var outputStream: PipedOutputStream
     private lateinit var inputStream: PipedInputStream
-    private lateinit var tee: Tee
+    private lateinit var tee: TeeLogic
 
     @BeforeMethod
     fun setUp() {
         outputStream = PipedOutputStream()
         inputStream = PipedInputStream(outputStream)
-        tee = Tee(inputStream)
+        tee = TeeLogic(inputStream)
     }
 
     private fun pushIncomingData(data: ByteArray) {

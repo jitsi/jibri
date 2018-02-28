@@ -7,6 +7,8 @@ import java.io.OutputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 /**
  * Reads from the given [InputStream] and mirrors the read
@@ -19,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * to read the data from the original stream and write it to
  * the branches
  */
-class Tee(inputStream: InputStream) {
+class TeeLogic(inputStream: InputStream) {
     val reader = BufferedReader(InputStreamReader(inputStream))
     var branches = CopyOnWriteArrayList<OutputStream>()
 
@@ -43,5 +45,31 @@ class Tee(inputStream: InputStream) {
         val outputStream = PipedOutputStream()
         branches.add(outputStream)
         return PipedInputStream(outputStream)
+    }
+}
+
+/**
+ * A wrapper around [TeeLogic] which spins up its own thread
+ * to do the reading automatically
+ */
+class Tee(inputStream: InputStream) {
+    private val teeLogic = TeeLogic(inputStream)
+    private val executor = Executors.newSingleThreadExecutor()
+    private val task: Future<*>
+
+    init {
+        task = executor.submit {
+            while (true) {
+                teeLogic.read()
+            }
+        }
+    }
+
+    fun addBranch(): InputStream {
+        return teeLogic.addBranch()
+    }
+
+    fun stop() {
+        task.cancel(true)
     }
 }

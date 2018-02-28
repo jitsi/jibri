@@ -26,7 +26,7 @@ val FFMPEG_RESTART_ATTEMPTS = 1
 abstract class AbstractFfmpegExecutor : FfmpegExecutor {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val ffmpegOutputLogger = Logger.getLogger("ffmpeg")
-    private val executor = Executors.newFixedThreadPool(3, NameableThreadFactory("AbstractFfmpegExecutor"))
+    private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("AbstractFfmpegExecutor"))
     /**
      * The currently active (if any) Ffmpeg process
      */
@@ -60,12 +60,6 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
         currentFfmpegProc = pb.start()
         // Tee ffmpeg's output so that we can analyze its status and log everything
         ffmpegOutputTee = Tee(currentFfmpegProc!!.inputStream)
-        // Keep reading from the initial inputstream
-        executor.submit {
-            while (true) {
-                ffmpegOutputTee?.read()
-            }
-        }
         ffmpegTail = Tail(ffmpegOutputTee!!.addBranch())
         // Read from a tee branch and log to a file
         executor.submit {
