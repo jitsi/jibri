@@ -85,8 +85,12 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
     /**
      * @see [JibriService.start]
      */
-    override fun start() {
-        jibriSelenium.joinCall(recordingOptions.callParams.callUrlInfo.callName)
+    override fun start(): Boolean {
+        if (!jibriSelenium.joinCall(recordingOptions.callParams.callUrlInfo.callName)) {
+            logger.error("Selenium failed to join the call")
+            stop()
+            return false
+        }
         val capturerParams = CapturerParams()
         capturer.start(capturerParams, sink)
         var numRestarts = 0
@@ -109,6 +113,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
+        return true
     }
 
     /**

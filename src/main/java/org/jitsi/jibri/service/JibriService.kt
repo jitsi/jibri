@@ -18,7 +18,7 @@ abstract class JibriService : StatusPublisher<JibriServiceStatus>() {
     /**
      * Starts this [JibriService]
      */
-    abstract fun start()
+    abstract fun start(): Boolean
 
     /**
      * Stops this [JibriService]

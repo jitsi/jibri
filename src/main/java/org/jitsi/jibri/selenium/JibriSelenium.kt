@@ -93,7 +93,7 @@ class JibriSelenium(
     /**
      * Join a a web call with Selenium
      */
-    fun joinCall(callName: String) {
+    fun joinCall(callName: String): Boolean {
         HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
         setJibriIdentifiers(
                 Pair("displayname", "TODO"),
@@ -102,8 +102,11 @@ class JibriSelenium(
                 Pair("xmpp_password_override", jibriSeleniumOptions.callParams.callLoginParams.password),
                 Pair("callStatsUserName", "jibri")
         )
-        CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${URL_OPTIONS.joinToString("&")}"))
+        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${URL_OPTIONS.joinToString("&")}"))) {
+            return false
+        }
         addEmptyCallDetector()
+        return true
     }
 
     fun leaveCallAndQuitBrowser() {
@@ -114,6 +117,6 @@ class JibriSelenium(
         //CallPage(chromeDriver).leave()
         chromeDriver.quit()
     }
-
+    
     //TODO: helper func to verify connectivity
 }

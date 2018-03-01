@@ -63,8 +63,12 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
     /**
      * @see [JibriService.start]
      */
-    override fun start() {
-        jibriSelenium.joinCall(streamingOptions.callParams.callUrlInfo.callName)
+    override fun start(): Boolean {
+        if (!jibriSelenium.joinCall(streamingOptions.callParams.callUrlInfo.callName)) {
+            logger.error("Selenium failed to join the call")
+            stop()
+            return false
+        }
         logger.info("Selenium joined the call")
         val capturerParams = CapturerParams()
         capturer.start(capturerParams, sink)
@@ -86,6 +90,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
+        return true
     }
 
     /**

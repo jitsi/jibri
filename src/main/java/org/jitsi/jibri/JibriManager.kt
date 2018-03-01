@@ -159,7 +159,9 @@ class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPa
             }
         }
 
-        jibriService.start()
+        if (!jibriService.start()) {
+            return StartServiceResult.ERROR
+        }
         currentActiveService = jibriService
         if (serviceParams.usageTimeoutMinutes != 0) {
             logger.info("This service will have a usage timeout of ${serviceParams.usageTimeoutMinutes} minute(s)")
