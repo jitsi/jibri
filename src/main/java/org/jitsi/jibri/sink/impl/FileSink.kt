@@ -1,29 +1,22 @@
 package org.jitsi.jibri.sink.impl
 
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.WriteableDirectory
 import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.logging.Logger
 
 /**
  * [FileSink] represents a sink which will write to a media file on the
  * filesystem
  */
-class FileSink(recordingsDirectory: File, callName: String, extension: String = ".mp4") : Sink {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+class FileSink(recordingsDirectory: WriteableDirectory, callName: String, extension: String = ".mp4") : Sink {
     val file: File
     init {
         val currentTime = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
         val filename = "${callName}_${currentTime.format(formatter)}$extension"
-        if (recordingsDirectory.mkdirs() or recordingsDirectory.isDirectory) {
-            file = File(recordingsDirectory, filename)
-            logger.info("Using recording file " + file.toString())
-        } else {
-            throw Exception("Error creating directory: $recordingsDirectory")
-        }
+        file = File(recordingsDirectory, filename)
     }
 
     /**

@@ -12,9 +12,8 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
+import org.jitsi.jibri.util.WriteableDirectory
 import org.jitsi.jibri.util.extensions.error
-import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
-import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
@@ -22,12 +21,12 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 data class RecordingOptions(
-        /**
+    /**
          * The directory in which recordings should be created
          */
-        val recordingDirectory: File,
-        val callParams: CallParams,
-        /**
+        val recordingDirectory: WriteableDirectory,
+    val callParams: CallParams,
+    /**
          * The filesystem path to the script which should be executed when
          *  the recording is finished.
          */
@@ -47,7 +46,10 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
     /**
      * Used for the selenium interaction
      */
-    private val jibriSelenium: JibriSelenium
+    private val jibriSelenium = JibriSelenium(
+        JibriSeleniumOptions(callParams = recordingOptions.callParams),
+        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
+    )
     /**
      * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
      */
@@ -67,16 +69,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
     init {
-        // The creation of a sink may fail and throw an exception, so it's important that anything
-        // that will not clean up nicely (like selenium, apparently) appear AFTER creating the sink so that
-        // if the sink creation fails, it isn't created in the first place.  We don't swallow the exception
-        // here because we want the exception to bubble up to the caller so they know there was an issue starting
-        // the service.
         sink = createSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
-        jibriSelenium = JibriSelenium(
-            JibriSeleniumOptions(callParams = recordingOptions.callParams),
-            Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
-        )
         jibriSelenium.addStatusHandler {
             publishStatus(it)
         }
@@ -148,7 +141,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
     /**
      * Helper to create the [FileSink] we'll write the media to
      */
-    private fun createSink(recordingsDirectory: File, callName: String): Sink {
+    private fun createSink(recordingsDirectory: WriteableDirectory, callName: String): Sink {
         return FileSink(recordingsDirectory, callName)
     }
 }

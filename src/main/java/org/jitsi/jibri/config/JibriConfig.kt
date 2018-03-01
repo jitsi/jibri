@@ -1,6 +1,7 @@
 package org.jitsi.jibri.config
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.jitsi.jibri.util.WriteableDirectory
 
 data class XmppCredentials(
         val domain: String = "",
@@ -57,7 +58,7 @@ data class XmppEnvironmentConfig(
 
 data class JibriConfig(
         @JsonProperty("recording_directory")
-        val recordingDirectory: String,
+        val recordingDirectory: WriteableDirectory,
         @JsonProperty("finalize_recording_script_path")
         val finalizeRecordingScriptPath: String,
         @JsonProperty("xmpp_environments")
