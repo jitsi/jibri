@@ -175,10 +175,6 @@ class XmppApi(
         val callUrlInfo = getCallUrlInfoFromJid(startIq.room, xmppEnvironment.stripFromRoomDomain, xmppEnvironment.xmppDomain)
         val callParams = CallParams(callUrlInfo, xmppEnvironment.callLogin)
         logger.info("Parsed call url info: $callUrlInfo")
-        // START TEMP CODE
-        logger.error("HARD CODING SERVICE TO RECORDING")
-        startIq.recordingMode = JibriIq.RecordingMode.FILE
-        // END TEMP CODE
         return when (startIq.recordingMode) {
             JibriIq.RecordingMode.FILE -> {
                 jibriManager.startFileRecording(
