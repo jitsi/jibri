@@ -66,24 +66,12 @@ data class StreamingParams(
  * instance.  NOTE: currently Jibri only runs a single service at a time, so
  * if one is running, the Jibri will describe itself as busy
  */
-class JibriManager(private val configFile: File) : StatusPublisher<JibriStatusPacketExt.Status>() {
+class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatusPacketExt.Status>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    //TODO: public so main can get to it and pass the xmpp stuff to the xmpp api,
-    //  need to figure out a better way for that
-    public lateinit var config: JibriConfig
     private var currentActiveService: JibriService? = null
     private var pendingIdleFunc: () -> Unit = {}
     val executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriManager"))
     var serviceTimeoutTask: ScheduledFuture<*>? = null
-
-    init {
-        loadConfig(configFile)
-    }
-
-    private fun loadConfig(configFile: File) {
-        config = jacksonObjectMapper().configure(JsonParser.Feature.ALLOW_COMMENTS, true).readValue(configFile)
-        logger.info("Parsed config:\n$config")
-    }
 
     /**
      * Starts a [FileRecordingJibriService] to record the call described

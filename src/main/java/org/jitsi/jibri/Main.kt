@@ -1,7 +1,10 @@
 package org.jitsi.jibri
 
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import net.sourceforge.argparse4j.ArgumentParsers
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -12,14 +15,23 @@ import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
+import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.util.extensions.error
 import java.io.File
 import java.util.logging.Logger
 import javax.ws.rs.ext.ContextResolver
 
-fun main(args: Array<String>) {
-    val logger = Logger.getLogger("org.jitsi.jibri.Main")
+val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
 
+fun loadConfig(configFile: File): JibriConfig {
+    val config: JibriConfig = jacksonObjectMapper()
+        .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
+        .readValue(configFile)
+    logger.info("Parsed config:\n$config")
+    return config
+}
+
+fun main(args: Array<String>) {
     val argParser = ArgumentParsers.newFor("Jibri").build()
             .defaultHelp(true)
             .description("Start Jibri")
@@ -37,8 +49,9 @@ fun main(args: Array<String>) {
         logger.error("Error: Config file $configFilePath doesn't exist")
         System.exit(1)
     }
+    val jibriConfig = loadConfig(jibriConfigFile)
 
-    val jibri = JibriManager(jibriConfigFile)
+    val jibri = JibriManager(jibriConfig)
 
     // InternalHttpApi
     val internalApiThread = Thread {
@@ -72,7 +85,7 @@ fun main(args: Array<String>) {
     }
     internalApiThread.start()
     // XmppApi
-    val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibri.config.xmppEnvironments)
+    val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibriConfig.xmppEnvironments)
     xmppApi.start()
 
     // HttpApi
