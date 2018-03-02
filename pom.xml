@@ -16,7 +16,7 @@
     <properties>
         <testng.version>6.13.1</testng.version>
         <selenium.version>3.8.1</selenium.version>
-        <kotlin.version>1.2.20</kotlin.version>
+        <kotlin.version>1.2.30</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
