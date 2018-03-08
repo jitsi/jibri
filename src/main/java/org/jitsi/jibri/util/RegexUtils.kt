@@ -11,4 +11,6 @@ val timestamp = """$oneOrMoreDigits\:$oneOrMoreDigits\:$oneOrMoreDigits\.$oneOrM
 val bitrate = """$decimal$string\/$string"""
 val speed = "${decimal}x"
 val space = """\s"""
+val nonSpace = """\S"""
 val zeroOrMoreSpaces = "$space*"
+val oneOrMoreNonSpaces = "$nonSpace+"
