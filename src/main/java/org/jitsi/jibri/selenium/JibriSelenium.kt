@@ -117,6 +117,6 @@ class JibriSelenium(
         //CallPage(chromeDriver).leave()
         chromeDriver.quit()
     }
-    
+
     //TODO: helper func to verify connectivity
 }

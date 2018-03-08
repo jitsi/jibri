@@ -1,8 +1,5 @@
 package org.jitsi.jibri
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
@@ -18,7 +15,6 @@ import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
-import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit

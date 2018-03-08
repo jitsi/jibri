@@ -3,7 +3,6 @@ package org.jitsi.jibri.util
 import java.io.File
 import java.io.IOException
 
-
 /**
  * A [File] representing a directory described by [dirPath]
  * which it requires to be writable.  The directory doesn't need to
