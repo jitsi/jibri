@@ -16,6 +16,9 @@
 package org.jitsi.xmpp.mucclient;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.ReconnectionManager;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
@@ -25,6 +28,8 @@ import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jivesoftware.smackx.ping.PingManager;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.parts.Resourcepart;
+
+import java.util.logging.Logger;
 
 /**
  * The {@link MucClient} is responsible for handling a single xmpp
@@ -36,6 +41,7 @@ import org.jxmpp.jid.parts.Resourcepart;
  */
 public class MucClient
 {
+    private Logger logger = Logger.getLogger(MucClient.class.toString());
     /**
      * The {@link AbstractXMPPConnection} object for the connection to
      * the xmpp server
@@ -57,6 +63,52 @@ public class MucClient
     {
         PingManager.setDefaultPingInterval(30);
         xmppConnection = new XMPPTCPConnection(config);
+        ReconnectionManager reconnectionManager = ReconnectionManager.getInstanceFor(xmppConnection);
+        reconnectionManager.enableAutomaticReconnection();
+        xmppConnection.addConnectionListener(new ConnectionListener()
+        {
+            @Override
+            public void connected(XMPPConnection xmppConnection)
+            {
+                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: connected");
+            }
+
+            @Override
+            public void authenticated(XMPPConnection xmppConnection, boolean b)
+            {
+                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: authenticated");
+            }
+
+            @Override
+            public void connectionClosed()
+            {
+                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: closed");
+            }
+
+            @Override
+            public void connectionClosedOnError(Exception e)
+            {
+                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: closed on error");
+            }
+
+            @Override
+            public void reconnectionSuccessful()
+            {
+                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnection successful");
+            }
+
+            @Override
+            public void reconnectingIn(int i)
+            {
+                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnecting in " + i);
+            }
+
+            @Override
+            public void reconnectionFailed(Exception e)
+            {
+                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnection failed");
+            }
+        });
         xmppConnection.connect().login();
     }
 
