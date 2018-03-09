@@ -1,6 +1,6 @@
 # Jibri Development
 ## Style
-Code should follow the Kotlin style guide.  This style is enforced with ktlint in the project itself, linting can be executed by running `mvn verify` (which will build, run tests and lint) or `mvn antrun:run@ktlint` (which will run just the linting).  Jibri is a Kotlin codebase, so Kotlin should be used for development (save for extreme circumstances where falling back to Java is acceptable).
+Code should follow the Kotlin style guide.  This style is enforced with ktlint in the project itself, linting can be executed by running `mvn verify` (which will build, run tests and lint) or `mvn antrun:run@ktlint` (which will run just the linting).  Jibri is a Kotlin codebase, so Kotlin should be used for development (save for extreme circumstances where falling back to Java is acceptable).  The linter can be run automatically by installing a pre-commit script, you can run [this script](resources/add_git_pre_commit_script.sh) to create/install this hook automatically.
 
 ## Versioning
 Jibri uses (annotated) tagged versions and follows [semantic versioning](https://semver.org/).  Adding an annotated tag is done as follows:
