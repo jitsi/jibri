@@ -30,7 +30,8 @@ data class RecordingOptions(
  * a web call, capturing its audio and video, and writing that audio and video
  * to a file to be replayed later.
  */
-class FileRecordingJibriService(private val recordingOptions: RecordingOptions) : AbstractFfmpegSeleniumService(recordingOptions.callParams) {
+class FileRecordingJibriService(private val recordingOptions: RecordingOptions) :
+        AbstractFfmpegSeleniumService(recordingOptions.callParams) {
     override val logger = Logger.getLogger(this::class.qualifiedName)
 
     override fun getSink(): Sink {
