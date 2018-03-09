@@ -2,7 +2,6 @@ package org.jitsi.jibri.capture.ffmpeg
 
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.capture.Capturer
-import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
@@ -32,7 +31,7 @@ class FfmpegCapturer : Capturer {
     /**
      * see [Capturer.start]
      */
-    override fun start(capturerParams: CapturerParams, sink: Sink) {
+    override fun start(sink: Sink) {
         ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
     }
 

@@ -1,7 +1,6 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.CallParams
-import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.selenium.JibriSelenium
@@ -13,7 +12,6 @@ import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.extensions.error
-import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -70,8 +68,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
             return false
         }
         logger.info("Selenium joined the call")
-        val capturerParams = CapturerParams()
-        capturer.start(capturerParams, sink)
+        capturer.start(sink)
         var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
             if (exitCode != null) {
@@ -86,7 +83,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
                 stop()
             } else {
                 numRestarts++
-                capturer.start(capturerParams, sink)
+                capturer.start(sink)
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)

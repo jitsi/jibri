@@ -1,7 +1,6 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.CallParams
-import org.jitsi.jibri.capture.CapturerParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.selenium.JibriSelenium
@@ -84,8 +83,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             stop()
             return false
         }
-        val capturerParams = CapturerParams()
-        capturer.start(capturerParams, sink)
+        capturer.start(sink)
         var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
             if (exitCode != null) {
@@ -102,7 +100,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
                 numRestarts++
                 // Re-create the sink here because we want a new filename
                 sink = createSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
-                capturer.start(capturerParams, sink)
+                capturer.start(sink)
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
