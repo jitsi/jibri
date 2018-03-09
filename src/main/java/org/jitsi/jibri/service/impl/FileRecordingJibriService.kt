@@ -40,7 +40,7 @@ data class RecordingOptions(
  * a web call, capturing its audio and video, and writing that audio and video
  * to a file to be replayed later.
  */
-class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriService() {
+class FileRecordingJibriService(private val recordingOptions: RecordingOptions) : JibriService() {
     /**
      * The [Logger] for this class
      */
@@ -99,8 +99,8 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             }
             if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
                 logger.error("Giving up on restarting the capturer")
-                stop()
                 publishStatus(JibriServiceStatus.ERROR)
+                stop()
             } else {
                 numRestarts++
                 // Re-create the sink here because we want a new filename
@@ -116,7 +116,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      * @see [JibriService.stop]
      */
     override fun stop() {
-        processMonitorTask?.cancel(true)
+        processMonitorTask?.cancel(false)
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")

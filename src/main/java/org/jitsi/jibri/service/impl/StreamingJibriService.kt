@@ -84,8 +84,8 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
             }
             if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
                 logger.error("Giving up on restarting the capturer")
-                stop()
                 publishStatus(JibriServiceStatus.ERROR)
+                stop()
             } else {
                 numRestarts++
                 capturer.start(sink)
@@ -99,7 +99,7 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
      * @see [JibriService.stop]
      */
     override fun stop() {
-        processMonitorTask?.cancel(true)
+        processMonitorTask?.cancel(false)
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")
