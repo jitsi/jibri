@@ -16,7 +16,12 @@ class OutputParser {
      * a fieldName or fieldValue).  This pattern will parse all fields from an ffmpeg output
      * string
      */
-    private val ffmpegOutputField = "$zeroOrMoreSpaces($oneOrMoreNonSpaces)$zeroOrMoreSpaces=$zeroOrMoreSpaces($oneOrMoreNonSpaces)"
+    private val ffmpegOutputField =
+        // The key
+        "$zeroOrMoreSpaces($oneOrMoreNonSpaces)$zeroOrMoreSpaces" +
+        "=" +
+        // The value
+        "$zeroOrMoreSpaces($oneOrMoreNonSpaces)"
 
     /**
      * In addition to the above, sometimes ffmpeg will print a 'warning'-type message, like the following:

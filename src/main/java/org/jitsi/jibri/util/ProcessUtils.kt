@@ -2,6 +2,12 @@ package org.jitsi.jibri.util
 
 import java.lang.reflect.Field
 
+/**
+ * Mimic the "pid" member of Java 9's [Process].  This can't be
+ * an extension function as it gets called from a Java context
+ * (which wouldn't see the extension function as a normal
+ * member)
+ */
 fun pid(p: Process): Long {
     var pid: Long = -1
 

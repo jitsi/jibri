@@ -92,7 +92,8 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
             }
 
             if (!parsedOutputLine.containsKey("frame")) {
-                logger.error("Ffmpeg is running but doesn't appear to be encoding.  Its most recent output line was $ffmpegOutput")
+                logger.error("Ffmpeg is running but doesn't appear to be encoding.  " +
+                        "Its most recent output line was $ffmpegOutput")
                 return false
             } else {
                 logger.debug("Ffmpeg appears healthy: $parsedOutputLine")

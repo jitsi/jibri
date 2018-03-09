@@ -28,26 +28,14 @@ class FfmpegCapturer : Capturer {
         }
     }
 
-    /**
-     * see [Capturer.start]
-     */
     override fun start(sink: Sink) {
         ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
     }
 
-    /**
-     * see [MonitorableProcess.isAlive]
-     */
     override fun isHealthy(): Boolean = ffmpegExecutor.isHealthy()
 
-    /**
-     * see [MonitorableProcess.getExitCode]
-     */
     override fun getExitCode(): Int? = ffmpegExecutor.getExitCode()
 
-    /**
-     * see [Capturer.stop]
-     */
     override fun stop() {
         ffmpegExecutor.stopFfmpeg()
     }

@@ -32,10 +32,10 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 driver.executeScript("return typeof(APP.conference && APP.conference._room) !== 'undefined'")
             }
             val totalTime = System.currentTimeMillis() - start
-            logger.info("Waited $totalTime milliseconds for page to load")
+            logger.info("Waited $totalTime milliseconds for call page to load")
             return true
         } catch (t: TimeoutException) {
-            logger.error("Timed out waiting for page to load")
+            logger.error("Timed out waiting for call page to load")
             return false
         }
     }
@@ -56,6 +56,6 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
 
     fun leave() {
         hangUpButton?.click()
-        //TODO: wait for call to be fully exited
+        //TODO: wait for call to be fully exited?
     }
 }

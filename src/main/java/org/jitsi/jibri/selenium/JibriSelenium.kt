@@ -21,6 +21,7 @@ import java.util.logging.Logger
  * 1) Owns the webdriver
  * 2) Handles passing the proper options to Chrome
  * 3) Sets the necessary localstorage variables before joining a call
+ * It implements [StatusPublisher] to publish its status
  */
 class JibriSelenium(
         private val jibriSeleniumOptions: JibriSeleniumOptions,
@@ -29,11 +30,17 @@ class JibriSelenium(
     private val logger = Logger.getLogger(this::class.qualifiedName)
     var chromeDriver: ChromeDriver
     var baseUrl: String
+    /**
+     * The options we'll add as url params
+     */
     val URL_OPTIONS = listOf(
         "config.iAmRecorder=true",
         "config.externalConnectUrl=null",
         "interfaceConfig.APP_NAME=\"Jibri\""
-        )
+    )
+    /**
+     * A task which checks if Jibri is alone in the call
+     */
     private var emptyCallTask: ScheduledFuture<*>? = null
 
     /**
@@ -54,7 +61,7 @@ class JibriSelenium(
                 "--alsa-output-device=plug:amix"
         )
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
-            mapOf("DISPLAY" to ":0")
+            mapOf("DISPLAY" to jibriSeleniumOptions.display)
         ).build()
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
     }
@@ -63,12 +70,16 @@ class JibriSelenium(
      * Set various values to be put in local storage.  NOTE: the driver
      * should have already navigated to the desired page
      */
-    private fun setJibriIdentifiers(vararg keyValues: Pair<String, String>) {
+    private fun setLocalStorageValues(vararg keyValues: Pair<String, String>) {
         for ((key, value) in keyValues) {
             chromeDriver.executeScript("window.localStorage.setItem('$key', '$value')")
         }
     }
 
+    /**
+     * Check if Jibri is the only participant in the call.  If it is the only
+     * participant for 30 seconds, it will leave the call.
+     */
     private fun addEmptyCallDetector() {
         var numTimesEmpty = 0
         emptyCallTask = executor.scheduleAtFixedRate(period = 15, unit = TimeUnit.SECONDS) {
@@ -95,7 +106,7 @@ class JibriSelenium(
      */
     fun joinCall(callName: String): Boolean {
         HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
-        setJibriIdentifiers(
+        setLocalStorageValues(
                 Pair("displayname", "TODO"),
                 Pair("email", "TODO"),
                 Pair("xmpp_username_override", "${jibriSeleniumOptions.callParams.callLoginParams.username}@${jibriSeleniumOptions.callParams.callLoginParams.domain}"),

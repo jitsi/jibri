@@ -8,7 +8,9 @@ import java.util.concurrent.Future
 
 /**
  * Read from an infinite [InputStream] and make available the most
- * recent line that was read via [mostRecentLine].
+ * recent line that was read via [mostRecentLine]. NOTE: this class
+ * will not read from the stream automatically, its [readLine]
+ * method must be called.
  */
 class TailLogic(inputStream: InputStream) {
     private val reader = BufferedReader(InputStreamReader(inputStream))
@@ -19,6 +21,11 @@ class TailLogic(inputStream: InputStream) {
     }
 }
 
+/**
+ * A wrapper around [TailLogic] which Spins up a thread to constantly
+ * read from the given [InputStream] and save the most-recently-read
+ * line as [mostRecentLine] to be read by whomever is interested.
+ */
 class Tail(inputStream: InputStream) {
     private val tailLogic = TailLogic(inputStream)
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("Tail"))

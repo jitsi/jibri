@@ -21,15 +21,18 @@ import java.util.logging.Logger
 
 data class RecordingOptions(
     /**
-         * The directory in which recordings should be created
-         */
-        val recordingDirectory: WriteableDirectory,
+     * The directory in which recordings should be created
+     */
+    val recordingDirectory: WriteableDirectory,
+    /**
+     * The params needed to join the call
+     */
     val callParams: CallParams,
     /**
-         * The filesystem path to the script which should be executed when
-         *  the recording is finished.
-         */
-        val finalizeScriptPath: String
+     * The filesystem path to the script which should be executed when
+     *  the recording is finished.
+     */
+    val finalizeScriptPath: String
 )
 
 /**
@@ -46,7 +49,7 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      * Used for the selenium interaction
      */
     private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(callParams = recordingOptions.callParams),
+        JibriSeleniumOptions(recordingOptions.callParams),
         Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
     )
     /**
@@ -61,14 +64,16 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
      * If ffmpeg dies for some reason, we want to restart it.  This [ScheduledExecutorService]
      * will run the process monitor in a separate thread so it can check that it's running on its own
      */
-    private val executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
+    private val executor =
+        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
     /**
      * The handle to the scheduled process monitor task, which we use to
      * cancel the task
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
+
     init {
-        sink = createSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
+        sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
         jibriSelenium.addStatusHandler {
             publishStatus(it)
         }
@@ -89,17 +94,17 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
             if (exitCode != null) {
                 logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
             } else {
-                logger.error("Capturer process is no longer healthy, but it is still running, stopping it now")
+                logger.error("Capturer process is no longer healthy but it is still running, stopping it now")
                 capturer.stop()
             }
             if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
                 logger.error("Giving up on restarting the capturer")
+                stop()
                 publishStatus(JibriServiceStatus.ERROR)
-                processMonitorTask?.cancel(false)
             } else {
                 numRestarts++
                 // Re-create the sink here because we want a new filename
-                sink = createSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
+                sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
                 capturer.start(sink)
             }
         }
@@ -134,12 +139,5 @@ class FileRecordingJibriService(val recordingOptions: RecordingOptions) : JibriS
         } catch (e: IOException) {
             logger.error("Failed to run finalize script: $e")
         }
-    }
-
-    /**
-     * Helper to create the [FileSink] we'll write the media to
-     */
-    private fun createSink(recordingsDirectory: WriteableDirectory, callName: String): Sink {
-        return FileSink(recordingsDirectory, callName)
     }
 }

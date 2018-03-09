@@ -18,11 +18,14 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 data class StreamingOptions(
-        /**
-         * The YouTube stream key to use for this stream
-         */
-        val youTubeStreamKey: String,
-        val callParams: CallParams
+    /**
+     * The YouTube stream key to use for this stream
+     */
+    val youTubeStreamKey: String,
+    /**
+     * The params needed to join the call
+     */
+    val callParams: CallParams
 )
 
 /**
@@ -45,14 +48,16 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
      * cancel the task
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
-    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(callParams = streamingOptions.callParams), executor)
+    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(streamingOptions.callParams), executor)
 
     init {
         sink = StreamSink(
-                url = "$YOUTUBE_URL/${streamingOptions.youTubeStreamKey}",
-                streamingMaxBitrate = STREAMING_MAX_BITRATE,
-                streamingBufSize = 2 * STREAMING_MAX_BITRATE)
+            url = "$YOUTUBE_URL/${streamingOptions.youTubeStreamKey}",
+            streamingMaxBitrate = STREAMING_MAX_BITRATE,
+            streamingBufSize = 2 * STREAMING_MAX_BITRATE
+        )
 
+        // Bubble up jibriSelenium's status
         jibriSelenium.addStatusHandler {
             publishStatus(it)
         }
@@ -74,13 +79,13 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
             if (exitCode != null) {
                 logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
             } else {
-                logger.error("Capturer process is no longer healthy, but it is still running, stopping it now")
+                logger.error("Capturer process is no longer healthy but it is still running, stopping it now")
                 capturer.stop()
             }
             if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
                 logger.error("Giving up on restarting the capturer")
-                publishStatus(JibriServiceStatus.ERROR)
                 stop()
+                publishStatus(JibriServiceStatus.ERROR)
             } else {
                 numRestarts++
                 capturer.start(sink)
