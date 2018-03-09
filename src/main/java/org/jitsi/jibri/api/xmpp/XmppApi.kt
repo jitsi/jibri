@@ -68,15 +68,17 @@ class XmppApi(
                         return handleJibriIq(jibriIq, config, mucClient)
                     }
                 })
-                jibriManager.addStatusHandler {
-                    logger.info("XMPP API got jibri status $it, publishing presence to connection ${config.name}")
+                jibriManager.addStatusHandler { status ->
+                    logger.info("XMPP API got jibri status $status, publishing presence to connection ${config.name}")
                     val jibriStatus = JibriPresenceHelper.createPresence(
-                        it,
+                        status,
                         JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"))
                     mucClient.sendStanza(jibriStatus)
                 }
-                mucClient.createOrJoinMuc(JidCreate.entityBareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"),
+                mucClient.createOrJoinMuc(
+                    JidCreate.entityBareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"),
                     Resourcepart.from(config.controlMuc.nickname))
+
                 val jibriStatus = JibriPresenceHelper.createPresence(
                     JibriStatusPacketExt.Status.IDLE,
                     JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"))
@@ -94,7 +96,9 @@ class XmppApi(
         return when (jibriIq.action) {
             JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
             JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)
-            else -> IQ.createErrorResponse(jibriIq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
+            else -> IQ.createErrorResponse(
+                jibriIq,
+                XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
         }
     }
 
@@ -105,7 +109,10 @@ class XmppApi(
      * [JibriIq.Status.BUSY] if the Jibri was already busy and couldn't start the requested service
      * [JibriIq.Status.ON] if the service started successfully
      */
-    private fun handleStartJibriIq(startJibriIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient): IQ {
+    private fun handleStartJibriIq(
+            startJibriIq: JibriIq,
+            xmppEnvironment: XmppEnvironmentConfig,
+            mucClient: MucClient): IQ {
         logger.info("Received start request")
         // We don't want to block the response to wait for the service to actually start, so submit a job to
         // start the service asynchronously and send an IQ with the status after its done.
@@ -171,7 +178,10 @@ class XmppApi(
      * to determine which [JibriManager] service API to call, as well as convert the types into what [JibriManager]
      * expects
      */
-    private fun handleStartService(startIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, serviceStatusHandler: JibriServiceStatusHandler): StartServiceResult {
+    private fun handleStartService(
+            startIq: JibriIq,
+            xmppEnvironment: XmppEnvironmentConfig,
+            serviceStatusHandler: JibriServiceStatusHandler): StartServiceResult {
         val callUrlInfo = getCallUrlInfoFromJid(startIq.room, xmppEnvironment.stripFromRoomDomain, xmppEnvironment.xmppDomain)
         val callParams = CallParams(callUrlInfo, xmppEnvironment.callLogin)
         logger.info("Parsed call url info: $callUrlInfo")

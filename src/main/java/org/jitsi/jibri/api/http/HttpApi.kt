@@ -62,7 +62,7 @@ class HttpApi(private val jibriManager: JibriManager) {
             RecordingSinkType.FILE -> {
                 jibriManager.startFileRecording(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    FileRecordingParams(callParams = serviceParams.callParams)
+                    FileRecordingParams(serviceParams.callParams)
                 )
             }
             RecordingSinkType.STREAM -> {
@@ -90,41 +90,4 @@ class HttpApi(private val jibriManager: JibriManager) {
         jibriManager.stopService()
         return Response.ok().build()
     }
-
-//    @GET
-//    @Path("hello")
-//    @Produces(MediaType.TEXT_PLAIN)
-//    fun helloWorld(): String {
-//        return "Hello, world!"
-//    }
-//
-//    @GET
-//    @Path("param")
-//    @Produces(MediaType.TEXT_PLAIN)
-//    fun paramMethod(@QueryParam("name") name: String): String {
-//        return "Hello, " + name
-//    }
-//
-//    @GET
-//    @Path("path/{var}")
-//    @Produces(MediaType.TEXT_PLAIN)
-//    fun pathMethod(@PathParam("var") name: String): String {
-//        return "Hello, " + name
-//    }
-//
-//    @POST
-//    @Path("post")
-//    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-//    @Produces(MediaType.TEXT_HTML)
-//    fun postMethod(@FormParam("name") name: String): String {
-//        return "<h2>Hello, $name</h2>"
-//    }
-//
-//    @POST
-//    @Path("postjson")
-//    @Consumes(MediaType.APPLICATION_JSON)
-//    @Produces(MediaType.APPLICATION_JSON)
-//    fun postJsonMethod(jsonData: Map<String, String>): String {
-//        return jsonData.toString()
-//    }
 }

@@ -86,9 +86,9 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
         }
         val service = FileRecordingJibriService(
                 RecordingOptions(
-                    recordingDirectory = config.recordingDirectory,
-                    callParams = fileRecordingParams.callParams,
-                    finalizeScriptPath = config.finalizeRecordingScriptPath
+                    config.recordingDirectory,
+                    fileRecordingParams.callParams,
+                    config.finalizeRecordingScriptPath
                 )
             )
         return startService(service, serviceParams, serviceStatusHandler)
@@ -110,8 +110,8 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
             return StartServiceResult.BUSY
         }
         val service = StreamingJibriService(StreamingOptions(
-                youTubeStreamKey = streamingParams.youTubeStreamKey,
-                callParams = streamingParams.callParams
+                streamingParams.youTubeStreamKey,
+                streamingParams.callParams
         ))
         return startService(service, serviceParams, serviceStatusHandler)
     }
@@ -178,9 +178,7 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
      */
     @Synchronized
     fun healthCheck(): JibriHealth {
-        return JibriHealth(
-                busy = busy()
-        )
+        return JibriHealth(busy())
     }
 
     /**
