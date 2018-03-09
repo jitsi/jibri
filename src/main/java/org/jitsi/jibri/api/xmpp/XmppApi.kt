@@ -130,10 +130,12 @@ class XmppApi(
                 val serviceStatusHandler: JibriServiceStatusHandler = { serviceStatus ->
                     when (serviceStatus) {
                         JibriServiceStatus.ERROR -> {
+                            logger.info("Current service had an error")
                             val errorIq = JibriIq()
                             errorIq.to = startJibriIq.from
                             errorIq.type = IQ.Type.set
                             errorIq.status = JibriIq.Status.FAILED
+                            logger.info("Sending error iq")
                             mucClient.sendStanza(errorIq)
                         }
                         else -> {} // We only care about errors here
