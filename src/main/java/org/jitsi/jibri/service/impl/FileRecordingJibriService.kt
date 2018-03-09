@@ -1,22 +1,12 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.CallParams
-import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
-import org.jitsi.jibri.selenium.JibriSelenium
-import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
-import org.jitsi.jibri.util.NameableThreadFactory
-import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.WriteableDirectory
 import org.jitsi.jibri.util.extensions.error
 import java.io.IOException
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 data class RecordingOptions(
@@ -40,87 +30,17 @@ data class RecordingOptions(
  * a web call, capturing its audio and video, and writing that audio and video
  * to a file to be replayed later.
  */
-class FileRecordingJibriService(private val recordingOptions: RecordingOptions) : JibriService() {
-    /**
-     * The [Logger] for this class
-     */
-    private val logger = Logger.getLogger(this::class.qualifiedName)
-    /**
-     * Used for the selenium interaction
-     */
-    private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(recordingOptions.callParams),
-        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
-    )
-    /**
-     * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
-     */
-    private val capturer = FfmpegCapturer()
-    /**
-     * The [Sink] this class will use to model the file on the filesystem
-     */
-    private var sink: Sink
-    /**
-     * If ffmpeg dies for some reason, we want to restart it.  This [ScheduledExecutorService]
-     * will run the process monitor in a separate thread so it can check that it's running on its own
-     */
-    private val executor =
-        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
-    /**
-     * The handle to the scheduled process monitor task, which we use to
-     * cancel the task
-     */
-    private var processMonitorTask: ScheduledFuture<*>? = null
+class FileRecordingJibriService(private val recordingOptions: RecordingOptions) : AbstractFfmpegSeleniumService(recordingOptions.callParams) {
+    override val logger = Logger.getLogger(this::class.qualifiedName)
 
-    init {
-        sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
-        jibriSelenium.addStatusHandler {
-            publishStatus(it)
-        }
+    override fun getSink(): Sink {
+        // We always create a new sink here because each time a new one is needed we want it
+        // to use a new file
+        return FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
     }
 
-    /**
-     * @see [JibriService.start]
-     */
-    override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(recordingOptions.callParams.callUrlInfo.callName)) {
-            logger.error("Selenium failed to join the call")
-            stop()
-            return false
-        }
-        capturer.start(sink)
-        var numRestarts = 0
-        val processMonitor = ProcessMonitor(capturer) { exitCode ->
-            if (exitCode != null) {
-                logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
-            } else {
-                logger.error("Capturer process is no longer healthy but it is still running, stopping it now")
-                capturer.stop()
-            }
-            if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
-                logger.error("Giving up on restarting the capturer")
-                publishStatus(JibriServiceStatus.ERROR)
-                stop()
-            } else {
-                numRestarts++
-                // Re-create the sink here because we want a new filename
-                sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
-                capturer.start(sink)
-            }
-        }
-        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
-        return true
-    }
-
-    /**
-     * @see [JibriService.stop]
-     */
     override fun stop() {
-        processMonitorTask?.cancel(false)
-        logger.info("Stopping capturer")
-        capturer.stop()
-        logger.info("Quitting selenium")
-        jibriSelenium.leaveCallAndQuitBrowser()
+        super.stop()
         logger.info("Finalizing the recording")
         finalize()
     }
