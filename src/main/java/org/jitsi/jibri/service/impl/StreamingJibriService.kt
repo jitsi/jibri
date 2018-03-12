@@ -17,6 +17,9 @@ data class StreamingOptions(
     val callParams: CallParams
 )
 
+private const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
+private const val STREAMING_MAX_BITRATE = 2976
+
 /**
  * [StreamingJibriService] is the [JibriService] responsible for joining a
  * web call, capturing its audio and video, and streaming that audio and video
@@ -25,8 +28,6 @@ data class StreamingOptions(
 class StreamingJibriService(streamingOptions: StreamingOptions) :
         AbstractFfmpegSeleniumService(streamingOptions.callParams) {
     override val logger = Logger.getLogger(this::class.qualifiedName)
-    private val STREAMING_MAX_BITRATE = 2976
-    private val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
 
     private val sink: Sink = StreamSink(
         url = "$YOUTUBE_URL/${streamingOptions.youTubeStreamKey}",
