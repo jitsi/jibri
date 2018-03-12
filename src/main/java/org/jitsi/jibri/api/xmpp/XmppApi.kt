@@ -184,7 +184,11 @@ class XmppApi(
             startIq: JibriIq,
             xmppEnvironment: XmppEnvironmentConfig,
             serviceStatusHandler: JibriServiceStatusHandler): StartServiceResult {
-        val callUrlInfo = getCallUrlInfoFromJid(startIq.room, xmppEnvironment.stripFromRoomDomain, xmppEnvironment.xmppDomain)
+        val callUrlInfo = getCallUrlInfoFromJid(
+            startIq.room,
+            xmppEnvironment.stripFromRoomDomain,
+            xmppEnvironment.xmppDomain
+        )
         val callParams = CallParams(callUrlInfo, xmppEnvironment.callLogin)
         logger.info("Parsed call url info: $callUrlInfo")
         return when (startIq.recordingMode) {

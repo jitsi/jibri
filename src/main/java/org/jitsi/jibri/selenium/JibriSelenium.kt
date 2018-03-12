@@ -28,12 +28,12 @@ class JibriSelenium(
         private val executor: ScheduledExecutorService
 ) : StatusPublisher<JibriServiceStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    var chromeDriver: ChromeDriver
-    var baseUrl: String
+    private var chromeDriver: ChromeDriver
+    private val baseUrl: String = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
     /**
      * The options we'll add as url params
      */
-    val URL_OPTIONS = listOf(
+    private val urlOptions = listOf(
         "config.iAmRecorder=true",
         "config.externalConnectUrl=null",
         "interfaceConfig.APP_NAME=\"Jibri\""
@@ -47,7 +47,6 @@ class JibriSelenium(
      * Set up default chrome driver options (using fake device, etc.)
       */
     init {
-        baseUrl = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
@@ -106,14 +105,16 @@ class JibriSelenium(
      */
     fun joinCall(callName: String): Boolean {
         HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
+        val xmppUsername = jibriSeleniumOptions.callParams.callLoginParams.username
+        val xmppDomain = jibriSeleniumOptions.callParams.callLoginParams.domain
         setLocalStorageValues(
                 Pair("displayname", "TODO"),
                 Pair("email", "TODO"),
-                Pair("xmpp_username_override", "${jibriSeleniumOptions.callParams.callLoginParams.username}@${jibriSeleniumOptions.callParams.callLoginParams.domain}"),
+                Pair("xmpp_username_override", "$xmppUsername@$xmppDomain"),
                 Pair("xmpp_password_override", jibriSeleniumOptions.callParams.callLoginParams.password),
                 Pair("callStatsUserName", "jibri")
         )
-        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${URL_OPTIONS.joinToString("&")}"))) {
+        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${urlOptions.joinToString("&")}"))) {
             return false
         }
         addEmptyCallDetector()
