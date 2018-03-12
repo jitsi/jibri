@@ -23,7 +23,7 @@ val FFMPEG_RESTART_ATTEMPTS = 1
  * It is abstract, and requires a subclass to implement the
  * [getFfmpegCommand] method to return the proper command.
  */
-abstract class AbstractFfmpegExecutor : FfmpegExecutor {
+abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder = ProcessBuilder()) : FfmpegExecutor {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val ffmpegOutputLogger = Logger.getLogger("ffmpeg")
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("AbstractFfmpegExecutor"))
@@ -52,12 +52,10 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
     protected abstract fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String
 
     override fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink) {
-        val command = getFfmpegCommand(ffmpegExecutorParams, sink)
-
-        val pb = ProcessBuilder(command.split(" "))
-        pb.redirectErrorStream(true)
-        logger.info("Running ffmpeg command:\n $command")
-        currentFfmpegProc = pb.start()
+        processBuilder.command(getFfmpegCommand(ffmpegExecutorParams, sink).split(" "))
+        processBuilder.redirectErrorStream(true)
+        logger.info("Running ffmpeg command:\n ${processBuilder.command()}")
+        currentFfmpegProc = processBuilder.start()
         // Tee ffmpeg's output so that we can analyze its status and log everything
         ffmpegOutputTee = Tee(currentFfmpegProc!!.inputStream)
         ffmpegTail = Tail(ffmpegOutputTee!!.addBranch())
@@ -73,11 +71,10 @@ abstract class AbstractFfmpegExecutor : FfmpegExecutor {
     }
 
     override fun getExitCode(): Int? {
-        currentFfmpegProc?.let {
-            if (it.isAlive) return null
-            return it.exitValue()
+        if (currentFfmpegProc?.isAlive == true) {
+            return null
         }
-        return null
+        return currentFfmpegProc?.exitValue()
     }
 
     override fun isHealthy(): Boolean {
