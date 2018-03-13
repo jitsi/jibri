@@ -30,5 +30,17 @@ data class JibriSeleniumOptions(
     /**
      * Which display selenium should be started on
      */
-    var display: String = ":0"
+    val display: String = ":0",
+    /**
+     * The display name that should be used for jibri.  Note that this
+     * is currently only used in the sipgateway gateway scenario; when doing
+     * recording the jibri is 'invisible' in the call
+     */
+    val displayName: String = "",
+    /**
+     * The email that should be used for jibri.  Note that this
+     * is currently only used in the sipgateway gateway scenario; when doing
+     * recording the jibri is 'invisible' in the call
+     */
+    val email: String = ""
 )

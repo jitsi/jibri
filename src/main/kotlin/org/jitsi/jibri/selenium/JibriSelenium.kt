@@ -133,8 +133,8 @@ class JibriSelenium(
         val xmppUsername = jibriSeleniumOptions.callParams.callLoginParams.username
         val xmppDomain = jibriSeleniumOptions.callParams.callLoginParams.domain
         setLocalStorageValues(
-                Pair("displayname", "TODO"),
-                Pair("email", "TODO"),
+                Pair("displayname", jibriSeleniumOptions.displayName),
+                Pair("email", jibriSeleniumOptions.email),
                 Pair("xmpp_username_override", "$xmppUsername@$xmppDomain"),
                 Pair("xmpp_password_override", jibriSeleniumOptions.callParams.callLoginParams.password),
                 Pair("callStatsUserName", "jibri")
