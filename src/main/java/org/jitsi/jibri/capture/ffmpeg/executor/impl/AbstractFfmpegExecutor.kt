@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
-val FFMPEG_RESTART_ATTEMPTS = 1
+const val FFMPEG_RESTART_ATTEMPTS = 1
 /**
  * [AbstractFfmpegExecutor] contains logic common to launching Ffmpeg across platforms.
  * It is abstract, and requires a subclass to implement the
