@@ -40,8 +40,6 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val capturer = FfmpegCapturer()
     private val sink: Sink
-    private val STREAMING_MAX_BITRATE = 2976
-    private val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
     /**
      * The [ScheduledExecutorService] we'll use to run the process monitor
      */

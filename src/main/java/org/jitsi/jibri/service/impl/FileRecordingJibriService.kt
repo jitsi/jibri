@@ -15,6 +15,7 @@ import org.jitsi.jibri.util.WriteableDirectory
 import org.jitsi.jibri.util.extensions.error
 import java.io.IOException
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -64,7 +65,7 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
      * If ffmpeg dies for some reason, we want to restart it.  This [ScheduledExecutorService]
      * will run the process monitor in a separate thread so it can check that it's running on its own
      */
-    private val executor =
+    private val executor: ScheduledExecutorService =
         Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
     /**
      * The handle to the scheduled process monitor task, which we use to
