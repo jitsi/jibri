@@ -23,6 +23,7 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
+import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
@@ -76,7 +77,7 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
      * Used for the selenium interaction
      */
     private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(recordingOptions.callParams),
+        JibriSeleniumOptions(recordingOptions.callParams, urlParams = RECORDING_URL_OPTIONS),
         Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
     )
     /**

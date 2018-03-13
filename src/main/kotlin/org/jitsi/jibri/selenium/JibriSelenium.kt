@@ -56,7 +56,23 @@ data class JibriSeleniumOptions(
      * is currently only used in the sipgateway gateway scenario; when doing
      * recording the jibri is 'invisible' in the call
      */
-    val email: String = ""
+    val email: String = "",
+    /**
+     * The url params to be passed in the call url
+     */
+    val urlParams: List<String>
+)
+
+val SIP_GW_URL_OPTIONS = listOf(
+    "config.iAmRecorder=true",
+    "config.iAmSipGateway=true",
+    "config.ignoreStartMuted=true"
+)
+
+val RECORDING_URL_OPTIONS = listOf(
+    "config.iAmRecorder=true",
+    "config.externalConnectUrl=null",
+    "interfaceConfig.APP_NAME=\"Jibri\""
 )
 
 /**
@@ -74,14 +90,7 @@ class JibriSelenium(
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var chromeDriver: ChromeDriver
     private val baseUrl: String = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
-    /**
-     * The options we'll add as url params
-     */
-    private val urlOptions = listOf(
-        "config.iAmRecorder=true",
-        "config.externalConnectUrl=null",
-        "interfaceConfig.APP_NAME=\"Jibri\""
-    )
+
     /**
      * A task which checks if Jibri is alone in the call
      */
@@ -166,7 +175,9 @@ class JibriSelenium(
                 Pair("xmpp_password_override", jibriSeleniumOptions.callParams.callLoginParams.password),
                 Pair("callStatsUserName", "jibri")
         )
-        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, "$callName#${urlOptions.joinToString("&")}"))) {
+        val urlParams = jibriSeleniumOptions.urlParams
+        val callNameWithUrlParams = "$callName#${urlParams.joinToString("&")}"
+        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callNameWithUrlParams))) {
             return false
         }
         addEmptyCallDetector()

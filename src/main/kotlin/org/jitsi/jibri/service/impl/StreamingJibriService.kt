@@ -22,6 +22,7 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
+import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
@@ -30,6 +31,7 @@ import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.extensions.error
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -60,13 +62,17 @@ class StreamingJibriService(private val streamingOptions: StreamingOptions) : Ji
     /**
      * The [java.util.concurrent.ScheduledExecutorService] we'll use to run the process monitor
      */
-    private val executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("StreamingJibriService"))
+    private val executor: ScheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("StreamingJibriService"))
     /**
      * The handle to the scheduled process monitor task, which we use to
      * cancel the task
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
-    private val jibriSelenium = JibriSelenium(JibriSeleniumOptions(streamingOptions.callParams), executor)
+    private val jibriSelenium = JibriSelenium(
+        JibriSeleniumOptions(streamingOptions.callParams, urlParams = RECORDING_URL_OPTIONS),
+        executor
+    )
 
     init {
         sink = StreamSink(
