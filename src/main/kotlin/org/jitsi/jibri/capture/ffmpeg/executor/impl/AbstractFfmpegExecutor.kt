@@ -30,6 +30,7 @@ import org.jitsi.jibri.util.Tee
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.pid
+import org.jitsi.jibri.util.stopProcess
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -132,19 +133,6 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
 
     override fun stopFfmpeg() {
         executor.shutdown()
-        currentFfmpegProc?.let {
-            val pid = pid(it)
-            logger.info("Sending SIGINT to ffmpeg proc $pid")
-            Runtime.getRuntime().exec("kill -s SIGINT $pid")
-        } ?: run {
-            logger.info("Ffmpeg had already exited")
-        }
-        currentFfmpegProc?.waitFor(10, TimeUnit.SECONDS)
-        currentFfmpegProc?.isAlive.let {
-            // This isn't great, as killing ffmpeg this way will corrupt
-            // the entire recording (from what I've seen)
-            currentFfmpegProc?.destroyForcibly()
-        }
-        logger.info("FfmpegCapturer exited with ${currentFfmpegProc?.exitValue()}")
+        stopProcess(currentFfmpegProc, "ffmpeg", logger)
     }
 }
