@@ -1,5 +1,6 @@
 package org.jitsi.jibri.service.impl
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
@@ -13,6 +14,7 @@ import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.WriteableDirectory
 import org.jitsi.jibri.util.extensions.error
+import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -34,6 +36,13 @@ data class RecordingOptions(
      *  the recording is finished.
      */
     val finalizeScriptPath: String
+)
+
+/**
+ * Set of metadata we'll put alongside the recording file(s)
+ */
+data class RecordingMetadata(
+    val participants: List<String>
 )
 
 /**
@@ -121,6 +130,10 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")
+        val participants = jibriSelenium.getParticipants()
+        val metadata = RecordingMetadata(participants)
+        jacksonObjectMapper()
+            .writeValue(File(recordingOptions.recordingDirectory, "metadata"), metadata)
         jibriSelenium.leaveCallAndQuitBrowser()
         logger.info("Finalizing the recording")
         finalize()

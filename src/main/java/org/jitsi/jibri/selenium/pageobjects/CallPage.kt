@@ -43,7 +43,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     fun getNumParticipants(driver: RemoteWebDriver): Long {
         val result = driver.executeScript("""
             try {
-                return APP.conference.membersCount
+                return APP.conference.membersCount;
             } catch (e) {
                 return e.message;
             }
@@ -51,6 +51,43 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return when (result) {
             is Long -> result
             else -> 1
+        }
+    }
+
+    fun injectParticipantTrackerScript(driver: RemoteWebDriver): Boolean {
+        val result = driver.executeScript("""
+            try {
+                window._jibriParticipants = [];
+                APP.conference._room.room.addListener(
+                    "xmpp.muc_member_joined",
+                    (from, nick, role, hidden, statsid, status) => {
+                        window._jibriParticipants.push(from);
+                    }
+                );
+                return true;
+            } catch (e) {
+                return e.message;
+            }
+        """.trimMargin())
+        return when (result) {
+            is Boolean -> result
+            else -> false
+        }
+    }
+
+    fun getParticipants(driver: RemoteWebDriver): List<String> {
+        val result = driver.executeScript("""
+            try {
+                return window._jibriParticipants;
+            } catch (e) {
+                return e.message;
+            }
+        """.trimMargin())
+        if (result is List<*>) {
+            @Suppress("UNCHECKED_CAST")
+            return result as List<String>
+        } else {
+            return listOf()
         }
     }
 

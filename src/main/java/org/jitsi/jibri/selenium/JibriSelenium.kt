@@ -101,6 +101,14 @@ class JibriSelenium(
     }
 
     /**
+     * Keep track of all the participants who take part in the call while
+     * Jibri is active
+     */
+    private fun addParticipantTracker() {
+        CallPage(chromeDriver).injectParticipantTrackerScript(chromeDriver)
+    }
+
+    /**
      * Join a a web call with Selenium
      */
     fun joinCall(callName: String): Boolean {
@@ -118,7 +126,12 @@ class JibriSelenium(
             return false
         }
         addEmptyCallDetector()
+        addParticipantTracker()
         return true
+    }
+
+    fun getParticipants(): List<String> {
+        return CallPage(chromeDriver).getParticipants(chromeDriver)
     }
 
     fun leaveCallAndQuitBrowser() {
