@@ -13,7 +13,7 @@ It works by launching a Chrome instance rendered in a virtual framebuffer and ca
 # Installing Jibri
 
 ### Installation notes
-* Jibri was built on ubuntu 16 (Xenial), and has been tested with the pre-built kernel and extra kernel modules ( linux-image-extra-virtual package). Any other distribution or kernel configuration MAY work but has not been tested.
+* Jibri was built on ubuntu 16 (Xenial), and has been tested with the pre-built kernel and extra kernel modules (linux-image-extra-virtual package). Any other distribution or kernel configuration MAY work but has not been tested.
 
 ## Pre-requisites
 ### ALSA and Loopback Device
@@ -31,8 +31,8 @@ It works by launching a Chrome instance rendered in a virtual framebuffer and ca
   * apt-get update
   * apt-get install ffmpeg
 
-### Google chrome stable & Chromedriver
-The latest google chrome stable build should be used. It may be able to be installed direclty via apt, but the manual instructions for installing it are as follows:
+### Google Chrome stable & Chromedriver
+The latest Google Chrome stable build should be used. It may be able to be installed direclty via apt, but the manual instructions for installing it are as follows:
 ```
 curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add
 echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
@@ -50,7 +50,7 @@ sudo chown root:root /usr/local/bin/chromedriver
 sudo chmod 0755 /usr/local/bin/chromedriver
 ```
 
-### Miscelaneous required tools
+### Miscellaneous required tools
 See the debian [control file](resources/debian-package-jibri/DEBIAN/control) for the dependencies that are required.
 
 ### User, group
@@ -65,8 +65,7 @@ See the debian [control file](resources/debian-package-jibri/DEBIAN/control) for
 By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the debian package, you'll need to make sure this directory exists (or change the location to which Jibri logs by editing the [log config](lib/logging.properties)
 
 ### Support daemon systemd configurations
-* Jibri expects XOrg and icewm to be running as daemons. To accomplish this, copy the example systemd files from the systemd directory into the appropriate place (/etc/systemd/system/ on Ubuntu 16).
-  * TODO: (where will the icewm/xorg systemd scripts be put?)
+* Jibri expects XOrg and icewm to be running as daemons. To accomplish this, copy the [example systemd files](resources/debian-package/jibri/etc/systemd/system) into the appropriate place (/etc/systemd/system/ on Ubuntu 16).  (The debian package install will do this automatically).
 * To start the supporting services:
   * `service jibri-xorg start`
   * `service jibri-icewm start`
@@ -75,7 +74,7 @@ By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the 
 
 # Configuring a Jitsi Meet environment for Jibri
 
-Jibri requires some settings to be enabled within a Jitsi Meet configuration. This changes include virtualhosts and accounts in Prosody, settings for the jitsi meet web (within config.js) as well as jicofo sip-communicator.properties.
+Jibri requires some settings to be enabled within a Jitsi Meet configuration. These changes include virtualhosts and accounts in Prosody, settings for the jitsi meet web (within config.js) as well as jicofo sip-communicator.properties.
 
 ## Prosody
 Create the recorder virtual host entry in /etc/prosody/prosody.cfg.lua:
