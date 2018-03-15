@@ -29,7 +29,9 @@ import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
+import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
@@ -215,6 +217,19 @@ class XmppApi(
         )
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
+        //TODO: should incorporate the sipgateway param into a single state ('mode' or something)
+        // so we don't have to check for the presence of the sipaddress field separate from
+        // checking file vs stream recording
+        if (startIq.sipAddress.isNotEmpty()) {
+            return jibriManager.startSipGateway(
+                ServiceParams(xmppEnvironment.usageTimeoutMins),
+                SipGatewayServiceParams(
+                    callParams,
+                    SipClientParams(startIq.sipAddress, startIq.displayName)),
+                    EnvironmentContext(xmppEnvironment.name),
+                    serviceStatusHandler
+            )
+        }
         return when (startIq.recordingMode) {
             JibriIq.RecordingMode.FILE -> {
                 jibriManager.startFileRecording(

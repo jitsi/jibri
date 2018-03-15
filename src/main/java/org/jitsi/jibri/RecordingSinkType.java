@@ -27,7 +27,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public enum RecordingSinkType
 {
     STREAM("stream"),
-    FILE("file");
+    FILE("file"),
+    //TODO: putting gateway in here doesn't feel great (and isn't what the xmpp uses anyway).
+    // we need some top-level param that denotes what we're doing (recording a file,
+    // streaming to youtube, or doing a sipgateway)
+    GATEWAY("gateway");
 
     @SuppressWarnings("FieldCanBeLocal")
     private final String recordingSinkType;
