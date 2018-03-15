@@ -29,6 +29,10 @@ class JibriIqHelper {
 
             return jibriIq
         }
+
+        fun create(from: Jid, type: IQ.Type): JibriIq {
+            return create(from, type, JibriIq.Status.UNDEFINED)
+        }
     }
 }
 

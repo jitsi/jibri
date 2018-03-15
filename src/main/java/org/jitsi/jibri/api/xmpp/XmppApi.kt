@@ -116,9 +116,7 @@ class XmppApi(
         // We don't want to block the response to wait for the service to actually start, so submit a job to
         // start the service asynchronously and send an IQ with the status after its done.
         executor.submit {
-            val resultIq = JibriIq()
-            resultIq.to = startJibriIq.from
-            resultIq.type = IQ.Type.set
+            val resultIq = JibriIqHelper.create(startJibriIq.from, IQ.Type.set)
             try {
                 logger.info("Starting service")
 
