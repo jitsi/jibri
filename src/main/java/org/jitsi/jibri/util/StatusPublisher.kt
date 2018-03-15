@@ -1,5 +1,7 @@
 package org.jitsi.jibri.util
 
+import java.util.concurrent.CopyOnWriteArrayList
+
 /**
  * Class for publishing and subscribing to status.  Handles the management
  * of all subscribers (via [addStatusHandler]) and pushes updates to
@@ -9,7 +11,7 @@ package org.jitsi.jibri.util
  * and can be anything the class wants.
  */
 open class StatusPublisher<T> {
-    private val handlers: MutableList<(T) -> Unit> = mutableListOf()
+    private val handlers: MutableList<(T) -> Unit> = CopyOnWriteArrayList()
     /**
      * Add a status handler for this [StatusPublisher].  Handlers
      * will be notified synchronously in the order they were added.
