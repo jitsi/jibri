@@ -20,6 +20,15 @@ class JibriIqHelper {
             result.to = jibriIq.from
             return result
         }
+
+        fun create(from: Jid, type: IQ.Type, status: JibriIq.Status): JibriIq {
+            val jibriIq = JibriIq()
+            jibriIq.to = from
+            jibriIq.type = type
+            jibriIq.status = status
+
+            return jibriIq
+        }
     }
 }
 

@@ -26,11 +26,10 @@ import java.util.concurrent.Executors
 import java.util.logging.Logger
 
 /**
- * [XmppApi] connects to XMPP MUCs according to the given [xmppConfigs] (which are parsed from config.json)
- * and listens for IQ messages which contain Jibri commands, which it relays
- * to the given [JibriManager].
- * The IQ messages are instances of [JibriIq] and allow the starting and stopping of
- * the services Jibri provides.
+ * [XmppApi] connects to XMPP MUCs according to the given [XmppEnvironmentConfig]s (which are
+ * parsed from config.json) and listens for IQ messages which contain Jibri commands, which it relays
+ * to the given [JibriManager].  The IQ messages are instances of [JibriIq] and allow the
+ * starting and stopping of the services Jibri provides.
  * [XmppApi] subscribes to [JibriManager] status updates and translates those into
  * XMPP presence (defined by [JibriStatusPacketExt]) updates to advertise the status of this Jibri.
  * [XmppApi] takes care of translating the XMPP commands into the appropriate
@@ -54,7 +53,7 @@ class XmppApi(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
         )
 
-        // Join all the mucs we've been told to
+        // Join all the MUCs we've been told to
         for (config in xmppConfigs) {
             for (host in config.xmppServerHosts) {
                 logger.info("Connecting to xmpp environment on $host with config $config")
@@ -131,11 +130,8 @@ class XmppApi(
                     when (serviceStatus) {
                         JibriServiceStatus.ERROR -> {
                             logger.info("Current service had an error")
-                            val errorIq = JibriIq()
-                            errorIq.to = startJibriIq.from
-                            errorIq.type = IQ.Type.set
-                            errorIq.status = JibriIq.Status.FAILED
-                            logger.info("Sending error iq")
+                            val errorIq = JibriIqHelper.create(startJibriIq.from, IQ.Type.set, JibriIq.Status.FAILED)
+                            logger.info("Sending error iq $errorIq")
                             mucClient.sendStanza(errorIq)
                         }
                         else -> {} // We only care about errors here

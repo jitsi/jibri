@@ -12,10 +12,10 @@ abstract class JibriSyncIqRequestHandler : AbstractIqRequestHandler(
         IQ.Type.set,
         IQRequestHandler.Mode.sync) {
     override fun handleIQRequest(iq: IQ): IQ {
-        if (iq !is JibriIq) {
-            return IQ.createErrorResponse(iq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
-        } else {
+        if (iq is JibriIq) {
             return handleJibriIqRequest(iq)
+        } else {
+            return IQ.createErrorResponse(iq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
         }
     }
 
