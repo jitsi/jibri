@@ -220,7 +220,7 @@ class XmppApi(
         //TODO: should incorporate the sipgateway param into a single state ('mode' or something)
         // so we don't have to check for the presence of the sipaddress field separate from
         // checking file vs stream recording
-        if (startIq.sipAddress.isNotEmpty()) {
+        if (startIq.sipAddress != null && startIq.sipAddress.isNotEmpty()) {
             return jibriManager.startSipGateway(
                 ServiceParams(xmppEnvironment.usageTimeoutMins),
                 SipGatewayServiceParams(
