@@ -35,6 +35,7 @@ class PjsuaExecutor : MonitorableProcess {
             --playback-dev=$PLAYBACK_DEVICE
             --id "${pjsuaExecutorParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>"
             --config-file $CONFIG_FILE_LOCATION
+            --log-file /tmp/pjsua.out
             sip:${pjsuaExecutorParams.sipClientParams.sipAddress}
         """.trimIndent().replace("\n", " ")
 
@@ -55,10 +56,14 @@ class PjsuaExecutor : MonitorableProcess {
     }
 
     override fun getExitCode(): Int? {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        //TODO: this will actually be the exit code of screen
+        currentPjsuaProc?.let {
+            return if (it.isAlive) null else it.exitValue()
+        }
+        return null
     }
 
     override fun isHealthy(): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return true
     }
 }
