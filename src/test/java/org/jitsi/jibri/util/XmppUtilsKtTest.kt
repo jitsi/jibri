@@ -16,9 +16,17 @@ class XmppUtilsKtTest {
     }
 
     @Test
-    fun `test roomjid with subdomain url conversion`() {
+    fun `test roomjid with subdomain strip url conversion`() {
         val expected = CallUrlInfo("https://$baseDomain", "roomName")
         val jid = JidCreate.entityBareFrom("${expected.callName}@mucdomain.$baseDomain")
+
+        expect(expected) { getCallUrlInfoFromJid(jid, "mucdomain.", "brian.jitsi.net") }
+    }
+
+    @Test
+    fun `test roomjid with call subdomain url conversion`() {
+        val expected = CallUrlInfo("https://$baseDomain/subdomain", "roomName")
+        val jid = JidCreate.entityBareFrom("${expected.callName}@mucdomain.subdomain.$baseDomain")
 
         expect(expected) { getCallUrlInfoFromJid(jid, "mucdomain.", "brian.jitsi.net") }
     }
