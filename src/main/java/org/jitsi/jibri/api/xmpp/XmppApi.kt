@@ -91,7 +91,7 @@ class XmppApi(
      * that this [JibrIq] was received on.
      */
     private fun handleJibriIq(jibriIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient): IQ {
-        logger.info("Received JibriIq $jibriIq from environment ${xmppEnvironment.name}")
+        logger.info("Received JibriIq ${jibriIq.toXML()} from environment ${xmppEnvironment.name}")
         return when (jibriIq.action) {
             JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
             JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)
@@ -129,7 +129,7 @@ class XmppApi(
                         JibriServiceStatus.ERROR -> {
                             logger.info("Current service had an error")
                             val errorIq = JibriIqHelper.create(startJibriIq.from, IQ.Type.set, JibriIq.Status.FAILED)
-                            logger.info("Sending error iq $errorIq")
+                            logger.info("Sending error iq ${errorIq.toXML()}")
                             mucClient.sendStanza(errorIq)
                         }
                         else -> {} // We only care about errors here
@@ -146,7 +146,7 @@ class XmppApi(
                 logger.error("Error in startService task: $e")
                 resultIq.status = JibriIq.Status.FAILED
             } finally {
-                logger.info("Sending start service response iq: $resultIq")
+                logger.info("Sending start service response iq: ${resultIq.toXML()}")
                 mucClient.sendStanza(resultIq)
             }
         }
