@@ -29,7 +29,18 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         val start = System.currentTimeMillis()
         try {
             WebDriverWait(driver, 30).until {
-                driver.executeScript("return typeof(APP.conference && APP.conference._room) !== 'undefined'")
+                val result = driver.executeScript("""
+                    try {
+                        return typeof(APP.conference._room) !== 'undefined';
+                    } catch (e) {
+                        return e.message;
+                    }
+                    """.trimMargin()
+                )
+                when (result) {
+                    is Boolean -> result
+                    else -> false
+                }
             }
             val totalTime = System.currentTimeMillis() - start
             logger.info("Waited $totalTime milliseconds for call page to load")
