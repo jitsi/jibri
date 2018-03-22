@@ -71,8 +71,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 window._jibriParticipants = [];
                 APP.conference._room.room.addListener(
                     "xmpp.muc_member_joined",
-                    (from, nick, role, hidden, statsid, status) => {
-                        window._jibriParticipants.push(from);
+                    (from, nick, role, hidden, statsid, status, identity) => {
+                        window._jibriParticipants.push(identity);
                     }
                 );
                 return true;
@@ -86,7 +86,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    fun getParticipants(driver: RemoteWebDriver): List<String> {
+    fun getParticipants(driver: RemoteWebDriver): List<Map<String, Any>> {
         val result = driver.executeScript("""
             try {
                 return window._jibriParticipants;
@@ -96,7 +96,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         """.trimMargin())
         if (result is List<*>) {
             @Suppress("UNCHECKED_CAST")
-            return result as List<String>
+            return result as List<Map<String, Any>>
         } else {
             return listOf()
         }

@@ -130,7 +130,7 @@ class JibriSelenium(
         return true
     }
 
-    fun getParticipants(): List<String> {
+    fun getParticipants(): List<Map<String, Any>> {
         return CallPage(chromeDriver).getParticipants(chromeDriver)
     }
 

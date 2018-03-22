@@ -42,7 +42,7 @@ data class RecordingOptions(
  * Set of metadata we'll put alongside the recording file(s)
  */
 data class RecordingMetadata(
-    val participants: List<String>
+    val participants: List<Map<String, Any>>
 )
 
 /**
@@ -131,6 +131,7 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
         capturer.stop()
         logger.info("Quitting selenium")
         val participants = jibriSelenium.getParticipants()
+        logger.info("Participants in this recording: $participants")
         val metadata = RecordingMetadata(participants)
         jacksonObjectMapper()
             .writeValue(File(recordingOptions.recordingDirectory, "metadata"), metadata)
