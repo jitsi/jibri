@@ -28,8 +28,8 @@ class FfmpegCapturer : Capturer {
         }
     }
 
-    override fun start(sink: Sink) {
-        ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+    override fun start(sink: Sink): Boolean {
+        return ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
     }
 
     override fun isHealthy(): Boolean = ffmpegExecutor.isHealthy()

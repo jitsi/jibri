@@ -34,7 +34,7 @@ interface FfmpegExecutor : MonitorableProcess {
      * Launch ffmpeg with the given [FfmpegExecutorParams] and using
      * the given [Sink]
      */
-    fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink)
+    fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): Boolean
 
     /**
      * Shutdown ffmpeg gracefully (if possible)

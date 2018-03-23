@@ -74,7 +74,11 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
             return false
         }
         logger.info("Selenium joined the call")
-        capturer.start(sink)
+        if (!capturer.start(sink)) {
+            logger.error("Capturer failed to start")
+            stop()
+            return false
+        }
         var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
             if (exitCode != null) {
@@ -89,7 +93,11 @@ class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriServi
                 stop()
             } else {
                 numRestarts++
-                capturer.start(sink)
+                if (!capturer.start(sink)) {
+                    logger.error("Capture failed to restart, giving up")
+                    publishStatus(JibriServiceStatus.ERROR)
+                    stop()
+                }
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)

@@ -98,7 +98,11 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
             stop()
             return false
         }
-        capturer.start(sink)
+        if (!capturer.start(sink)) {
+            logger.error("Capturer failed to start")
+            stop()
+            return false
+        }
         var numRestarts = 0
         val processMonitor = ProcessMonitor(capturer) { exitCode ->
             if (exitCode != null) {
@@ -115,7 +119,11 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
                 numRestarts++
                 // Re-create the sink here because we want a new filename
                 sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
-                capturer.start(sink)
+                if (!capturer.start(sink)) {
+                    logger.error("Capture failed to restart, giving up")
+                    publishStatus(JibriServiceStatus.ERROR)
+                    stop()
+                }
             }
         }
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)

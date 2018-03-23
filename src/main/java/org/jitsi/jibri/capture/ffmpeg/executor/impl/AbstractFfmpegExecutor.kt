@@ -12,6 +12,7 @@ import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.pid
 import java.io.BufferedReader
+import java.io.IOException
 import java.io.InputStreamReader
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -51,11 +52,16 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
      */
     protected abstract fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String
 
-    override fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink) {
+    override fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): Boolean {
         processBuilder.command(getFfmpegCommand(ffmpegExecutorParams, sink).split(" "))
         processBuilder.redirectErrorStream(true)
         logger.info("Running ffmpeg command:\n ${processBuilder.command()}")
-        currentFfmpegProc = processBuilder.start()
+        try {
+            currentFfmpegProc = processBuilder.start()
+        } catch (e: IOException) {
+            logger.error("Error starting ffmpeg: $e")
+            return false
+        }
         // Tee ffmpeg's output so that we can analyze its status and log everything
         ffmpegOutputTee = Tee(currentFfmpegProc!!.inputStream)
         ffmpegTail = Tail(ffmpegOutputTee!!.addBranch())
@@ -68,6 +74,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
         }
 
         logger.debug("Launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive}")
+        return true
     }
 
     override fun getExitCode(): Int? {
