@@ -52,8 +52,19 @@ data class XmppEnvironmentConfig(
      */
     @JsonProperty("room_jid_domain_string_to_strip_from_start")
     val stripFromRoomDomain: String,
+    /**
+     * How long Jibri sessions will be allowed to last before
+     * they are stopped.  A value of 0 allows them to go on
+     * indefinitely
+     */
     @JsonProperty("usage_timeout")
-    val usageTimeoutMins: Int
+    val usageTimeoutMins: Int,
+    /**
+     * Whether or not we'll automatically trust any
+     * cert on this XMPP domain
+     */
+    @JsonProperty("always_trust_certs")
+    val trustAllXmppCerts: Boolean = true
 )
 
 data class JibriConfig(

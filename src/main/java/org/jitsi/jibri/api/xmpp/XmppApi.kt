@@ -15,6 +15,8 @@ import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
+import org.jitsi.xmpp.TrustAllHostnameVerifier
+import org.jitsi.xmpp.TrustAllX509TrustManager
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.XMPPError
@@ -57,11 +59,17 @@ class XmppApi(
         for (config in xmppConfigs) {
             for (host in config.xmppServerHosts) {
                 logger.info("Connecting to xmpp environment on $host with config $config")
-                val mucClient = MucClient(XMPPTCPConnectionConfiguration.builder()
+                val configBuilder = XMPPTCPConnectionConfiguration.builder()
                     .setHost(host)
                     .setXmppDomain(config.controlLogin.domain)
                     .setUsernameAndPassword(config.controlLogin.username, config.controlLogin.password)
-                    .build())
+                if (config.trustAllXmppCerts) {
+                    logger.info("The trustAllXmppCerts config is enabled for this domain, " +
+                            "all XMPP server provided certificates will be accepted")
+                    configBuilder.setCustomX509TrustManager(TrustAllX509TrustManager())
+                    configBuilder.setHostnameVerifier(TrustAllHostnameVerifier())
+                }
+                val mucClient = MucClient(configBuilder.build())
                 mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
                     override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
                         return handleJibriIq(jibriIq, config, mucClient)
