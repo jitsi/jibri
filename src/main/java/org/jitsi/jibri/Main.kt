@@ -2,7 +2,10 @@ package org.jitsi.jibri
 
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.exc.InvalidFormatException
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import net.sourceforge.argparse4j.ArgumentParsers
@@ -23,12 +26,23 @@ import javax.ws.rs.ext.ContextResolver
 
 val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
 
-fun loadConfig(configFile: File): JibriConfig {
-    val config: JibriConfig = jacksonObjectMapper()
-        .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
-        .readValue(configFile)
-    logger.info("Parsed config:\n$config")
-    return config
+fun loadConfig(configFile: File): JibriConfig? {
+    return try {
+        val config: JibriConfig = jacksonObjectMapper()
+            .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
+            .readValue(configFile)
+        logger.info("Parsed config:\n$config")
+        config
+    } catch (e: MissingKotlinParameterException) {
+        logger.error("A required config parameter was missing: ${e.originalMessage}")
+        null
+    } catch (e: UnrecognizedPropertyException) {
+        logger.error("An unrecognized config parameter was found: ${e.originalMessage}")
+        null
+    } catch (e: InvalidFormatException) {
+        logger.error("A config parameter was incorrectly formatted: ${e.localizedMessage}")
+        null
+    }
 }
 
 fun main(args: Array<String>) {
@@ -50,8 +64,11 @@ fun main(args: Array<String>) {
         System.exit(1)
     }
     val jibriConfig = loadConfig(jibriConfigFile)
+    if (jibriConfig == null) {
+        System.exit(1)
+    }
 
-    val jibri = JibriManager(jibriConfig)
+    val jibri = JibriManager(jibriConfig!!)
 
     // InternalHttpApi
     val internalApiThread = Thread {
