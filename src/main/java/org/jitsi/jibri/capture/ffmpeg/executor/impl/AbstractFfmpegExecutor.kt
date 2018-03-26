@@ -2,8 +2,10 @@ package org.jitsi.jibri.capture.ffmpeg.executor.impl
 
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
+import org.jitsi.jibri.capture.ffmpeg.util.ENCODING_KEY
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.capture.ffmpeg.util.OutputParser
+import org.jitsi.jibri.capture.ffmpeg.util.WARNING_KEY
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.Tail
@@ -25,22 +27,22 @@ const val FFMPEG_RESTART_ATTEMPTS = 1
  * [getFfmpegCommand] method to return the proper command.
  */
 abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder = ProcessBuilder()) : FfmpegExecutor {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = Logger.getLogger(AbstractFfmpegExecutor::class.qualifiedName)
     private val ffmpegOutputLogger = Logger.getLogger("ffmpeg")
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("AbstractFfmpegExecutor"))
     /**
      * The currently active (if any) Ffmpeg process
      */
-    var currentFfmpegProc: Process? = null
+    private var currentFfmpegProc: Process? = null
     /**
      * In order to both analyze Ffmpeg's output live and log it to a file, we'll
      * tee its stdout stream so that both consumers can get all of its output.
      */
-    var ffmpegOutputTee: Tee? = null
+    private var ffmpegOutputTee: Tee? = null
     /**
      * We'll use this to monitor the stdout output of the Ffmpeg process
      */
-    var ffmpegTail: Tail? = null
+    private var ffmpegTail: Tail? = null
 
     init {
         ffmpegOutputLogger.useParentHandlers = false
@@ -95,13 +97,17 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
                 return false
             }
 
-            if (!parsedOutputLine.containsKey("frame")) {
+            return if (parsedOutputLine.containsKey(ENCODING_KEY) || parsedOutputLine.containsKey(WARNING_KEY)) {
+                if (parsedOutputLine.containsKey(WARNING_KEY)) {
+                    logger.debug("Ffmpeg is encoding, but issued a warning: $parsedOutputLine")
+                } else {
+                    logger.debug("Ffmpeg appears healthy: $parsedOutputLine")
+                }
+                true
+            } else {
                 logger.error("Ffmpeg is running but doesn't appear to be encoding.  " +
                         "Its most recent output line was $ffmpegOutput")
-                return false
-            } else {
-                logger.debug("Ffmpeg appears healthy: $parsedOutputLine")
-                return true
+                false
             }
         }
         return false

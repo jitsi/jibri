@@ -110,6 +110,15 @@ class OutputParserTest {
     }
 
     @Test
+    fun `test past duration line`() {
+        val outputLine = "Past duration 0.622368 too large"
+
+        val result = parser.parse(outputLine)
+        assertEquals(1, result.size)
+        assertTrue(result.containsKey(WARNING_KEY))
+    }
+
+    @Test
     fun `test failed parse`() {
         val outputLine = "wrong line"
         val result = parser.parse(outputLine)
