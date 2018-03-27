@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+
+build:
+	mv target/jibri-1.0-SNAPSHOT-jar-with-dependencies.jar target/jibri.jar
+
+%:
+	dh $@

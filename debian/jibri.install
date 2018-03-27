@@ -1,0 +1,18 @@
+#!/usr/bin/dh-exec
+
+resources/debian-package/etc/jitsi/jibri/asoundrc etc/jitsi/jibri
+resources/debian-package/etc/jitsi/jibri/config.json etc/jitsi/jibri
+resources/debian-package/etc/jitsi/jibri/icewm.preferences etc/jitsi/jibri
+resources/debian-package/etc/jitsi/jibri/xorg-video-dummy.conf etc/jitsi/jibri
+
+resources/debian-package/etc/systemd/system/jibri-icewm.service etc/systemd/system
+resources/debian-package/etc/systemd/system/jibri.service etc/systemd/system
+resources/debian-package/etc/systemd/system/jibri-xorg.service etc/systemd/system
+
+resources/debian-package/opt/jitsi/jibri/launch_jibri.sh opt/jitsi/jibri
+resources/debian-package/opt/jitsi/jibri/reload_jibri.sh opt/jitsi/jibri
+resources/debian-package/opt/jitsi/jibri/shutdown_jibri.sh opt/jitsi/jibri
+
+target/jibri.jar opt/jitsi/jibri
+lib/logging.properties etc/jitsi/jibri
+
