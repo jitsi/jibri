@@ -89,7 +89,7 @@ fun main(args: Array<String>) {
 
     // InternalHttpApi
     val internalApiThread = Thread {
-        val internalHttpApi = InternalHttpApi {
+        val configChangedHandler = {
             logger.info("The config file has changed, waiting for Jibri to be idle before exiting")
             jibri.executeWhenIdle {
                 logger.info("Jibri is idle and there are config file changes, exiting")
@@ -97,6 +97,14 @@ fun main(args: Array<String>) {
                 System.exit(0)
             }
         }
+        val shutdownHandler = {
+            logger.info("Jibri has been told to shutdown, stopping any active service")
+            jibri.stopService()
+            logger.info("Service stopped")
+            System.exit(0)
+        }
+        val internalHttpApi = InternalHttpApi(configChangedHandler, shutdownHandler)
+
         val jerseyConfig = ResourceConfig()
         jerseyConfig.register(internalHttpApi)
             .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
