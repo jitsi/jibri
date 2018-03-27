@@ -12,6 +12,7 @@ PermissionsStartOnly=true
 #ExecStartPre=/bin/chown jibri /var/run/jibri
 #ExecStart=/home/jibri/jibri-xmpp-client/app.py
 ExecStart=/opt/jitsi/jibri/launch_jibri.sh
+ExecStop=/opt/jitsi/jibri/shutdown_jibri.sh
 #ExecReload=/bin/kill -HUP $MAINPID
 ExecReload=/opt/jitsi/jibri/reload_jibri.sh
 KillMode=process

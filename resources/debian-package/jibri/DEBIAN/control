@@ -1,5 +1,5 @@
 Package: Jibri
-Version: 0.1
+Version: 0.2
 Maintainer: team@jitsi.net
 Architecture: all
 Depends: default-jre-headless | java8-runtime-headless | java8-runtime, ffmpeg, curl, alsa-utils, icewm, xdotool, xserver-xorg-input-void, xserver-xorg-video-dummy
