@@ -34,7 +34,22 @@ dch -D unstable -r ""
 
 dpkg-buildpackage -A -rfakeroot -us -uc
 
-mkdir $WORKSPACE/$BUILD_NUMBER-ARTIFACTS
-mv $WORKSPACE/../jibri_$MAJOR_VERSION.$MINOR_VERSION* $WORKSPACE/$BUILD_NUMBER-ARTIFACTS
+ARTIFACTS_DIR=$WORKSPACE/$BUILD_NUMBER-ARTIFACTS
+mkdir $ARTIFACTS_DIR
+mv $WORKSPACE/../jibri_$MAJOR_VERSION.$MINOR_VERSION* $ARTIFACTS_DIR
+
+find $ARTIFACTS_DIR -name *.deb -exec gpg --batch --passphrase-file ~/.gnupg/passphrase -sba '{}' \;
+ls -l $ARTIFACTS_DIR
+mv $ARTIFACTS_DIR/jibri*{.deb,.changes} $REPO_DIR/mini-dinstall/incoming
+mv $ARTIFACTS_DIR/jibri*.asc $REPO_DIR/unstable/signatures
+ls -l $REPO_DIR/mini-dinstall/incoming
+
+/var/lib/jenkins/bin/clean-oldies.sh unstable jibri
+
+# call repo update script
+mini-dinstall -b -c $MINID_CONF_FILE $REPO_DIR
+
+# sync with download server
+/var/lib/jenkins/bin/sync-repo.sh unstable
 
 #TODO: push tag to remote
