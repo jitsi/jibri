@@ -5,6 +5,9 @@ set -e
 
 MAJOR_MINOR=$1
 
+# Prune any local tags that aren't on the remote
+git fetch --prune origin "+refs/tags/*:refs/tags/*"
+
 DESCRIBE=`git describe --tags --always`
 REV=$(git log --pretty=format:'%h' -n 1)
 
