@@ -34,6 +34,7 @@ dch -D unstable -r ""
 
 dpkg-buildpackage -A -rfakeroot -us -uc
 
-cp $WORKSPACE/../jibri_$MAJOR_VERSION.$MINOR_VERSION* $WORKSPACE
+mkdir $WORKSPACE/$BUILD_NUMBER-ARTIFACTS
+cp $WORKSPACE/../jibri_$MAJOR_VERSION.$MINOR_VERSION* $WORKSPACE/$BUILD_NUMBER-ARTIFACTS
 
 #TODO: push tag to remote
