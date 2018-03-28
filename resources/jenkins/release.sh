@@ -23,20 +23,21 @@ else
     exit 1
 fi
 
-echo "New version will be $MAJOR_VERSION.$MINOR_VERSION"
+NEW_VERSION=$MAJOR_VERSION.$MINOR_VERSION
+echo "New version will be $NEW_VERSION"
 
 cd $WORKSPACE
 
-git tag -a $MAJOR_VERSION.$MINOR_VERSION -m "New $MAJOR_MINOR release"
+git tag -a $NEW_VERSION -m "New $MAJOR_MINOR release"
 
-dch -v "$MAJOR_VERSION.$MINOR_VERSION-1" "Built from git. $REV"
+dch -v "$NEW_VERSION-1" "Built from git. $REV"
 dch -D unstable -r ""
 
 dpkg-buildpackage -A -rfakeroot -us -uc
 
 ARTIFACTS_DIR=$WORKSPACE/$BUILD_NUMBER-ARTIFACTS
 mkdir $ARTIFACTS_DIR
-mv $WORKSPACE/../jibri_$MAJOR_VERSION.$MINOR_VERSION* $ARTIFACTS_DIR
+mv $WORKSPACE/../jibri_$NEW_VERSION* $ARTIFACTS_DIR
 
 find $ARTIFACTS_DIR -name *.deb -exec gpg --batch --passphrase-file ~/.gnupg/passphrase -sba '{}' \;
 ls -l $ARTIFACTS_DIR
@@ -52,4 +53,4 @@ mini-dinstall -b -c $MINID_CONF_FILE $REPO_DIR
 # sync with download server
 /var/lib/jenkins/bin/sync-repo.sh unstable
 
-#TODO: push tag to remote
+git push origin $NEW_VERSION
