@@ -42,17 +42,18 @@ ARTIFACTS_DIR=$WORKSPACE/$BUILD_NUMBER-ARTIFACTS
 mkdir $ARTIFACTS_DIR
 mv $WORKSPACE/../jibri_$NEW_VERSION* $ARTIFACTS_DIR
 
-echo "Running jenkins-cli build update-repo-from-ci"
-java -jar /var/lib/jenkins/bin/jenkins-cli.jar -s http://jenkins2.jitsi.net:8080 build update-repo-from-ci -f \
-  -p FILES_TO_COPY="$REPO_DIR/mini-dinstall/incoming/*{*.changes,*.deb}" \
-  --username "ci" \
-  --password "$(cat /var/lib/jenkins/jenkins2-passwd)"
 
 find $ARTIFACTS_DIR -name *.deb -exec gpg --batch --passphrase-file ~/.gnupg/passphrase -sba '{}' \;
 ls -l $ARTIFACTS_DIR
 mv $ARTIFACTS_DIR/jibri*{.deb,.changes} $REPO_DIR/mini-dinstall/incoming
 mv $ARTIFACTS_DIR/jibri*.asc $REPO_DIR/unstable/signatures
 ls -l $REPO_DIR/mini-dinstall/incoming
+
+echo "Running jenkins-cli build update-repo-from-ci"
+java -jar /var/lib/jenkins/bin/jenkins-cli.jar -s http://jenkins2.jitsi.net:8080 build update-repo-from-ci -f \
+  -p FILES_TO_COPY="$REPO_DIR/mini-dinstall/incoming/*{*.changes,*.deb}" \
+  --username "ci" \
+  --password "$(cat /var/lib/jenkins/jenkins2-passwd)"
 
 /var/lib/jenkins/bin/clean-oldies.sh unstable jibri
 
