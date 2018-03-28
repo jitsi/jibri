@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # This script should be run after the build/tests have successfully completed
 
