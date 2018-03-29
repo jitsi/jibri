@@ -25,6 +25,7 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.LinuxFfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.MacFfmpegExecutor
 import org.jitsi.jibri.util.extensions.debug
+import org.jitsi.jibri.util.extensions.error
 import java.util.logging.Logger
 
 /**
@@ -46,7 +47,20 @@ class FfmpegCapturer : Capturer {
     }
 
     override fun start(sink: Sink): Boolean {
-        return ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+        if (!ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)) {
+            return false
+        }
+        // Now make sure ffmpeg is actually healthy before returning that start
+        // was successful in case it starts up (and stays alive) but fails to
+        // start encoding successfully
+        for (i in 1..15) {
+            if (isHealthy()) {
+                return true
+            }
+            Thread.sleep(1000)
+        }
+        logger.error("Ffmpeg started up but did not start encoding after 15 tries, giving up")
+        return false
     }
 
     override fun isHealthy(): Boolean = ffmpegExecutor.isHealthy()

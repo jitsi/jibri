@@ -20,9 +20,7 @@ package org.jitsi.jibri.selenium.pageobjects
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.util.extensions.error
 import org.openqa.selenium.TimeoutException
-import org.openqa.selenium.WebElement
 import org.openqa.selenium.remote.RemoteWebDriver
-import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.util.logging.Logger
