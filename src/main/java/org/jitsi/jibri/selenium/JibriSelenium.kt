@@ -153,10 +153,7 @@ class JibriSelenium(
 
     fun leaveCallAndQuitBrowser() {
         emptyCallTask?.cancel(true)
-        //TODO: we can't leave the call cleanly via clicking the 'leave call' button
-        // because they are hidden from the UI when jibri joins.  Should we issue a js
-        // command to leave cleanly rather than just qutting the driver?
-        //CallPage(chromeDriver).leave()
+        CallPage(chromeDriver).leave()
         chromeDriver.quit()
     }
 

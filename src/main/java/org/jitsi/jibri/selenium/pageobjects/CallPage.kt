@@ -32,8 +32,6 @@ import java.util.logging.Logger
  */
 class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    @FindBy(xpath = "//*[@id=\"toolbar_button_hangup\"]")
-    private val hangUpButton: WebElement? = null
 
     init {
         PageFactory.initElements(driver, this)
@@ -119,8 +117,17 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    fun leave() {
-        hangUpButton?.click()
-        //TODO: wait for call to be fully exited?
+    fun leave(): Boolean {
+        val result = driver.executeScript("""
+            try {
+                return APP.conference._room.connection.disconnect();
+            } catch (e) {
+                return e.message;
+            }
+        """.trimMargin())
+        return when (result) {
+            is String -> false
+            else -> true
+        }
     }
 }
