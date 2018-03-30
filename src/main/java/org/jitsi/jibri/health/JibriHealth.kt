@@ -17,9 +17,18 @@
 
 package org.jitsi.jibri.health
 
+data class EnvironmentContext(
+    val name: String
+)
+
 data class JibriHealth(
     /**
      * Whether or not this Jibri is "busy". See [JibriManager#busy]
      */
-    var busy: Boolean = false
+    val busy: Boolean = false,
+    /**
+     * Context for the environment Jibri is currently active on
+     * (only present if [busy] is true)
+     */
+    val environmentContext: EnvironmentContext? = null
 )

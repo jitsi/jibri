@@ -27,6 +27,7 @@ import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.config.XmppEnvironmentConfig
+import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.util.NameableThreadFactory
@@ -215,6 +216,7 @@ class XmppApi(
                 jibriManager.startFileRecording(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
                     FileRecordingParams(callParams),
+                    EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
             }
@@ -222,6 +224,7 @@ class XmppApi(
                 jibriManager.startStreaming(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
                     StreamingParams(callParams, youTubeStreamKey = startIq.streamId),
+                    EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
             }

@@ -79,14 +79,15 @@ class HttpApi(private val jibriManager: JibriManager) {
             RecordingSinkType.FILE -> {
                 jibriManager.startFileRecording(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    FileRecordingParams(serviceParams.callParams)
+                    FileRecordingParams(serviceParams.callParams),
+                    environmentContext = null
                 )
             }
             RecordingSinkType.STREAM -> {
                 jibriManager.startStreaming(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    StreamingParams(serviceParams.callParams, serviceParams.youTubeStreamKey
-                    )
+                    StreamingParams(serviceParams.callParams, serviceParams.youTubeStreamKey),
+                    environmentContext = null
                 )
             }
         }
