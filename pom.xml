@@ -230,7 +230,7 @@
                 <executions>
                     <execution>
                         <id>ktlint</id>
-                        <phase>verify</phase>
+                        <phase>compile</phase>
                         <configuration>
                             <target name="ktlint">
                                 <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
@@ -259,7 +259,7 @@
                     <dependency>
                         <groupId>com.github.shyiko</groupId>
                         <artifactId>ktlint</artifactId>
-                        <version>0.14.0</version>
+                        <version>0.20.0</version>
                     </dependency>
                     <!-- additional 3rd party ruleset(s) can be specified here -->
                 </dependencies>
