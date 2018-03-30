@@ -87,27 +87,34 @@ class XmppApi(
                     configBuilder.setCustomX509TrustManager(TrustAllX509TrustManager())
                     configBuilder.setHostnameVerifier(TrustAllHostnameVerifier())
                 }
-                val mucClient = MucClient(configBuilder.build())
-                mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
-                    override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
-                        return handleJibriIq(jibriIq, config, mucClient)
+                try {
+                    val mucClient = MucClient(configBuilder.build())
+                    mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
+                        override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
+                            return handleJibriIq(jibriIq, config, mucClient)
+                        }
+                    })
+                    jibriManager.addStatusHandler { status ->
+                        logger.info("XMPP API got jibri status $status, publishing presence to connection ${config.name}")
+                        val jibriStatus = JibriPresenceHelper.createPresence(
+                            status,
+                            JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
+                        )
+                        mucClient.sendStanza(jibriStatus)
                     }
-                })
-                jibriManager.addStatusHandler { status ->
-                    logger.info("XMPP API got jibri status $status, publishing presence to connection ${config.name}")
-                    val jibriStatus = JibriPresenceHelper.createPresence(
-                        status,
-                        JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"))
-                    mucClient.sendStanza(jibriStatus)
-                }
-                mucClient.createOrJoinMuc(
-                    JidCreate.entityBareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"),
-                    Resourcepart.from(config.controlMuc.nickname))
+                    mucClient.createOrJoinMuc(
+                        JidCreate.entityBareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"),
+                        Resourcepart.from(config.controlMuc.nickname)
+                    )
 
-                val jibriStatus = JibriPresenceHelper.createPresence(
-                    JibriStatusPacketExt.Status.IDLE,
-                    JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"))
-                mucClient.sendStanza(jibriStatus)
+                    val jibriStatus = JibriPresenceHelper.createPresence(
+                        JibriStatusPacketExt.Status.IDLE,
+                        JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
+                    )
+                    mucClient.sendStanza(jibriStatus)
+                } catch (e: Exception) {
+                    logger.error("Error connecting to xmpp environment: $e")
+                }
             }
         }
     }
