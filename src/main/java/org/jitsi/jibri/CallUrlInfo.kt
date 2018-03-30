@@ -25,8 +25,8 @@ import java.util.Objects
  * url will be created by joining [baseUrl] and [callName] with a "/"
  */
 data class CallUrlInfo(
-        val baseUrl: String = "",
-        val callName: String = ""
+    val baseUrl: String = "",
+    val callName: String = ""
 ) {
     val callUrl = "$baseUrl/$callName"
 

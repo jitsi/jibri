@@ -28,9 +28,9 @@ import java.util.logging.Logger
  * will invoke the given [processUnhealthyCallback].
  */
 class ProcessMonitor(
-        private val processToMonitor: MonitorableProcess,
-        private val processUnhealthyCallback: (exitCode: Int?) -> Unit
-    ) : Runnable {
+    private val processToMonitor: MonitorableProcess,
+    private val processUnhealthyCallback: (exitCode: Int?) -> Unit
+) : Runnable {
     private val logger = Logger.getLogger(this::class.qualifiedName)
 
     /**

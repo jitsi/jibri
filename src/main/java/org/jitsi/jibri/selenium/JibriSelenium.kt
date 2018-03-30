@@ -41,8 +41,8 @@ import java.util.logging.Logger
  * It implements [StatusPublisher] to publish its status
  */
 class JibriSelenium(
-        private val jibriSeleniumOptions: JibriSeleniumOptions,
-        private val executor: ScheduledExecutorService
+    private val jibriSeleniumOptions: JibriSeleniumOptions,
+    private val executor: ScheduledExecutorService
 ) : StatusPublisher<JibriServiceStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var chromeDriver: ChromeDriver

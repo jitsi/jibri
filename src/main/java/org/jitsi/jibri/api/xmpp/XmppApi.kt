@@ -142,9 +142,10 @@ class XmppApi(
      * [JibriIq.Status.ON] if the service started successfully
      */
     private fun handleStartJibriIq(
-            startJibriIq: JibriIq,
-            xmppEnvironment: XmppEnvironmentConfig,
-            mucClient: MucClient): IQ {
+        startJibriIq: JibriIq,
+        xmppEnvironment: XmppEnvironmentConfig,
+        mucClient: MucClient
+    ): IQ {
         logger.info("Received start request")
         // We don't want to block the response to wait for the service to actually start, so submit a job to
         // start the service asynchronously and send an IQ with the status after its done.
@@ -208,9 +209,10 @@ class XmppApi(
      * expects
      */
     private fun handleStartService(
-            startIq: JibriIq,
-            xmppEnvironment: XmppEnvironmentConfig,
-            serviceStatusHandler: JibriServiceStatusHandler): StartServiceResult {
+        startIq: JibriIq,
+        xmppEnvironment: XmppEnvironmentConfig,
+        serviceStatusHandler: JibriServiceStatusHandler
+    ): StartServiceResult {
         val callUrlInfo = getCallUrlInfoFromJid(
             startIq.room,
             xmppEnvironment.stripFromRoomDomain,

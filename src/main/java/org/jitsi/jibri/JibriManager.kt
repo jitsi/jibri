@@ -96,10 +96,11 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
      */
     @Synchronized
     fun startFileRecording(
-            serviceParams: ServiceParams,
-            fileRecordingParams: FileRecordingParams,
-            environmentContext: EnvironmentContext?,
-            serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
+        serviceParams: ServiceParams,
+        fileRecordingParams: FileRecordingParams,
+        environmentContext: EnvironmentContext?,
+        serviceStatusHandler: JibriServiceStatusHandler? = null
+    ): StartServiceResult {
         logger.info("Starting a file recording with params: $fileRecordingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
@@ -122,10 +123,11 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
      */
     @Synchronized
     fun startStreaming(
-            serviceParams: ServiceParams,
-            streamingParams: StreamingParams,
-            environmentContext: EnvironmentContext?,
-            serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
+        serviceParams: ServiceParams,
+        streamingParams: StreamingParams,
+        environmentContext: EnvironmentContext?,
+        serviceStatusHandler: JibriServiceStatusHandler? = null
+    ): StartServiceResult {
         logger.info("Starting a stream with params: $streamingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
@@ -144,10 +146,11 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
      * started successfully or not.
      */
     private fun startService(
-            jibriService: JibriService,
-            serviceParams: ServiceParams,
-            environmentContext: EnvironmentContext?,
-            serviceStatusHandler: JibriServiceStatusHandler? = null): StartServiceResult {
+        jibriService: JibriService,
+        serviceParams: ServiceParams,
+        environmentContext: EnvironmentContext?,
+        serviceStatusHandler: JibriServiceStatusHandler? = null
+    ): StartServiceResult {
         publishStatus(JibriStatusPacketExt.Status.BUSY)
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)

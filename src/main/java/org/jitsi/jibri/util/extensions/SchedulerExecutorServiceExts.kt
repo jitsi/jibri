@@ -30,7 +30,8 @@ fun ScheduledExecutorService.scheduleAtFixedRate(
     delay: Long = 0,
     period: Long,
     unit: TimeUnit,
-    action: () -> Unit): ScheduledFuture<*> {
+    action: () -> Unit
+): ScheduledFuture<*> {
     return this.scheduleAtFixedRate(action, delay, period, unit)
 }
 
@@ -41,6 +42,7 @@ fun ScheduledExecutorService.scheduleAtFixedRate(
 fun ScheduledExecutorService.schedule(
     delay: Long = 0,
     unit: TimeUnit = TimeUnit.SECONDS,
-    action: () -> Unit): ScheduledFuture<*> {
+    action: () -> Unit
+): ScheduledFuture<*> {
     return this.schedule(action, delay, unit)
 }
