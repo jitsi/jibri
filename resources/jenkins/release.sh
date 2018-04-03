@@ -17,10 +17,10 @@ MAJOR_VERSION=`echo $CURR_VERSION | awk '{split($0,a,"."); print a[1]}'`
 MINOR_VERSION=`echo $CURR_VERSION | awk '{split($0,a,"."); print a[2]}'`
 
 if [ "$MAJOR_MINOR" == "Minor" ]; then
-    ((MINOR_VERSION++))
+    MINOR_VERSION=$((MINOR_VERSION+1))
 elif [ "$MAJOR_MINOR" == "Major" ]; then
-    ((MAJOR_VERSION++))
-    ((MINOR_VERSION=0))
+    MAJOR_VERSION=$((MAJOR_VERSION+1))
+    MINOR_VERSION=0
 else
     echo "Error, unrecognized release type $MAJOR_MINOR.  Options are 'Major' and 'Minor'"
     exit 1
