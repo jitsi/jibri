@@ -103,7 +103,9 @@ fun main(args: Array<String>) {
             logger.info("Service stopped")
             System.exit(0)
         }
-        val internalHttpApi = InternalHttpApi(configChangedHandler, shutdownHandler)
+        val internalHttpApi = InternalHttpApi(
+            configChangedHandler = configChangedHandler,
+            shutdownHandler = shutdownHandler)
 
         val jerseyConfig = ResourceConfig()
         jerseyConfig.register(internalHttpApi)

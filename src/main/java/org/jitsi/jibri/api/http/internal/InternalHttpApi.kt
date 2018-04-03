@@ -17,6 +17,9 @@
 
 package org.jitsi.jibri.api.http.internal
 
+import org.jitsi.jibri.util.extensions.schedule
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.logging.Logger
 import javax.ws.rs.POST
 import javax.ws.rs.Path
@@ -24,39 +27,42 @@ import javax.ws.rs.core.Response
 
 @Path("/jibri/api/internal/v1.0")
 class InternalHttpApi(
+    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
     private val configChangedHandler: () -> Unit,
     private val shutdownHandler: () -> Unit
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     /**
      * Signal this Jibri to reload its config file at the soonest opportunity
-     * (when it does not have a currently running service).  If Jibri is
-     * currently idle, it will shutdown immediately and return no HTTP response.
-     * If it is not idle, it will return a 200 and schedule a shutdown
-     * for when it becomes idle.
+     * (when it does not have a currently running service). Returns a 200
+     * and schedules a shutdown for when it becomes idle.
      */
     @POST
     @Path("notifyConfigChanged")
     fun reloadConfig(): Response {
         logger.info("Config file changed")
-        configChangedHandler()
-        // If Jibri is currently idle, then we'll exit in the context
-        // of the above call, so this response will never get sent.
-        // Since the old Jibri used a signal (which has no concept of
-        // a response), I'm assuming it will be ok if we don't return one
-        // in some instances here.
+        // Schedule firing the handler so we have a chance to send the successful
+        // response.
+        executor.schedule(1) {
+            configChangedHandler()
+        }
         return Response.ok().build()
     }
 
     /**
      * Signal this Jibri to (cleanly) stop any services that are
-     * running and shutdown.  Will not send an HTTP response, since
-     * it will shutdown immediately.
+     * running and shutdown.  Returns a 200 and schedules a shutdown with a 1
+     * second delay.
      */
     @POST
     @Path("shutdown")
-    fun shutdown() {
+    fun shutdown(): Response {
         logger.info("Shutting down")
-        shutdownHandler()
+        // Schedule firing the handler so we have a chance to send the successful
+        // response.
+        executor.schedule(1) {
+            shutdownHandler()
+        }
+        return Response.ok().build()
     }
 }
