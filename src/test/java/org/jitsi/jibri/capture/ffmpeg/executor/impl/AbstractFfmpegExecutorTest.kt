@@ -18,72 +18,94 @@
 package org.jitsi.jibri.capture.ffmpeg.executor.impl
 
 import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.whenever
+import io.kotlintest.Description
+import io.kotlintest.Spec
+import io.kotlintest.shouldBe
+import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.sink.Sink
-import org.junit.Assert.assertEquals
-import org.testng.Assert.assertFalse
-import org.testng.Assert.assertNull
-import org.testng.annotations.BeforeMethod
-import org.testng.annotations.Test
+import org.jitsi.jibri.util.testHelpers.eventually
 import java.io.InputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.time.Duration
 
-class FakeFfmpegExecutor(fakeProcessBuilder: ProcessBuilder) : AbstractFfmpegExecutor(fakeProcessBuilder) {
+class TestableAbstractFfmpegExecutor(fakeProcessBuilder: ProcessBuilder) : AbstractFfmpegExecutor(fakeProcessBuilder) {
     override fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String = ""
 }
 
-class AbstractFfmpegExecutorTest {
-    private val mockSink: Sink = mock()
-    private val mockProcessBuilder: ProcessBuilder = mock()
-    private val mockProcess: Process = mock()
+class AbstractFfmpegExecutorTest : ShouldSpec() {
+    private val processBuilder: ProcessBuilder = mock()
+    private val process: Process = mock()
+    private val sink: Sink = mock()
     private lateinit var processStdOutWriter: PipedOutputStream
-    private lateinit var mockProcessStdOut: InputStream
-    private lateinit var ffmpegExecutor: AbstractFfmpegExecutor
+    private lateinit var processStdOut: InputStream
 
-    private val mocks = listOf(
-        mockSink,
-        mockProcessBuilder,
-        mockProcess
-    )
+    private val ffmpegExecutor = TestableAbstractFfmpegExecutor(processBuilder)
 
-    @BeforeMethod
-    fun setUp() {
-        ffmpegExecutor = FakeFfmpegExecutor(mockProcessBuilder)
+    override fun beforeSpec(description: Description, spec: Spec) {
+        super.beforeSpec(description, spec)
+
         processStdOutWriter = PipedOutputStream()
-        mockProcessStdOut = PipedInputStream(processStdOutWriter)
-        mocks.forEach { reset(it) }
-
-        whenever(mockProcessBuilder.start()).thenReturn(mockProcess)
-        whenever(mockProcess.inputStream).thenReturn(mockProcessStdOut)
+        processStdOut = PipedInputStream(processStdOutWriter)
+        whenever(process.inputStream).thenReturn(processStdOut)
+        whenever(processBuilder.start()).thenReturn(process)
     }
 
-    @Test
-    fun `test if the process was never launched, then 'null' is returned as the exit code`() {
-        assertNull(ffmpegExecutor.getExitCode())
-    }
+    init {
+        "before ffmpeg is launched" {
+            "getExitCode" {
+                should("return null") {
+                    ffmpegExecutor.getExitCode() shouldBe null
+                }
+            }
+            "isHealthy" {
+                should("return false") {
+                    ffmpegExecutor.isHealthy() shouldBe false
+                }
+            }
+        }
 
-    @Test
-    fun `test if the process is alive, then 'null' is returned as the exit code`() {
-        whenever(mockProcess.isAlive).thenReturn(true)
-
-        ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), mockSink)
-        assertNull(ffmpegExecutor.getExitCode())
-    }
-
-    @Test
-    fun `test if the process is dead, then its exit code is returned`() {
-        whenever(mockProcess.isAlive).thenReturn(true)
-        ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), mockSink)
-        whenever(mockProcess.exitValue()).thenReturn(42)
-        whenever(mockProcess.isAlive).thenReturn(false)
-        assertEquals(42, ffmpegExecutor.getExitCode())
-    }
-
-    @Test
-    fun `test if the process was never launched, then it doesn't show as healthy`() {
-        assertFalse(ffmpegExecutor.isHealthy())
+        "after ffmpeg is launched" {
+            whenever(process.isAlive).thenReturn(true)
+            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            "if the process is alive" {
+                "getExitCode" {
+                    should("return null") {
+                        ffmpegExecutor.getExitCode() shouldBe null
+                    }
+                }
+                "and ffmpeg is encoding" {
+                    processStdOutWriter.write("frame=24\n".toByteArray())
+                    "isHealthy" {
+                        should("return true") {
+                            eventually(Duration.ofSeconds(5)) {
+                                ffmpegExecutor.isHealthy() shouldBe true
+                            }
+                        }
+                    }
+                }
+                "and ffmpeg has a warning" {
+                    processStdOutWriter.write("Past duration 0.53 too large".toByteArray())
+                    "isHealthy" {
+                        should("return true") {
+                            eventually(Duration.ofSeconds(5)) {
+                                ffmpegExecutor.isHealthy() shouldBe true
+                            }
+                        }
+                    }
+                }
+            }
+            "if the process dies" {
+                whenever(process.isAlive).thenReturn(false)
+                "getExitCode" {
+                    whenever(process.exitValue()).thenReturn(42)
+                    should("return its exit code") {
+                        ffmpegExecutor.getExitCode() shouldBe 42
+                    }
+                }
+            }
+        }
     }
 }

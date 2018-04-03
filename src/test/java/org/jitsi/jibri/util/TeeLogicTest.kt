@@ -20,49 +20,51 @@ package org.jitsi.jibri.util
 import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 
-class TailLogicTest : ShouldSpec() {
+class TeeLogicTest : ShouldSpec() {
     private lateinit var outputStream: PipedOutputStream
     private lateinit var inputStream: PipedInputStream
-    private lateinit var tail: TailLogic
+    private lateinit var tee: TeeLogic
 
-    private fun writeLine(data: String) {
-        val line = if (data.endsWith("\n")) data else data + "\n"
-        line.toByteArray().forEach {
-            outputStream.write(it.toInt())
-        }
+    private fun pushIncomingData(data: Byte) {
+        outputStream.write(data.toInt())
+        tee.read()
     }
 
     override fun beforeTest(description: Description) {
         super.beforeTest(description)
         outputStream = PipedOutputStream()
         inputStream = PipedInputStream(outputStream)
-        tail = TailLogic(inputStream)
+        tee = TeeLogic(inputStream)
+    }
+
+    private fun pushIncomingData(data: String) {
+        data.toByteArray().forEach {
+            pushIncomingData(it)
+        }
     }
 
     init {
-        "mostRecentLine" {
-            "initially" {
-                should("equal an empty string") {
-                    tail.mostRecentLine shouldBe ""
+        "data written" {
+            "after the creation of a branch" {
+                should("be received by that branch") {
+                    val branch = tee.addBranch()
+                    pushIncomingData("hello, world\n")
+                    val reader = BufferedReader(InputStreamReader(branch))
+                    reader.readLine() shouldBe "hello, world"
                 }
             }
-            "after writing once" {
-                should("equal that line") {
-                    writeLine("hello, world")
-                    tail.readLine()
-                    tail.mostRecentLine shouldBe "hello, world"
-                }
-            }
-            "after writing multiple times" {
-                should("equal the most recent line") {
-                    writeLine("hello, world")
-                    tail.readLine()
-                    writeLine("goodbye, world")
-                    tail.readLine()
-                    tail.mostRecentLine shouldBe "goodbye, world"
+            "before the creation of a branch" {
+                should("not be received by that branch") {
+                    pushIncomingData("hello, world\n")
+                    val branch = tee.addBranch()
+                    pushIncomingData("goodbye, world\n")
+                    val reader = BufferedReader(InputStreamReader(branch))
+                    reader.readLine() shouldBe "goodbye, world"
                 }
             }
         }

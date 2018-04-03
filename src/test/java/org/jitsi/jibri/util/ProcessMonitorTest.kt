@@ -18,54 +18,54 @@
 package org.jitsi.jibri.util
 
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.reset
+import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
-import org.testng.annotations.BeforeMethod
-import org.testng.annotations.Test
-import kotlin.test.assertEquals
+import io.kotlintest.Description
+import io.kotlintest.Spec
+import io.kotlintest.TestResult
+import io.kotlintest.shouldBe
+import io.kotlintest.specs.ExpectSpec
+import io.kotlintest.specs.ShouldSpec
 
-class ProcessMonitorTest {
-    lateinit var mockProcess: MonitorableProcess
-    lateinit var processMonitor: ProcessMonitor
-    var exitCodes: MutableList<Int?> = mutableListOf()
-    val deadCallback: (exitCode: Int?) -> Unit = { exitCode: Int? ->
+class ProcessMonitorTest : ShouldSpec() {
+    private val process: MonitorableProcess = mock()
+    private val exitCodes: MutableList<Int?> = mutableListOf()
+    private val deadCallback: (exitCode: Int?) -> Unit = { exitCode ->
         exitCodes.add(exitCode)
     }
+    private val processMonitor = ProcessMonitor(process, deadCallback)
 
-    @BeforeMethod
-    fun setUp() {
-        exitCodes.clear()
-        mockProcess = mock()
-        processMonitor = ProcessMonitor(mockProcess, deadCallback)
-    }
-
-    @Test
-    fun `test the process dying causes the callback to be invoked`() {
-        whenever(mockProcess.isHealthy()).thenReturn(false)
-        whenever(mockProcess.getExitCode()).thenReturn(42)
-
-        processMonitor.run()
-        assertEquals(1, exitCodes.size)
-        assertEquals(42, exitCodes.first())
-
-        processMonitor.run()
-        assertEquals(2, exitCodes.size)
-        assertEquals(42, exitCodes.last())
-    }
-
-    @Test
-    fun `test passing a null exit code works`() {
-        whenever(mockProcess.isHealthy()).thenReturn(false)
-        whenever(mockProcess.getExitCode()).thenReturn(null)
-
-        processMonitor.run()
-        assertEquals(1, exitCodes.size)
-        assertEquals(null, exitCodes.first())
-    }
-
-    @Test
-    fun `test the callback is not invoked if the process is still alive`() {
-        whenever(mockProcess.isHealthy()).thenReturn(true)
-        for (i in 1..5) processMonitor.run()
-        assertEquals(0, exitCodes.size)
+    init {
+        "when the monitored process dies" {
+            reset(process)
+            exitCodes.clear()
+            whenever(process.isHealthy()).thenReturn(false)
+            whenever(process.getExitCode()).thenReturn(42)
+            processMonitor.run()
+            "the callback" {
+                should("be invoked") {
+                    exitCodes.size shouldBe 1
+                }
+            }
+            "the exit code" {
+                should("have been passed correctly") {
+                    exitCodes.first() shouldBe 42
+                }
+            }
+        }
+        "when the monitored process is still alive" {
+            reset(process)
+            exitCodes.clear()
+            whenever(process.isHealthy()).thenReturn(true)
+            whenever(process.getExitCode()).thenReturn(null)
+            processMonitor.run()
+            "the callback" {
+                should("not be invoked") {
+                    exitCodes.size shouldBe 0
+                }
+            }
+        }
     }
 }
+

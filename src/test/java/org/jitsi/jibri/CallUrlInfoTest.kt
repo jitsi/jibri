@@ -17,45 +17,72 @@
 
 package org.jitsi.jibri
 
-import org.testng.Assert.assertEquals
-import org.testng.Assert.assertFalse
-import org.testng.Assert.assertTrue
-import org.testng.annotations.Test
+import io.kotlintest.shouldBe
+import io.kotlintest.shouldNotBe
+import io.kotlintest.specs.ShouldSpec
 
-class CallUrlInfoTest {
-    @Test
-    fun `test creation`() {
+class CallUrlInfoTest : ShouldSpec() {
+    init {
+        "creating a CallUrlInfo" {
+            val info = CallUrlInfo("baseUrl", "callName")
+            should("assign the fields correctly") {
+                info.baseUrl shouldBe "baseUrl"
+                info.callName shouldBe "callName"
+                info.callUrl shouldBe "baseUrl/callName"
+            }
+        }
         val info = CallUrlInfo("baseUrl", "callName")
-        assertEquals("baseUrl", info.baseUrl)
-        assertEquals("callName", info.callName)
-        assertEquals("baseUrl/callName", info.callUrl)
-    }
+        "the same CallUrlInfo instance" {
+            should("equal itself") {
+                info shouldBe info
+                info.hashCode() shouldBe info.hashCode()
+            }
+        }
+        "two equivalent CallUrlInfo instances" {
+            val duplicateInfo = CallUrlInfo("baseUrl", "callName")
+            should("be equal") {
+                info shouldBe duplicateInfo
+            }
+            should("have the same hash code") {
+                info.hashCode() shouldBe duplicateInfo.hashCode()
+            }
+        }
+        "CallUrlInfo instances with different base urls" {
+            val differentBaseUrl = CallUrlInfo("differentBaseUrl", "callName")
+            should("not be equal") {
+                info shouldNotBe differentBaseUrl
+            }
+            should("not have the same has code") {
+                info.hashCode() shouldNotBe differentBaseUrl.hashCode()
+            }
+        }
+        "CallUrlInfo instances with different call names" {
+            val differentCallName = CallUrlInfo("differentUrl", "differentCallName")
+            should("not be equal") {
+                info shouldNotBe differentCallName
+            }
+            should("not have the same has code") {
+                info.hashCode() shouldNotBe differentCallName.hashCode()
+            }
+        }
+        "CallUrlInfo instances with different base url case" {
+            val differentBaseUrlCase = CallUrlInfo("BASEURL", "callName")
+            should("be equal") {
+                info shouldBe differentBaseUrlCase
+            }
+            should("have the same has code") {
+                info.hashCode() shouldBe differentBaseUrlCase.hashCode()
+            }
+        }
+        "CallUrlInfo instances with different call name case" {
+            val differentCallNameCase = CallUrlInfo("baseUrl", "CALLNAME")
+            should("be equal") {
+                info shouldBe differentCallNameCase
+            }
+            should("have the same has code") {
+                info.hashCode() shouldBe differentCallNameCase.hashCode()
+            }
+        }
 
-    @Test
-    fun `test equals() and hashCode()`() {
-        val info = CallUrlInfo("baseUrl", "callName")
-        val duplicateInfo = CallUrlInfo("baseUrl", "callName")
-        val differentBaseUrl = CallUrlInfo("differentBaseUrl", "callName")
-        val differentCallName = CallUrlInfo("differentUrl", "differentCallName")
-        val differentBaseUrlCase = CallUrlInfo("BASEURL", "callName")
-        val differentCallNameCase = CallUrlInfo("baseUrl", "CALLNAME")
-
-        assertTrue(info == info)
-        assertTrue(info.hashCode() == info.hashCode())
-
-        assertTrue(info == duplicateInfo)
-        assertTrue(info.hashCode() == duplicateInfo.hashCode())
-
-        assertFalse(info == differentBaseUrl)
-        assertFalse(info.hashCode() == differentBaseUrl.hashCode())
-
-        assertFalse(info == differentCallName)
-        assertFalse(info.hashCode() == differentCallName.hashCode())
-
-        assertTrue(info == differentBaseUrlCase)
-        assertTrue(info.hashCode() == differentBaseUrlCase.hashCode())
-
-        assertTrue(info == differentCallNameCase)
-        assertTrue(info.hashCode() == differentCallNameCase.hashCode())
     }
 }
