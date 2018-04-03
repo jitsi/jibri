@@ -33,7 +33,7 @@ cd $WORKSPACE
 
 git tag -a $NEW_VERSION -m "New $MAJOR_MINOR release"
 
-dch -v "$NEW_VERSION-1" "Built from git. $REV"
+dch -v "$NEW_VERSION.$BUILD_NUMBER-1" "Built from git. $REV"
 dch -D unstable -r ""
 
 dpkg-buildpackage -A -rfakeroot -us -uc
