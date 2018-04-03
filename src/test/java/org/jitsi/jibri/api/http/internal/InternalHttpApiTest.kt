@@ -39,17 +39,17 @@ class InternalHttpApiTest {
     }
 
     @Test
-    fun testReloadConfig() {
-        var configChangedHandlerCalled = false
-        val configChangedHandler = {
-            configChangedHandlerCalled = true
+    fun testGracefulShutdown() {
+        var gracefulShutdownHandlerCalled = false
+        val gracefulShutdownHandler = {
+            gracefulShutdownHandlerCalled = true
         }
-        val internalHttpApi = InternalHttpApi(executor, configChangedHandler, {})
+        val internalHttpApi = InternalHttpApi(executor, gracefulShutdownHandler, {})
 
-        val response = internalHttpApi.reloadConfig()
+        val response = internalHttpApi.gracefulShutdown()
         assertEquals(response.status, 200)
         // This should not have been called directly, it should have been scheduled
-        assertFalse(configChangedHandlerCalled)
+        assertFalse(gracefulShutdownHandlerCalled)
     }
 
     @Test
@@ -64,6 +64,5 @@ class InternalHttpApiTest {
         assertEquals(response.status, 200)
         // This should not have been called directly, it should have been scheduled
         assertFalse(shutdownHandlerCalled)
-
     }
 }

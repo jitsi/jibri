@@ -104,7 +104,7 @@ fun main(args: Array<String>) {
             System.exit(0)
         }
         val internalHttpApi = InternalHttpApi(
-            configChangedHandler = configChangedHandler,
+            gracefulShutdownHandler = configChangedHandler,
             shutdownHandler = shutdownHandler)
 
         val jerseyConfig = ResourceConfig()

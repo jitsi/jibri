@@ -28,23 +28,23 @@ import javax.ws.rs.core.Response
 @Path("/jibri/api/internal/v1.0")
 class InternalHttpApi(
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
-    private val configChangedHandler: () -> Unit,
+    private val gracefulShutdownHandler: () -> Unit,
     private val shutdownHandler: () -> Unit
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     /**
-     * Signal this Jibri to reload its config file at the soonest opportunity
-     * (when it does not have a currently running service). Returns a 200
+     * Signal this Jibri to shutdown gracefully, meaning shut down when
+     * it is idle (i.e. finish any currently running service). Returns a 200
      * and schedules a shutdown for when it becomes idle.
      */
     @POST
-    @Path("notifyConfigChanged")
-    fun reloadConfig(): Response {
-        logger.info("Config file changed")
+    @Path("gracefulShutdown")
+    fun gracefulShutdown(): Response {
+        logger.info("Jibri gracefully shutting down")
         // Schedule firing the handler so we have a chance to send the successful
         // response.
         executor.schedule(1) {
-            configChangedHandler()
+            gracefulShutdownHandler()
         }
         return Response.ok().build()
     }
@@ -57,7 +57,7 @@ class InternalHttpApi(
     @POST
     @Path("shutdown")
     fun shutdown(): Response {
-        logger.info("Shutting down")
+        logger.info("Jibri is forecfully shutting down")
         // Schedule firing the handler so we have a chance to send the successful
         // response.
         executor.schedule(1) {
