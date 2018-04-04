@@ -122,7 +122,7 @@ class JibriSelenium(
      * Set various values to be put in local storage.  NOTE: the driver
      * should have already navigated to the desired page
      */
-    private fun setLocalStorageValues(vararg keyValues: Pair<String, String>) {
+    private fun setLocalStorageValues(keyValues: Map<String, String>) {
         for ((key, value) in keyValues) {
             chromeDriver.executeScript("window.localStorage.setItem('$key', '$value')")
         }
@@ -168,12 +168,12 @@ class JibriSelenium(
         HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
         val xmppUsername = jibriSeleniumOptions.callParams.callLoginParams.username
         val xmppDomain = jibriSeleniumOptions.callParams.callLoginParams.domain
-        setLocalStorageValues(
-                Pair("displayname", jibriSeleniumOptions.displayName),
-                Pair("email", jibriSeleniumOptions.email),
-                Pair("xmpp_username_override", "$xmppUsername@$xmppDomain"),
-                Pair("xmpp_password_override", jibriSeleniumOptions.callParams.callLoginParams.password),
-                Pair("callStatsUserName", "jibri")
+        setLocalStorageValues(mapOf(
+            "displayname" to jibriSeleniumOptions.displayName,
+            "email" to jibriSeleniumOptions.email,
+            "xmpp_username_override" to "$xmppUsername@$xmppDomain",
+            "xmpp_password_override" to jibriSeleniumOptions.callParams.callLoginParams.password,
+            "callStatsUserName" to "jibri")
         )
         val urlParams = jibriSeleniumOptions.urlParams
         val callNameWithUrlParams = "$callName#${urlParams.joinToString("&")}"
