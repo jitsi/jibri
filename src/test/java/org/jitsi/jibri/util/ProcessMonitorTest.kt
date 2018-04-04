@@ -19,13 +19,8 @@ package org.jitsi.jibri.util
 
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
-import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.Description
-import io.kotlintest.Spec
-import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
-import io.kotlintest.specs.ExpectSpec
 import io.kotlintest.specs.ShouldSpec
 
 class ProcessMonitorTest : ShouldSpec() {
@@ -68,4 +63,3 @@ class ProcessMonitorTest : ShouldSpec() {
         }
     }
 }
-

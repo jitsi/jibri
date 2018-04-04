@@ -83,6 +83,5 @@ class CallUrlInfoTest : ShouldSpec() {
                 info.hashCode() shouldBe differentCallNameCase.hashCode()
             }
         }
-
     }
 }
