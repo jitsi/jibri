@@ -40,6 +40,7 @@ import org.jitsi.jibri.util.extensions.error
 import java.io.File
 import java.util.logging.Logger
 import javax.ws.rs.ext.ContextResolver
+import kotlin.system.exitProcess
 
 val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
 
@@ -78,14 +79,10 @@ fun main(args: Array<String>) {
     val jibriConfigFile = File(configFilePath)
     if (!jibriConfigFile.exists()) {
         logger.error("Error: Config file $configFilePath doesn't exist")
-        System.exit(1)
+        exitProcess(1)
     }
-    val jibriConfig = loadConfig(jibriConfigFile)
-    if (jibriConfig == null) {
-        System.exit(1)
-    }
-
-    val jibri = JibriManager(jibriConfig!!)
+    val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
+    val jibri = JibriManager(jibriConfig)
 
     // InternalHttpApi
     val internalApiThread = Thread {
