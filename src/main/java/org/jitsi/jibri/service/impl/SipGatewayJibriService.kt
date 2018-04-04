@@ -30,7 +30,9 @@ class SipGatewayJibriService(private val sipGatewayServiceParams: SipGatewayServ
     private val jibriSelenium = JibriSelenium(
         JibriSeleniumOptions(
             sipGatewayServiceParams.callParams,
-            urlParams = SIP_GW_URL_OPTIONS))
+            displayName = sipGatewayServiceParams.sipClientParams.displayName,
+            urlParams = SIP_GW_URL_OPTIONS,
+            extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1")))
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
