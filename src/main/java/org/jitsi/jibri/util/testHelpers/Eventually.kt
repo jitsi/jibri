@@ -24,7 +24,6 @@ import java.time.Duration
  * kotlin.test's version)
  */
 fun <T> eventually(duration: Duration, func: () -> T): T {
-    val now = System.currentTimeMillis()
     val end = System.currentTimeMillis() + duration.toMillis()
     var times = 0
     while (System.currentTimeMillis() < end) {

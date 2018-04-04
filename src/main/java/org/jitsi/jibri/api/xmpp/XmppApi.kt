@@ -121,7 +121,7 @@ class XmppApi(
 
     /**
      * Helper function to handle a [JibriIq] message with the context of the [XmppEnvironmentConfig] and [MucClient]
-     * that this [JibrIq] was received on.
+     * that this [JibriIq] was received on.
      */
     private fun handleJibriIq(jibriIq: JibriIq, xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient): IQ {
         logger.info("Received JibriIq ${jibriIq.toXML()} from environment ${xmppEnvironment.name}")
