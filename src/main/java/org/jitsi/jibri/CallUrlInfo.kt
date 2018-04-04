@@ -31,11 +31,12 @@ data class CallUrlInfo(
     val callUrl = "$baseUrl/$callName"
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null) return false
-        if (javaClass != other.javaClass) return false
-        val otherCallUrlInfo = other as CallUrlInfo
-        return hashCode() == otherCallUrlInfo.hashCode()
+        return when {
+            other == null -> false
+            this === other -> true
+            javaClass != other.javaClass -> false
+            else -> hashCode() == other.hashCode()
+        }
     }
 
     override fun hashCode(): Int {

@@ -31,11 +31,20 @@ class CallUrlInfoTest : ShouldSpec() {
                 info.callUrl shouldBe "baseUrl/callName"
             }
         }
+        "a nullable CallUrlInfo instance" {
+            should("not equal null") {
+                val nullableInfo: CallUrlInfo? = CallUrlInfo("baseUrl", "callName")
+                (nullableInfo == null) shouldBe false
+            }
+        }
         val info = CallUrlInfo("baseUrl", "callName")
-        "the same CallUrlInfo instance" {
+        "a CallUrlInfo instance" {
             should("equal itself") {
                 info shouldBe info
                 info.hashCode() shouldBe info.hashCode()
+            }
+            should("not equal another type") {
+                info.equals("string") shouldBe false
             }
         }
         "two equivalent CallUrlInfo instances" {
