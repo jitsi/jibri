@@ -30,6 +30,8 @@ import org.jivesoftware.smackx.ping.PingManager;
 import org.jxmpp.jid.EntityBareJid;
 import org.jxmpp.jid.parts.Resourcepart;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -49,9 +51,10 @@ public class MucClient
      */
     private final AbstractXMPPConnection xmppConnection;
     /**
-     * The {@link MultiUserChat} object for the muc we'll be joining
+     * The {@link MultiUserChat} objects which represent the MUCs we're
+     * connected to
      */
-    private MultiUserChat muc;
+    private List<MultiUserChat> mucs = new ArrayList<>();
 
     /**
      * Connect to the xmpp service defined by the given config
@@ -122,13 +125,10 @@ public class MucClient
     public void createOrJoinMuc(EntityBareJid mucJid, Resourcepart nickname)
             throws Exception
     {
-        if (muc != null)
-        {
-            muc.leave();
-        }
         MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(xmppConnection);
-        muc = mucManager.getMultiUserChat(mucJid);
+        MultiUserChat muc = mucManager.getMultiUserChat(mucJid);
         muc.createOrJoin(nickname);
+        mucs.add(muc);
     }
 
     /**

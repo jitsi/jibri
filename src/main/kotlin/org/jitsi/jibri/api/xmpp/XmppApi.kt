@@ -106,9 +106,18 @@ class XmppApi(
                         jibriJid.asEntityBareJidIfPossible(),
                         Resourcepart.from(config.controlMuc.nickname)
                     )
+                    mucClient.createOrJoinMuc(
+                        JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
+                        Resourcepart.from(config.sipControlMuc.nickname)
+                    )
 
                     val jibriPresence = JibriPresenceHelper.createPresence(JibriStatusPacketExt.Status.IDLE, jibriJid)
                     mucClient.sendStanza(jibriPresence)
+                    val jibriSipStatus = JibriPresenceHelper.createPresence(
+                        JibriStatusPacketExt.Status.IDLE,
+                        JidCreate.bareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
+                    )
+                    mucClient.sendStanza(jibriSipStatus)
                 } catch (e: Exception) {
                     logger.error("Error connecting to xmpp environment: $e")
                 }

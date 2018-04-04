@@ -54,10 +54,20 @@ data class XmppEnvironmentConfig(
     @JsonProperty("control_login")
     val controlLogin: XmppCredentials,
     /**
-     * The muc we'll join to announce our presence
+     * The muc we'll join to announce our presence for
+     * recording and streaming services
      */
     @JsonProperty("control_muc")
     val controlMuc: XmppMuc,
+    /**
+     * The muc we'll join to announce our presence
+     * for sip gateway services
+     * TODO: should this and controlMuc above be
+     * optional?  but somehow require at least one
+     * to be set?
+     */
+    @JsonProperty("sip_control_muc")
+    val sipControlMuc: XmppMuc,
     /**
      * The login information the selenium web client will use
      */
