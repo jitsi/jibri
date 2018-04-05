@@ -29,7 +29,7 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.WriteableDirectory
+import org.jitsi.jibri.util.WritableDirectory
 import org.jitsi.jibri.util.extensions.error
 import java.io.File
 import java.io.IOException
@@ -43,7 +43,7 @@ data class RecordingOptions(
     /**
      * The directory in which recordings should be created
      */
-    val recordingDirectory: WriteableDirectory,
+    val recordingDirectory: WritableDirectory,
     /**
      * The params needed to join the call
      */
