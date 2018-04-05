@@ -29,7 +29,7 @@ fun pid(p: Process): Long {
     var pid: Long = -1
 
     try {
-        if (p.javaClass.name.equals("java.lang.UNIXProcess")) {
+        if (p.javaClass.name == "java.lang.UNIXProcess") {
             val field: Field = p.javaClass.getDeclaredField("pid")
             field.isAccessible = true
             pid = field.getLong(p)

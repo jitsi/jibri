@@ -53,7 +53,7 @@ private const val STREAMING_MAX_BITRATE = 2976
  * web call, capturing its audio and video, and streaming that audio and video
  * to a url
  */
-class StreamingJibriService(val streamingOptions: StreamingOptions) : JibriService() {
+class StreamingJibriService(private val streamingOptions: StreamingOptions) : JibriService() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val capturer = FfmpegCapturer()
     private val sink: Sink

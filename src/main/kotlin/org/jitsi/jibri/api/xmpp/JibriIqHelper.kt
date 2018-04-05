@@ -26,7 +26,7 @@ import org.jxmpp.jid.Jid
 //TODO: this functionality should be added to JibriIq
 
 /**
- * Create a result iq from the given [jibriIq]
+ * Create a result iq from the given [JibriIq]
  */
 class JibriIqHelper {
     companion object {

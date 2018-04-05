@@ -39,8 +39,8 @@ import java.util.concurrent.Future
  * the branches
  */
 class TeeLogic(inputStream: InputStream) {
-    val reader = BufferedReader(InputStreamReader(inputStream))
-    var branches = CopyOnWriteArrayList<OutputStream>()
+    private val reader = BufferedReader(InputStreamReader(inputStream))
+    private var branches = CopyOnWriteArrayList<OutputStream>()
 
     /**
      * Reads a byte from the original [InputStream] and

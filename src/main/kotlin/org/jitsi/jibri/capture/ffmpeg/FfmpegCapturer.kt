@@ -34,7 +34,7 @@ import java.util.logging.Logger
  */
 class FfmpegCapturer : Capturer {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    val ffmpegExecutor: FfmpegExecutor
+    private val ffmpegExecutor: FfmpegExecutor
 
     init
     {

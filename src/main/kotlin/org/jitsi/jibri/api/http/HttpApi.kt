@@ -55,7 +55,7 @@ class HttpApi(private val jibriManager: JibriManager) {
 
     /**
      * Get the health of this Jibri in the format of a json-encoded
-     * [JibriHealth] object
+     * [org.jitsi.jibri.health.JibriHealth] object
      */
     @GET
     @Path("health")

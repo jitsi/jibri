@@ -35,19 +35,7 @@ class FileSink(recordingsDirectory: WriteableDirectory, callName: String, extens
         val filename = "${callName}_${currentTime.format(formatter)}$extension"
         file = File(recordingsDirectory, filename)
     }
-
-    /**
-     * See [Sink.getPath]
-     */
     override val path: String = file.path
-
-    /**
-     * See [Sink.getFormat]
-     */
     override val format: String = file.extension
-
-    /**
-     * See [Sink.getOptions]
-     */
     override val options: String = "-profile:v main -level 3.1"
 }
