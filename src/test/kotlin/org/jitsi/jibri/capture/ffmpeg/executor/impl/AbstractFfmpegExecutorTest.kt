@@ -31,11 +31,10 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.time.Duration
 
-class TestableAbstractFfmpegExecutor(fakeProcessBuilder: ProcessBuilder) : AbstractFfmpegExecutor(fakeProcessBuilder) {
-    override fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String = ""
-}
-
 class AbstractFfmpegExecutorTest : ShouldSpec() {
+    class TestableAbstractFfmpegExecutor(fakeProcessBuilder: ProcessBuilder) : AbstractFfmpegExecutor(fakeProcessBuilder) {
+        override fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String = ""
+    }
     private val processBuilder: ProcessBuilder = mock()
     private val process: Process = mock()
     private val sink: Sink = mock()
