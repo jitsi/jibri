@@ -42,12 +42,12 @@ import java.util.logging.Logger;
  */
 public class MucClient
 {
-    private Logger logger = Logger.getLogger(MucClient.class.toString());
+    private final Logger logger = Logger.getLogger(MucClient.class.toString());
     /**
      * The {@link AbstractXMPPConnection} object for the connection to
      * the xmpp server
      */
-    private AbstractXMPPConnection xmppConnection;
+    private final AbstractXMPPConnection xmppConnection;
     /**
      * The {@link MultiUserChat} object for the muc we'll be joining
      */

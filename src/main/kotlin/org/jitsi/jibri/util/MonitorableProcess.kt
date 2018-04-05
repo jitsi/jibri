@@ -23,13 +23,13 @@ package org.jitsi.jibri.util
  */
 interface MonitorableProcess {
     /**
-     * Returns [true] if this [MonitorableProcess] considers
-     * itself "healthy", [false] otherwise
+     * Returns true if this [MonitorableProcess] considers
+     * itself "healthy", false otherwise
      */
     fun isHealthy(): Boolean
     /**
      * Return the exit code of this [MonitorableProcess],
-     * or [null] if it's still alive
+     * or null if it's still alive
      */
     fun getExitCode(): Int?
 }

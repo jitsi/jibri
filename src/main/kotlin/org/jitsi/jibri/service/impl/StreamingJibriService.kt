@@ -58,7 +58,7 @@ class StreamingJibriService(private val streamingOptions: StreamingOptions) : Ji
     private val capturer = FfmpegCapturer()
     private val sink: Sink
     /**
-     * The [ScheduledExecutorService] we'll use to run the process monitor
+     * The [java.util.concurrent.ScheduledExecutorService] we'll use to run the process monitor
      */
     private val executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("StreamingJibriService"))
     /**
