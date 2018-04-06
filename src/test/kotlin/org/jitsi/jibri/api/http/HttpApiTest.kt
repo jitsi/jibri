@@ -29,6 +29,7 @@ import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
 import io.kotlintest.Matcher
 import io.kotlintest.Result
+import io.kotlintest.Spec
 import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNot
@@ -60,8 +61,8 @@ class HttpApiTest : ShouldSpec() {
     private val jibriManager: JibriManager = mock()
     private lateinit var jerseyTest: JerseyTest
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeSpec(description: Description, spec: Spec) {
+        super.beforeSpec(description, spec)
         jerseyTest = object : JerseyTest() {
             override fun configure(): Application {
                 return ResourceConfig(object : ResourceConfig() {
@@ -76,8 +77,8 @@ class HttpApiTest : ShouldSpec() {
         jerseyTest.setUp()
     }
 
-    override fun afterTest(description: Description, result: TestResult) {
-        super.afterTest(description, result)
+    override fun afterSpec(description: Description, spec: Spec) {
+        super.afterSpec(description, spec)
         jerseyTest.tearDown()
     }
 
@@ -87,14 +88,15 @@ class HttpApiTest : ShouldSpec() {
                 val expectedHealth = JibriHealth(busy = false)
                 whenever(jibriManager.healthCheck())
                     .thenReturn(expectedHealth)
+                val res = jerseyTest.target("/jibri/api/v1.0/health").request()
+                    .get()
                 should("call JibriManager#healthCheck") {
-                    jerseyTest.target("/jibri/api/v1.0/health").request().get()
                     verify(jibriManager).healthCheck()
                 }
-                should("return the right json body and a status of 200") {
-                    val res = jerseyTest.target("/jibri/api/v1.0/health").request()
-                        .get()
+                should("return a status of 200") {
                     res.status shouldBe 200
+                }
+                should("return the right json body") {
                     val json = res.readEntity(String::class.java)
                     // The json should not include the 'environmentContext' field at all, since it
                     // will be null
@@ -110,10 +112,12 @@ class HttpApiTest : ShouldSpec() {
                 )
                 whenever(jibriManager.healthCheck())
                     .thenReturn(expectedHealth)
-                should("return the right json body and a status of 200") {
-                    val res = jerseyTest.target("/jibri/api/v1.0/health").request()
-                        .get()
+                val res = jerseyTest.target("/jibri/api/v1.0/health").request()
+                    .get()
+                should("return a status of 200") {
                     res.status shouldBe 200
+                }
+                should("return the right json body") {
                     val json = res.readEntity(String::class.java)
                     // The json should not include the 'environmentContext' field at all, since it
                     // will be null
@@ -143,13 +147,14 @@ class HttpApiTest : ShouldSpec() {
                     sinkType = RecordingSinkType.FILE
                 )
                 val json = jacksonObjectMapper().writeValueAsString(startServiceRequest)
+                val res = jerseyTest
+                    .target("/jibri/api/v1.0/startService")
+                    .request()
+                    .post(Entity.json(json))
                 should("return a 200") {
-                    val res = jerseyTest
-                        .target("/jibri/api/v1.0/startService")
-                        .request()
-                        .post(Entity.json(json))
                     res.status shouldBe 200
-                    println(res.readEntity(String::class.java))
+                }
+                should("call JibriManager#startFileRecording with the right params") {
                     capturedServiceParams.firstValue.usageTimeoutMinutes shouldBe 0
                 }
             }
