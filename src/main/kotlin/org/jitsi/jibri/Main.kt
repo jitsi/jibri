@@ -65,12 +65,12 @@ fun loadConfig(configFile: File): JibriConfig? {
 
 fun main(args: Array<String>) {
     val argParser = ArgumentParsers.newFor("Jibri").build()
-            .defaultHelp(true)
-            .description("Start Jibri")
+        .defaultHelp(true)
+        .description("Start Jibri")
     argParser.addArgument("-c", "--config")
-            .required(true)
-            .type(String::class.java)
-            .help("Path to the jibri config file")
+        .required(true)
+        .type(String::class.java)
+        .help("Path to the jibri config file")
 
     val ns = argParser.parseArgs(args)
     val configFilePath = ns.getString("config")
@@ -85,73 +85,42 @@ fun main(args: Array<String>) {
     val jibri = JibriManager(jibriConfig)
 
     // InternalHttpApi
-    val internalApiThread = Thread {
-        val configChangedHandler = {
-            logger.info("The config file has changed, waiting for Jibri to be idle before exiting")
-            jibri.executeWhenIdle {
-                logger.info("Jibri is idle and there are config file changes, exiting")
-                // Exit so we can be restarted and load the new config
-                System.exit(0)
-            }
-        }
-        val shutdownHandler = {
-            logger.info("Jibri has been told to shutdown, stopping any active service")
-            jibri.stopService()
-            logger.info("Service stopped")
-            System.exit(0)
-        }
-        val internalHttpApi = InternalHttpApi(
-            gracefulShutdownHandler = configChangedHandler,
-            shutdownHandler = shutdownHandler)
-
-        val jerseyConfig = ResourceConfig()
-        jerseyConfig.register(internalHttpApi)
-            .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
-            .register(JacksonFeature::class.java)
-
-        val servlet = ServletHolder(ServletContainer(jerseyConfig))
-
-        val server = Server(3333)
-        val context = ServletContextHandler(server, "/*")
-        context.addServlet(servlet, "/*")
-
-        try {
-            server.start()
-            server.join()
-        } catch (e: Exception) {
-            logger.error("Error with internal HTTP API server: $e")
-        } finally {
-            server.destroy()
+    val configChangedHandler = {
+        logger.info("The config file has changed, waiting for Jibri to be idle before exiting")
+        jibri.executeWhenIdle {
+            logger.info("Jibri is idle and there are config file changes, exiting")
+            // Exit so we can be restarted and load the new config
+            exitProcess(0)
         }
     }
-    internalApiThread.start()
+    val shutdownHandler = {
+        logger.info("Jibri has been told to shutdown, stopping any active service")
+        jibri.stopService()
+        logger.info("Service stopped")
+        exitProcess(0)
+    }
+    val internalHttpApi = InternalHttpApi(
+        gracefulShutdownHandler = configChangedHandler,
+        shutdownHandler = shutdownHandler
+    )
+    launchHttpServer(3333, internalHttpApi)
+
     // XmppApi
     val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibriConfig.xmppEnvironments)
     xmppApi.start()
 
     // HttpApi
-    Thread {
-        val jerseyConfig = ResourceConfig()
-        jerseyConfig.register(HttpApi(jibri))
-            .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
-            .register(JacksonFeature::class.java)
+    launchHttpServer(2222, HttpApi(jibri))
+}
 
-        val servlet = ServletHolder(ServletContainer(jerseyConfig))
-
-        val server = Server(2222)
-        val context = ServletContextHandler(server, "/*")
-        context.addServlet(servlet, "/*")
-
-        try {
-            server.start()
-            server.join()
-        } catch (e: Exception) {
-            logger.error("Error with HTTP API server: $e")
-        } finally {
-            server.destroy()
-        }
-    }.start()
-
-    // Wait on the internal API thread to prevent Main from exiting
-    internalApiThread.join()
+fun launchHttpServer(port: Int, component: Any) {
+    val jerseyConfig = ResourceConfig()
+    jerseyConfig.register(component)
+        .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
+        .register(JacksonFeature::class.java)
+    val servlet = ServletHolder(ServletContainer(jerseyConfig))
+    val server = Server(port)
+    val context = ServletContextHandler(server, "/*")
+    context.addServlet(servlet, "/*")
+    server.start()
 }
