@@ -28,6 +28,7 @@ public enum RecordingSinkType
     STREAM("stream"),
     FILE("file");
 
+    @SuppressWarnings("FieldCanBeLocal")
     private final String recordingSinkType;
 
     RecordingSinkType(final String recordingMode) {
