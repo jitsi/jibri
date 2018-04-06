@@ -21,14 +21,17 @@ data class EnvironmentContext(
     val name: String
 )
 
+// The variables need to be accessed by Jackson so this class
+// can be serialized as part of a JSON HTTP response
+@Suppress("MemberVisibilityCanBePrivate")
 data class JibriHealth(
     /**
      * Whether or not this Jibri is "busy". See [JibriManager#busy]
      */
-    private val busy: Boolean = false,
+    val busy: Boolean = false,
     /**
      * Context for the environment Jibri is currently active on
      * (only present if [busy] is true)
      */
-    private val environmentContext: EnvironmentContext? = null
+    val environmentContext: EnvironmentContext? = null
 )
