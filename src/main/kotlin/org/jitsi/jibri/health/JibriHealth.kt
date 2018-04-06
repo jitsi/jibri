@@ -17,21 +17,24 @@
 
 package org.jitsi.jibri.health
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect
+import com.fasterxml.jackson.annotation.JsonInclude
+
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 data class EnvironmentContext(
-    val name: String
+    private val name: String
 )
 
-// The variables need to be accessed by Jackson so this class
-// can be serialized as part of a JSON HTTP response
-@Suppress("MemberVisibilityCanBePrivate")
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 data class JibriHealth(
     /**
      * Whether or not this Jibri is "busy". See [JibriManager#busy]
      */
-    val busy: Boolean = false,
+    private val busy: Boolean,
     /**
      * Context for the environment Jibri is currently active on
      * (only present if [busy] is true)
      */
-    val environmentContext: EnvironmentContext? = null
+    private val environmentContext: EnvironmentContext? = null
 )

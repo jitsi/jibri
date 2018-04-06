@@ -16,7 +16,8 @@
  */
 package org.jitsi.jibri;
 
-import org.codehaus.jackson.annotate.*;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author bbaldino

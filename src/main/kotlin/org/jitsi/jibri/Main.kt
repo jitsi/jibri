@@ -21,15 +21,14 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import net.sourceforge.argparse4j.ArgumentParsers
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
-import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
@@ -114,10 +113,12 @@ fun main(args: Array<String>) {
 }
 
 fun launchHttpServer(port: Int, component: Any) {
-    val jerseyConfig = ResourceConfig()
-    jerseyConfig.register(component)
-        .register(ContextResolver<ObjectMapper> { ObjectMapper().registerModule(KotlinModule()) })
-        .register(JacksonFeature::class.java)
+    val jerseyConfig = ResourceConfig(object : ResourceConfig() {
+        init {
+            register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
+            registerInstances(component)
+        }
+    })
     val servlet = ServletHolder(ServletContainer(jerseyConfig))
     val server = Server(port)
     val context = ServletContextHandler(server, "/*")

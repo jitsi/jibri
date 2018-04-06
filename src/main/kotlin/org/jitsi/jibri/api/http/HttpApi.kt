@@ -34,15 +34,11 @@ import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
-//TODO(brian): i had to put default values here or else jackson would fail
-// to parse it as part of a request, though from what i've read this
-// shouldn't be necessary?
-// https://github.com/FasterXML/jackson-module-kotlin
-// https://craftsmen.nl/kotlin-create-rest-services-using-jersey-and-jackson/
+// TODO: this needs to include usageTimeout
 data class StartServiceParams(
-    val callParams: CallParams = CallParams(),
-    val sinkType: RecordingSinkType = RecordingSinkType.FILE,
-    val youTubeStreamKey: String = ""
+    val callParams: CallParams,
+    val sinkType: RecordingSinkType,
+    val youTubeStreamKey: String? = null
 )
 
 /**
@@ -76,14 +72,15 @@ class HttpApi(private val jibriManager: JibriManager) {
     fun startService(serviceParams: StartServiceParams): Response {
         logger.debug("Got a start service request with params $serviceParams")
         val result: StartServiceResult = when (serviceParams.sinkType) {
-            RecordingSinkType.FILE -> {
+            RecordingSinkType.FILE -> run {
                 jibriManager.startFileRecording(
                     ServiceParams(usageTimeoutMinutes = 0),
                     FileRecordingParams(serviceParams.callParams),
                     environmentContext = null
                 )
             }
-            RecordingSinkType.STREAM -> {
+            RecordingSinkType.STREAM -> run {
+                val youTubeStreamKey = serviceParams.youTubeStreamKey ?: return@run StartServiceResult.ERROR
                 jibriManager.startStreaming(
                     ServiceParams(usageTimeoutMinutes = 0),
                     StreamingParams(serviceParams.callParams, serviceParams.youTubeStreamKey),
