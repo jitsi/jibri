@@ -63,13 +63,17 @@ class XmppApi(
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
+    private val defaultMucClientProvider = { config: XMPPTCPConnectionConfiguration ->
+        MucClient(config)
+    }
 
     /**
      * Start up the XMPP API by connecting and logging in to all the configured XMPP environments.  For each XMPP
      * connection, we'll listen for incoming [JibriIq] messages and handle them appropriately.  Join the MUC on
      * each connection and send an initial [JibriStatusPacketExt] presence.
      */
-    fun start() {
+    //fun start() {
+    fun start(mucClientProvider: (XMPPTCPConnectionConfiguration) -> MucClient = defaultMucClientProvider) {
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
@@ -90,7 +94,8 @@ class XmppApi(
                     configBuilder.setHostnameVerifier(TrustAllHostnameVerifier())
                 }
                 try {
-                    val mucClient = MucClient(configBuilder.build())
+//                    val mucClient = MucClient(configBuilder.build())
+                    val mucClient = mucClientProvider(configBuilder.build())
                     mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
                         override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
                             return handleJibriIq(jibriIq, config, mucClient)
@@ -226,21 +231,8 @@ class XmppApi(
         )
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
-        //TODO: should incorporate the sipgateway param into a single state ('mode' or something)
-        // so we don't have to check for the presence of the sipaddress field separate from
-        // checking file vs stream recording
-        if (startIq.sipAddress != null && startIq.sipAddress.isNotEmpty()) {
-            return jibriManager.startSipGateway(
-                ServiceParams(xmppEnvironment.usageTimeoutMins),
-                SipGatewayServiceParams(
-                    callParams,
-                    SipClientParams(startIq.sipAddress, startIq.displayName)),
-                    EnvironmentContext(xmppEnvironment.name),
-                    serviceStatusHandler
-            )
-        }
-        return when (startIq.recordingMode) {
-            JibriIq.RecordingMode.FILE -> {
+        return when (startIq.mode()) {
+            JibriMode.FILE -> {
                 jibriManager.startFileRecording(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
                     FileRecordingRequestParams(callParams, xmppEnvironment.callLogin),
@@ -248,7 +240,7 @@ class XmppApi(
                     serviceStatusHandler
                 )
             }
-            JibriIq.RecordingMode.STREAM -> {
+            JibriMode.STREAM -> {
                 jibriManager.startStreaming(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
                     StreamingParams(callParams, xmppEnvironment.callLogin, youTubeStreamKey = startIq.streamId),
@@ -256,6 +248,15 @@ class XmppApi(
                     serviceStatusHandler
                 )
             }
+            JibriMode.SIPGW -> {
+                jibriManager.startSipGateway(
+                    ServiceParams(xmppEnvironment.usageTimeoutMins),
+                    SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
+                    EnvironmentContext(xmppEnvironment.name),
+                    serviceStatusHandler
+                )
+            }
+
             else -> {
                 StartServiceResult.ERROR
             }

@@ -50,6 +50,25 @@ class JibriIqHelper {
     }
 }
 
+enum class JibriMode(val mode: String) {
+    FILE(JibriIq.RecordingMode.FILE.toString()),
+    STREAM(JibriIq.RecordingMode.STREAM.toString()),
+    SIPGW("sipgw"),
+    UNDEFINED(JibriIq.RecordingMode.UNDEFINED.toString())
+}
+
+fun JibriIq.mode(): JibriMode {
+    if (!sipAddress.isNullOrBlank()) {
+        return JibriMode.SIPGW
+    }
+    return when (recordingMode) {
+        JibriIq.RecordingMode.FILE -> JibriMode.FILE
+        JibriIq.RecordingMode.STREAM -> JibriMode.STREAM
+        JibriIq.RecordingMode.UNDEFINED -> JibriMode.UNDEFINED
+        else -> JibriMode.UNDEFINED
+    }
+}
+
 class JibriPresenceHelper {
     companion object {
         fun createPresence(status: JibriStatusPacketExt.Status, to: Jid): Presence {
