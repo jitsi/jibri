@@ -164,6 +164,7 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
         }
 
         if (!jibriService.start()) {
+            stopService()
             return StartServiceResult.ERROR
         }
         currentActiveService = jibriService
