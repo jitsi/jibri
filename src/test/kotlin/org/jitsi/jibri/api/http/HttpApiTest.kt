@@ -30,10 +30,10 @@ import io.kotlintest.Description
 import io.kotlintest.Matcher
 import io.kotlintest.Result
 import io.kotlintest.TestResult
-import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNot
 import io.kotlintest.specs.ShouldSpec
+import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.test.JerseyTest
 import org.jitsi.jibri.CallParams
@@ -67,6 +67,7 @@ class HttpApiTest : ShouldSpec() {
                 return ResourceConfig(object : ResourceConfig() {
                     init {
                         register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
+                        register(JacksonFeature::class.java)
                         registerInstances(HttpApi(jibriManager))
                     }
                 })

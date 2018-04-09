@@ -29,6 +29,7 @@ import net.sourceforge.argparse4j.ArgumentParsers
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
+import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
@@ -116,6 +117,7 @@ fun launchHttpServer(port: Int, component: Any) {
     val jerseyConfig = ResourceConfig(object : ResourceConfig() {
         init {
             register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
+            register(JacksonFeature::class.java)
             registerInstances(component)
         }
     })
