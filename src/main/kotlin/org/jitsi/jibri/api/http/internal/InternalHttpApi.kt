@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.api.http.internal
 
+import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.extensions.schedule
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -27,7 +28,8 @@ import javax.ws.rs.core.Response
 
 @Path("/jibri/api/internal/v1.0")
 class InternalHttpApi(
-    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
+    private val executor: ScheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("internal http api")),
     private val gracefulShutdownHandler: () -> Unit,
     private val shutdownHandler: () -> Unit
 ) {
@@ -43,9 +45,7 @@ class InternalHttpApi(
         logger.info("Jibri gracefully shutting down")
         // Schedule firing the handler so we have a chance to send the successful
         // response.
-        executor.schedule(1) {
-            gracefulShutdownHandler()
-        }
+        executor.schedule(1, action = gracefulShutdownHandler)
         return Response.ok().build()
     }
 
@@ -57,12 +57,10 @@ class InternalHttpApi(
     @POST
     @Path("shutdown")
     fun shutdown(): Response {
-        logger.info("Jibri is forecfully shutting down")
+        logger.info("Jibri is forcefully shutting down")
         // Schedule firing the handler so we have a chance to send the successful
         // response.
-        executor.schedule(1) {
-            shutdownHandler()
-        }
+        executor.schedule(1, action = shutdownHandler)
         return Response.ok().build()
     }
 }

@@ -38,17 +38,13 @@ class JibriIqHelper {
             return result
         }
 
-        fun create(from: Jid, type: IQ.Type, status: JibriIq.Status): JibriIq {
+        fun create(from: Jid, type: IQ.Type = IQ.Type.set, status: JibriIq.Status = JibriIq.Status.UNDEFINED): JibriIq {
             val jibriIq = JibriIq()
             jibriIq.to = from
             jibriIq.type = type
             jibriIq.status = status
 
             return jibriIq
-        }
-
-        fun create(from: Jid, type: IQ.Type): JibriIq {
-            return create(from, type, JibriIq.Status.UNDEFINED)
         }
     }
 }

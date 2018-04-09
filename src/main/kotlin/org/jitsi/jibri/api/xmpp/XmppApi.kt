@@ -94,24 +94,19 @@ class XmppApi(
                             return handleJibriIq(jibriIq, config, mucClient)
                         }
                     })
+                    val jibriJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
                     jibriManager.addStatusHandler { status ->
                         logger.info("XMPP API got jibri status $status, publishing presence to connection ${config.name}")
-                        val jibriStatus = JibriPresenceHelper.createPresence(
-                            status,
-                            JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
-                        )
-                        mucClient.sendStanza(jibriStatus)
+                        val jibriPresence = JibriPresenceHelper.createPresence(status, jibriJid)
+                        mucClient.sendStanza(jibriPresence)
                     }
                     mucClient.createOrJoinMuc(
-                        JidCreate.entityBareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}"),
+                        jibriJid.asEntityBareJidIfPossible(),
                         Resourcepart.from(config.controlMuc.nickname)
                     )
 
-                    val jibriStatus = JibriPresenceHelper.createPresence(
-                        JibriStatusPacketExt.Status.IDLE,
-                        JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
-                    )
-                    mucClient.sendStanza(jibriStatus)
+                    val jibriPresence = JibriPresenceHelper.createPresence(JibriStatusPacketExt.Status.IDLE, jibriJid)
+                    mucClient.sendStanza(jibriPresence)
                 } catch (e: Exception) {
                     logger.error("Error connecting to xmpp environment: $e")
                 }
@@ -150,7 +145,7 @@ class XmppApi(
         // We don't want to block the response to wait for the service to actually start, so submit a job to
         // start the service asynchronously and send an IQ with the status after its done.
         executor.submit {
-            val resultIq = JibriIqHelper.create(startJibriIq.from, IQ.Type.set)
+            val resultIq = JibriIqHelper.create(startJibriIq.from)
             try {
                 logger.info("Starting service")
 
@@ -162,7 +157,7 @@ class XmppApi(
                     when (serviceStatus) {
                         JibriServiceStatus.ERROR -> {
                             logger.info("Current service had an error")
-                            val errorIq = JibriIqHelper.create(startJibriIq.from, IQ.Type.set, JibriIq.Status.FAILED)
+                            val errorIq = JibriIqHelper.create(startJibriIq.from, status = JibriIq.Status.FAILED)
                             logger.info("Sending error iq ${errorIq.toXML()}")
                             mucClient.sendStanza(errorIq)
                         }

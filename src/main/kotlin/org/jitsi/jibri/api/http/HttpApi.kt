@@ -83,7 +83,7 @@ class HttpApi(private val jibriManager: JibriManager) {
                 val youTubeStreamKey = serviceParams.youTubeStreamKey ?: return@run StartServiceResult.ERROR
                 jibriManager.startStreaming(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    StreamingParams(serviceParams.callParams, serviceParams.youTubeStreamKey),
+                    StreamingParams(serviceParams.callParams, youTubeStreamKey),
                     environmentContext = null
                 )
             }
