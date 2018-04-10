@@ -28,7 +28,6 @@ import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.util.extensions.debug
-import org.jitsi.jibri.util.extensions.error
 import java.util.logging.Logger
 import javax.ws.rs.Consumes
 import javax.ws.rs.GET
