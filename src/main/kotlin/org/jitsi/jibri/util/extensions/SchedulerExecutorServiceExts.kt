@@ -27,9 +27,9 @@ import java.util.concurrent.TimeUnit
  * argument)
  */
 fun ScheduledExecutorService.scheduleAtFixedRate(
-    delay: Long = 0,
     period: Long,
     unit: TimeUnit,
+    delay: Long = 0,
     action: () -> Unit
 ): ScheduledFuture<*> {
     return this.scheduleAtFixedRate(action, delay, period, unit)
