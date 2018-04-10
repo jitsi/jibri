@@ -133,12 +133,12 @@ class HttpApiTest : ShouldSpec() {
                 ).thenReturn(StartServiceResult.SUCCESS)
                 val startServiceRequest = StartServiceParams(
                     callParams = CallParams(
-                        callUrlInfo = CallUrlInfo("https://meet.jit.si", "callName"),
-                        callLoginParams = XmppCredentials(
-                            domain = "xmpp_domain",
-                            username = "xmpp_username",
-                            password = "xmpp_password"
-                        )
+                        callUrlInfo = CallUrlInfo("https://meet.jit.si", "callName")
+                    ),
+                    callLoginParams = XmppCredentials(
+                        domain = "xmpp_domain",
+                        username = "xmpp_username",
+                        password = "xmpp_password"
                     ),
                     sinkType = RecordingSinkType.FILE
                 )

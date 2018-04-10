@@ -58,5 +58,4 @@ fun stopProcess(p: Process?, name: String, logger: Logger) {
         p?.destroyForcibly()
     }
     logger.info("$name exited with ${p?.exitValue()}")
-
 }

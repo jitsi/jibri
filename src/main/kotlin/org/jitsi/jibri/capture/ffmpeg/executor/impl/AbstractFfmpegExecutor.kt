@@ -29,13 +29,11 @@ import org.jitsi.jibri.util.Tail
 import org.jitsi.jibri.util.Tee
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
-import org.jitsi.jibri.util.pid
 import org.jitsi.jibri.util.stopProcess
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 const val FFMPEG_RESTART_ATTEMPTS = 1
