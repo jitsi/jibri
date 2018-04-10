@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package org.jitsi.jibri.util.testHelpers
+package org.jitsi.jibri.helpers
 
 import java.time.Duration
 

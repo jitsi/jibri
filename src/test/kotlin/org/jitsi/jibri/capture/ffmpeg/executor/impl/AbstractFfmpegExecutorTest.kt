@@ -24,8 +24,8 @@ import io.kotlintest.Spec
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
+import org.jitsi.jibri.helpers.eventually
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.testHelpers.eventually
 import java.io.InputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
