@@ -106,18 +106,13 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
         }
     }
 
-    /**
-     * @see [JibriService.start]
-     */
     override fun start(): Boolean {
         if (!jibriSelenium.joinCall(recordingOptions.callParams.callUrlInfo.callName)) {
             logger.error("Selenium failed to join the call")
-            stop()
             return false
         }
         if (!capturer.start(sink)) {
             logger.error("Capturer failed to start")
-            stop()
             return false
         }
         var numRestarts = 0
@@ -126,20 +121,18 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
                 logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
             } else {
                 logger.error("Capturer process is no longer healthy but it is still running, stopping it now")
-                capturer.stop()
             }
             if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
                 logger.error("Giving up on restarting the capturer")
                 publishStatus(JibriServiceStatus.ERROR)
-                stop()
             } else {
                 numRestarts++
                 // Re-create the sink here because we want a new filename
                 sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
+                capturer.stop()
                 if (!capturer.start(sink)) {
                     logger.error("Capture failed to restart, giving up")
                     publishStatus(JibriServiceStatus.ERROR)
-                    stop()
                 }
             }
         }
@@ -147,9 +140,6 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
         return true
     }
 
-    /**
-     * @see [JibriService.stop]
-     */
     override fun stop() {
         processMonitorTask?.cancel(false)
         logger.info("Stopping capturer")

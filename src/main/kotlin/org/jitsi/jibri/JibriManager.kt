@@ -163,10 +163,6 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
             }
         }
 
-        if (!jibriService.start()) {
-            stopService()
-            return StartServiceResult.ERROR
-        }
         currentActiveService = jibriService
         currentEnvironmentContext = environmentContext
         if (serviceParams.usageTimeoutMinutes != 0) {
@@ -180,7 +176,10 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
                 }
             }
         }
-
+        if (!jibriService.start()) {
+            stopService()
+            return StartServiceResult.ERROR
+        }
         return StartServiceResult.SUCCESS
     }
 
