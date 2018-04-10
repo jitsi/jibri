@@ -29,17 +29,25 @@ class PjsuaExecutor : MonitorableProcess {
      * Launch pjsua with the given [PjsuaExecutorParams]
      */
     fun launchPjsua(pjsuaExecutorParams: PjsuaExecutorParams) {
+        //TODO: not able to format this as nicely because we need arguments like
+        // "--id xx xx" to be parsed as 2 separate arguments when passing them
+        // to the shell ("--id" is one, "xx xx" is another); splitting on spaces
+        // doesn't work because the value might have a space in it.  look into
+        // a nicer way to do this?
         val pjsuaCommand = """
             pjsua
             --capture-dev=$CAPTURE_DEVICE
             --playback-dev=$PLAYBACK_DEVICE
-            --id "${pjsuaExecutorParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>"
-            --config-file $CONFIG_FILE_LOCATION
-            --log-file /tmp/pjsua.out
+            --id
+            ${pjsuaExecutorParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>
+            --config-file
+            $CONFIG_FILE_LOCATION
+            --log-file
+            /tmp/pjsua.out
             sip:${pjsuaExecutorParams.sipClientParams.sipAddress}
-        """.trimIndent().replace("\n", " ")
+        """.trimIndent()
 
-        val command = "screen -S ${pjsuaExecutorParams.screenSessionName} -d -m $pjsuaCommand".split(" ")
+        val command = pjsuaCommand.split("\n")
         val pb = ProcessBuilder(command)
         pb.redirectErrorStream(true)
         pb.environment().put("DISPLAY", X_DISPLAY)
