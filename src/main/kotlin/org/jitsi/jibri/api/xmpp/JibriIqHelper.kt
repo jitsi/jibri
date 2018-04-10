@@ -30,7 +30,7 @@ import org.jxmpp.jid.Jid
  */
 class JibriIqHelper {
     companion object {
-        fun createResult(jibriIq: JibriIq): JibriIq {
+        fun createResult(jibriIq: JibriIq, status: JibriIq.Status): JibriIq {
             val result = JibriIq()
             result.type = IQ.Type.result
             result.stanzaId = jibriIq.stanzaId

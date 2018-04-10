@@ -180,8 +180,7 @@ class XmppApi(
             }
         }
         // Immediately respond that the request is pending
-        val initialResponse = JibriIqHelper.createResult(startJibriIq)
-        initialResponse.status = JibriIq.Status.PENDING
+        val initialResponse = JibriIqHelper.createResult(startJibriIq, JibriIq.Status.PENDING)
         logger.info("Sending 'pending' response to start IQ")
         return initialResponse
     }
@@ -193,9 +192,7 @@ class XmppApi(
     private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
         jibriManager.stopService()
         // By this point the service has been fully stopped
-        val response = JibriIqHelper.createResult(stopJibriIq)
-        response.status = JibriIq.Status.OFF
-        return response
+        return JibriIqHelper.createResult(stopJibriIq, JibriIq.Status.OFF)
     }
 
     /**
