@@ -24,6 +24,8 @@ import org.jitsi.jibri.RecordingSinkType
 import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.StreamingParams
+
+import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.util.extensions.debug
 import java.util.logging.Logger
 import javax.ws.rs.Consumes
@@ -37,6 +39,12 @@ import javax.ws.rs.core.Response
 // TODO: this needs to include usageTimeout
 data class StartServiceParams(
     val callParams: CallParams,
+    /**
+     * XMPP login information to be used if [RecordingSinkType] is
+     * [RecordingSinkType.FILE] or [RecordingSinkType.STREAM] in order
+     * to make the recorder 'invisible'
+     */
+    val callLoginParams: XmppCredentials? = null,
     val sinkType: RecordingSinkType,
     val youTubeStreamKey: String? = null
 )
@@ -73,17 +81,21 @@ class HttpApi(private val jibriManager: JibriManager) {
         logger.debug("Got a start service request with params $serviceParams")
         val result: StartServiceResult = when (serviceParams.sinkType) {
             RecordingSinkType.FILE -> run {
+                // If it's a file recording, it must have the callLoginParams set
+                val callLoginParams = serviceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startFileRecording(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    FileRecordingParams(serviceParams.callParams),
+                    FileRecordingParams(serviceParams.callParams, callLoginParams),
                     environmentContext = null
                 )
             }
             RecordingSinkType.STREAM -> run {
                 val youTubeStreamKey = serviceParams.youTubeStreamKey ?: return@run StartServiceResult.ERROR
+                // If it's a stream, it must have the callLoginParams set
+                val callLoginParams = serviceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startStreaming(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    StreamingParams(serviceParams.callParams, youTubeStreamKey),
+                    StreamingParams(serviceParams.callParams, callLoginParams, youTubeStreamKey),
                     environmentContext = null
                 )
             }

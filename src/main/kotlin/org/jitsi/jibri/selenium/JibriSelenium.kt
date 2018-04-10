@@ -19,6 +19,7 @@ package org.jitsi.jibri.selenium
 
 import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.service.JibriServiceStatus
@@ -164,17 +165,19 @@ class JibriSelenium(
     /**
      * Join a a web call with Selenium
      */
-    fun joinCall(callName: String): Boolean {
+    fun joinCall(callName: String, xmppCredentials: XmppCredentials? = null): Boolean {
         HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
-        val xmppUsername = jibriSeleniumOptions.callParams.callLoginParams.username
-        val xmppDomain = jibriSeleniumOptions.callParams.callLoginParams.domain
-        setLocalStorageValues(mapOf(
+
+        val localStorageValues = mutableMapOf(
             "displayname" to jibriSeleniumOptions.displayName,
             "email" to jibriSeleniumOptions.email,
-            "xmpp_username_override" to "$xmppUsername@$xmppDomain",
-            "xmpp_password_override" to jibriSeleniumOptions.callParams.callLoginParams.password,
-            "callStatsUserName" to "jibri")
+            "callStatsUserName" to "jibri"
         )
+        xmppCredentials?.let {
+            localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.password}"
+            localStorageValues["xmpp_password_override"] = xmppCredentials.password
+        }
+        setLocalStorageValues(localStorageValues)
         val urlParams = jibriSeleniumOptions.urlParams
         val callNameWithUrlParams = "$callName#${urlParams.joinToString("&")}"
         if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callNameWithUrlParams))) {

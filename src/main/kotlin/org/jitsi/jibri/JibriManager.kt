@@ -49,8 +49,7 @@ enum class StartServiceResult {
  * Parameters needed for joining the call in Selenium
  */
 data class CallParams(
-    val callUrlInfo: CallUrlInfo,
-    val callLoginParams: XmppCredentials
+    val callUrlInfo: CallUrlInfo
 )
 
 /**
@@ -64,7 +63,8 @@ data class ServiceParams(
  * Parameters needed for starting a [FileRecordingJibriService]
  */
 data class FileRecordingParams(
-    val callParams: CallParams
+    val callParams: CallParams,
+    val callLogicParams: XmppCredentials
 )
 
 /**
@@ -72,6 +72,7 @@ data class FileRecordingParams(
  */
 data class StreamingParams(
     val callParams: CallParams,
+    val callLogicParams: XmppCredentials,
     val youTubeStreamKey: String
 )
 
