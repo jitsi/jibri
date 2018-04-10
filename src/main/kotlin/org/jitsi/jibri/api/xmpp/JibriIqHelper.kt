@@ -35,6 +35,7 @@ class JibriIqHelper {
             result.type = IQ.Type.result
             result.stanzaId = jibriIq.stanzaId
             result.to = jibriIq.from
+            result.status = status
             return result
         }
 
