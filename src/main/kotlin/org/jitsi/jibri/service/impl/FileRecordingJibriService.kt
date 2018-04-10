@@ -101,9 +101,7 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
 
     init {
         sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
-        jibriSelenium.addStatusHandler {
-            publishStatus(it)
-        }
+        jibriSelenium.addStatusHandler(this::publishStatus)
     }
 
     override fun start(): Boolean {

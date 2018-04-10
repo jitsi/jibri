@@ -76,9 +76,7 @@ class StreamingJibriService(private val streamingOptions: StreamingOptions) : Ji
         )
 
         // Bubble up jibriSelenium's status
-        jibriSelenium.addStatusHandler {
-            publishStatus(it)
-        }
+        jibriSelenium.addStatusHandler(this::publishStatus)
     }
 
     override fun start(): Boolean {
