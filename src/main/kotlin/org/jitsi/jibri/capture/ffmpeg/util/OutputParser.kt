@@ -22,7 +22,18 @@ import org.jitsi.jibri.util.oneOrMoreNonSpaces
 import org.jitsi.jibri.util.zeroOrMoreSpaces
 import java.util.regex.Pattern
 
+/**
+ * The key (from the set of key, value pairs we parse
+ * from ffmpeg's stdout output) that corresponds to
+ * successful, ongoing encoding from ffmpeg. i.e.:
+ * frame=123
+ */
 const val ENCODING_KEY = "frame"
+/**
+ * The key we use when inserting a warning output line
+ * from ffmpeg into the map of parsed key, value pairs
+ * from parsing ffmpeg's output
+ */
 const val WARNING_KEY = "warning"
 
 /**
