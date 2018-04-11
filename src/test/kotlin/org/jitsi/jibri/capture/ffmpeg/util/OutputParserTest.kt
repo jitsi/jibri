@@ -24,7 +24,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
 class OutputParserTest : StringSpec({
-    val parser = OutputParser()
     fun verifyHelper(expectedValues: Map<String, Any>, actualValues: Map<String, Any>) {
         actualValues.size shouldBe expectedValues.size
         expectedValues.forEach { (field, value) ->
@@ -45,13 +44,13 @@ class OutputParserTest : StringSpec({
             "speed" to "1.19x"
         )
 
-        val result = parser.parse(outputLine)
+        val result = OutputParser.parse(outputLine)
         verifyHelper(expectedValues, result)
     }
 
     "parsing of a 'past duration' line should parse a warning line" {
         val outputLine = "Past duration 0.622368 too large"
-        val result = parser.parse(outputLine)
+        val result = OutputParser.parse(outputLine)
         result.size shouldBe 1
         result should haveKey(WARNING_KEY)
         result should contain(WARNING_KEY, outputLine as Any)
@@ -59,7 +58,7 @@ class OutputParserTest : StringSpec({
 
     "an unknown line should result in no fields parsed" {
         val outputLine = "wrong line"
-        val result = parser.parse(outputLine)
+        val result = OutputParser.parse(outputLine)
         result.size shouldBe 0
     }
 })
