@@ -17,23 +17,18 @@
 
 package org.jitsi.jibri.capture.ffmpeg.executor.impl
 
+import org.jitsi.jibri.capture.ffmpeg.FfmpegProcessWrapper
+import org.jitsi.jibri.capture.ffmpeg.FfmpegStatus
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
-import org.jitsi.jibri.capture.ffmpeg.util.ENCODING_KEY
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
-import org.jitsi.jibri.capture.ffmpeg.util.OutputParser
-import org.jitsi.jibri.capture.ffmpeg.util.WARNING_KEY
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.NameableThreadFactory
-import org.jitsi.jibri.util.Tail
-import org.jitsi.jibri.util.Tee
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
-import org.jitsi.jibri.util.stopProcess
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
+import org.jitsi.jibri.util.logStream
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 const val FFMPEG_RESTART_ATTEMPTS = 1
@@ -49,16 +44,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
     /**
      * The currently active (if any) Ffmpeg process
      */
-    private var currentFfmpegProc: Process? = null
-    /**
-     * In order to both analyze Ffmpeg's output live and log it to a file, we'll
-     * tee its stdout stream so that both consumers can get all of its output.
-     */
-    private var ffmpegOutputTee: Tee? = null
-    /**
-     * We'll use this to monitor the stdout output of the Ffmpeg process
-     */
-    private var ffmpegTail: Tail? = null
+    private var currentFfmpegProc: FfmpegProcessWrapper? = null
 
     init {
         ffmpegOutputLogger.useParentHandlers = false
@@ -71,28 +57,20 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
     protected abstract fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String
 
     override fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): Boolean {
-        processBuilder.command(getFfmpegCommand(ffmpegExecutorParams, sink).split(" "))
-        processBuilder.redirectErrorStream(true)
-        logger.info("Running ffmpeg command:\n ${processBuilder.command()}")
+        val command = getFfmpegCommand(ffmpegExecutorParams, sink).split(" ")
         try {
-            currentFfmpegProc = processBuilder.start()
-        } catch (e: IOException) {
-            logger.error("Error starting ffmpeg: $e")
+            currentFfmpegProc = FfmpegProcessWrapper(command, processBuilder = processBuilder)
+        } catch (t: Throwable) {
+            logger.error("Error starting ffmpeg: $t")
             return false
         }
-        // Tee ffmpeg's output so that we can analyze its status and log everything
-        ffmpegOutputTee = Tee(currentFfmpegProc!!.inputStream)
-        ffmpegTail = Tail(ffmpegOutputTee!!.addBranch())
-        // Read from a tee branch and log to a file
-        executor.submit {
-            val reader = BufferedReader(InputStreamReader(ffmpegOutputTee!!.addBranch()))
-            while (true) {
-                ffmpegOutputLogger.info(reader.readLine())
-            }
+        return currentFfmpegProc?.let {
+            it.start()
+            logStream(it.getOutput(), ffmpegOutputLogger, executor)
+            true
+        } ?: run {
+            false
         }
-
-        logger.debug("Launched ffmpeg, is it alive? ${currentFfmpegProc?.isAlive}")
-        return true
     }
 
     override fun getExitCode(): Int? {
@@ -103,34 +81,38 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
     }
 
     override fun isHealthy(): Boolean {
-        //TODO: should we only consider 2 sequential instances of not getting a frame=
-        // encoding line "unhealthy"?
-        currentFfmpegProc?.let {
-            val ffmpegOutput = ffmpegTail?.mostRecentLine ?: ""
-            val parsedOutputLine = OutputParser().parse(ffmpegOutput)
-            if (!it.isAlive) {
-                logger.error("Ffmpeg is no longer running, its most recent output line was: $ffmpegOutput")
-                return false
-            }
-
-            return if (parsedOutputLine.containsKey(ENCODING_KEY) || parsedOutputLine.containsKey(WARNING_KEY)) {
-                if (parsedOutputLine.containsKey(WARNING_KEY)) {
-                    logger.debug("Ffmpeg is encoding, but issued a warning: $parsedOutputLine")
-                } else {
-                    logger.debug("Ffmpeg appears healthy: $parsedOutputLine")
+        return currentFfmpegProc?.let {
+            val (status, mostRecentOutput) = it.getStatus()
+            return@let when (status) {
+                FfmpegStatus.HEALTHY -> {
+                    logger.debug("Ffmpeg appears healthy: $mostRecentOutput")
+                    true
                 }
-                true
-            } else {
-                logger.error("Ffmpeg is running but doesn't appear to be encoding.  " +
-                        "Its most recent output line was $ffmpegOutput")
-                false
+                FfmpegStatus.WARNING -> {
+                    logger.info("Ffmpeg is encoding, but issued a warning: $mostRecentOutput")
+                    true
+                }
+                FfmpegStatus.ERROR -> {
+                    logger.error("Ffmpeg is running but doesn't appear to be encoding: $mostRecentOutput")
+                    false
+                }
             }
+        } ?: run {
+            false
         }
-        return false
     }
 
     override fun stopFfmpeg() {
         executor.shutdown()
-        stopProcess(currentFfmpegProc, "ffmpeg", logger)
+        logger.info("Stopping ffmpeg process")
+        currentFfmpegProc?.apply {
+            stop()
+            waitFor(10, TimeUnit.SECONDS)
+            if (isAlive) {
+                logger.error("Ffmpeg didn't stop, killing ffmpeg")
+                destroyForcibly()
+            }
+        }
+        logger.info("Ffmpeg exited with value ${currentFfmpegProc?.exitValue()}")
     }
 }
