@@ -30,7 +30,6 @@ import io.kotlintest.Description
 import io.kotlintest.Matcher
 import io.kotlintest.Result
 import io.kotlintest.Spec
-import io.kotlintest.TestResult
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNot
 import io.kotlintest.specs.ShouldSpec
