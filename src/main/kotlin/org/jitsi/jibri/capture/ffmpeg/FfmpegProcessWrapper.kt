@@ -30,7 +30,7 @@ enum class FfmpegStatus {
 class FfmpegProcessWrapper(
     command: List<String>,
     environment: Map<String, String> = mapOf(),
-    private val processBuilder: ProcessBuilder = ProcessBuilder()
+    processBuilder: ProcessBuilder = ProcessBuilder()
 ) : ProcessWrapper<FfmpegStatus>(command, environment, processBuilder) {
 
     override fun getStatus(): Pair<FfmpegStatus, String> {

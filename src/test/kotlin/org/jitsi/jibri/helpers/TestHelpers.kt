@@ -41,3 +41,24 @@ fun <T> eventually(duration: Duration, func: () -> T): T {
     }
     throw AssertionError("Test failed after ${duration.seconds} seconds; attempted $times times")
 }
+
+/**
+ * Ensures that, for the given [Duration], [func] should always evaluate
+ * correctly
+ */
+fun <T> always(duration: Duration, func: () -> T) {
+    val start = System.currentTimeMillis()
+    val end = start + duration.toMillis()
+    var times = 1
+    while (System.currentTimeMillis() < end) {
+        try {
+            func()
+        } catch (e: Throwable) {
+            if (AssertionError::class.java.isAssignableFrom(e.javaClass)) {
+                throw AssertionError("Test failed after ${System.currentTimeMillis() - start}ms; attempted $times times")
+            }
+        }
+        times++
+        Thread.sleep(500)
+    }
+}

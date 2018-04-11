@@ -20,10 +20,10 @@ package org.jitsi.jibri.capture.ffmpeg.executor.impl
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
-import io.kotlintest.Spec
 import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotlintest.specs.FunSpec
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
+import org.jitsi.jibri.helpers.always
 import org.jitsi.jibri.helpers.eventually
 import org.jitsi.jibri.sink.Sink
 import java.io.InputStream
@@ -31,80 +31,79 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.time.Duration
 
-class AbstractFfmpegExecutorTest : ShouldSpec() {
+class AbstractFfmpegExecutorTest : FunSpec() {
+    override fun isInstancePerTest(): Boolean = true
     class TestableAbstractFfmpegExecutor(fakeProcessBuilder: ProcessBuilder) : AbstractFfmpegExecutor(fakeProcessBuilder) {
         override fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String = ""
     }
+
     private val processBuilder: ProcessBuilder = mock()
     private val process: Process = mock()
     private val sink: Sink = mock()
     private lateinit var processStdOutWriter: PipedOutputStream
     private lateinit var processStdOut: InputStream
+    private lateinit var ffmpegExecutor: TestableAbstractFfmpegExecutor
 
-    private val ffmpegExecutor = TestableAbstractFfmpegExecutor(processBuilder)
+    override fun beforeTest(description: Description) {
+        super.beforeTest(description)
 
-    override fun beforeSpec(description: Description, spec: Spec) {
-        super.beforeSpec(description, spec)
-
+        whenever(processBuilder.start()).thenReturn(process)
         processStdOutWriter = PipedOutputStream()
         processStdOut = PipedInputStream(processStdOutWriter)
         whenever(process.inputStream).thenReturn(processStdOut)
-        whenever(processBuilder.start()).thenReturn(process)
+
+        ffmpegExecutor = TestableAbstractFfmpegExecutor(processBuilder)
+    }
+
+    private fun setProcessStdOutLine(line: String) {
+        val lineToWrite = if (line.endsWith("\n")) line else "$line\n"
+        processStdOutWriter.write(lineToWrite.toByteArray())
     }
 
     init {
-        "before ffmpeg is launched" {
-            "getExitCode" {
-                should("return null") {
-                    ffmpegExecutor.getExitCode() shouldBe null
-                }
-            }
-            "isHealthy" {
-                should("return false") {
-                    ffmpegExecutor.isHealthy() shouldBe false
-                }
+        test("before ffmpeg is launched, getExitCode and isHealthy should act accordingly") {
+            ffmpegExecutor.getExitCode() shouldBe null
+            ffmpegExecutor.isHealthy() shouldBe false
+        }
+
+        test("after ffmpeg is launched and is alive, getExitCode should return null") {
+            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            whenever(process.isAlive).thenReturn(true)
+            ffmpegExecutor.getExitCode() shouldBe null
+        }
+
+        test("after ffmpeg is launched and is encoding, isHealthy should return true") {
+            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            whenever(process.isAlive).thenReturn(true)
+            setProcessStdOutLine("frame=24")
+            eventually(Duration.ofSeconds(5)) {
+                ffmpegExecutor.isHealthy() shouldBe true
             }
         }
 
-        "after ffmpeg is launched" {
-            whenever(process.isAlive).thenReturn(true)
+        test("after ffmpeg is launched and has a warning, isHealthy should return true") {
             ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
-            "if the process is alive" {
-                "getExitCode" {
-                    should("return null") {
-                        ffmpegExecutor.getExitCode() shouldBe null
-                    }
-                }
-                "and ffmpeg is encoding" {
-                    processStdOutWriter.write("frame=24\n".toByteArray())
-                    "isHealthy" {
-                        should("return true") {
-                            eventually(Duration.ofSeconds(5)) {
-                                ffmpegExecutor.isHealthy() shouldBe true
-                            }
-                        }
-                    }
-                }
-                "and ffmpeg has a warning" {
-                    processStdOutWriter.write("Past duration 0.53 too large".toByteArray())
-                    "isHealthy" {
-                        should("return true") {
-                            eventually(Duration.ofSeconds(5)) {
-                                ffmpegExecutor.isHealthy() shouldBe true
-                            }
-                        }
-                    }
-                }
+            whenever(process.isAlive).thenReturn(true)
+            setProcessStdOutLine("Past duration 0.53 too large")
+            eventually(Duration.ofSeconds(5)) {
+                ffmpegExecutor.isHealthy() shouldBe true
             }
-            "if the process dies" {
-                whenever(process.isAlive).thenReturn(false)
-                "getExitCode" {
-                    whenever(process.exitValue()).thenReturn(42)
-                    should("return its exit code") {
-                        ffmpegExecutor.getExitCode() shouldBe 42
-                    }
-                }
+        }
+
+        test("after ffmpeg is launched and has an error, isHealthy should return false") {
+            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            setProcessStdOutLine("Error")
+            whenever(process.isAlive).thenReturn(true)
+            always(Duration.ofSeconds(5)) {
+                ffmpegExecutor.isHealthy() shouldBe false
             }
+        }
+
+        test("if the process dies, its exit code is returned") {
+            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            whenever(process.isAlive).thenReturn(false)
+            whenever(process.exitValue()).thenReturn(42)
+            ffmpegExecutor.getExitCode() shouldBe 42
         }
     }
 }
