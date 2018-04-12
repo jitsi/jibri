@@ -119,6 +119,7 @@ class JibriSelenium(
                 "--disable-infobars",
                 "--alsa-output-device=plug:amix"
         )
+        chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
             mapOf("DISPLAY" to jibriSeleniumOptions.display)
         ).build()
