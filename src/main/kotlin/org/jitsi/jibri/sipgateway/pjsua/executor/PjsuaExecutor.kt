@@ -1,9 +1,9 @@
 package org.jitsi.jibri.sipgateway.pjsua.executor
 
 import org.jitsi.jibri.sipgateway.SipClientParams
-import org.jitsi.jibri.sipgateway.pjsua.PjsuaFileHandler
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaProcessWrapper
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaStatus
+import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaFileHandler
 import org.jitsi.jibri.util.MonitorableProcess
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.extensions.debug

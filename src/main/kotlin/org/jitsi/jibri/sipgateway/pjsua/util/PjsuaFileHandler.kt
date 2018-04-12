@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package org.jitsi.jibri.sipgateway.pjsua
+package org.jitsi.jibri.sipgateway.pjsua.util
 
 import java.util.logging.FileHandler
 
