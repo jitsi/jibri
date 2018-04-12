@@ -20,7 +20,7 @@ import org.jitsi.jibri.util.ProcessWrapper
 
 enum class PjsuaStatus {
     HEALTHY,
-    ERROR
+    EXITED
 }
 
 class PjsuaProcessWrapper(
@@ -31,6 +31,7 @@ class PjsuaProcessWrapper(
 
     override fun getStatus(): Pair<PjsuaStatus, String> {
         val mostRecentLine = getMostRecentLine()
-        return Pair(PjsuaStatus.HEALTHY, mostRecentLine)
+        val status = if(isAlive) PjsuaStatus.HEALTHY else PjsuaStatus.EXITED
+        return Pair(status, mostRecentLine)
     }
 }

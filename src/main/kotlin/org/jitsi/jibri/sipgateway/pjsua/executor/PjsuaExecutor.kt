@@ -105,8 +105,8 @@ class PjsuaExecutor(
                     logger.debug("Pjsua appears healthy: $mostRecentOutput")
                     true
                 }
-                PjsuaStatus.ERROR -> {
-                    logger.debug("Pjsua had an error: $mostRecentOutput")
+                PjsuaStatus.EXITED -> {
+                    logger.debug("Pjsua exited: $mostRecentOutput")
                     false
                 }
             }
