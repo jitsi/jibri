@@ -106,7 +106,7 @@ class PjsuaExecutor(
                     true
                 }
                 PjsuaStatus.EXITED -> {
-                    logger.debug("Pjsua exited: $mostRecentOutput")
+                    logger.debug("Pjsua exited with code ${getExitCode()}: $mostRecentOutput")
                     false
                 }
             }
