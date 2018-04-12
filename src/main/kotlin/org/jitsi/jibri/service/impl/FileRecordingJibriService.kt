@@ -127,6 +127,9 @@ class FileRecordingJibriService(private val recordingOptions: RecordingOptions) 
             } else {
                 numRestarts++
                 // Re-create the sink here because we want a new filename
+                //TODO: we can run into an issue here where this takes a while and the monitor task runs again
+                // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
+                // and shuts it down
                 sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
                 capturer.stop()
                 if (!capturer.start(sink)) {

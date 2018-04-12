@@ -24,7 +24,8 @@ import org.jitsi.jibri.util.ProcessWrapper
 enum class FfmpegStatus {
     HEALTHY,
     WARNING,
-    ERROR
+    ERROR,
+    EXITED
 }
 
 class FfmpegProcessWrapper(
@@ -37,6 +38,7 @@ class FfmpegProcessWrapper(
         val mostRecentLine = getMostRecentLine()
         val result = OutputParser.parse(mostRecentLine)
         val status = when {
+            !isAlive -> FfmpegStatus.EXITED
             result.containsKey(ENCODING_KEY) -> FfmpegStatus.HEALTHY
             result.containsKey(WARNING_KEY) -> FfmpegStatus.WARNING
             else -> FfmpegStatus.ERROR

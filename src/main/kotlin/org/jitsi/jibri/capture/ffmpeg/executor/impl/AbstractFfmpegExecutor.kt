@@ -65,6 +65,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
             return false
         }
         return currentFfmpegProc?.let {
+            logger.info("Starting ffmpeg with command $command")
             it.start()
             logStream(it.getOutput(), ffmpegOutputLogger, executor)
             true
@@ -94,6 +95,10 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
                 }
                 FfmpegStatus.ERROR -> {
                     logger.error("Ffmpeg is running but doesn't appear to be encoding: $mostRecentOutput")
+                    false
+                }
+                FfmpegStatus.EXITED -> {
+                    logger.error("Ffmpeg is no longer running.  It's most recent output was $mostRecentOutput")
                     false
                 }
             }
