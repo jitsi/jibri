@@ -19,6 +19,7 @@ package org.jitsi.jibri.service.impl
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallParams
+import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
@@ -125,8 +126,14 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
             logger.error("Capturer failed to start")
             return false
         }
+        val processMonitor = createCaptureMonitor(capturer)
+        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
+        return true
+    }
+
+    private fun createCaptureMonitor(process: Capturer): ProcessMonitor {
         var numRestarts = 0
-        val processMonitor = ProcessMonitor(capturer) { exitCode ->
+        return ProcessMonitor(process) { exitCode ->
             if (exitCode != null) {
                 logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
             } else {
@@ -141,16 +148,14 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 //TODO: we can run into an issue here where this takes a while and the monitor task runs again
                 // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
                 // and shuts it down
-                sink = FileSink(fileRecordingParams.recordingDirectory, fileRecordingParams.callParams.callUrlInfo.callName)
-                capturer.stop()
-                if (!capturer.start(sink)) {
+                sink = FileSink(recordingOptions.recordingDirectory, recordingOptions.callParams.callUrlInfo.callName)
+                process.stop()
+                if (!process.start(sink)) {
                     logger.error("Capture failed to restart, giving up")
                     publishStatus(JibriServiceStatus.ERROR)
                 }
             }
         }
-        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
-        return true
     }
 
     override fun stop() {
