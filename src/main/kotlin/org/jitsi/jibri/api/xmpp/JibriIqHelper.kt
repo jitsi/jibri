@@ -64,7 +64,6 @@ fun JibriIq.mode(): JibriMode {
     return when (recordingMode) {
         JibriIq.RecordingMode.FILE -> JibriMode.FILE
         JibriIq.RecordingMode.STREAM -> JibriMode.STREAM
-        JibriIq.RecordingMode.UNDEFINED -> JibriMode.UNDEFINED
         else -> JibriMode.UNDEFINED
     }
 }

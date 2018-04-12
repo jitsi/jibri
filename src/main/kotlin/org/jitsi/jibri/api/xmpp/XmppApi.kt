@@ -72,7 +72,6 @@ class XmppApi(
      * connection, we'll listen for incoming [JibriIq] messages and handle them appropriately.  Join the MUC on
      * each connection and send an initial [JibriStatusPacketExt] presence.
      */
-    //fun start() {
     fun start(mucClientProvider: (XMPPTCPConnectionConfiguration) -> MucClient = defaultMucClientProvider) {
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
@@ -94,7 +93,6 @@ class XmppApi(
                     configBuilder.setHostnameVerifier(TrustAllHostnameVerifier())
                 }
                 try {
-//                    val mucClient = MucClient(configBuilder.build())
                     val mucClient = mucClientProvider(configBuilder.build())
                     mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
                         override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {

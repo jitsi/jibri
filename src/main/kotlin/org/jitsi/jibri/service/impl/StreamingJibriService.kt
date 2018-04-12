@@ -111,7 +111,6 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         return true
     }
 
-    // abtract out common logic, return common status? HEALTHY, UNHEALTHY, EXITED?
     private fun createCapturerMonitor(process: Capturer): ProcessMonitor {
         var numRestarts = 0
         return ProcessMonitor(process) { exitCode ->

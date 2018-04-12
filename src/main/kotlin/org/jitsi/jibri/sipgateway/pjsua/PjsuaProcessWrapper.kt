@@ -31,7 +31,7 @@ class PjsuaProcessWrapper(
 
     override fun getStatus(): Pair<PjsuaStatus, String> {
         val mostRecentLine = getMostRecentLine()
-        val status = if(isAlive) PjsuaStatus.HEALTHY else PjsuaStatus.EXITED
+        val status = if (isAlive) PjsuaStatus.HEALTHY else PjsuaStatus.EXITED
         return Pair(status, mostRecentLine)
     }
 }
