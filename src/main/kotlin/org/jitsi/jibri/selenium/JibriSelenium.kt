@@ -135,7 +135,7 @@ class JibriSelenium(
      */
     private fun addEmptyCallDetector() {
         var numTimesEmpty = 0
-        emptyCallTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS) {
+        emptyCallTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
             try {
                 // >1 since the count will include jibri itself
                 if (CallPage(chromeDriver).getNumParticipants(chromeDriver) > 1) {

@@ -34,7 +34,7 @@ class CallUrlInfoTest : ShouldSpec() {
         "a nullable CallUrlInfo instance" {
             should("not equal null") {
                 val nullableInfo: CallUrlInfo? = CallUrlInfo("baseUrl", "callName")
-                (nullableInfo == null) shouldBe false
+                nullableInfo shouldNotBe null
             }
         }
         val info = CallUrlInfo("baseUrl", "callName")
