@@ -64,7 +64,7 @@ data class ServiceParams(
  */
 data class FileRecordingParams(
     val callParams: CallParams,
-    val callLogicParams: XmppCredentials
+    val callLoginParams: XmppCredentials
 )
 
 /**
@@ -72,7 +72,7 @@ data class FileRecordingParams(
  */
 data class StreamingParams(
     val callParams: CallParams,
-    val callLogicParams: XmppCredentials,
+    val callLoginParams: XmppCredentials,
     val youTubeStreamKey: String
 )
 
