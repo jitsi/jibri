@@ -69,7 +69,7 @@ abstract class ProcessWrapper<out StatusType>(
 
     init {
         processBuilder.command(command)
-        processBuilder.redirectErrorStream()
+        processBuilder.redirectErrorStream(true)
         processBuilder.environment().putAll(environment)
     }
 
@@ -86,6 +86,8 @@ abstract class ProcessWrapper<out StatusType>(
     fun waitFor(timeout: Long, unit: TimeUnit): Boolean = process.waitFor(timeout, unit)
 
     fun stop() {
+        tail.stop()
+        tee.stop()
         val pid = pid(process)
         Runtime.getRuntime().exec("kill -s SIGINT $pid")
     }
