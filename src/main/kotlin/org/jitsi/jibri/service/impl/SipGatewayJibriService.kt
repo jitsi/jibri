@@ -56,10 +56,13 @@ class SipGatewayJibriService(private val sipGatewayServiceParams: SipGatewayServ
     override fun start(): Boolean {
         if (!jibriSelenium.joinCall(sipGatewayServiceParams.callParams.callUrlInfo.callName)) {
             logger.error("Selenium failed to join the call")
-            stop()
             return false
         }
-        pjsuaClient.start()
+        if (!pjsuaClient.start()) {
+            logger.error("Pjsua failed to start")
+            return false
+        }
+        //TODO: process monitor
         return true
     }
 

@@ -18,7 +18,7 @@ interface SipClient : MonitorableProcess {
     /**
      * Start the [SipClient]
      */
-    fun start()
+    fun start(): Boolean
 
     /**
      * Stop the [SipClient]

@@ -12,8 +12,8 @@ data class PjsuaClientParams(
 class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient {
     private val pjsuaExecutor = PjsuaExecutor()
 
-    override fun start() {
-        pjsuaExecutor.launchPjsua(PjsuaExecutorParams(pjsuaClientParams.sipClientParams))
+    override fun start(): Boolean {
+        return pjsuaExecutor.launchPjsua(PjsuaExecutorParams(pjsuaClientParams.sipClientParams))
     }
 
     override fun stop() {
