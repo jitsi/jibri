@@ -106,6 +106,7 @@ class SipGatewayJibriService(
     }
 
     override fun stop() {
+        processMonitorTask?.cancel(false)
         pjsuaClient.stop()
         jibriSelenium.leaveCallAndQuitBrowser()
     }
