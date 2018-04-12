@@ -1,0 +1,19 @@
+[Unit]
+Description=Jibri Process
+Requires=jibri-icewm.service jibri-xorg.service
+After=network.target
+
+[Service]
+User=jibri
+Group=jibri
+PermissionsStartOnly=true
+ExecStart=/opt/jitsi/jibri/launch.sh
+ExecStop=/opt/jitsi/jibri/graceful_shutdown.sh
+ExecReload=/opt/jitsi/jibri/graceful_shutdown.sh
+KillMode=process
+Restart=always
+RestartPreventExitStatus=255
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
