@@ -18,14 +18,13 @@
 package org.jitsi.jibri.api.http
 
 import org.jitsi.jibri.CallParams
-import org.jitsi.jibri.FileRecordingParams
+import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
 import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
-import org.jitsi.jibri.StreamingParams
-
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.util.extensions.debug
 import java.util.logging.Logger
 import javax.ws.rs.Consumes
@@ -85,7 +84,7 @@ class HttpApi(private val jibriManager: JibriManager) {
                 val callLoginParams = serviceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startFileRecording(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    FileRecordingParams(serviceParams.callParams, callLoginParams),
+                    FileRecordingRequestParams(serviceParams.callParams, callLoginParams),
                     environmentContext = null
                 )
             }
