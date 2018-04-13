@@ -90,7 +90,7 @@ class HttpApi(private val jibriManager: JibriManager) {
                 val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startFileRecording(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    FileRecordingRequestParams(serviceParams.callParams, callLoginParams),
+                    FileRecordingRequestParams(startServiceParams.callParams, callLoginParams),
                     environmentContext = null
                 )
             }
