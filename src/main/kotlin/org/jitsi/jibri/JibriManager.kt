@@ -26,9 +26,9 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
+import org.jitsi.jibri.service.impl.FileRecordingParams
 import org.jitsi.jibri.service.impl.StreamingJibriService
-import org.jitsi.jibri.service.impl.RecordingOptions
-import org.jitsi.jibri.service.impl.StreamingOptions
+import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
@@ -60,20 +60,20 @@ data class ServiceParams(
 )
 
 /**
- * Parameters needed for starting a [FileRecordingJibriService]
+ * Some of the values in [FileRecordingParams] come from the configuration
+ * file, so the incoming request won't contain all of them.  This class
+ * models the subset of values which will come in the request.
  */
-data class FileRecordingParams(
+data class FileRecordingRequestParams(
+    /**
+     * Which call we'll join
+     */
     val callParams: CallParams,
+    /**
+     * The login information needed to appear invisible in
+     * the call
+     */
     val callLoginParams: XmppCredentials
-)
-
-/**
- * Parameters needed for starting a [StreamingJibriService]
- */
-data class StreamingParams(
-    val callParams: CallParams,
-    val callLoginParams: XmppCredentials,
-    val youTubeStreamKey: String
 )
 
 /**
@@ -98,22 +98,25 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
     @Synchronized
     fun startFileRecording(
         serviceParams: ServiceParams,
-        fileRecordingParams: FileRecordingParams,
+        fileRecordingRequestParams: FileRecordingRequestParams,
         environmentContext: EnvironmentContext?,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ): StartServiceResult {
-        logger.info("Starting a file recording with params: $fileRecordingParams")
+        logger.info("Starting a file recording with params: $fileRecordingRequestParams " +
+                "finalize script path: ${config.finalizeRecordingScriptPath} and " +
+                "recordings directory: ${config.recordingDirectory}")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
         val service = FileRecordingJibriService(
-                RecordingOptions(
-                    config.recordingDirectory,
-                    fileRecordingParams.callParams,
-                    config.finalizeRecordingScriptPath
-                )
+            FileRecordingParams(
+                fileRecordingRequestParams.callParams,
+                fileRecordingRequestParams.callLoginParams,
+                config.finalizeRecordingScriptPath,
+                config.recordingDirectory
             )
+        )
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
@@ -134,10 +137,7 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
-        val service = StreamingJibriService(StreamingOptions(
-                streamingParams.youTubeStreamKey,
-                streamingParams.callParams
-        ))
+        val service = StreamingJibriService(streamingParams)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 

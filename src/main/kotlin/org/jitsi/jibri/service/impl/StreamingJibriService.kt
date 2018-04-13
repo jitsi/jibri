@@ -20,6 +20,7 @@ package org.jitsi.jibri.service.impl
 import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
+import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
@@ -36,26 +37,34 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
-data class StreamingOptions(
+private const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
+private const val STREAMING_MAX_BITRATE = 2976
+
+/**
+ * Parameters needed for starting a [StreamingJibriService]
+ */
+data class StreamingParams(
+    /**
+     * Which call we'll join
+     */
+    val callParams: CallParams,
+    /**
+     * The login information needed to appear invisible in
+     * the call
+     */
+    val callLoginParams: XmppCredentials,
     /**
      * The YouTube stream key to use for this stream
      */
-    val youTubeStreamKey: String,
-    /**
-     * The params needed to join the call
-     */
-    val callParams: CallParams
+    val youTubeStreamKey: String
 )
-
-private const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
-private const val STREAMING_MAX_BITRATE = 2976
 
 /**
  * [StreamingJibriService] is the [JibriService] responsible for joining a
  * web call, capturing its audio and video, and streaming that audio and video
  * to a url
  */
-class StreamingJibriService(private val streamingOptions: StreamingOptions) : JibriService() {
+class StreamingJibriService(private val streamingParams: StreamingParams) : JibriService() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val capturer = FfmpegCapturer()
     private val sink: Sink
@@ -70,13 +79,13 @@ class StreamingJibriService(private val streamingOptions: StreamingOptions) : Ji
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
     private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(streamingOptions.callParams, urlParams = RECORDING_URL_OPTIONS),
+        JibriSeleniumOptions(streamingParams.callParams, urlParams = RECORDING_URL_OPTIONS),
         executor
     )
 
     init {
         sink = StreamSink(
-            url = "$YOUTUBE_URL/${streamingOptions.youTubeStreamKey}",
+            url = "$YOUTUBE_URL/${streamingParams.youTubeStreamKey}",
             streamingMaxBitrate = STREAMING_MAX_BITRATE,
             streamingBufSize = 2 * STREAMING_MAX_BITRATE
         )
@@ -86,7 +95,7 @@ class StreamingJibriService(private val streamingOptions: StreamingOptions) : Ji
     }
 
     override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(streamingOptions.callParams.callUrlInfo.callName)) {
+        if (!jibriSelenium.joinCall(streamingParams.callParams.callUrlInfo.callName, streamingParams.callLoginParams)) {
             logger.error("Selenium failed to join the call")
             return false
         }

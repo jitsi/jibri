@@ -21,15 +21,15 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqProvider
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.CallParams
-import org.jitsi.jibri.FileRecordingParams
+import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
-import org.jitsi.jibri.StreamingParams
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
@@ -216,7 +216,7 @@ class XmppApi(
             JibriIq.RecordingMode.FILE -> {
                 jibriManager.startFileRecording(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
-                    FileRecordingParams(callParams, xmppEnvironment.callLogin),
+                    FileRecordingRequestParams(callParams, xmppEnvironment.callLogin),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
