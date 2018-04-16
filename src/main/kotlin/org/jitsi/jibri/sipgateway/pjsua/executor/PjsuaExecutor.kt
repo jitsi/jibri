@@ -32,12 +32,7 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 data class PjsuaExecutorParams(
-    val sipClientParams: SipClientParams,
-    /**
-     * The name of the screen session we'll start when
-     * launching pjsua
-     */
-    val screenSessionName: String = "pjsua"
+    val sipClientParams: SipClientParams
 )
 
 private const val CAPTURE_DEVICE = 23
