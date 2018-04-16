@@ -67,7 +67,7 @@ data class XmppEnvironmentConfig(
      * to be set?
      */
     @JsonProperty("sip_control_muc")
-    val sipControlMuc: XmppMuc,
+    val sipControlMuc: XmppMuc?,
     /**
      * The login information the selenium web client will use
      */

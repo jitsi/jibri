@@ -105,22 +105,27 @@ class XmppApi(
                         val jibriPresence = JibriPresenceHelper.createPresence(status, jibriJid)
                         mucClient.sendStanza(jibriPresence)
                     }
+                    // The recording control muc
                     mucClient.createOrJoinMuc(
                         jibriJid.asEntityBareJidIfPossible(),
                         Resourcepart.from(config.controlMuc.nickname)
                     )
-                    mucClient.createOrJoinMuc(
-                        JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
-                        Resourcepart.from(config.sipControlMuc.nickname)
-                    )
-
                     val jibriPresence = JibriPresenceHelper.createPresence(JibriStatusPacketExt.Status.IDLE, jibriJid)
                     mucClient.sendStanza(jibriPresence)
-                    val jibriSipStatus = JibriPresenceHelper.createPresence(
-                        JibriStatusPacketExt.Status.IDLE,
-                        JidCreate.bareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
-                    )
-                    mucClient.sendStanza(jibriSipStatus)
+
+                    // The SIP control muc
+                    config.sipControlMuc?.let {
+                        logger.info("SIP control muc is defined for environment ${config.name}, joining")
+                        mucClient.createOrJoinMuc(
+                            JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
+                            Resourcepart.from(config.sipControlMuc.nickname)
+                        )
+                        val jibriSipStatus = JibriPresenceHelper.createPresence(
+                            JibriStatusPacketExt.Status.IDLE,
+                            JidCreate.bareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
+                        )
+                        mucClient.sendStanza(jibriSipStatus)
+                    }
                 } catch (e: Exception) {
                     logger.error("Error connecting to xmpp environment: $e")
                 }
