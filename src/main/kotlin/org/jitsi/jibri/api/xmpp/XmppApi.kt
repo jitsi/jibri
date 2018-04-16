@@ -161,7 +161,12 @@ class XmppApi(
                             logger.info("Sending error iq ${errorIq.toXML()}")
                             mucClient.sendStanza(errorIq)
                         }
-                        else -> {} // We only care about errors here
+                        JibriServiceStatus.FINISHED -> {
+                            logger.info("Current service finished")
+                            val offIq = JibriIqHelper.create(startJibriIq.from, status = JibriIq.Status.OFF)
+                            logger.info("Sending off iq ${offIq.toXML()}")
+                            mucClient.sendStanza(offIq)
+                        }
                     }
                 }
                 val startServiceResult = handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
