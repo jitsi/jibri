@@ -28,6 +28,8 @@ import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.FileRecordingParams
 import org.jitsi.jibri.service.impl.StreamingJibriService
+import org.jitsi.jibri.service.impl.SipGatewayJibriService
+import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
@@ -52,6 +54,7 @@ data class CallParams(
     val callUrlInfo: CallUrlInfo
 )
 
+//TODO: move these param classes into their appropriate files
 /**
  * Parameters needed for starting any [JibriService]
  */
@@ -99,7 +102,7 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
     fun startFileRecording(
         serviceParams: ServiceParams,
         fileRecordingRequestParams: FileRecordingRequestParams,
-        environmentContext: EnvironmentContext?,
+        environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ): StartServiceResult {
         logger.info("Starting a file recording with params: $fileRecordingRequestParams " +
@@ -129,15 +132,34 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
     fun startStreaming(
         serviceParams: ServiceParams,
         streamingParams: StreamingParams,
-        environmentContext: EnvironmentContext?,
+        environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ): StartServiceResult {
-        logger.info("Starting a stream with params: $streamingParams")
+        logger.info("Starting a stream with params: $serviceParams $streamingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
             return StartServiceResult.BUSY
         }
         val service = StreamingJibriService(streamingParams)
+        return startService(service, serviceParams, environmentContext, serviceStatusHandler)
+    }
+
+    @Synchronized
+    fun startSipGateway(
+        serviceParams: ServiceParams,
+        sipGatewayServiceParams: SipGatewayServiceParams,
+        environmentContext: EnvironmentContext? = null,
+        serviceStatusHandler: JibriServiceStatusHandler? = null
+    ): StartServiceResult {
+        logger.info("Starting a SIP gateway with params: $serviceParams $sipGatewayServiceParams")
+        if (busy()) {
+            logger.info("Jibri is busy, can't start service")
+            return StartServiceResult.BUSY
+        }
+        val service = SipGatewayJibriService(SipGatewayServiceParams(
+            sipGatewayServiceParams.callParams,
+            sipGatewayServiceParams.sipClientParams
+        ))
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 

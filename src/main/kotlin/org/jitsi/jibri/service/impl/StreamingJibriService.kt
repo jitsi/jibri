@@ -18,6 +18,7 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.CallParams
+import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
@@ -104,8 +105,15 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             logger.error("Capturer failed to start")
             return false
         }
+
+        val processMonitor = createCapturerMonitor(capturer)
+        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
+        return true
+    }
+
+    private fun createCapturerMonitor(process: Capturer): ProcessMonitor {
         var numRestarts = 0
-        val processMonitor = ProcessMonitor(capturer) { exitCode ->
+        return ProcessMonitor(process) { exitCode ->
             if (exitCode != null) {
                 logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
             } else {
@@ -116,15 +124,13 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
                 publishStatus(JibriServiceStatus.ERROR)
             } else {
                 numRestarts++
-                capturer.stop()
-                if (!capturer.start(sink)) {
+                process.stop()
+                if (!process.start(sink)) {
                     logger.error("Capture failed to restart, giving up")
                     publishStatus(JibriServiceStatus.ERROR)
                 }
             }
         }
-        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
-        return true
     }
 
     override fun stop() {

@@ -29,6 +29,7 @@ import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
+import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -59,6 +60,11 @@ data class JibriSeleniumOptions(
      */
     val email: String = "",
     /**
+     * Chrome command line flags to add (in addition to the common
+     * ones)
+     */
+    val extraChromeCommandLineFlags: List<String> = listOf(),
+    /**
      * The url params to be passed in the call url
      */
     val urlParams: List<String>
@@ -73,6 +79,8 @@ val SIP_GW_URL_OPTIONS = listOf(
 val RECORDING_URL_OPTIONS = listOf(
     "config.iAmRecorder=true",
     "config.externalConnectUrl=null",
+    "config.startWithAudioMuted=true",
+    "config.startWithVideoMuted=true",
     "interfaceConfig.APP_NAME=\"Jibri\""
 )
 
@@ -86,7 +94,7 @@ val RECORDING_URL_OPTIONS = listOf(
  */
 class JibriSelenium(
     private val jibriSeleniumOptions: JibriSeleniumOptions,
-    private val executor: ScheduledExecutorService
+    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 ) : StatusPublisher<JibriServiceStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var chromeDriver: ChromeDriver
@@ -113,6 +121,7 @@ class JibriSelenium(
                 "--disable-infobars",
                 "--alsa-output-device=plug:amix"
         )
+        chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
             mapOf("DISPLAY" to jibriSeleniumOptions.display)
         ).build()

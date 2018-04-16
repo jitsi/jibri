@@ -29,7 +29,9 @@ import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
+import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
@@ -61,13 +63,16 @@ class XmppApi(
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
+    private val defaultMucClientProvider = { config: XMPPTCPConnectionConfiguration ->
+        MucClient(config)
+    }
 
     /**
      * Start up the XMPP API by connecting and logging in to all the configured XMPP environments.  For each XMPP
      * connection, we'll listen for incoming [JibriIq] messages and handle them appropriately.  Join the MUC on
      * each connection and send an initial [JibriStatusPacketExt] presence.
      */
-    fun start() {
+    fun start(mucClientProvider: (XMPPTCPConnectionConfiguration) -> MucClient = defaultMucClientProvider) {
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
@@ -88,7 +93,7 @@ class XmppApi(
                     configBuilder.setHostnameVerifier(TrustAllHostnameVerifier())
                 }
                 try {
-                    val mucClient = MucClient(configBuilder.build())
+                    val mucClient = mucClientProvider(configBuilder.build())
                     mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
                         override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
                             return handleJibriIq(jibriIq, config, mucClient)
@@ -96,17 +101,31 @@ class XmppApi(
                     })
                     val jibriJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
                     jibriManager.addStatusHandler { status ->
-                        logger.info("XMPP API got jibri status $status, publishing presence to connection ${config.name}")
+                        logger.info("Jibri reports its status is now $status, publishing presence to connection ${config.name}")
                         val jibriPresence = JibriPresenceHelper.createPresence(status, jibriJid)
                         mucClient.sendStanza(jibriPresence)
                     }
+                    // The recording control muc
                     mucClient.createOrJoinMuc(
                         jibriJid.asEntityBareJidIfPossible(),
                         Resourcepart.from(config.controlMuc.nickname)
                     )
-
                     val jibriPresence = JibriPresenceHelper.createPresence(JibriStatusPacketExt.Status.IDLE, jibriJid)
                     mucClient.sendStanza(jibriPresence)
+
+                    // The SIP control muc
+                    config.sipControlMuc?.let {
+                        logger.info("SIP control muc is defined for environment ${config.name}, joining")
+                        mucClient.createOrJoinMuc(
+                            JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
+                            Resourcepart.from(config.sipControlMuc.nickname)
+                        )
+                        val jibriSipStatus = JibriPresenceHelper.createPresence(
+                            JibriStatusPacketExt.Status.IDLE,
+                            JidCreate.bareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
+                        )
+                        mucClient.sendStanza(jibriSipStatus)
+                    }
                 } catch (e: Exception) {
                     logger.error("Error connecting to xmpp environment: $e")
                 }
@@ -215,8 +234,8 @@ class XmppApi(
         )
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
-        return when (startIq.recordingMode) {
-            JibriIq.RecordingMode.FILE -> {
+        return when (startIq.mode()) {
+            JibriMode.FILE -> {
                 jibriManager.startFileRecording(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
                     FileRecordingRequestParams(callParams, xmppEnvironment.callLogin),
@@ -224,10 +243,18 @@ class XmppApi(
                     serviceStatusHandler
                 )
             }
-            JibriIq.RecordingMode.STREAM -> {
+            JibriMode.STREAM -> {
                 jibriManager.startStreaming(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
                     StreamingParams(callParams, xmppEnvironment.callLogin, youTubeStreamKey = startIq.streamId),
+                    EnvironmentContext(xmppEnvironment.name),
+                    serviceStatusHandler
+                )
+            }
+            JibriMode.SIPGW -> {
+                jibriManager.startSipGateway(
+                    ServiceParams(xmppEnvironment.usageTimeoutMins),
+                    SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
