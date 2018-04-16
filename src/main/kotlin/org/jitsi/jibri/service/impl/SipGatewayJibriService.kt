@@ -114,6 +114,7 @@ class SipGatewayJibriService(
             when (exitCode) {
                 null -> {
                     logger.error("SipClient process is still running but no longer healthy")
+                    publishStatus(JibriServiceStatus.ERROR)
                 }
                 0 -> {
                     logger.info("SipClient remote side hung up")
