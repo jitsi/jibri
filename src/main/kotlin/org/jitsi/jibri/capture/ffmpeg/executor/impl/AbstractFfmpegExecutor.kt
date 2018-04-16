@@ -98,7 +98,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
                     false
                 }
                 FfmpegStatus.EXITED -> {
-                    logger.error("Ffmpeg exited with code ${getExitCode()}.  It's most recent output was $mostRecentOutput")
+                    logger.error("Ffmpeg exited with code ${getExitCode()}.  Its most recent output was $mostRecentOutput")
                     false
                 }
             }
