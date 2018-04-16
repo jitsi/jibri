@@ -101,7 +101,7 @@ class XmppApi(
                     })
                     val jibriJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
                     jibriManager.addStatusHandler { status ->
-                        logger.info("XMPP API got jibri status $status, publishing presence to connection ${config.name}")
+                        logger.info("Jibri reports its status is now $status, publishing presence to connection ${config.name}")
                         val jibriPresence = JibriPresenceHelper.createPresence(status, jibriJid)
                         mucClient.sendStanza(jibriPresence)
                     }
