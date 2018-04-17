@@ -57,7 +57,11 @@ data class StreamingParams(
     /**
      * The YouTube stream key to use for this stream
      */
-    val youTubeStreamKey: String
+    val youTubeStreamKey: String,
+    /**
+     * The YouTube broadcast ID for this stream, if we have it
+     */
+    val youTubeBroadcastId: String? = null
 )
 
 /**
