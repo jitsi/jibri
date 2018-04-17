@@ -110,6 +110,10 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             return false
         }
 
+        streamingParams.youTubeBroadcastId?.let {
+            jibriSelenium.addToPresence("live-stream-view-url", "https://www.youtube.com/watch?v=$it")
+        }
+
         val processMonitor = createCapturerMonitor(capturer)
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
         return true
