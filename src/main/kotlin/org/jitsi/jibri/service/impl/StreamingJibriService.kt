@@ -111,7 +111,9 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         }
 
         streamingParams.youTubeBroadcastId?.let {
-            jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")
+            if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
+                logger.error("Error adding live stream url to presence")
+            }
         }
 
         val processMonitor = createCapturerMonitor(capturer)

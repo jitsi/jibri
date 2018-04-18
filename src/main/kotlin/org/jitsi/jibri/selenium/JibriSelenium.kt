@@ -171,9 +171,8 @@ class JibriSelenium(
         CallPage(chromeDriver).injectParticipantTrackerScript(chromeDriver)
     }
 
-    fun addToPresence(key: String, value: String) {
+    fun addToPresence(key: String, value: String): Boolean =
         CallPage(chromeDriver).addToPresence(chromeDriver, key, value)
-    }
 
     /**
      * Join a a web call with Selenium
