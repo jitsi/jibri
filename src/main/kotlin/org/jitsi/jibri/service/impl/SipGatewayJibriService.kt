@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.service.impl
 
-import org.jitsi.jibri.CallParams
+import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS

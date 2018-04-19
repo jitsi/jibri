@@ -18,11 +18,11 @@
 package org.jitsi.jibri.service.impl
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS

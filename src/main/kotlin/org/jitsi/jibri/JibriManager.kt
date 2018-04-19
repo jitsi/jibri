@@ -22,14 +22,15 @@ import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.health.JibriHealth
+import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.FileRecordingParams
-import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.SipGatewayJibriService
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
+import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
@@ -46,13 +47,6 @@ enum class StartServiceResult {
     BUSY,
     ERROR
 }
-
-/**
- * Parameters needed for joining the call in Selenium
- */
-data class CallParams(
-    val callUrlInfo: CallUrlInfo
-)
 
 //TODO: move these param classes into their appropriate files
 /**
