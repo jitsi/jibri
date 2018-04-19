@@ -22,13 +22,13 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqPr
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriManager
-import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams

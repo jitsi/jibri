@@ -24,6 +24,13 @@ enum class JibriServiceStatus {
     ERROR
 }
 
+/**
+ * Parameters needed for starting any [JibriService]
+ */
+data class ServiceParams(
+    val usageTimeoutMinutes: Int
+)
+
 typealias JibriServiceStatusHandler = (JibriServiceStatus) -> Unit
 
 /**

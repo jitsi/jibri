@@ -26,6 +26,7 @@ import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.FileRecordingParams
 import org.jitsi.jibri.service.impl.SipGatewayJibriService
@@ -47,14 +48,6 @@ enum class StartServiceResult {
     BUSY,
     ERROR
 }
-
-//TODO: move these param classes into their appropriate files
-/**
- * Parameters needed for starting any [JibriService]
- */
-data class ServiceParams(
-    val usageTimeoutMinutes: Int
-)
 
 /**
  * Some of the values in [FileRecordingParams] come from the configuration
