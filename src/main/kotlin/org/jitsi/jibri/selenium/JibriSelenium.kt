@@ -17,7 +17,6 @@
 
 package org.jitsi.jibri.selenium
 
-import org.jitsi.jibri.CallParams
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
@@ -34,6 +33,13 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
+
+/**
+ * Parameters needed for joining the call in Selenium
+ */
+data class CallParams(
+    val callUrlInfo: CallUrlInfo
+)
 
 /**
  * Options that can be passed to [JibriSelenium]
