@@ -20,10 +20,10 @@ package org.jitsi.jibri.api.http
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
-import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
+import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams

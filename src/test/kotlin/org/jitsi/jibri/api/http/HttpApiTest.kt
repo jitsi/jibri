@@ -39,12 +39,12 @@ import org.glassfish.jersey.test.JerseyTest
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
-import org.jitsi.jibri.ServiceParams
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.CallParams
+import org.jitsi.jibri.service.ServiceParams
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.Application
 import javax.ws.rs.ext.ContextResolver
