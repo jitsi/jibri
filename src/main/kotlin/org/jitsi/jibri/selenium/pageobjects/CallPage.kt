@@ -115,6 +115,30 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
+    /**
+     * Add the given key, value pair to the presence map and send a new presence
+     * message
+     */
+    fun addToPresence(driver: RemoteWebDriver, key: String, value: String): Boolean {
+        val result = driver.executeScript("""
+            try {
+                APP.conference._room.room.addToPresence(
+                    '$key',
+                    {
+                        value: '$value'
+                    }
+                );
+                APP.conference._room.room.sendPresence();
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin())
+        return when (result) {
+            is String -> false
+            else -> true
+        }
+    }
+
     fun leave(): Boolean {
         val result = driver.executeScript("""
             try {

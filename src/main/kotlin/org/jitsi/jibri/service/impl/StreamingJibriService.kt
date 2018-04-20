@@ -57,7 +57,11 @@ data class StreamingParams(
     /**
      * The YouTube stream key to use for this stream
      */
-    val youTubeStreamKey: String
+    val youTubeStreamKey: String,
+    /**
+     * The YouTube broadcast ID for this stream, if we have it
+     */
+    val youTubeBroadcastId: String? = null
 )
 
 /**
@@ -104,6 +108,12 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         if (!capturer.start(sink)) {
             logger.error("Capturer failed to start")
             return false
+        }
+
+        streamingParams.youTubeBroadcastId?.let {
+            if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
+                logger.error("Error adding live stream url to presence")
+            }
         }
 
         val processMonitor = createCapturerMonitor(capturer)

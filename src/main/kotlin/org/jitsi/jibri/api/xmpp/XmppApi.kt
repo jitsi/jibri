@@ -246,7 +246,11 @@ class XmppApi(
             JibriMode.STREAM -> {
                 jibriManager.startStreaming(
                     ServiceParams(xmppEnvironment.usageTimeoutMins),
-                    StreamingParams(callParams, xmppEnvironment.callLogin, youTubeStreamKey = startIq.streamId),
+                    StreamingParams(
+                        callParams,
+                        xmppEnvironment.callLogin,
+                        youTubeStreamKey = startIq.streamId,
+                        youTubeBroadcastId = startIq.youtubeBroadcastId),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
