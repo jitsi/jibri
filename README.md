@@ -62,7 +62,7 @@ sudo chmod 0755 /usr/local/bin/chromedriver
 See the debian [control file](resources/debian-package-jibri/DEBIAN/control) for the dependencies that are required.
 
 ### Jitsi Debian Repository
-The latest Jibri packages can be found in the unstable repository on downloads.jitsi.org (https://jitsi.org/downloads/).
+The latest Jibri packages can be found in the unstable repository on downloads.jitsi.org.
 First install the Jitsi repository key onto your system:
 ```
 wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
