@@ -61,6 +61,26 @@ sudo chmod 0755 /usr/local/bin/chromedriver
 ### Miscellaneous required tools
 See the debian [control file](resources/debian-package-jibri/DEBIAN/control) for the dependencies that are required.
 
+### Jitsi Debian Repository
+The latest Jibri packages can be found in the unstable repository on downloads.jitsi.org.
+First install the Jitsi repository key onto your system:
+```
+wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
+```
+Create a sources.list.d file with the repository:
+```
+sudo sh -c "echo 'deb https://download.jitsi.org unstable/' > /etc/apt/sources.list.d/jitsi-unstable.list"
+```
+Update your package list:
+```
+sudo apt-get -y update
+```
+Install the latest jibri
+```
+sudo apt-get install jibri
+```
+
+
 ### User, group
 * Jibri is currently meant to be run as a regular system user. This example creatively uses username 'jibri' and group name 'jibri', but any user will do. This has not been tested with the root user.
 * Ensure that the jibri user is in the correct groups to make full access of the audio and video devices. The example jibri account in Ubuntu 16 are: "adm","audio","video","plugdev".
