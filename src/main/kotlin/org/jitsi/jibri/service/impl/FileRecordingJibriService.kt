@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.service.impl
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
@@ -70,6 +71,8 @@ data class FileRecordingParams(
  * Set of metadata we'll put alongside the recording file(s)
  */
 data class RecordingMetadata(
+    @JsonProperty("meeting_url")
+    val meetingUrl: String,
     val participants: List<Map<String, Any>>
 )
 
@@ -165,7 +168,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
         logger.info("Quitting selenium")
         val participants = jibriSelenium.getParticipants()
         logger.info("Participants in this recording: $participants")
-        val metadata = RecordingMetadata(participants)
+        val metadata = RecordingMetadata(fileRecordingParams.callParams.callUrlInfo.callUrl, participants)
         jacksonObjectMapper()
             .writeValue(File(fileRecordingParams.recordingDirectory, "metadata"), metadata)
         jibriSelenium.leaveCallAndQuitBrowser()
