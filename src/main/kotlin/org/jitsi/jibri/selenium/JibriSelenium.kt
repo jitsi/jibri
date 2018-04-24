@@ -22,6 +22,7 @@ import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
+import org.jitsi.jibri.selenium.util.BrowserFileHandler
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
@@ -32,7 +33,6 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
-import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -102,6 +102,7 @@ class JibriSelenium(
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 ) : StatusPublisher<JibriServiceStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val browserOutputLogger = Logger.getLogger("browser")
     private var chromeDriver: ChromeDriver
     private val baseUrl: String = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
 
@@ -114,6 +115,8 @@ class JibriSelenium(
      * Set up default chrome driver options (using fake device, etc.)
       */
     init {
+        browserOutputLogger.useParentHandlers = false
+        browserOutputLogger.addHandler(BrowserFileHandler())
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
@@ -211,14 +214,14 @@ class JibriSelenium(
 
     fun leaveCallAndQuitBrowser() {
         emptyCallTask?.cancel(true)
-        File("/tmp/browser.out").printWriter().use { out ->
-            chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
-                val logEntries = chromeDriver.manage().logs().get(logType)
-                logger.info("Got ${logEntries.all.size} log entries")
-                out.println("========= TYPE=$logType ===========")
-                logEntries.all.forEach {
-                    out.println(it.toJson())
-                }
+
+        browserOutputLogger.info("Logs for call ${jibriSeleniumOptions.callParams.callUrlInfo.callUrl}")
+        chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
+            val logEntries = chromeDriver.manage().logs().get(logType)
+            logger.info("Got ${logEntries.all.size} log entries for type $logType")
+            browserOutputLogger.info("========= TYPE=$logType ===========")
+            logEntries.all.forEach {
+                browserOutputLogger.info(it.toString())
             }
         }
         CallPage(chromeDriver).leave()
