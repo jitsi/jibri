@@ -83,16 +83,17 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             try {
                 window._jibriParticipants = [];
                 const existingMembers = APP.conference._room.room.members || {};
-                console.log("There were " + Object.keys(existingMembers).length + " existing members");
-                for (let key in existingMembers) {
-                    const existingMember = existingMembers[key];
+                const existingMemberJids = Object.keys(existingMembers);
+                console.log("There were " + existingMemberJids.length + " existing members");
+                existingMemberJids.forEach(jid => {
+                    const existingMember = existingMembers[jid];
                     if (existingMember.identity) {
                         console.log("Member ", existingMember, " has identity, adding");
                         window._jibriParticipants.push(existingMember.identity);
                     } else {
                         console.log("Member ", existingMember.jid, " has no identity, skipping");
                     }
-                }
+                });
                 APP.conference._room.room.addListener(
                     "xmpp.muc_member_joined",
                     (from, nick, role, hidden, statsid, status, identity) => {
