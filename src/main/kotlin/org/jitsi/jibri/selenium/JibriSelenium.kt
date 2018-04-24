@@ -29,10 +29,15 @@ import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.logging.LogType
+import org.openqa.selenium.logging.LoggingPreferences
+import org.openqa.selenium.remote.CapabilityType
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
@@ -125,6 +130,9 @@ class JibriSelenium(
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
             mapOf("DISPLAY" to jibriSeleniumOptions.display)
         ).build()
+        val logPrefs = LoggingPreferences()
+        logPrefs.enable(LogType.DRIVER, Level.ALL)
+        chromeOptions.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
     }
 
@@ -203,6 +211,16 @@ class JibriSelenium(
 
     fun leaveCallAndQuitBrowser() {
         emptyCallTask?.cancel(true)
+        File("/tmp/browser.out").printWriter().use { out ->
+            chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
+                val logEntries = chromeDriver.manage().logs().get(logType)
+                logger.info("Got ${logEntries.all.size} log entries")
+                out.println("========= TYPE=$logType ===========")
+                logEntries.all.forEach {
+                    out.println(it.toJson())
+                }
+            }
+        }
         CallPage(chromeDriver).leave()
         chromeDriver.quit()
     }
