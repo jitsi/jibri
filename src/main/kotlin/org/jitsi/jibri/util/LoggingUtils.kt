@@ -19,19 +19,32 @@ package org.jitsi.jibri.util
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import java.util.logging.Logger
 
+/**
+ * A helper function to log a given [InputStream] via the given [Logger].
+ * A future is returned which will be completed when the end of the given
+ * stream is reached.
+ */
 fun logStream(
     stream: InputStream,
     logger: Logger,
     executor: ExecutorService = Executors.newSingleThreadExecutor(NameableThreadFactory("StreamLogger"))
-) {
-    executor.submit {
+): Future<*> {
+    return executor.submit(Callable<Boolean> {
         val reader = BufferedReader(InputStreamReader(stream))
-        while (true) {
-            logger.info(reader.readLine())
+        var eof = false
+        while (!eof) {
+            reader.readLine()?.let {
+                logger.info(it)
+            } ?: run {
+                eof = true
+            }
         }
-    }
+        return@Callable true
+    })
 }
