@@ -83,6 +83,8 @@ abstract class ProcessWrapper<out StatusType>(
         tail = Tail(getOutput())
     }
 
+    fun waitFor() = process.waitFor()
+
     fun waitFor(timeout: Long, unit: TimeUnit): Boolean = process.waitFor(timeout, unit)
 
     fun stop() {
@@ -131,4 +133,14 @@ abstract class ProcessWrapper<out StatusType>(
     abstract fun getStatus(): Pair<StatusType, String>
 
     protected fun getMostRecentLine(): String = tail.mostRecentLine
+}
+
+class SimpleProcessWrapper(
+    command: List<String>,
+    environment: Map<String, String> = mapOf(),
+    processBuilder: ProcessBuilder = ProcessBuilder()
+) : ProcessWrapper<Boolean>(command, environment, processBuilder) {
+    override fun getStatus(): Pair<Boolean, String> {
+        return Pair(true, "")
+    }
 }

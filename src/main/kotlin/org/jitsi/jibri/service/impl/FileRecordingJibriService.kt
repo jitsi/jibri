@@ -33,10 +33,11 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
+import org.jitsi.jibri.util.SimpleProcessWrapper
 import org.jitsi.jibri.util.WritableDirectory
 import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.logStream
 import java.io.File
-import java.io.IOException
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -183,12 +184,19 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
      */
     private fun finalize() {
         try {
-            val finalizeProc = Runtime.getRuntime()
-                .exec("${fileRecordingParams.finalizeScriptPath} ${fileRecordingParams.recordingDirectory}")
+            val finalizeProc = SimpleProcessWrapper(
+                listOf(
+                    fileRecordingParams.finalizeScriptPath,
+                    fileRecordingParams.recordingDirectory.toString()
+                )
+            )
+            finalizeProc.start()
+            val task = logStream(finalizeProc.getOutput(), logger)
             finalizeProc.waitFor()
-            logger.info("Recording finalize script finished with exit " +
-                    "value: ${finalizeProc.exitValue()}")
-        } catch (e: IOException) {
+            // Make sure we get all the logs
+            task.get()
+            logger.info("Recording finalize script finished with exit value ${finalizeProc.exitValue()}")
+        } catch (e: Exception) {
             logger.error("Failed to run finalize script: $e")
         }
     }
