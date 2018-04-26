@@ -37,14 +37,12 @@ fun logStream(
 ): Future<*> {
     return executor.submit(Callable<Boolean> {
         val reader = BufferedReader(InputStreamReader(stream))
-        var eof = false
-        while (!eof) {
-            reader.readLine()?.let {
-                logger.info(it)
-            } ?: run {
-                eof = true
-            }
+
+        while (true) {
+            val line = reader.readLine() ?: break
+            logger.info(line)
         }
+
         return@Callable true
     })
 }

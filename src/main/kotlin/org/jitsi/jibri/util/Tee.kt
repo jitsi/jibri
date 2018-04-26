@@ -69,9 +69,9 @@ class TeeLogic(inputStream: InputStream) {
      * starting from the time of its creation
      */
     fun addBranch(): InputStream {
-        PipedOutputStream().let {
-            branches.add(it)
-            return PipedInputStream(it)
+        with(PipedOutputStream()) {
+            branches.add(this)
+            return PipedInputStream(this)
         }
     }
 }

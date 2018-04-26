@@ -18,6 +18,9 @@ package org.jitsi.jibri.helpers
 
 import java.time.Duration
 
+//TODO: rename 'eventually' to 'within' and 'always' to 'forAllOf', add Int.seconds
+// extension
+
 /**
  * Custom version of kotlin.test's [io.kotlintest.eventually] which uses milliseconds
  * and adds a wait between checks (and gives me much more consistent results than

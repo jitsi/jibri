@@ -190,10 +190,10 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
             )
             with(SimpleProcessWrapper(finalizeCommand)) {
                 start()
-                val loggerTask = logStream(getOutput(), logger)
+                val streamDone = logStream(getOutput(), logger)
                 waitFor()
                 // Make sure we get all the logs
-                loggerTask.get()
+                streamDone.get()
                 logger.info("Recording finalize script finished with exit value ${exitValue()}")
             }
         } catch (e: Exception) {
