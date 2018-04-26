@@ -27,6 +27,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
+class EndOfStreamException : Exception()
+
+private const val EOF = -1
+
 /**
  * Reads from the given [InputStream] and mirrors the read
  * data to all of the created 'branches' off of it.
@@ -44,12 +48,18 @@ class TeeLogic(inputStream: InputStream) {
 
     /**
      * Reads a byte from the original [InputStream] and
-     * writes it to all of the branches
+     * writes it to all of the branches.  If EOF is detected,
+     * all branches will be closed and [EndOfStreamException]
+     * will be thrown, so that any callers can know not
+     * to bother calling again.
      */
     fun read() {
         val c = reader.read()
-        branches.forEach {
-            it.write(c)
+        if (c == EOF) {
+            branches.forEach(OutputStream::close)
+            throw EndOfStreamException()
+        } else {
+            branches.forEach { it.write(c) }
         }
     }
 
@@ -59,9 +69,10 @@ class TeeLogic(inputStream: InputStream) {
      * starting from the time of its creation
      */
     fun addBranch(): InputStream {
-        val outputStream = PipedOutputStream()
-        branches.add(outputStream)
-        return PipedInputStream(outputStream)
+        with(PipedOutputStream()) {
+            branches.add(this)
+            return PipedInputStream(this)
+        }
     }
 }
 

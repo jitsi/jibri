@@ -19,6 +19,7 @@ package org.jitsi.jibri.util
 
 import io.kotlintest.Description
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -35,17 +36,17 @@ class TeeLogicTest : ShouldSpec() {
         tee.read()
     }
 
+    private fun pushIncomingData(data: String) {
+        data.toByteArray().forEach {
+            pushIncomingData(it)
+        }
+    }
+
     override fun beforeTest(description: Description) {
         super.beforeTest(description)
         outputStream = PipedOutputStream()
         inputStream = PipedInputStream(outputStream)
         tee = TeeLogic(inputStream)
-    }
-
-    private fun pushIncomingData(data: String) {
-        data.toByteArray().forEach {
-            pushIncomingData(it)
-        }
     }
 
     init {
@@ -66,6 +67,27 @@ class TeeLogicTest : ShouldSpec() {
                     val reader = BufferedReader(InputStreamReader(branch))
                     reader.readLine() shouldBe "goodbye, world"
                 }
+            }
+        }
+        "end of stream" {
+            should("throw EndOfStreamException") {
+                outputStream.close()
+                shouldThrow<EndOfStreamException> {
+                    tee.read()
+                }
+            }
+            should("close all branches") {
+                val branch1 = tee.addBranch()
+                val branch2 = tee.addBranch()
+                outputStream.close()
+                shouldThrow<EndOfStreamException> {
+                    tee.read()
+                }
+                val reader1 = BufferedReader(InputStreamReader(branch1))
+                reader1.readLine() shouldBe null
+
+                val reader2 = BufferedReader(InputStreamReader(branch2))
+                reader2.readLine() shouldBe null
             }
         }
     }
