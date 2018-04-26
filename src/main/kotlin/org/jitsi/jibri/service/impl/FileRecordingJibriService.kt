@@ -184,18 +184,18 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
      */
     private fun finalize() {
         try {
-            val finalizeProc = SimpleProcessWrapper(
-                listOf(
-                    fileRecordingParams.finalizeScriptPath,
-                    fileRecordingParams.recordingDirectory.toString()
-                )
+            val finalizeCommand = listOf(
+                fileRecordingParams.finalizeScriptPath,
+                fileRecordingParams.recordingDirectory.toString()
             )
-            finalizeProc.start()
-            val task = logStream(finalizeProc.getOutput(), logger)
-            finalizeProc.waitFor()
-            // Make sure we get all the logs
-            task.get()
-            logger.info("Recording finalize script finished with exit value ${finalizeProc.exitValue()}")
+            with(SimpleProcessWrapper(finalizeCommand)) {
+                start()
+                val loggerTask = logStream(getOutput(), logger)
+                waitFor()
+                // Make sure we get all the logs
+                loggerTask.get()
+                logger.info("Recording finalize script finished with exit value ${exitValue()}")
+            }
         } catch (e: Exception) {
             logger.error("Failed to run finalize script: $e")
         }
