@@ -59,7 +59,7 @@ sudo chmod 0755 /usr/local/bin/chromedriver
 ```
 
 ### Miscellaneous required tools
-See the debian [control file](resources/debian-package-jibri/DEBIAN/control) for the dependencies that are required.
+See the debian [control file](debian/jibri/DEBIAN/control) for the dependencies that are required.
 
 ### Jitsi Debian Repository
 The latest Jibri packages can be found in the unstable repository on downloads.jitsi.org.
