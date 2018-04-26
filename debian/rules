@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+
+override_dh_auto_build-indep:
+	mv target/jibri-1.0-SNAPSHOT-jar-with-dependencies.jar target/jibri.jar
+
+%:
+	dh $@

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+die () {
+    echo >&2 "$@"
+    exit 1
+}
+
+echo "Creating jibri user and group"
+# Create the Jibri user and group
+useradd --system --create-home jibri
+groupadd jitsi
+echo "Done creating jibri user and group"
+usermod -a -G jibri,jitsi,audio,video jibri
+echo "jibri user added to aduio, video and jibri groups"
+
+# Make the directory for the logs and set the permissions
+mkdir -p /var/log/jitsi/jibri
+chgrp jitsi /var/log/jitsi/jibri
+chmod g+w /var/log/jitsi/jibri
+
+# Move the asoundrc file to the jibri home directory
+mv /etc/jitsi/jibri/asoundrc /home/jibri/.asoundrc
+
+# Make the directory for the icewm preferences and move the preferences file into it
+mkdir /home/jibri/.icewm
+mv /etc/jitsi/jibri/icewm.preferences /home/jibri/.icewm/preferences
