@@ -23,13 +23,13 @@ import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
-import org.jitsi.jibri.helpers.always
-import org.jitsi.jibri.helpers.eventually
+import org.jitsi.jibri.helpers.forAllOf
+import org.jitsi.jibri.helpers.seconds
+import org.jitsi.jibri.helpers.within
 import org.jitsi.jibri.sink.Sink
 import java.io.InputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
-import java.time.Duration
 
 class AbstractFfmpegExecutorTest : FunSpec() {
     override fun isInstancePerTest(): Boolean = true
@@ -76,7 +76,7 @@ class AbstractFfmpegExecutorTest : FunSpec() {
             ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
             whenever(process.isAlive).thenReturn(true)
             setProcessStdOutLine("frame=24")
-            eventually(Duration.ofSeconds(5)) {
+            within(5.seconds()) {
                 ffmpegExecutor.isHealthy() shouldBe true
             }
         }
@@ -85,7 +85,7 @@ class AbstractFfmpegExecutorTest : FunSpec() {
             ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
             whenever(process.isAlive).thenReturn(true)
             setProcessStdOutLine("Past duration 0.53 too large")
-            eventually(Duration.ofSeconds(5)) {
+            within(5.seconds()) {
                 ffmpegExecutor.isHealthy() shouldBe true
             }
         }
@@ -94,7 +94,7 @@ class AbstractFfmpegExecutorTest : FunSpec() {
             ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
             setProcessStdOutLine("Error")
             whenever(process.isAlive).thenReturn(true)
-            always(Duration.ofSeconds(5)) {
+            forAllOf(5.seconds()) {
                 ffmpegExecutor.isHealthy() shouldBe false
             }
         }

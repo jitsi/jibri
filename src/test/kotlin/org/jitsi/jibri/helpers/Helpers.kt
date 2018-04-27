@@ -18,15 +18,12 @@ package org.jitsi.jibri.helpers
 
 import java.time.Duration
 
-//TODO: rename 'eventually' to 'within' and 'always' to 'forAllOf', add Int.seconds
-// extension
-
 /**
  * Custom version of kotlin.test's [io.kotlintest.eventually] which uses milliseconds
  * and adds a wait between checks (and gives me much more consistent results than
  * kotlin.test's version)
  */
-fun <T> eventually(duration: Duration, func: () -> T): T {
+fun <T> within(duration: Duration, func: () -> T): T {
     val end = System.currentTimeMillis() + duration.toMillis()
     var times = 0
     while (System.currentTimeMillis() < end) {
@@ -45,11 +42,13 @@ fun <T> eventually(duration: Duration, func: () -> T): T {
     throw AssertionError("Test failed after ${duration.seconds} seconds; attempted $times times")
 }
 
+fun Int.seconds(): Duration = Duration.ofSeconds(this.toLong())
+
 /**
  * Ensures that, for the given [Duration], [func] should always evaluate
  * correctly
  */
-fun <T> always(duration: Duration, func: () -> T) {
+fun <T> forAllOf(duration: Duration, func: () -> T) {
     val start = System.currentTimeMillis()
     val end = start + duration.toMillis()
     var times = 1
