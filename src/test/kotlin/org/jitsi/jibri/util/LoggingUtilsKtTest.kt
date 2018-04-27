@@ -25,10 +25,10 @@ import com.nhaarman.mockito_kotlin.verify
 import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
-import org.jitsi.jibri.helpers.eventually
+import org.jitsi.jibri.helpers.seconds
+import org.jitsi.jibri.helpers.within
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
-import java.time.Duration
 import java.util.logging.Logger
 import kotlin.concurrent.thread
 
@@ -54,7 +54,7 @@ internal class LoggingUtilsKtTest : FunSpec() {
             }
 
             val logLine = argumentCaptor<String>()
-            eventually(Duration.ofSeconds(5)) {
+            within(5.seconds()) {
                 verify(logger, times(5)).info(logLine.capture())
             }
             logLine.allValues.forEachIndexed { index, value ->
@@ -71,13 +71,13 @@ internal class LoggingUtilsKtTest : FunSpec() {
                 pipedOutputStream.close()
             }
             val logLine = argumentCaptor<String>()
-            eventually(Duration.ofSeconds(5)) {
+            within(5.seconds()) {
                 verify(logger, times(5)).info(logLine.capture())
             }
             logLine.allValues.forEachIndexed { index, value ->
                 index.toString() shouldBe value
             }
-            eventually(Duration.ofSeconds(5)) {
+            within(5.seconds()) {
                 streamClosed.isDone shouldBe true
             }
             streamClosed.get() shouldBe true
