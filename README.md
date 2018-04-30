@@ -105,7 +105,19 @@ By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the 
 Jibri requires some settings to be enabled within a Jitsi Meet configuration. These changes include virtualhosts and accounts in Prosody, settings for the jitsi meet web (within config.js) as well as jicofo sip-communicator.properties.
 
 ## Prosody
-Create the recorder virtual host entry in /etc/prosody/prosody.cfg.lua:
+
+Create the internal MUC component entry.  This is required so that the jibri clients can be discovered by Jicofo in a MUC that's not externally accessible by jitsi meet users.  Add the following in /etc/prosody/prosody.cfg.lua:
+```
+-- internal muc component, meant to enable pools of jibri and jigasi clients
+Component "internal.auth.yourdomain.com" "muc"
+    modules_enabled = {
+      "ping";
+    }
+    storage = "null"
+    muc_room_cache_size = 1000
+```
+
+Create the recorder virtual host entry, to hold the user account for the jibri chrome session.  This is used to restrict only authenticated jibri chrome sessions to be hidden participants in the conference being recordered.  Add the following in /etc/prosody/prosody.cfg.lua:
 ```
 VirtualHost "recorder.yourdomain.com"
   modules_enabled = {
@@ -113,6 +125,7 @@ VirtualHost "recorder.yourdomain.com"
   }
   authentication = "internal_plain"
 ```
+
 Setup the two accounts jibri will use.
 ```
 prosodyctl register jibri auth.yourdomain.com jibriauthpass
