@@ -28,6 +28,7 @@ enum class JibriServiceStatus {
  * Parameters needed for starting any [JibriService]
  */
 data class ServiceParams(
+    val sessionId: String,
     val usageTimeoutMinutes: Int
 )
 

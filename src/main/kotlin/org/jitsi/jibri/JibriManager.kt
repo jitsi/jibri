@@ -102,6 +102,7 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
+                serviceParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
                 config.finalizeRecordingScriptPath,
                 config.recordingDirectory

@@ -19,6 +19,7 @@ package org.jitsi.jibri.service.impl
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import org.jitsi.jibri.api.xmpp.JibriMode
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
@@ -52,6 +53,7 @@ data class FileRecordingParams(
      * Which call we'll join
      */
     val callParams: CallParams,
+    val sessionId: String,
     /**
      * The login information needed to appear invisible in
      * the call
@@ -130,6 +132,9 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
             logger.error("Capturer failed to start")
             return false
         }
+        jibriSelenium.addToPresence("session_id", fileRecordingParams.sessionId)
+        jibriSelenium.addToPresence("mode", JibriMode.FILE.toString())
+        jibriSelenium.sendPresence()
         val processMonitor = createCaptureMonitor(capturer)
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
         return true

@@ -232,12 +232,13 @@ class XmppApi(
             xmppEnvironment.stripFromRoomDomain,
             xmppEnvironment.xmppDomain
         )
+        val serviceParams = ServiceParams(startIq.sessionId, xmppEnvironment.usageTimeoutMins)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
         return when (startIq.mode()) {
             JibriMode.FILE -> {
                 jibriManager.startFileRecording(
-                    ServiceParams(xmppEnvironment.usageTimeoutMins),
+                    serviceParams,
                     FileRecordingRequestParams(callParams, xmppEnvironment.callLogin),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
@@ -245,7 +246,7 @@ class XmppApi(
             }
             JibriMode.STREAM -> {
                 jibriManager.startStreaming(
-                    ServiceParams(xmppEnvironment.usageTimeoutMins),
+                    serviceParams,
                     StreamingParams(
                         callParams,
                         xmppEnvironment.callLogin,
@@ -257,7 +258,7 @@ class XmppApi(
             }
             JibriMode.SIPGW -> {
                 jibriManager.startSipGateway(
-                    ServiceParams(xmppEnvironment.usageTimeoutMins),
+                    serviceParams,
                     SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler

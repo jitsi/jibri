@@ -143,6 +143,19 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                         value: '$value'
                     }
                 );
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin())
+        return when (result) {
+            is String -> false
+            else -> true
+        }
+    }
+
+    fun sendPresence(driver: RemoteWebDriver): Boolean {
+        val result = driver.executeScript("""
+            try {
                 APP.conference._room.room.sendPresence();
             } catch (e) {
                 return e.message;
