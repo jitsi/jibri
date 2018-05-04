@@ -42,6 +42,7 @@ import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
+import org.jxmpp.jid.Jid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
 import java.util.concurrent.Executors
@@ -151,8 +152,8 @@ class XmppApi(
     /**
      * Handle a start [JibriIq] message.  We'll respond immediately with a [JibriIq.Status.PENDING] IQ response and
      * send a new IQ with the subsequent stats after starting the service:
-     * [JibriIq.Status.FAILED] if there was an error starting the service (or an error while the service was running)
-     * [JibriIq.Status.BUSY] if the Jibri was already busy and couldn't start the requested service
+     * [JibriIq.Status.OFF] if there was an error starting the service (or an error while the service was running).
+     *  In this case, a [JibriIq.FailureReason] will be set as well.
      * [JibriIq.Status.ON] if the service started successfully
      */
     private fun handleStartJibriIq(
@@ -172,30 +173,26 @@ class XmppApi(
                 // to notify the caller who invoked the service of its status, so we'll listen
                 // for the service's status while it's running and this method will be invoked
                 // if it changes
-                val serviceStatusHandler: JibriServiceStatusHandler = { serviceStatus ->
-                    when (serviceStatus) {
-                        JibriServiceStatus.ERROR -> {
-                            val errorIq = JibriIqHelper.create(startJibriIq.from, status = JibriIq.Status.FAILED)
-                            logger.info("Current service had an error, sending error iq ${errorIq.toXML()}")
-                            mucClient.sendStanza(errorIq)
-                        }
-                        JibriServiceStatus.FINISHED -> {
-                            val offIq = JibriIqHelper.create(startJibriIq.from, status = JibriIq.Status.OFF)
-                            logger.info("Current service finished, sending off iq ${offIq.toXML()}")
-                            mucClient.sendStanza(offIq)
-                        }
-                    }
-                }
+                val serviceStatusHandler = createServiceStatusHandler(startJibriIq.from, mucClient)
                 val startServiceResult = handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
 
-                resultIq.status = when (startServiceResult) {
-                    StartServiceResult.SUCCESS -> JibriIq.Status.ON
-                    StartServiceResult.BUSY -> JibriIq.Status.BUSY
-                    StartServiceResult.ERROR -> JibriIq.Status.FAILED
+                when (startServiceResult) {
+                    StartServiceResult.SUCCESS -> {
+                        resultIq.status = JibriIq.Status.ON
+                    }
+                    StartServiceResult.BUSY -> {
+                        resultIq.status = JibriIq.Status.OFF
+                        resultIq.failureReason = JibriIq.FailureReason.BUSY
+                    }
+                    StartServiceResult.ERROR -> {
+                        resultIq.status = JibriIq.Status.OFF
+                        resultIq.failureReason = JibriIq.FailureReason.ERROR
+                    }
                 }
             } catch (e: Throwable) {
                 logger.error("Error in startService task: $e")
-                resultIq.status = JibriIq.Status.FAILED
+                resultIq.status = JibriIq.Status.OFF
+                resultIq.failureReason = JibriIq.FailureReason.ERROR
             } finally {
                 logger.info("Sending start service response iq: ${resultIq.toXML()}")
                 mucClient.sendStanza(resultIq)
@@ -205,6 +202,26 @@ class XmppApi(
         val initialResponse = JibriIqHelper.createResult(startJibriIq, JibriIq.Status.PENDING)
         logger.info("Sending 'pending' response to start IQ")
         return initialResponse
+    }
+
+    private fun createServiceStatusHandler(requester: Jid, mucClient: MucClient): (JibriServiceStatus) -> Unit {
+        return { serviceStatus ->
+            when (serviceStatus) {
+                JibriServiceStatus.ERROR -> {
+                    with(JibriIqHelper.create(requester, status = JibriIq.Status.OFF)) {
+                        failureReason = JibriIq.FailureReason.ERROR
+                        logger.info("Current service had an error, sending error iq ${toXML()}")
+                        mucClient.sendStanza(this)
+                    }
+                }
+                JibriServiceStatus.FINISHED -> {
+                    with(JibriIqHelper.create(requester, status = JibriIq.Status.OFF)) {
+                        logger.info("Current service finished, sending off iq ${toXML()}")
+                        mucClient.sendStanza(this)
+                    }
+                }
+            }
+        }
     }
 
     /**
