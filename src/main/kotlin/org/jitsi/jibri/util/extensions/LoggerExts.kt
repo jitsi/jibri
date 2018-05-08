@@ -15,6 +15,15 @@
  *
  */
 
+// Kotlin will warn that the inline keyword likely does nothing
+// where we use it on the logger helper functions here, but
+// we're not inlining for performance, we're inlining to make
+// the logger helper functions transparent to java.util.logger
+// so that the printed log message contains the correct function
+// (i.e. the ACTUAL function the log call was made from, not the
+// helpers here).
+@file:Suppress("NOTHING_TO_INLINE")
+
 package org.jitsi.jibri.util.extensions
 
 import java.util.logging.Level
@@ -24,10 +33,10 @@ import java.util.logging.Logger
  * Extension functions to provide more friendly logging APIs
  */
 
-fun Logger.error(msg: String) {
+inline fun Logger.error(msg: String) {
     this.log(Level.SEVERE, msg)
 }
 
-fun Logger.debug(msg: String) {
+inline fun Logger.debug(msg: String) {
     this.fine(msg)
 }
