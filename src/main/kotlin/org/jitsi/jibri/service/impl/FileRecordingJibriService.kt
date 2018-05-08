@@ -147,7 +147,6 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 logger.error("Giving up on restarting the capturer")
                 publishStatus(JibriServiceStatus.ERROR)
             } else {
-                logger.info("Trying to restart capturer")
                 numRestarts++
                 // Re-create the sink here because we want a new filename
                 //TODO: we can run into an issue here where this takes a while and the monitor task runs again
