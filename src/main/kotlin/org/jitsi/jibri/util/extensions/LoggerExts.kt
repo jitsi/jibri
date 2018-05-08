@@ -37,6 +37,15 @@ inline fun Logger.error(msg: String) {
     this.log(Level.SEVERE, msg)
 }
 
+inline fun Logger.error(msg: String, t: Throwable) {
+    val sb = StringBuffer()
+    sb.append("$msg: $t").append(" with stack: \n")
+    for (stackElement in t.stackTrace) {
+        sb.append(stackElement.toString()).append("\n")
+    }
+    error(sb.toString())
+}
+
 inline fun Logger.debug(msg: String) {
     this.fine(msg)
 }
