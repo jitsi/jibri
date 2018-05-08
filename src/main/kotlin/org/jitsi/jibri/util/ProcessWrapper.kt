@@ -88,8 +88,10 @@ abstract class ProcessWrapper<out StatusType>(
     fun waitFor(timeout: Long, unit: TimeUnit): Boolean = process.waitFor(timeout, unit)
 
     fun stop() {
-        tail.stop()
-        tee.stop()
+        // Note that we specifically do NOT call stop on tee or tail here
+        // because we want them to read everything available from the
+        // process' inputstream. Once it's done, they'll read
+        // the EOF and close things up correctly
         val pid = pid(process)
         Runtime.getRuntime().exec("kill -s SIGINT $pid")
     }

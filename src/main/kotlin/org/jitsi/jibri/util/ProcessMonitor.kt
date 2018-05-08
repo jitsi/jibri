@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.util
 
+import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import java.util.logging.Logger
 
@@ -39,12 +40,13 @@ class ProcessMonitor(
      * [processToMonitor] (or null, if there isn't one)
      */
     override fun run() {
+        logger.debug("ProcessMonitor checking process health")
         try {
             if (!processToMonitor.isHealthy()) {
                 processUnhealthyCallback(processToMonitor.getExitCode())
             }
         } catch (t: Throwable) {
-            logger.error("Error while determining process health: $t")
+            logger.error("Error while determining process health", t)
         }
     }
 }
