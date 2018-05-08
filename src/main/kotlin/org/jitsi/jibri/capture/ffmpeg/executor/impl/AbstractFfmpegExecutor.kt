@@ -28,7 +28,6 @@ import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
@@ -42,7 +41,6 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
     private val logger = Logger.getLogger(AbstractFfmpegExecutor::class.qualifiedName)
     private val ffmpegOutputLogger = Logger.getLogger("ffmpeg")
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("AbstractFfmpegExecutor"))
-    private var processLoggerTask: Future<*>? = null
     /**
      * The currently active (if any) Ffmpeg process
      */
@@ -69,14 +67,19 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
         return currentFfmpegProc?.let {
             logger.info("Starting ffmpeg with command $command")
             it.start()
-            processLoggerTask = logStream(it.getOutput(), ffmpegOutputLogger, executor)
+            logStream(it.getOutput(), ffmpegOutputLogger, executor)
             true
         } ?: run {
             false
         }
     }
 
-    override fun getExitCode(): Int? = if (currentFfmpegProc?.isAlive == true) null else currentFfmpegProc?.exitValue()
+    override fun getExitCode(): Int? {
+        if (currentFfmpegProc?.isAlive == true) {
+            return null
+        }
+        return currentFfmpegProc?.exitValue()
+    }
 
     override fun isHealthy(): Boolean {
         return currentFfmpegProc?.let {
@@ -105,6 +108,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
     }
 
     override fun stopFfmpeg() {
+        executor.shutdown()
         logger.info("Stopping ffmpeg process")
         currentFfmpegProc?.apply {
             stop()
@@ -114,7 +118,6 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
                 destroyForcibly()
             }
         }
-        processLoggerTask?.get()
         logger.info("Ffmpeg exited with value ${currentFfmpegProc?.exitValue()}")
     }
 }
