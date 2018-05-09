@@ -89,8 +89,8 @@ class HttpApi(private val jibriManager: JibriManager) {
                 // If it's a file recording, it must have the callLoginParams set
                 val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startFileRecording(
-                    ServiceParams("", usageTimeoutMinutes = 0),
-                    FileRecordingRequestParams(startServiceParams.callParams, callLoginParams),
+                    ServiceParams(usageTimeoutMinutes = 0),
+                    FileRecordingRequestParams(startServiceParams.callParams, "TODO: sessionID", callLoginParams),
                     environmentContext = null
                 )
             }
@@ -99,8 +99,8 @@ class HttpApi(private val jibriManager: JibriManager) {
                 // If it's a stream, it must have the callLoginParams set
                 val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startStreaming(
-                    ServiceParams("", usageTimeoutMinutes = 0),
-                    StreamingParams(startServiceParams.callParams, callLoginParams, youTubeStreamKey),
+                    ServiceParams(usageTimeoutMinutes = 0),
+                    StreamingParams(startServiceParams.callParams, "TODO: sessionID", callLoginParams, youTubeStreamKey),
                     environmentContext = null
                 )
             }
@@ -108,8 +108,8 @@ class HttpApi(private val jibriManager: JibriManager) {
                 // If it's a sip gateway, it must have sipClientParams set
                 val sipClientParams = startServiceParams.sipClientParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startSipGateway(
-                    ServiceParams("", usageTimeoutMinutes = 0),
-                    SipGatewayServiceParams(
+                    ServiceParams(usageTimeoutMinutes = 0),
+                    SipGatewayServiceParams(//TODO: add session ID
                         startServiceParams.callParams,
                         sipClientParams)
                     )

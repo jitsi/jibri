@@ -251,14 +251,14 @@ class XmppApi(
             xmppEnvironment.stripFromRoomDomain,
             xmppEnvironment.xmppDomain
         )
-        val serviceParams = ServiceParams(startIq.sessionId, xmppEnvironment.usageTimeoutMins)
+        val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
         return when (startIq.mode()) {
             JibriMode.FILE -> {
                 jibriManager.startFileRecording(
                     serviceParams,
-                    FileRecordingRequestParams(callParams, xmppEnvironment.callLogin),
+                    FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
@@ -268,6 +268,7 @@ class XmppApi(
                     serviceParams,
                     StreamingParams(
                         callParams,
+                        startIq.sessionId,
                         xmppEnvironment.callLogin,
                         youTubeStreamKey = startIq.streamId,
                         youTubeBroadcastId = startIq.youtubeBroadcastId),
