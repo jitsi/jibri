@@ -56,6 +56,9 @@ class FfmpegCapturer : Capturer {
         for (i in 1..15) {
             if (isHealthy()) {
                 return true
+            } else if (getExitCode() != null) {
+                logger.error("Ffmpeg already exited")
+                break
             }
             Thread.sleep(1000)
         }
