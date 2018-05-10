@@ -42,6 +42,7 @@ import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
+import org.jxmpp.jid.BareJid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
 import java.util.concurrent.Executors
@@ -99,20 +100,25 @@ class XmppApi(
                             return handleJibriIq(jibriIq, config, mucClient)
                         }
                     })
-                    val jibriJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
-                    jibriManager.addStatusHandler { status ->
-                        logger.info("Jibri reports its status is now $status, publishing presence to connection ${config.name}")
-                        val jibriPresence = JibriPresenceHelper.createPresence(status, jibriJid)
-                        mucClient.sendStanza(jibriPresence)
+                    val recordingMucJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
+                    val sipMucJid: BareJid? = config.sipControlMuc?.let {
+                        JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
                     }
+                    val updatePresence: (JibriStatusPacketExt.Status) -> Unit = { status ->
+                        logger.info("Jibri reports its status is now $status, publishing presence to connection ${config.name}")
+                        // We need to update our presence in potentially 2 MUCs: the recording muc and the SIP
+                        // MUC
+                        mucClient.sendStanza(JibriPresenceHelper.createPresence(status, recordingMucJid))
+                        sipMucJid?.let {
+                            mucClient.sendStanza(JibriPresenceHelper.createPresence(status, it))
+                        }
+                    }
+                    jibriManager.addStatusHandler(updatePresence)
                     // The recording control muc
                     mucClient.createOrJoinMuc(
-                        jibriJid.asEntityBareJidIfPossible(),
+                        recordingMucJid.asEntityBareJidIfPossible(),
                         Resourcepart.from(config.controlMuc.nickname)
                     )
-                    val jibriPresence = JibriPresenceHelper.createPresence(JibriStatusPacketExt.Status.IDLE, jibriJid)
-                    mucClient.sendStanza(jibriPresence)
-
                     // The SIP control muc
                     config.sipControlMuc?.let {
                         logger.info("SIP control muc is defined for environment ${config.name}, joining")
@@ -120,12 +126,8 @@ class XmppApi(
                             JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
                             Resourcepart.from(config.sipControlMuc.nickname)
                         )
-                        val jibriSipStatus = JibriPresenceHelper.createPresence(
-                            JibriStatusPacketExt.Status.IDLE,
-                            JidCreate.bareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
-                        )
-                        mucClient.sendStanza(jibriSipStatus)
                     }
+                    updatePresence(JibriStatusPacketExt.Status.IDLE)
                 } catch (e: Exception) {
                     logger.error("Error connecting to xmpp environment: $e")
                 }
