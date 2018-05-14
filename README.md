@@ -22,6 +22,8 @@ The new Jibri now has configurable logging, which can be set via the [logging.pr
 
 ### Installation notes
 * Jibri was built on ubuntu 16.04 (Xenial), and has been tested with the pre-built kernel and extra kernel modules (`linux-image-extra-virtual` package). Any other distribution or kernel configuration MAY work but has not been tested.
+* (EC2 Users) Running both jitsi-meet and jibri on a t2.micro instance will immediately throw buffer overflow error once streaming begins. This installation guide has been tried and tested on a r4.large instance.
+
 
 ## Pre-requisites
 ### ALSA and Loopback Device
@@ -31,6 +33,7 @@ The new Jibri now has configurable logging, which can be set via the [logging.pr
   * Load the module into the running kernel: `modprobe snd-aloop`
   * Check to see that the module is already loaded: `lsmod | grep snd_aloop`
 * If the output shows the snd-aloop module loaded, then the ALSA loopback configuration step is complete.
+* (EC2 Users) If you see `modprobe: FATAL: Module snd-aloop not found in directory /lib/modules/x.x.x-xxxx-aws`, change the kernel boot settings from Linux x.x.x-xxxx-**aws** to Linux x.x.x-xxxx-**generic** by following the instructions [here](https://stackoverflow.com/questions/49538514/sound-driver-snd-aloop-kernel-module-setup-issue-with-aws-ec2-ubuntu-16-04-ins?answertab=active#tab-top).
 
 ### Ffmpeg with X11 capture support
 * Jibri requires a relatively modern ffmpeg install with x11 capture compiled in. This comes by default in Ubuntu 16.04, by installing the ffmpeg package.
@@ -84,7 +87,7 @@ sudo apt-get install jibri
 
 
 ### User, group
-* Jibri is currently meant to be run as a regular system user. This example creatively uses username 'jibri' and group name 'jibri', but any user will do. This has not been tested with the root user.
+* Jibri is currently meant to be run as a regular system user. This example creatively uses username 'jibri' and group name 'jibri', but any user will do. This has been tested also with the root user.
 * Ensure that the jibri user is in the correct groups to make full access of the audio and video devices. The example jibri account in Ubuntu 16.04 are: "adm","audio","video","plugdev".
 `sudo usermod -aG adm,audio,video,plugdev jibri`
 
@@ -142,7 +145,7 @@ recordingType: 'jibri',
 enableRecording: true,
 hiddenDomain: 'recorder.yourdomain.com',
 ```
-Once recording is enabled in config.js, the recording button will become available in the user interface. However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed. Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
+Once recording is enabled in config.js, the recording (or "Go live now") button will become available in the user interface. However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed. Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
 Make sure to update Jibri's config.json appropriately to match any config done above.
 
