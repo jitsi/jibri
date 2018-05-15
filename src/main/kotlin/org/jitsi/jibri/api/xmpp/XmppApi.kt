@@ -42,6 +42,7 @@ import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
+import org.jxmpp.jid.BareJid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
 import java.util.concurrent.Executors
@@ -99,20 +100,25 @@ class XmppApi(
                             return handleJibriIq(jibriIq, config, mucClient)
                         }
                     })
-                    val jibriJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
-                    jibriManager.addStatusHandler { status ->
-                        logger.info("Jibri reports its status is now $status, publishing presence to connection ${config.name}")
-                        val jibriPresence = JibriPresenceHelper.createPresence(status, jibriJid)
-                        mucClient.sendStanza(jibriPresence)
+                    val recordingMucJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}")
+                    val sipMucJid: BareJid? = config.sipControlMuc?.let {
+                        JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
                     }
+                    val updatePresence: (JibriStatusPacketExt.Status) -> Unit = { status ->
+                        logger.info("Jibri reports its status is now $status, publishing presence to connection ${config.name}")
+                        // We need to update our presence in potentially 2 MUCs: the recording muc and the SIP
+                        // MUC
+                        mucClient.sendStanza(JibriPresenceHelper.createPresence(status, recordingMucJid))
+                        sipMucJid?.let {
+                            mucClient.sendStanza(JibriPresenceHelper.createPresence(status, it))
+                        }
+                    }
+                    jibriManager.addStatusHandler(updatePresence)
                     // The recording control muc
                     mucClient.createOrJoinMuc(
-                        jibriJid.asEntityBareJidIfPossible(),
+                        recordingMucJid.asEntityBareJidIfPossible(),
                         Resourcepart.from(config.controlMuc.nickname)
                     )
-                    val jibriPresence = JibriPresenceHelper.createPresence(JibriStatusPacketExt.Status.IDLE, jibriJid)
-                    mucClient.sendStanza(jibriPresence)
-
                     // The SIP control muc
                     config.sipControlMuc?.let {
                         logger.info("SIP control muc is defined for environment ${config.name}, joining")
@@ -120,12 +126,8 @@ class XmppApi(
                             JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
                             Resourcepart.from(config.sipControlMuc.nickname)
                         )
-                        val jibriSipStatus = JibriPresenceHelper.createPresence(
-                            JibriStatusPacketExt.Status.IDLE,
-                            JidCreate.bareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
-                        )
-                        mucClient.sendStanza(jibriSipStatus)
                     }
+                    updatePresence(JibriStatusPacketExt.Status.IDLE)
                 } catch (e: Exception) {
                     logger.error("Error connecting to xmpp environment: $e")
                 }
@@ -151,8 +153,8 @@ class XmppApi(
     /**
      * Handle a start [JibriIq] message.  We'll respond immediately with a [JibriIq.Status.PENDING] IQ response and
      * send a new IQ with the subsequent stats after starting the service:
-     * [JibriIq.Status.FAILED] if there was an error starting the service (or an error while the service was running)
-     * [JibriIq.Status.BUSY] if the Jibri was already busy and couldn't start the requested service
+     * [JibriIq.Status.OFF] if there was an error starting the service (or an error while the service was running).
+     *  In this case, a [JibriIq.FailureReason] will be set as well.
      * [JibriIq.Status.ON] if the service started successfully
      */
     private fun handleStartJibriIq(
@@ -165,6 +167,7 @@ class XmppApi(
         // start the service asynchronously and send an IQ with the status after its done.
         executor.submit {
             val resultIq = JibriIqHelper.create(startJibriIq.from)
+            resultIq.sipAddress = startJibriIq.sipAddress
             try {
                 logger.info("Starting service")
 
@@ -172,30 +175,26 @@ class XmppApi(
                 // to notify the caller who invoked the service of its status, so we'll listen
                 // for the service's status while it's running and this method will be invoked
                 // if it changes
-                val serviceStatusHandler: JibriServiceStatusHandler = { serviceStatus ->
-                    when (serviceStatus) {
-                        JibriServiceStatus.ERROR -> {
-                            val errorIq = JibriIqHelper.create(startJibriIq.from, status = JibriIq.Status.FAILED)
-                            logger.info("Current service had an error, sending error iq ${errorIq.toXML()}")
-                            mucClient.sendStanza(errorIq)
-                        }
-                        JibriServiceStatus.FINISHED -> {
-                            val offIq = JibriIqHelper.create(startJibriIq.from, status = JibriIq.Status.OFF)
-                            logger.info("Current service finished, sending off iq ${offIq.toXML()}")
-                            mucClient.sendStanza(offIq)
-                        }
-                    }
-                }
+                val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
                 val startServiceResult = handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
 
-                resultIq.status = when (startServiceResult) {
-                    StartServiceResult.SUCCESS -> JibriIq.Status.ON
-                    StartServiceResult.BUSY -> JibriIq.Status.BUSY
-                    StartServiceResult.ERROR -> JibriIq.Status.FAILED
+                when (startServiceResult) {
+                    StartServiceResult.SUCCESS -> {
+                        resultIq.status = JibriIq.Status.ON
+                    }
+                    StartServiceResult.BUSY -> {
+                        resultIq.status = JibriIq.Status.OFF
+                        resultIq.failureReason = JibriIq.FailureReason.BUSY
+                    }
+                    StartServiceResult.ERROR -> {
+                        resultIq.status = JibriIq.Status.OFF
+                        resultIq.failureReason = JibriIq.FailureReason.ERROR
+                    }
                 }
             } catch (e: Throwable) {
                 logger.error("Error in startService task: $e")
-                resultIq.status = JibriIq.Status.FAILED
+                resultIq.status = JibriIq.Status.OFF
+                resultIq.failureReason = JibriIq.FailureReason.ERROR
             } finally {
                 logger.info("Sending start service response iq: ${resultIq.toXML()}")
                 mucClient.sendStanza(resultIq)
@@ -205,6 +204,28 @@ class XmppApi(
         val initialResponse = JibriIqHelper.createResult(startJibriIq, JibriIq.Status.PENDING)
         logger.info("Sending 'pending' response to start IQ")
         return initialResponse
+    }
+
+    private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): (JibriServiceStatus) -> Unit {
+        return { serviceStatus ->
+            when (serviceStatus) {
+                JibriServiceStatus.ERROR -> {
+                    with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
+                        failureReason = JibriIq.FailureReason.ERROR
+                        sipAddress = request.sipAddress
+                        logger.info("Current service had an error, sending error iq ${toXML()}")
+                        mucClient.sendStanza(this)
+                    }
+                }
+                JibriServiceStatus.FINISHED -> {
+                    with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
+                        sipAddress = request.sipAddress
+                        logger.info("Current service finished, sending off iq ${toXML()}")
+                        mucClient.sendStanza(this)
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -232,22 +253,24 @@ class XmppApi(
             xmppEnvironment.stripFromRoomDomain,
             xmppEnvironment.xmppDomain
         )
+        val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
         return when (startIq.mode()) {
             JibriMode.FILE -> {
                 jibriManager.startFileRecording(
-                    ServiceParams(xmppEnvironment.usageTimeoutMins),
-                    FileRecordingRequestParams(callParams, xmppEnvironment.callLogin),
+                    serviceParams,
+                    FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
             }
             JibriMode.STREAM -> {
                 jibriManager.startStreaming(
-                    ServiceParams(xmppEnvironment.usageTimeoutMins),
+                    serviceParams,
                     StreamingParams(
                         callParams,
+                        startIq.sessionId,
                         xmppEnvironment.callLogin,
                         youTubeStreamKey = startIq.streamId,
                         youTubeBroadcastId = startIq.youtubeBroadcastId),
@@ -257,7 +280,7 @@ class XmppApi(
             }
             JibriMode.SIPGW -> {
                 jibriManager.startSipGateway(
-                    ServiceParams(xmppEnvironment.usageTimeoutMins),
+                    serviceParams,
                     SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler

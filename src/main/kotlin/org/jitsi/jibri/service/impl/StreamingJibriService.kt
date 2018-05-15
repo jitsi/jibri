@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.service.impl
 
+import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
@@ -49,6 +50,10 @@ data class StreamingParams(
      * Which call we'll join
      */
     val callParams: CallParams,
+    /**
+     * The ID of this session
+     */
+    val sessionId: String,
     /**
      * The login information needed to appear invisible in
      * the call
@@ -110,11 +115,14 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             return false
         }
 
+        jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
+        jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
         streamingParams.youTubeBroadcastId?.let {
             if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
                 logger.error("Error adding live stream url to presence")
             }
         }
+        jibriSelenium.sendPresence()
 
         val processMonitor = createCapturerMonitor(capturer)
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)

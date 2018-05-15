@@ -90,7 +90,7 @@ class HttpApi(private val jibriManager: JibriManager) {
                 val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startFileRecording(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    FileRecordingRequestParams(startServiceParams.callParams, callLoginParams),
+                    FileRecordingRequestParams(startServiceParams.callParams, "TODO: sessionID", callLoginParams),
                     environmentContext = null
                 )
             }
@@ -100,7 +100,7 @@ class HttpApi(private val jibriManager: JibriManager) {
                 val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startStreaming(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    StreamingParams(startServiceParams.callParams, callLoginParams, youTubeStreamKey),
+                    StreamingParams(startServiceParams.callParams, "TODO: sessionID", callLoginParams, youTubeStreamKey),
                     environmentContext = null
                 )
             }
@@ -109,7 +109,7 @@ class HttpApi(private val jibriManager: JibriManager) {
                 val sipClientParams = startServiceParams.sipClientParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startSipGateway(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    SipGatewayServiceParams(
+                    SipGatewayServiceParams(//TODO: add session ID
                         startServiceParams.callParams,
                         sipClientParams)
                     )

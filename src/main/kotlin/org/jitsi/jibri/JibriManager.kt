@@ -60,6 +60,10 @@ data class FileRecordingRequestParams(
      */
     val callParams: CallParams,
     /**
+     * The ID of this session
+     */
+    val sessionId: String,
+    /**
      * The login information needed to appear invisible in
      * the call
      */
@@ -102,6 +106,7 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
+                fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
                 config.finalizeRecordingScriptPath,
                 config.recordingDirectory

@@ -191,6 +191,8 @@ class JibriSelenium(
     fun addToPresence(key: String, value: String): Boolean =
         CallPage(chromeDriver).addToPresence(chromeDriver, key, value)
 
+    fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence(chromeDriver)
+
     /**
      * Join a a web call with Selenium
      */
