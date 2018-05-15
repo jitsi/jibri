@@ -118,20 +118,32 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
      * cancel the task
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
+    /**
+     * The directory in which we'll store recordings for this particular session.  This is a directory that will
+     * be nested within [FileRecordingParams.recordingDirectory].
+     */
+    private val sessionRecordingDirectory =
+        fileRecordingParams.recordingDirectory.resolve(fileRecordingParams.sessionId)
+    /**
+     * The directory to where we'll move recording session data if the finalize script fails
+     */
+    private val failedRecordingsDirectory =
+        fileRecordingParams.recordingDirectory.resolve("failed")
 
     init {
+        logger.info("Writing recording to $sessionRecordingDirectory")
         sink = FileSink(
-            fileRecordingParams.recordingDirectory,
+            sessionRecordingDirectory,
             fileRecordingParams.callParams.callUrlInfo.callName
         )
         jibriSelenium.addStatusHandler(this::publishStatus)
     }
 
     override fun start(): Boolean {
-        if (!createIfDoesNotExist(fileRecordingParams.recordingDirectory, logger)) {
+        if (!createIfDoesNotExist(sessionRecordingDirectory, logger)) {
             return false
         }
-        if (!Files.isWritable(fileRecordingParams.recordingDirectory)) {
+        if (!Files.isWritable(sessionRecordingDirectory)) {
             logger.error("Unable to write to ${fileRecordingParams.recordingDirectory}")
             return false
         }
@@ -171,11 +183,9 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 // Re-create the sink here because we want a new filename
                 //TODO: we can run into an issue here where this takes a while and the monitor task runs again
                 // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
-                // and shuts it down
-                sink = FileSink(
-                    fileRecordingParams.recordingDirectory,
-                    fileRecordingParams.callParams.callUrlInfo.callName
-                )
+                // and shuts it down.  Add a forced delay to match the initial delay we set when
+                // creating the monitor task?
+                sink = FileSink(sessionRecordingDirectory, fileRecordingParams.callParams.callUrlInfo.callName)
                 process.stop()
                 if (!process.start(sink)) {
                     logger.error("Capture failed to restart, giving up")
@@ -192,8 +202,8 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
         logger.info("Quitting selenium")
         val participants = jibriSelenium.getParticipants()
         logger.info("Participants in this recording: $participants")
-        if (Files.isWritable(fileRecordingParams.recordingDirectory)) {
-            val metadataFile = fileRecordingParams.recordingDirectory.resolve("metadata")
+        if (Files.isWritable(sessionRecordingDirectory)) {
+            val metadataFile = sessionRecordingDirectory.resolve("metadata")
             val metadata = RecordingMetadata(fileRecordingParams.callParams.callUrlInfo.callUrl, participants)
             Files.newBufferedWriter(metadataFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use {
                 jacksonObjectMapper().writeValue(it, metadata)
@@ -224,9 +234,34 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 // Make sure we get all the logs
                 streamDone.get()
                 logger.info("Recording finalize script finished with exit value $exitValue")
+                when (exitValue) {
+                    0 -> handleFinalizeSuccess()
+                    else -> handleFinalizeError()
+                }
             }
         } catch (e: Exception) {
             logger.error("Failed to run finalize script: $e")
         }
+    }
+
+    private fun handleFinalizeSuccess() {
+        logger.info("Finalize finished successfully, deleting files")
+        try {
+            Files.walk(sessionRecordingDirectory)
+                // Makes sure we process the directories after the files within them
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach { f -> f.delete() }
+        } catch (e: Exception) {
+            logger.error("Error deleting session recording directory", e)
+        }
+    }
+
+    private fun handleFinalizeError() {
+        logger.error("Error during finalize script, moving recording to failure directory")
+        Files.move(
+            sessionRecordingDirectory,
+            failedRecordingsDirectory.resolve(fileRecordingParams.sessionId)
+        )
     }
 }
