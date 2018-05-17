@@ -34,7 +34,7 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.SimpleProcessWrapper
+import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.WritableDirectory
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
@@ -197,7 +197,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 fileRecordingParams.finalizeScriptPath,
                 fileRecordingParams.recordingDirectory.toString()
             )
-            with(SimpleProcessWrapper(finalizeCommand)) {
+            with(ProcessWrapper(finalizeCommand)) {
                 start()
                 val streamDone = logStream(getOutput(), logger)
                 waitFor()
