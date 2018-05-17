@@ -47,6 +47,7 @@ internal class ProcessWrapperTest : ShouldSpec() {
         inputStream = PipedInputStream(outputStream)
 
         whenever(process.inputStream).thenReturn(inputStream)
+        whenever(process.destroyForcibly()).thenReturn(process)
         whenever(processBuilder.start()).thenReturn(process)
 
         processWrapper = ProcessWrapper(listOf(), processBuilder = processBuilder)
