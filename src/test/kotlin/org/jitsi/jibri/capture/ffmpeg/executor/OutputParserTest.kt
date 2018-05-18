@@ -15,7 +15,7 @@
  *
  */
 
-package org.jitsi.jibri.capture.ffmpeg.util
+package org.jitsi.jibri.capture.ffmpeg.executor
 
 import io.kotlintest.matchers.contain
 import io.kotlintest.matchers.haveKey
@@ -23,7 +23,7 @@ import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 
-class OutputParserTest : StringSpec({
+internal class OutputParserTest : StringSpec({
     fun verifyHelper(expectedValues: Map<String, Any>, actualValues: Map<String, Any>) {
         actualValues.size shouldBe expectedValues.size
         expectedValues.forEach { (field, value) ->
@@ -53,7 +53,10 @@ class OutputParserTest : StringSpec({
         val result = OutputParser.parse(outputLine)
         result.size shouldBe 1
         result should haveKey(WARNING_KEY)
-        result should contain(WARNING_KEY, outputLine as Any)
+        result should contain(
+            WARNING_KEY,
+            outputLine as Any
+        )
     }
 
     "an unknown line should result in no fields parsed" {

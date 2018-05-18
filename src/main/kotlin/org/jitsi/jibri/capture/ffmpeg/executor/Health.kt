@@ -16,12 +16,107 @@
  */
 package org.jitsi.jibri.capture.ffmpeg.executor
 
-import org.jitsi.jibri.capture.ffmpeg.util.FfmpegStatus
-import org.jitsi.jibri.capture.ffmpeg.util.getFfmpegStatus
 import org.jitsi.jibri.util.ProcessWrapper
+import org.jitsi.jibri.util.decimal
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.oneOrMoreNonSpaces
+import org.jitsi.jibri.util.zeroOrMoreSpaces
 import java.util.logging.Logger
+import java.util.regex.Pattern
+
+/**
+ * The key (from the set of key, value pairs we parse
+ * from ffmpeg's stdout output) that corresponds to
+ * successful, ongoing encoding from ffmpeg. i.e.:
+ * frame=123
+ */
+const val ENCODING_KEY = "frame"
+/**
+ * The key we use when inserting a warning output line
+ * from ffmpeg into the map of parsed key, value pairs
+ * from parsing ffmpeg's output
+ */
+const val WARNING_KEY = "warning"
+
+/**
+ * Parses the stdout output of ffmpeg to check if it's working
+ */
+class OutputParser {
+    companion object {
+        /**
+         * Ffmpeg prints to stdout while its running with a status of its current job.
+         * For the most part, it uses the following format:
+         * fieldName=fieldValue fieldName2=fieldValue fieldName3=fieldValue...
+         * where any amount spaces can be inserted anywhere in that pattern (except for within
+         * a fieldName or fieldValue).  This pattern will parse all fields from an ffmpeg output
+         * string
+         */
+        private const val ffmpegOutputField =
+        // The key
+        "$zeroOrMoreSpaces($oneOrMoreNonSpaces)$zeroOrMoreSpaces" +
+        "=" +
+        // The value
+        "$zeroOrMoreSpaces($oneOrMoreNonSpaces)"
+
+        /**
+         * ffmpeg past duration warning line
+         */
+        private const val ffmpegPastDuration = "Past duration $decimal too large"
+
+        /**
+         * Ffmpeg warning lines that denote a 'hiccup' (but not a failure)
+         */
+        private val warningLines = listOf(
+            ffmpegPastDuration
+        )
+
+        fun parse(outputLine: String): Map<String, Any> {
+            val result = mutableMapOf<String, Any>()
+
+            // First parse the output line as generic field and value fields
+            val matcher = Pattern.compile(ffmpegOutputField).matcher(outputLine)
+            while (matcher.find()) {
+                val fieldName = matcher.group(1).trim()
+                val fieldValue = matcher.group(2).trim()
+                result[fieldName] = fieldValue
+            }
+            for (warningLine in warningLines) {
+                val warningMatcher = Pattern.compile(ffmpegPastDuration).matcher(outputLine)
+                if (warningMatcher.matches()) {
+                    result[WARNING_KEY] = outputLine
+                    break
+                }
+            }
+
+            return result
+        }
+
+        fun isHealthy(outputLine: String): Boolean {
+            val parsedOutputLine = parse(outputLine)
+            return parsedOutputLine.containsKey(ENCODING_KEY) || parsedOutputLine.containsKey(WARNING_KEY)
+        }
+    }
+}
+
+enum class FfmpegStatus {
+    HEALTHY,
+    WARNING,
+    ERROR,
+    EXITED
+}
+
+fun getFfmpegStatus(process: ProcessWrapper): Pair<FfmpegStatus, String> {
+    val mostRecentLine = process.getMostRecentLine()
+    val result = OutputParser.parse(mostRecentLine)
+    val status = when {
+        !process.isAlive -> FfmpegStatus.EXITED
+        result.containsKey(ENCODING_KEY) -> FfmpegStatus.HEALTHY
+        result.containsKey(WARNING_KEY) -> FfmpegStatus.WARNING
+        else -> FfmpegStatus.ERROR
+    }
+    return Pair(status, mostRecentLine)
+}
 
 fun isFfmpegHealthy(process: ProcessWrapper?, logger: Logger): Boolean {
     if (process == null) {
