@@ -104,11 +104,11 @@ enum class FfmpegStatus {
     EXITED
 }
 
-fun ProcessWrapper.getFfmpegStatus(): Pair<FfmpegStatus, String> {
-    val mostRecentLine = getMostRecentLine()
+fun getFfmpegStatus(process: ProcessWrapper): Pair<FfmpegStatus, String> {
+    val mostRecentLine = process.getMostRecentLine()
     val result = OutputParser.parse(mostRecentLine)
     val status = when {
-        !isAlive -> FfmpegStatus.EXITED
+        !process.isAlive -> FfmpegStatus.EXITED
         result.containsKey(ENCODING_KEY) -> FfmpegStatus.HEALTHY
         result.containsKey(WARNING_KEY) -> FfmpegStatus.WARNING
         else -> FfmpegStatus.ERROR

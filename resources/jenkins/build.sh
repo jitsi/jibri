@@ -3,5 +3,4 @@
 set -e
 
 cd $WORKSPACE/
-mvn verify
-mvn package
+mvn clean verify package

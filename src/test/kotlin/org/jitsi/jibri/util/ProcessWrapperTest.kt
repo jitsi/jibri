@@ -99,14 +99,14 @@ internal class ProcessWrapperTest : ShouldSpec() {
             "when the process has exited" {
                 should("return its exit code") {
                     whenever(process.exitValue()).thenReturn(42)
-                    processWrapper.exitValue() shouldBe 42
+                    processWrapper.exitValue shouldBe 42
                 }
             }
             "when the process has not exited" {
                 should("throw IllegalThreadStateException") {
                     whenever(process.exitValue()).doThrow(IllegalThreadStateException())
                     shouldThrow<IllegalThreadStateException> {
-                        processWrapper.exitValue()
+                        processWrapper.exitValue
                     }
                 }
             }
