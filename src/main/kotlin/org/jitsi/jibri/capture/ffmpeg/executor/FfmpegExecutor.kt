@@ -110,5 +110,5 @@ class FfmpegExecutor(
 
     override fun getExitCode(): Int? = if (currentFfmpegProc?.isAlive == true) null else currentFfmpegProc?.exitValue
 
-    override fun isHealthy(): Boolean = currentFfmpegProc?.isFfmpegHealthy(logger) ?: false
+    override fun isHealthy(): Boolean = isFfmpegHealthy(currentFfmpegProc, logger)
 }

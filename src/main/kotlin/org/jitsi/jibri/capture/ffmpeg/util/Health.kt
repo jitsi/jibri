@@ -21,8 +21,11 @@ import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import java.util.logging.Logger
 
-fun ProcessWrapper.isFfmpegHealthy(logger: Logger): Boolean {
-    val (status, mostRecentOutput) = getFfmpegStatus()
+fun isFfmpegHealthy(process: ProcessWrapper?, logger: Logger): Boolean {
+    if (process == null) {
+        return false
+    }
+    val (status, mostRecentOutput) = getFfmpegStatus(process)
     return when (status) {
         FfmpegStatus.HEALTHY -> {
             logger.debug("Ffmpeg appears healthy: $mostRecentOutput")
@@ -37,7 +40,7 @@ fun ProcessWrapper.isFfmpegHealthy(logger: Logger): Boolean {
             false
         }
         FfmpegStatus.EXITED -> {
-            logger.error("Ffmpeg exited with code $exitValue.  Its most recent output was $mostRecentOutput")
+            logger.error("Ffmpeg exited with code ${process.exitValue}.  Its most recent output was $mostRecentOutput")
             false
         }
     }
