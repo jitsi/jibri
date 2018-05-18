@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.capture.ffmpeg.util
 
+import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.decimal
 import org.jitsi.jibri.util.oneOrMoreNonSpaces
 import org.jitsi.jibri.util.zeroOrMoreSpaces
@@ -94,4 +95,23 @@ class OutputParser {
             return parsedOutputLine.containsKey(ENCODING_KEY) || parsedOutputLine.containsKey(WARNING_KEY)
         }
     }
+}
+
+enum class FfmpegStatus {
+    HEALTHY,
+    WARNING,
+    ERROR,
+    EXITED
+}
+
+fun ProcessWrapper.getFfmpegStatus(): Pair<FfmpegStatus, String> {
+    val mostRecentLine = getMostRecentLine()
+    val result = OutputParser.parse(mostRecentLine)
+    val status = when {
+        !isAlive -> FfmpegStatus.EXITED
+        result.containsKey(ENCODING_KEY) -> FfmpegStatus.HEALTHY
+        result.containsKey(WARNING_KEY) -> FfmpegStatus.WARNING
+        else -> FfmpegStatus.ERROR
+    }
+    return Pair(status, mostRecentLine)
 }

@@ -18,11 +18,12 @@
 package org.jitsi.jibri.sipgateway.pjsua.executor
 
 import org.jitsi.jibri.sipgateway.SipClientParams
-import org.jitsi.jibri.sipgateway.pjsua.PjsuaProcessWrapper
-import org.jitsi.jibri.sipgateway.pjsua.PjsuaStatus
 import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaFileHandler
+import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaStatus
+import org.jitsi.jibri.sipgateway.pjsua.util.getPjsuaStatus
 import org.jitsi.jibri.util.MonitorableProcess
 import org.jitsi.jibri.util.NameableThreadFactory
+import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
@@ -49,7 +50,7 @@ class PjsuaExecutor(
     /**
      * The currently active (if any) pjsua process
      */
-    private var currentPjsuaProc: PjsuaProcessWrapper? = null
+    private var currentPjsuaProc: ProcessWrapper? = null
 
     init {
         pjsuaOutputLogger.useParentHandlers = false
@@ -70,7 +71,7 @@ class PjsuaExecutor(
         )
 
         try {
-            currentPjsuaProc = PjsuaProcessWrapper(
+            currentPjsuaProc = ProcessWrapper(
                 command,
                 mapOf("DISPLAY" to X_DISPLAY),
                 processBuilder)
@@ -111,7 +112,7 @@ class PjsuaExecutor(
 
     override fun isHealthy(): Boolean {
         return currentPjsuaProc?.let {
-            val (status, mostRecentOutput) = it.getStatus()
+            val (status, mostRecentOutput) = it.getPjsuaStatus()
             return@let when (status) {
                 PjsuaStatus.HEALTHY -> {
                     logger.debug("Pjsua appears healthy: $mostRecentOutput")

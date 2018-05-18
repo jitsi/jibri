@@ -24,12 +24,9 @@ import java.util.concurrent.TimeUnit
  * A wrapper around [Process] that implements
  * behaviors more useful to Jibri.  This isn't done
  * as a subclass because [Process] is abstract
- * and the actual implementation varies by platform, so
- * we'll leave that to the existing [Process] class.
- * Templated on the value that will be return from
- * [getStatus]
+ * and the actual implementation varies by platform.
  */
-abstract class ProcessWrapper<out StatusType>(
+class ProcessWrapper(
     command: List<String>,
     val environment: Map<String, String> = mapOf(),
     private val processBuilder: ProcessBuilder = ProcessBuilder()
@@ -132,17 +129,5 @@ abstract class ProcessWrapper<out StatusType>(
         return tee.addBranch()
     }
 
-    abstract fun getStatus(): Pair<StatusType, String>
-
-    protected fun getMostRecentLine(): String = tail.mostRecentLine
-}
-
-class SimpleProcessWrapper(
-    command: List<String>,
-    environment: Map<String, String> = mapOf(),
-    processBuilder: ProcessBuilder = ProcessBuilder()
-) : ProcessWrapper<Boolean>(command, environment, processBuilder) {
-    override fun getStatus(): Pair<Boolean, String> {
-        return Pair(true, "")
-    }
+    fun getMostRecentLine(): String = tail.mostRecentLine
 }

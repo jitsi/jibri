@@ -17,13 +17,14 @@
 
 package org.jitsi.jibri.capture.ffmpeg.executor.impl
 
-import org.jitsi.jibri.capture.ffmpeg.FfmpegProcessWrapper
-import org.jitsi.jibri.capture.ffmpeg.FfmpegStatus
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
+import org.jitsi.jibri.capture.ffmpeg.util.FfmpegStatus
+import org.jitsi.jibri.capture.ffmpeg.util.getFfmpegStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.NameableThreadFactory
+import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
@@ -46,7 +47,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
     /**
      * The currently active (if any) Ffmpeg process
      */
-    private var currentFfmpegProc: FfmpegProcessWrapper? = null
+    private var currentFfmpegProc: ProcessWrapper? = null
 
     init {
         ffmpegOutputLogger.useParentHandlers = false
@@ -61,7 +62,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
     override fun launchFfmpeg(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): Boolean {
         val command = getFfmpegCommand(ffmpegExecutorParams, sink).split(" ")
         try {
-            currentFfmpegProc = FfmpegProcessWrapper(command, processBuilder = processBuilder)
+            currentFfmpegProc = ProcessWrapper(command, processBuilder = processBuilder)
         } catch (t: Throwable) {
             logger.error("Error starting ffmpeg: $t")
             return false
@@ -80,7 +81,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
 
     override fun isHealthy(): Boolean {
         return currentFfmpegProc?.let {
-            val (status, mostRecentOutput) = it.getStatus()
+            val (status, mostRecentOutput) = it.getFfmpegStatus()
             return@let when (status) {
                 FfmpegStatus.HEALTHY -> {
                     logger.debug("Ffmpeg appears healthy: $mostRecentOutput")
