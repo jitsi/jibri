@@ -203,7 +203,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 waitFor()
                 // Make sure we get all the logs
                 streamDone.get()
-                logger.info("Recording finalize script finished with exit value ${exitValue()}")
+                logger.info("Recording finalize script finished with exit value $exitValue")
             }
         } catch (e: Exception) {
             logger.error("Failed to run finalize script: $e")

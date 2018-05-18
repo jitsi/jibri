@@ -77,7 +77,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
         }
     }
 
-    override fun getExitCode(): Int? = if (currentFfmpegProc?.isAlive == true) null else currentFfmpegProc?.exitValue()
+    override fun getExitCode(): Int? = if (currentFfmpegProc?.isAlive == true) null else currentFfmpegProc?.exitValue
 
     override fun isHealthy(): Boolean {
         return currentFfmpegProc?.let {
@@ -116,6 +116,6 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
             }
         }
         processLoggerTask?.get()
-        logger.info("Ffmpeg exited with value ${currentFfmpegProc?.exitValue()}")
+        logger.info("Ffmpeg exited with value ${currentFfmpegProc?.exitValue}")
     }
 }

@@ -62,7 +62,8 @@ class ProcessWrapper(
      * Throws if the wrapped process has not exited, so check
      * that [isAlive] is false before calling to avoid that.
      */
-    fun exitValue() = process.exitValue()
+    val exitValue: Int
+        get() = process.exitValue()
 
     init {
         processBuilder.command(command)

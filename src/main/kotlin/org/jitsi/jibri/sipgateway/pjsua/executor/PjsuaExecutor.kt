@@ -101,12 +101,12 @@ class PjsuaExecutor(
                 destroyForcibly()
             }
         }
-        logger.info("Pjsua exited with value ${currentPjsuaProc?.exitValue()}")
+        logger.info("Pjsua exited with value ${currentPjsuaProc?.exitValue}")
     }
 
     override fun getExitCode(): Int? {
         return currentPjsuaProc?.let {
-            if (it.isAlive) null else it.exitValue()
+            if (it.isAlive) null else it.exitValue
         }
     }
 
