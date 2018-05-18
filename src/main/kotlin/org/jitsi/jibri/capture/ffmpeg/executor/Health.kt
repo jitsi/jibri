@@ -14,8 +14,10 @@
  * limitations under the License.
  *
  */
-package org.jitsi.jibri.capture.ffmpeg.util
+package org.jitsi.jibri.capture.ffmpeg.executor
 
+import org.jitsi.jibri.capture.ffmpeg.util.FfmpegStatus
+import org.jitsi.jibri.capture.ffmpeg.util.getFfmpegStatus
 import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
