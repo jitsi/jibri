@@ -35,10 +35,10 @@ import java.util.logging.Logger
  * configured audio and video devices, and writing to the given [Sink]
  */
 class FfmpegCapturer(
-    osDetector: OsDetector = OsDetector()
+    osDetector: OsDetector = OsDetector(),
+    private val ffmpegExecutor: FfmpegExecutor = FfmpegExecutor()
 ) : Capturer {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val ffmpegExecutor = FfmpegExecutor()
     private val getCommand: (Sink) -> List<String>
 
     init {
@@ -51,6 +51,10 @@ class FfmpegCapturer(
         }
     }
 
+    /**
+     * Start the capturer and write to the given [Sink].  Returns
+     * true on success, false otherwise
+     */
     override fun start(sink: Sink): Boolean {
         val command = getCommand(sink)
         if (!ffmpegExecutor.launchFfmpeg(command)) {
@@ -72,9 +76,19 @@ class FfmpegCapturer(
         return false
     }
 
+    /**
+     * Returns true if the capturer is healthy, false otherwise
+     */
     override fun isHealthy(): Boolean = ffmpegExecutor.isHealthy()
 
+    /**
+     * Returns the exit code if the capturer has exited, null if
+     * it's still running
+     */
     override fun getExitCode(): Int? = ffmpegExecutor.getExitCode()
 
+    /**
+     * Stops the capturer
+     */
     override fun stop() = ffmpegExecutor.stopFfmpeg()
 }
