@@ -22,6 +22,7 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegStatus
 import org.jitsi.jibri.capture.ffmpeg.util.getFfmpegStatus
+import org.jitsi.jibri.capture.ffmpeg.util.isFfmpegHealthy
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessWrapper
@@ -39,7 +40,9 @@ const val FFMPEG_RESTART_ATTEMPTS = 1
  * It is abstract, and requires a subclass to implement the
  * [getFfmpegCommand] method to return the proper command.
  */
-abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder = ProcessBuilder()) : FfmpegExecutor {
+abstract class AbstractFfmpegExecutor(
+    private val processBuilder: ProcessBuilder = ProcessBuilder()
+) : FfmpegExecutor {
     private val logger = Logger.getLogger(AbstractFfmpegExecutor::class.qualifiedName)
     private val ffmpegOutputLogger = Logger.getLogger("ffmpeg")
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("AbstractFfmpegExecutor"))
@@ -79,31 +82,7 @@ abstract class AbstractFfmpegExecutor(private val processBuilder: ProcessBuilder
 
     override fun getExitCode(): Int? = if (currentFfmpegProc?.isAlive == true) null else currentFfmpegProc?.exitValue
 
-    override fun isHealthy(): Boolean {
-        return currentFfmpegProc?.let {
-            val (status, mostRecentOutput) = it.getFfmpegStatus()
-            return@let when (status) {
-                FfmpegStatus.HEALTHY -> {
-                    logger.debug("Ffmpeg appears healthy: $mostRecentOutput")
-                    true
-                }
-                FfmpegStatus.WARNING -> {
-                    logger.info("Ffmpeg is encoding, but issued a warning: $mostRecentOutput")
-                    true
-                }
-                FfmpegStatus.ERROR -> {
-                    logger.error("Ffmpeg is running but doesn't appear to be encoding: $mostRecentOutput")
-                    false
-                }
-                FfmpegStatus.EXITED -> {
-                    logger.error("Ffmpeg exited with code ${getExitCode()}.  Its most recent output was $mostRecentOutput")
-                    false
-                }
-            }
-        } ?: run {
-            false
-        }
-    }
+    override fun isHealthy(): Boolean = currentFfmpegProc?.isFfmpegHealthy(logger) ?: false
 
     override fun stopFfmpeg() {
         logger.info("Stopping ffmpeg process")
