@@ -53,7 +53,6 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                 whenever(ffmpegExecutor.launchFfmpeg(commandCaptor.capture())).thenReturn(true)
                 should("be correct for linux") {
                     ffmpegCapturer.start(sink)
-                    println(commandCaptor.firstValue)
                     commandCaptor.firstValue should contain("x11grab")
                     commandCaptor.firstValue should contain("alsa")
                 }
