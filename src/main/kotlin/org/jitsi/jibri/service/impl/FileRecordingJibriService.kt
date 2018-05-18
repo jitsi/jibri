@@ -88,7 +88,10 @@ data class RecordingMetadata(
  * a web call, capturing its audio and video, and writing that audio and video
  * to a file to be replayed later.
  */
-class FileRecordingJibriService(private val fileRecordingParams: FileRecordingParams) : JibriService() {
+class FileRecordingJibriService(
+    private val fileRecordingParams: FileRecordingParams,
+    private val executor: ScheduledExecutorService
+) : JibriService() {
     /**
      * The [Logger] for this class
      */
@@ -107,12 +110,6 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
      * The [Sink] this class will use to model the file on the filesystem
      */
     private var sink: Sink
-    /**
-     * If ffmpeg dies for some reason, we want to restart it.  This [ScheduledExecutorService]
-     * will run the process monitor in a separate thread so it can check that it's running on its own
-     */
-    private val executor: ScheduledExecutorService =
-        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
     /**
      * The handle to the scheduled process monitor task, which we use to
      * cancel the task
