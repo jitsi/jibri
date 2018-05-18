@@ -17,18 +17,30 @@
 
 package org.jitsi.jibri
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import java.util.Objects
 
 /**
  * We assume the 'baseUrl' represents a sort of landing page (on the same
  * domain) where we can set the necessary local storage values.  The call
- * url will be created by joining [baseUrl] and [callName] with a "/"
+ * url will be created by joining [baseUrl] and [callName] with a "/".  If
+ * set, a list of [urlParams] will be concatenated after the call name with
+ * a "#" in between.
  */
 data class CallUrlInfo(
     val baseUrl: String = "",
-    val callName: String = ""
+    val callName: String = "",
+    private val urlParams: List<String> = listOf()
 ) {
-    val callUrl = "$baseUrl/$callName"
+    @get:JsonIgnore
+    val callUrl: String
+        get() {
+            return if (urlParams.isNotEmpty()) {
+                "$baseUrl/$callName#${urlParams.joinToString("&")}"
+            } else {
+                "$baseUrl/$callName"
+            }
+        }
 
     override fun equals(other: Any?): Boolean {
         return when {
@@ -40,6 +52,7 @@ data class CallUrlInfo(
     }
 
     override fun hashCode(): Int {
+        // Purposefully ignore urlParams here
         return Objects.hash(baseUrl.toLowerCase(), callName.toLowerCase())
     }
 }
