@@ -26,7 +26,6 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
-import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
@@ -96,9 +95,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
      * Used for the selenium interaction
      */
     private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(
-            fileRecordingParams.callParams, urlParams = RECORDING_URL_OPTIONS),
-        Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
+        executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
     )
     /**
      * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
@@ -127,7 +124,9 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
 
     override fun start(): Boolean {
         if (!jibriSelenium.joinCall(
-                fileRecordingParams.callParams.callUrlInfo.callName, fileRecordingParams.callLoginParams)) {
+                fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+                fileRecordingParams.callLoginParams)
+        ) {
             logger.error("Selenium failed to join the call")
             return false
         }
