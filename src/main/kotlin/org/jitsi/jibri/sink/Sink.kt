@@ -38,5 +38,5 @@ interface Sink {
     /**
      * Any ffmpeg command-line options this [Sink] requires
      */
-    val options: String
+    val options: Array<String>
 }

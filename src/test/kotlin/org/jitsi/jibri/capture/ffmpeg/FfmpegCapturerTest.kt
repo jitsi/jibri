@@ -42,7 +42,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
 
     init {
         whenever(sink.format).thenReturn("format")
-        whenever(sink.options).thenReturn("options")
+        whenever(sink.options).thenReturn(arrayOf("option1", "option2"))
         whenever(sink.path).thenReturn("path")
 
         "on linux" {
@@ -55,6 +55,8 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     ffmpegCapturer.start(sink)
                     commandCaptor.firstValue should contain("x11grab")
                     commandCaptor.firstValue should contain("alsa")
+                    commandCaptor.firstValue should contain("option1")
+                    commandCaptor.firstValue should contain("option2")
                 }
             }
             "when launching succeeds" {
