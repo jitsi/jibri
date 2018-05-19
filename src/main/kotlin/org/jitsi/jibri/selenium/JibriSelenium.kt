@@ -197,7 +197,7 @@ class JibriSelenium(
      * Join a a web call with Selenium
      */
     fun joinCall(callName: String, xmppCredentials: XmppCredentials? = null): Boolean {
-        HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
+        HomePage(chromeDriver).visit(baseUrl)
 
         val localStorageValues = mutableMapOf(
             "displayname" to jibriSeleniumOptions.displayName,
@@ -211,7 +211,7 @@ class JibriSelenium(
         setLocalStorageValues(localStorageValues)
         val urlParams = jibriSeleniumOptions.urlParams
         val callNameWithUrlParams = "$callName#${urlParams.joinToString("&")}"
-        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callNameWithUrlParams))) {
+        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callNameWithUrlParams).callUrl)) {
             return false
         }
         addEmptyCallDetector()

@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.selenium.pageobjects
 
-import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -35,8 +35,9 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         PageFactory.initElements(driver, this)
     }
 
-    override fun visit(callUrlInfo: CallUrlInfo): Boolean {
-        if (!super.visit(callUrlInfo)) {
+    override fun visit(url: String): Boolean {
+        logger.debug("Visiting url $url")
+        if (!super.visit(url)) {
             return false
         }
         val start = System.currentTimeMillis()
