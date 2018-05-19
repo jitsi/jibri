@@ -32,7 +32,7 @@ fun getFfmpegCommandLinux(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink
         "-i", "hw:0,1,0",
         "-acodec", "aac", "-strict", "-2", "-ar", "44100",
         "-c:v", "libx264", "-preset", ffmpegExecutorParams.videoEncodePreset,
-        sink.options, "-pix_fmt", "yuv420p", "-r", ffmpegExecutorParams.framerate.toString(),
+        *sink.options, "-pix_fmt", "yuv420p", "-r", ffmpegExecutorParams.framerate.toString(),
         "-crf", ffmpegExecutorParams.h264ConstantRateFactor.toString(),
         "-g", ffmpegExecutorParams.gopSize.toString(), "-tune", "zerolatency",
         "-f", sink.format, sink.path
@@ -50,7 +50,7 @@ fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink):
         "-vsync", "2",
         "-acodec", "aac", "-strict", "-2", "-ar", "44100",
         "-c:v", "libx264", "-preset", ffmpegExecutorParams.videoEncodePreset,
-        sink.options, "-pix_fmt", "yuv420p", "-crf", ffmpegExecutorParams.h264ConstantRateFactor.toString(),
+        *sink.options, "-pix_fmt", "yuv420p", "-crf", ffmpegExecutorParams.h264ConstantRateFactor.toString(),
         "-g", ffmpegExecutorParams.gopSize.toString(), "-tune", "zerolatency",
         "-f", sink.format, sink.path
     )

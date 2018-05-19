@@ -37,5 +37,8 @@ class FileSink(recordingsDirectory: WritableDirectory, callName: String, extensi
     }
     override val path: String = file.path
     override val format: String = file.extension
-    override val options: String = "-profile:v main -level 3.1"
+    override val options: Array<String> = arrayOf(
+        "-profile:v", "main",
+        "-level", "3.1"
+    )
 }

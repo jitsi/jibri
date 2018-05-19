@@ -25,5 +25,8 @@ import org.jitsi.jibri.sink.Sink
 class StreamSink(val url: String, val streamingMaxBitrate: Int, val streamingBufSize: Int) : Sink {
     override val path: String = url
     override val format: String = "flv"
-    override val options: String = "-maxrate ${streamingMaxBitrate}k -bufsize ${streamingBufSize}k"
+    override val options: Array<String> = arrayOf(
+        "-maxrate", "${streamingMaxBitrate}k",
+        "-bufsize", "${streamingBufSize}k"
+    )
 }
