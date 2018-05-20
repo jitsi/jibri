@@ -156,7 +156,7 @@ class JibriSelenium(
         emptyCallTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
             try {
                 // >1 since the count will include jibri itself
-                if (CallPage(chromeDriver).getNumParticipants(chromeDriver) > 1) {
+                if (CallPage(chromeDriver).getNumParticipants() > 1) {
                     numTimesEmpty = 0
                 } else {
                     numTimesEmpty++
@@ -177,13 +177,13 @@ class JibriSelenium(
      * Jibri is active
      */
     private fun addParticipantTracker() {
-        CallPage(chromeDriver).injectParticipantTrackerScript(chromeDriver)
+        CallPage(chromeDriver).injectParticipantTrackerScript()
     }
 
     fun addToPresence(key: String, value: String): Boolean =
-        CallPage(chromeDriver).addToPresence(chromeDriver, key, value)
+        CallPage(chromeDriver).addToPresence(key, value)
 
-    fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence(chromeDriver)
+    fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
     /**
      * Join a a web call with Selenium
@@ -211,7 +211,7 @@ class JibriSelenium(
     }
 
     fun getParticipants(): List<Map<String, Any>> {
-        return CallPage(chromeDriver).getParticipants(chromeDriver)
+        return CallPage(chromeDriver).getParticipants()
     }
 
     fun leaveCallAndQuitBrowser() {
