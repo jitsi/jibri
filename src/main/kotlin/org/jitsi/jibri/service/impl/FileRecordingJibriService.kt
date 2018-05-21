@@ -32,8 +32,8 @@ import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
+import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
@@ -90,7 +90,8 @@ data class RecordingMetadata(
  */
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
-    private val executor: ScheduledExecutorService
+    private val executor: ScheduledExecutorService,
+    private val processFactory: ProcessFactory = ProcessFactory()
 ) : JibriService() {
     /**
      * The [Logger] for this class
@@ -222,9 +223,9 @@ class FileRecordingJibriService(
         try {
             val finalizeCommand = listOf(
                 fileRecordingParams.finalizeScriptPath.toString(),
-                fileRecordingParams.recordingDirectory.toString()
+                sessionRecordingDirectory.toString()
             )
-            with(ProcessWrapper(finalizeCommand)) {
+            with(processFactory.createProcess(finalizeCommand)) {
                 start()
                 val streamDone = logStream(getOutput(), logger)
                 waitFor()
