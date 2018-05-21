@@ -118,7 +118,10 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
-        sink = FileSink(fileRecordingParams.recordingDirectory, fileRecordingParams.callParams.callUrlInfo.callName)
+        sink = FileSink(
+            fileRecordingParams.recordingDirectory.toPath(),
+            fileRecordingParams.callParams.callUrlInfo.callName
+        )
         jibriSelenium.addStatusHandler(this::publishStatus)
     }
 
@@ -160,7 +163,10 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 //TODO: we can run into an issue here where this takes a while and the monitor task runs again
                 // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
                 // and shuts it down
-                sink = FileSink(fileRecordingParams.recordingDirectory, fileRecordingParams.callParams.callUrlInfo.callName)
+                sink = FileSink(
+                    fileRecordingParams.recordingDirectory.toPath(),
+                    fileRecordingParams.callParams.callUrlInfo.callName
+                )
                 process.stop()
                 if (!process.start(sink)) {
                     logger.error("Capture failed to restart, giving up")

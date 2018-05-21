@@ -18,8 +18,7 @@
 package org.jitsi.jibri.sink.impl
 
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.WritableDirectory
-import java.io.File
+import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -27,16 +26,16 @@ import java.time.format.DateTimeFormatter
  * [FileSink] represents a sink which will write to a media file on the
  * filesystem
  */
-class FileSink(recordingsDirectory: WritableDirectory, callName: String, extension: String = ".mp4") : Sink {
-    val file: File
+class FileSink(recordingsDirectory: Path, callName: String, extension: String = ".mp4") : Sink {
+    val file: Path
     init {
         val currentTime = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
         val filename = "${callName}_${currentTime.format(formatter)}$extension"
-        file = File(recordingsDirectory, filename)
+        file = recordingsDirectory.resolve(filename)
     }
-    override val path: String = file.path
-    override val format: String = file.extension
+    override val path: String = file.toString()
+    override val format: String = file.toFile().extension
     override val options: Array<String> = arrayOf(
         "-profile:v", "main",
         "-level", "3.1"
