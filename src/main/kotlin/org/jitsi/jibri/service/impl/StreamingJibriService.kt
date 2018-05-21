@@ -24,7 +24,6 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
-import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
@@ -88,10 +87,7 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
      * cancel the task
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
-    private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(streamingParams.callParams, urlParams = RECORDING_URL_OPTIONS),
-        executor
-    )
+    private val jibriSelenium = JibriSelenium(executor = executor)
 
     init {
         sink = StreamSink(
@@ -105,7 +101,10 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
     }
 
     override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(streamingParams.callParams.callUrlInfo.callName, streamingParams.callLoginParams)) {
+        if (!jibriSelenium.joinCall(
+                streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+                streamingParams.callLoginParams)
+        ) {
             logger.error("Selenium failed to join the call")
             return false
         }

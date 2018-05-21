@@ -66,6 +66,8 @@ class HttpApiTest : ShouldSpec() {
             override fun configure(): Application {
                 return ResourceConfig(object : ResourceConfig() {
                     init {
+                        // Uncommenting the following line can help with debugging any errors
+                        //property(LoggingFeature.LOGGING_FEATURE_LOGGER_LEVEL_SERVER, "WARNING")
                         register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
                         register(JacksonFeature::class.java)
                         registerInstances(HttpApi(jibriManager))

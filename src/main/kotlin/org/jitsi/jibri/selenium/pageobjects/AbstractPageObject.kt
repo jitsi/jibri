@@ -17,7 +17,6 @@
 
 package org.jitsi.jibri.selenium.pageobjects
 
-import org.jitsi.jibri.CallUrlInfo
 import org.openqa.selenium.remote.RemoteWebDriver
 
 /**
@@ -25,8 +24,8 @@ import org.openqa.selenium.remote.RemoteWebDriver
  * all page object instances
  */
 open class AbstractPageObject(protected val driver: RemoteWebDriver) {
-    open fun visit(callUrlInfo: CallUrlInfo): Boolean {
-        driver.get(callUrlInfo.callUrl)
+    open fun visit(url: String): Boolean {
+        driver.get(url)
         return true
     }
 }
