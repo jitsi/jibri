@@ -37,6 +37,7 @@ import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
+import java.nio.file.Paths
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -108,8 +109,8 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
                 fileRecordingRequestParams.callParams,
                 fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
-                config.finalizeRecordingScriptPath,
-                config.recordingDirectory
+                Paths.get(config.finalizeRecordingScriptPath),
+                Paths.get(config.recordingDirectory)
             )
         )
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)

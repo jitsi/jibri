@@ -34,10 +34,11 @@ import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.ProcessWrapper
-import org.jitsi.jibri.util.WritableDirectory
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
-import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -65,11 +66,11 @@ data class FileRecordingParams(
      * The filesystem path to the script which should be executed when
      *  the recording is finished.
      */
-    val finalizeScriptPath: String,
+    val finalizeScriptPath: Path,
     /**
      * The directory in which recordings should be created
      */
-    val recordingDirectory: WritableDirectory
+    val recordingDirectory: Path
 )
 
 /**
@@ -118,8 +119,11 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
+        if (!Files.isWritable(fileRecordingParams.recordingDirectory)) {
+            throw IOException("Unable to write to directory ${fileRecordingParams.recordingDirectory}")
+        }
         sink = FileSink(
-            fileRecordingParams.recordingDirectory.toPath(),
+            fileRecordingParams.recordingDirectory,
             fileRecordingParams.callParams.callUrlInfo.callName
         )
         jibriSelenium.addStatusHandler(this::publishStatus)
@@ -164,7 +168,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
                 // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
                 // and shuts it down
                 sink = FileSink(
-                    fileRecordingParams.recordingDirectory.toPath(),
+                    fileRecordingParams.recordingDirectory,
                     fileRecordingParams.callParams.callUrlInfo.callName
                 )
                 process.stop()
@@ -185,7 +189,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
         logger.info("Participants in this recording: $participants")
         val metadata = RecordingMetadata(fileRecordingParams.callParams.callUrlInfo.callUrl, participants)
         jacksonObjectMapper()
-            .writeValue(File(fileRecordingParams.recordingDirectory, "metadata"), metadata)
+            .writeValue(Files.createFile(fileRecordingParams.recordingDirectory.resolve("metadata")).toFile(), metadata)
         jibriSelenium.leaveCallAndQuitBrowser()
         logger.info("Finalizing the recording")
         finalize()
@@ -199,7 +203,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
     private fun finalize() {
         try {
             val finalizeCommand = listOf(
-                fileRecordingParams.finalizeScriptPath,
+                fileRecordingParams.finalizeScriptPath.toString(),
                 fileRecordingParams.recordingDirectory.toString()
             )
             with(ProcessWrapper(finalizeCommand)) {
