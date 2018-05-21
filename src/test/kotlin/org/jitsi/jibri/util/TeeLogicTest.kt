@@ -17,19 +17,21 @@
 
 package org.jitsi.jibri.util
 
-import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
+import org.jitsi.jibri.helpers.seconds
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 
-class TeeLogicTest : ShouldSpec() {
-    private lateinit var outputStream: PipedOutputStream
-    private lateinit var inputStream: PipedInputStream
-    private lateinit var tee: TeeLogic
+internal class TeeLogicTest : ShouldSpec() {
+    override fun isInstancePerTest(): Boolean = true
+
+    private val outputStream = PipedOutputStream()
+    private val inputStream = PipedInputStream(outputStream)
+    private val tee = TeeLogic(inputStream)
 
     private fun pushIncomingData(data: Byte) {
         outputStream.write(data.toInt())
@@ -40,13 +42,6 @@ class TeeLogicTest : ShouldSpec() {
         data.toByteArray().forEach {
             pushIncomingData(it)
         }
-    }
-
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
-        outputStream = PipedOutputStream()
-        inputStream = PipedInputStream(outputStream)
-        tee = TeeLogic(inputStream)
     }
 
     init {
@@ -88,6 +83,28 @@ class TeeLogicTest : ShouldSpec() {
 
                 val reader2 = BufferedReader(InputStreamReader(branch2))
                 reader2.readLine() shouldBe null
+            }
+        }
+    }
+}
+
+internal class TeeTest : ShouldSpec() {
+    override fun isInstancePerTest(): Boolean = true
+
+    private val outputStream = PipedOutputStream()
+    private val inputStream = PipedInputStream(outputStream)
+    private val tee = Tee(inputStream)
+
+    init {
+        val branch = tee.addBranch()
+        "stop" {
+            should("close downstream readers").config(timeout = 5.seconds()) {
+                tee.stop()
+                // This is testing that it returns the proper value (to signal
+                // the stream was closed).  But the timeout in the config tests
+                // is also critical because if the stream wasn't closed, then
+                // the read call will block indefinitely
+                branch.read() shouldBe -1
             }
         }
     }
