@@ -27,10 +27,6 @@ fun createIfDoesNotExist(path: Path, logger: Logger? = null): Boolean {
             Files.createDirectories(path)
         } catch (e: Exception) {
             logger?.error("Error creating directory", e)
-            println(e)
-            for (stackElement in e.stackTrace) {
-                println(stackElement)
-            }
             return false
         }
     }
