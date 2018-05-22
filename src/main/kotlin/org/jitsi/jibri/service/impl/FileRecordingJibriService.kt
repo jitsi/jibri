@@ -34,11 +34,9 @@ import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.ProcessWrapper
-import org.jitsi.jibri.util.createIfDoesntExist
-import org.jitsi.jibri.util.extensions.debug
+import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
@@ -130,7 +128,7 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
     }
 
     override fun start(): Boolean {
-        if (!createIfDoesntExist(fileRecordingParams.recordingDirectory, logger)) {
+        if (!createIfDoesNotExist(fileRecordingParams.recordingDirectory, logger)) {
             return false
         }
         if (!Files.isWritable(fileRecordingParams.recordingDirectory)) {

@@ -21,13 +21,16 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.logging.Logger
 
-
-fun createIfDoesntExist(path: Path, logger: Logger): Boolean {
+fun createIfDoesNotExist(path: Path, logger: Logger? = null): Boolean {
     if (!Files.exists(path)) {
         try {
-            Files.createDirectory(path)
+            Files.createDirectories(path)
         } catch (e: Exception) {
-            logger.error("Error creating directory", e)
+            logger?.error("Error creating directory", e)
+            println(e)
+            for (stackElement in e.stackTrace) {
+                println(stackElement)
+            }
             return false
         }
     }
