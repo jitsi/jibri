@@ -34,11 +34,14 @@ import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.ProcessWrapper
+import org.jitsi.jibri.util.createIfDoesntExist
+import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -119,9 +122,6 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
-        if (!Files.isWritable(fileRecordingParams.recordingDirectory)) {
-            throw IOException("Unable to write to directory ${fileRecordingParams.recordingDirectory}")
-        }
         sink = FileSink(
             fileRecordingParams.recordingDirectory,
             fileRecordingParams.callParams.callUrlInfo.callName
@@ -130,6 +130,13 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
     }
 
     override fun start(): Boolean {
+        if (!createIfDoesntExist(fileRecordingParams.recordingDirectory, logger)) {
+            return false
+        }
+        if (!Files.isWritable(fileRecordingParams.recordingDirectory)) {
+            logger.error("Unable to write to ${fileRecordingParams.recordingDirectory}")
+            return false
+        }
         if (!jibriSelenium.joinCall(
                 fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
                 fileRecordingParams.callLoginParams)
@@ -187,9 +194,15 @@ class FileRecordingJibriService(private val fileRecordingParams: FileRecordingPa
         logger.info("Quitting selenium")
         val participants = jibriSelenium.getParticipants()
         logger.info("Participants in this recording: $participants")
-        val metadata = RecordingMetadata(fileRecordingParams.callParams.callUrlInfo.callUrl, participants)
-        jacksonObjectMapper()
-            .writeValue(Files.createFile(fileRecordingParams.recordingDirectory.resolve("metadata")).toFile(), metadata)
+        if (Files.isWritable(fileRecordingParams.recordingDirectory)) {
+            val metadataFile = fileRecordingParams.recordingDirectory.resolve("metadata")
+            val metadata = RecordingMetadata(fileRecordingParams.callParams.callUrlInfo.callUrl, participants)
+            Files.newBufferedWriter(metadataFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use {
+                jacksonObjectMapper().writeValue(it, metadata)
+            }
+        } else {
+            logger.error("Unable to write metadata file to recording directory ${fileRecordingParams.recordingDirectory}")
+        }
         jibriSelenium.leaveCallAndQuitBrowser()
         logger.info("Finalizing the recording")
         finalize()

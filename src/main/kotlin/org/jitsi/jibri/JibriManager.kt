@@ -37,6 +37,8 @@ import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
 import java.nio.file.Paths
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -77,7 +79,10 @@ data class FileRecordingRequestParams(
  * instance.  NOTE: currently Jibri only runs a single service at a time, so
  * if one is running, the Jibri will describe itself as busy
  */
-class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatusPacketExt.Status>() {
+class JibriManager(
+    private val config: JibriConfig,
+    private val fileSystem: FileSystem = FileSystems.getDefault()
+) : StatusPublisher<JibriStatusPacketExt.Status>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
     private var currentEnvironmentContext: EnvironmentContext? = null
@@ -109,8 +114,8 @@ class JibriManager(private val config: JibriConfig) : StatusPublisher<JibriStatu
                 fileRecordingRequestParams.callParams,
                 fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
-                Paths.get(config.finalizeRecordingScriptPath),
-                Paths.get(config.recordingDirectory)
+                fileSystem.getPath(config.finalizeRecordingScriptPath),
+                fileSystem.getPath(config.recordingDirectory)
             )
         )
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
