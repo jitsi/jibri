@@ -35,7 +35,7 @@ class FileSink(recordingsDirectory: Path, callName: String, extension: String = 
         file = recordingsDirectory.resolve(filename)
     }
     override val path: String = file.toString()
-    override val format: String = file.toFile().extension
+    override val format: String = extension.removePrefix(".")
     override val options: Array<String> = arrayOf(
         "-profile:v", "main",
         "-level", "3.1"
