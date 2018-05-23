@@ -33,7 +33,15 @@ import org.jitsi.jibri.service.impl.SipGatewayJibriService
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.StreamingParams
+import org.jitsi.jibri.statsd.ASPECT_BUSY
+import org.jitsi.jibri.statsd.ASPECT_ERROR
+import org.jitsi.jibri.statsd.TAG_SERVICE_LIVE_STREAM
+import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
+import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
+import org.jitsi.jibri.statsd.ASPECT_START
+import org.jitsi.jibri.statsd.ASPECT_STOP
 import org.jitsi.jibri.util.NameableThreadFactory
+import org.jitsi.jibri.statsd.StatsDClient
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
@@ -80,7 +88,8 @@ data class FileRecordingRequestParams(
  */
 class JibriManager(
     private val config: JibriConfig,
-    private val fileSystem: FileSystem = FileSystems.getDefault()
+    private val fileSystem: FileSystem = FileSystems.getDefault(),
+    private val statsDClient: StatsDClient? = StatsDClient()
 ) : StatusPublisher<JibriStatusPacketExt.Status>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
@@ -106,6 +115,7 @@ class JibriManager(
                 "recordings directory: ${config.recordingDirectory}")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
+            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_RECORDING)
             return StartServiceResult.BUSY
         }
         val service = FileRecordingJibriService(
@@ -117,6 +127,7 @@ class JibriManager(
                 fileSystem.getPath(config.recordingDirectory)
             )
         )
+        statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_RECORDING)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
@@ -135,9 +146,11 @@ class JibriManager(
         logger.info("Starting a stream with params: $serviceParams $streamingParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
+            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_LIVE_STREAM)
             return StartServiceResult.BUSY
         }
         val service = StreamingJibriService(streamingParams)
+        statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_LIVE_STREAM)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
@@ -151,12 +164,14 @@ class JibriManager(
         logger.info("Starting a SIP gateway with params: $serviceParams $sipGatewayServiceParams")
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
+            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_SIP_GATEWAY)
             return StartServiceResult.BUSY
         }
         val service = SipGatewayJibriService(SipGatewayServiceParams(
             sipGatewayServiceParams.callParams,
             sipGatewayServiceParams.sipClientParams
         ))
+        statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_SIP_GATEWAY)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
@@ -179,7 +194,13 @@ class JibriManager(
         // the error'd service and update presence appropriately
         jibriService.addStatusHandler {
             when (it) {
-                JibriServiceStatus.ERROR, JibriServiceStatus.FINISHED -> stopService()
+                JibriServiceStatus.ERROR -> {
+                    statsDClient?.incrementCounter(ASPECT_ERROR, StatsDClient.getTagForService(jibriService))
+                    stopService()
+                }
+                JibriServiceStatus.FINISHED -> {
+                    stopService()
+                }
             }
         }
 
@@ -198,6 +219,7 @@ class JibriManager(
         }
         if (!jibriService.start()) {
             stopService()
+            statsDClient?.incrementCounter(ASPECT_ERROR, StatsDClient.getTagForService(jibriService))
             return StartServiceResult.ERROR
         }
         return StartServiceResult.SUCCESS
@@ -208,6 +230,7 @@ class JibriManager(
      */
     @Synchronized
     fun stopService() {
+        statsDClient?.incrementCounter(ASPECT_STOP, StatsDClient.getTagForService(currentActiveService))
         logger.info("Stopping the current service")
         serviceTimeoutTask?.cancel(false)
         // Note that this will block until the service is completely stopped
