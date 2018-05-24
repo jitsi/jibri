@@ -31,7 +31,6 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
-import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.createIfDoesNotExist
@@ -40,7 +39,6 @@ import org.jitsi.jibri.util.logStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -91,22 +89,14 @@ data class RecordingMetadata(
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
     private val executor: ScheduledExecutorService,
+    private val jibriSelenium: JibriSelenium = JibriSelenium(executor = executor),
+    private val capturer: Capturer = FfmpegCapturer(),
     private val processFactory: ProcessFactory = ProcessFactory()
 ) : JibriService() {
     /**
      * The [Logger] for this class
      */
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    /**
-     * Used for the selenium interaction
-     */
-    private val jibriSelenium = JibriSelenium(
-        executor = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriSelenium"))
-    )
-    /**
-     * The [FfmpegCapturer] that will be used to capture media from the call and write it to a file
-     */
-    private val capturer = FfmpegCapturer()
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
@@ -238,7 +228,7 @@ class FileRecordingJibriService(
                 }
             }
         } catch (e: Exception) {
-            logger.error("Failed to run finalize script: $e")
+            logger.error("Failed to run finalize script", e)
         }
     }
 
@@ -246,10 +236,10 @@ class FileRecordingJibriService(
         logger.info("Finalize finished successfully, deleting files")
         try {
             Files.walk(sessionRecordingDirectory)
-                // Makes sure we process the directories after the files within them
+                // Reverse sort makes sure we process the directories
+                // after the files within them
                 .sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach { f -> f.delete() }
+                .forEach(Files::delete)
         } catch (e: Exception) {
             logger.error("Error deleting session recording directory", e)
         }
@@ -257,6 +247,9 @@ class FileRecordingJibriService(
 
     private fun handleFinalizeError() {
         logger.error("Error during finalize script, moving recording to failure directory")
+        if (!createIfDoesNotExist(failedRecordingsDirectory, logger)) {
+            logger.error("Couldn't created failed recordings directory")
+        }
         Files.move(
             sessionRecordingDirectory,
             failedRecordingsDirectory.resolve(fileRecordingParams.sessionId)
