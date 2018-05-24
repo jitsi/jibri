@@ -96,6 +96,12 @@ data class XmppEnvironmentConfig(
 data class JibriConfig(
     @JsonProperty("recording_directory")
     val recordingDirectory: String,
+    /**
+     * Whether or not pushing stats to statsd
+     * should be enabled.  See [org.jitsi.jibri.statsd.JibriStatsDClient].
+     */
+    @JsonProperty("enable_stats_d")
+    val enabledStatsD: Boolean = true,
     @JsonProperty("finalize_recording_script_path")
     val finalizeRecordingScriptPath: String,
     @JsonProperty("xmpp_environments")
