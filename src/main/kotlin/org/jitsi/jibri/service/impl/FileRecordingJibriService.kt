@@ -34,6 +34,7 @@ import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.createIfDoesNotExist
+import org.jitsi.jibri.util.deleteRecursively
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
 import java.nio.file.Files
@@ -235,14 +236,8 @@ class FileRecordingJibriService(
 
     private fun handleFinalizeSuccess() {
         logger.info("Finalize finished successfully, deleting files")
-        try {
-            Files.walk(sessionRecordingDirectory)
-                // Reverse sort makes sure we process the directories
-                // after the files within them
-                .sorted(Comparator.reverseOrder())
-                .forEach(Files::delete)
-        } catch (e: Exception) {
-            logger.error("Error deleting session recording directory", e)
+        if (!deleteRecursively(sessionRecordingDirectory, logger)) {
+            logger.error("Error deleting session recording directory")
         }
     }
 

@@ -32,6 +32,20 @@ internal class FileUtilsKtTest : ShouldSpec() {
         val perms = PosixFilePermissions.fromString(permsStr)
         Files.setPosixFilePermissions(p, perms)
     }
+    private fun createPath(pathStr: String): Path = createPath(fs.getPath(pathStr))
+    private fun createPath(path: Path): Path {
+        // Just check for the presence of a "." to determine if it's a file or a dir
+        if (path.fileName.toString().contains(".")) {
+            Files.createFile(path)
+        } else {
+            Files.createDirectories(path)
+        }
+        return path
+    }
+    private fun Path.withPerms(permString: String): Path {
+        setPerms(permString, this)
+        return this
+    }
 
     init {
         "createIfDoesNotExist" {
@@ -55,8 +69,7 @@ internal class FileUtilsKtTest : ShouldSpec() {
             }
             "without permissions to create in a directory" {
                 val baseDir = fs.getPath("/noperms")
-                Files.createDirectory(baseDir)
-                setPerms("r--r--r--", baseDir)
+                Files.createDirectory(baseDir).withPerms("r--r--r--")
                 should("fail to create a single dir") {
                     val newDir = baseDir.resolve("test")
                     createIfDoesNotExist(newDir) shouldBe false
@@ -64,6 +77,61 @@ internal class FileUtilsKtTest : ShouldSpec() {
                 should("fail to create nested dirs") {
                     val newDir = baseDir.resolve("test1/test2")
                     createIfDoesNotExist(newDir) shouldBe false
+                }
+            }
+        }
+        "deleteRecursively" {
+            "for a directory" {
+                val baseDir = createPath("/dir")
+                "that's empty" {
+                    "with perms" {
+                        should("succeed") {
+                            deleteRecursively(baseDir) shouldBe true
+                            Files.exists(baseDir) shouldBe false
+                        }
+                    }
+                    "without perms" {
+                        setPerms("r--r--r--", baseDir)
+                        should("fail") {
+                            deleteRecursively(baseDir) shouldBe false
+                            Files.exists(baseDir) shouldBe true
+                        }
+                    }
+                }
+                "with nested dirs" {
+                    val subDir = createPath(baseDir.resolve("subDir"))
+                    "with perms" {
+                        should("succeed") {
+                            deleteRecursively(baseDir) shouldBe true
+                            Files.exists(baseDir) shouldBe false
+                        }
+                        "with nested files" {
+                            createPath(subDir.resolve("file.txt"))
+                            should("succeed") {
+                                deleteRecursively(baseDir) shouldBe true
+                                Files.exists(baseDir) shouldBe false
+                            }
+                        }
+                    }
+                    "without perms on the subDir" {
+                        setPerms("r--r--r--", subDir)
+                        should("fail") {
+                            deleteRecursively(baseDir) shouldBe false
+                            Files.exists(baseDir) shouldBe true
+                        }
+                    }
+                }
+                "with files of different permissions" {
+                    val readOnlyFile = createPath(baseDir.resolve("file1.txt")).withPerms("r--r--r--")
+                    val normalFile = createPath(baseDir.resolve("file2.txt"))
+                    // This test is disabled because the memory file system library doesn't seem to support
+                    // enforcing file permissions here (even though the file is read-only, it can
+                    // still be deleted).  I'm leaving it because I hope to try and path the lib soon.
+                    should("fail, but delete any files it can").config(enabled = false) {
+                        deleteRecursively(baseDir) shouldBe false
+                        Files.exists(readOnlyFile) shouldBe true
+                        Files.exists(normalFile) shouldBe false
+                    }
                 }
             }
         }
