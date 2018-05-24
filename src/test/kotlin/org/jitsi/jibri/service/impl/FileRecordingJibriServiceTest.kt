@@ -21,15 +21,11 @@ import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.anyOrNull
 import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.doAnswer
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.matchers.collections.shouldContain
-import io.kotlintest.matchers.should
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.shouldBe
-import io.kotlintest.shouldHave
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.capture.Capturer
@@ -39,28 +35,13 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessWrapper
-import java.io.InputStream
+import java.io.IOException
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
-import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
-
-internal abstract class FakeProcess : Process() {
-    private val outputStream = PipedOutputStream()
-    val inputStream = PipedInputStream(outputStream)
-
-    fun writeToStdOut(msg: String) {
-        outputStream.write(msg.toByteArray())
-    }
-
-    fun stop() {
-        outputStream.close()
-    }
-
-}
 
 internal class FileRecordingJibriServiceTest : ShouldSpec() {
     override fun isInstancePerTest(): Boolean = true
@@ -179,7 +160,7 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                     whenever(finalizeProc.getOutput()).thenReturn(stdOut)
                     whenever(finalizeProc.waitFor()).thenReturn(if (shouldSucceed) 0 else 1)
                     whenever(finalizeProc.exitValue).thenReturn(if (shouldSucceed) 0 else 1)
-                    whenever(finalizeProc.start()).doAnswer {
+                    whenever(finalizeProc.start()).thenAnswer {
                         Files.exists(recordingsDir.resolve(sessionId).resolve("metadata")) shouldBe true
                         op.close()
                     }
@@ -221,6 +202,23 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                 }
                 "when finalize fails" {
                     val finalizeProc = setupFinalizeProcessMock(false)
+                    whenever(processFactory.createProcess(any(), anyOrNull(), any())).thenReturn(finalizeProc)
+                    fileRecordingJibriService.stop()
+
+                    should("create the failed directory") {
+                        Files.exists(recordingsDir.resolve("failed")) shouldBe true
+                    }
+                    should("move the recording directory to the failed directory") {
+                        Files.walk(recordingsDir).forEach { p -> println(p) }
+                        Files.exists(recordingsDir.resolve("failed").resolve(sessionId)) shouldBe true
+                        Files.exists(recordingsDir.resolve("failed").resolve(sessionId).resolve("recording.mp4")) shouldBe true
+                    }
+                }
+                "when trying to run finalize throws" {
+                    val finalizeProc: ProcessWrapper = mock()
+                    whenever(finalizeProc.start()).thenAnswer {
+                        throw IOException()
+                    }
                     whenever(processFactory.createProcess(any(), anyOrNull(), any())).thenReturn(finalizeProc)
                     fileRecordingJibriService.stop()
 

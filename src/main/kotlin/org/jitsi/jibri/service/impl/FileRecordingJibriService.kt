@@ -229,6 +229,7 @@ class FileRecordingJibriService(
             }
         } catch (e: Exception) {
             logger.error("Failed to run finalize script", e)
+            handleFinalizeError()
         }
     }
 
