@@ -192,7 +192,7 @@ class XmppApi(
                     }
                 }
             } catch (e: Throwable) {
-                logger.error("Error in startService task: $e")
+                logger.error("Error in startService task", e)
                 resultIq.status = JibriIq.Status.OFF
                 resultIq.failureReason = JibriIq.FailureReason.ERROR
             } finally {

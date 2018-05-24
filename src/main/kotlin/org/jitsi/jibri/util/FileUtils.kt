@@ -14,25 +14,21 @@
  * limitations under the License.
  *
  */
-
 package org.jitsi.jibri.util
 
-import java.io.File
-import java.io.IOException
+import org.jitsi.jibri.util.extensions.error
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.logging.Logger
 
-/**
- * A [File] representing a directory described by [dirPath]
- * which it requires to be writable.  The directory doesn't need to
- * exist ([WritableDirectory] will try and create it) but it must
- * be able to be created and, once created, must be able to be
- * written to.  If any of these conditions fails, the constructor
- * throws [IOException].
- */
-class WritableDirectory(dirPath: String) : File(dirPath) {
-    init {
-        val path = File(dirPath)
-        if ((!path.isDirectory or !path.mkdirs()) and !path.canWrite()) {
-            throw IOException("Unable to write to directory $dirPath")
+fun createIfDoesNotExist(path: Path, logger: Logger? = null): Boolean {
+    if (!Files.exists(path)) {
+        try {
+            Files.createDirectories(path)
+        } catch (e: Exception) {
+            logger?.error("Error creating directory", e)
+            return false
         }
     }
+    return true
 }
