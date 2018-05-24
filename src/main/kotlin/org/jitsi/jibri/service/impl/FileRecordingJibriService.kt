@@ -191,7 +191,7 @@ class FileRecordingJibriService(
         val participants = jibriSelenium.getParticipants()
         logger.info("Participants in this recording: $participants")
         if (Files.isWritable(sessionRecordingDirectory)) {
-            val metadataFile = sessionRecordingDirectory.resolve("metadata")
+            val metadataFile = sessionRecordingDirectory.resolve("metadata.json")
             val metadata = RecordingMetadata(fileRecordingParams.callParams.callUrlInfo.callUrl, participants)
             Files.newBufferedWriter(metadataFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use {
                 jacksonObjectMapper().writeValue(it, metadata)

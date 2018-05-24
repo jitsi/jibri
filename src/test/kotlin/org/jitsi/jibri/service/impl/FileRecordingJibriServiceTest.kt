@@ -161,7 +161,7 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                     whenever(finalizeProc.waitFor()).thenReturn(if (shouldSucceed) 0 else 1)
                     whenever(finalizeProc.exitValue).thenReturn(if (shouldSucceed) 0 else 1)
                     whenever(finalizeProc.start()).thenAnswer {
-                        Files.exists(recordingsDir.resolve(sessionId).resolve("metadata")) shouldBe true
+                        Files.exists(recordingsDir.resolve(sessionId).resolve("metadata.json")) shouldBe true
                         op.close()
                     }
                     finalizeProc
