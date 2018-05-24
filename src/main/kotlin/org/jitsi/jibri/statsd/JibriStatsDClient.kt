@@ -24,12 +24,16 @@ import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.util.extensions.debug
 import java.util.logging.Logger
 
-class StatsDClient {
+/**
+ * Client for pushing statsd values
+ */
+class JibriStatsDClient
+    (hostname: String = "localhost", port: Int = 8125) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val statsd = NonBlockingStatsDClient(
         "jibri",
-        "localhost",
-        8125
+        hostname,
+        port
     )
 
     fun incrementCounter(aspect: String, vararg tags: String) {

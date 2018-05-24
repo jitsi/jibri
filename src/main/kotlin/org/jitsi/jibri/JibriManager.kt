@@ -41,7 +41,7 @@ import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
 import org.jitsi.jibri.statsd.ASPECT_START
 import org.jitsi.jibri.statsd.ASPECT_STOP
 import org.jitsi.jibri.util.NameableThreadFactory
-import org.jitsi.jibri.statsd.StatsDClient
+import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
@@ -89,7 +89,7 @@ data class FileRecordingRequestParams(
 class JibriManager(
     private val config: JibriConfig,
     private val fileSystem: FileSystem = FileSystems.getDefault(),
-    private val statsDClient: StatsDClient? = StatsDClient()
+    private val statsDClient: JibriStatsDClient? = null
 ) : StatusPublisher<JibriStatusPacketExt.Status>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
@@ -195,7 +195,7 @@ class JibriManager(
         jibriService.addStatusHandler {
             when (it) {
                 JibriServiceStatus.ERROR -> {
-                    statsDClient?.incrementCounter(ASPECT_ERROR, StatsDClient.getTagForService(jibriService))
+                    statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
                     stopService()
                 }
                 JibriServiceStatus.FINISHED -> {
@@ -219,7 +219,7 @@ class JibriManager(
         }
         if (!jibriService.start()) {
             stopService()
-            statsDClient?.incrementCounter(ASPECT_ERROR, StatsDClient.getTagForService(jibriService))
+            statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
             return StartServiceResult.ERROR
         }
         return StartServiceResult.SUCCESS
@@ -230,7 +230,7 @@ class JibriManager(
      */
     @Synchronized
     fun stopService() {
-        statsDClient?.incrementCounter(ASPECT_STOP, StatsDClient.getTagForService(currentActiveService))
+        statsDClient?.incrementCounter(ASPECT_STOP, JibriStatsDClient.getTagForService(currentActiveService))
         logger.info("Stopping the current service")
         serviceTimeoutTask?.cancel(false)
         // Note that this will block until the service is completely stopped
