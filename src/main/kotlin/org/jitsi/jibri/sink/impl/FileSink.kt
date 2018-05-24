@@ -26,16 +26,16 @@ import java.time.format.DateTimeFormatter
  * [FileSink] represents a sink which will write to a media file on the
  * filesystem
  */
-class FileSink(recordingsDirectory: Path, callName: String, extension: String = ".mp4") : Sink {
+class FileSink(recordingsDirectory: Path, callName: String, extension: String = "mp4") : Sink {
     val file: Path
     init {
         val currentTime = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
-        val filename = "${callName}_${currentTime.format(formatter)}$extension"
+        val filename = "${callName}_${currentTime.format(formatter)}.$extension"
         file = recordingsDirectory.resolve(filename)
     }
     override val path: String = file.toString()
-    override val format: String = extension.removePrefix(".")
+    override val format: String = extension
     override val options: Array<String> = arrayOf(
         "-profile:v", "main",
         "-level", "3.1"

@@ -29,7 +29,7 @@ internal class FileSinkTest : ShouldSpec() {
 
     init {
         "when created" {
-            val sink = FileSink(fs.getPath("/tmp/xxx"), "callname", ".ext")
+            val sink = FileSink(fs.getPath("/tmp/xxx"), "callname", "ext")
             should("have the correct path") {
                 sink.path should startWith("/tmp/xxx/")
                 sink.path should contain("callname")
