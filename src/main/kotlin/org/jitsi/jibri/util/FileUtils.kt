@@ -32,3 +32,17 @@ fun createIfDoesNotExist(path: Path, logger: Logger? = null): Boolean {
     }
     return true
 }
+
+fun deleteRecursively(path: Path, logger: Logger? = null): Boolean {
+    try {
+        Files.walk(path)
+            // Reverse sort makes sure we process the directories
+            // after the files within them
+            .sorted(Comparator.reverseOrder())
+            .forEach(Files::delete)
+    } catch (e: Exception) {
+        logger?.error("Error recursively deleting $path", e)
+        return false
+    }
+    return true
+}

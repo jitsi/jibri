@@ -137,6 +137,7 @@ class HttpApiTest : ShouldSpec() {
                     anyOrNull())
                 ).thenReturn(StartServiceResult.SUCCESS)
                 val startServiceRequest = StartServiceParams(
+                    sessionId = "session_id",
                     callParams = CallParams(
                         callUrlInfo = CallUrlInfo("https://meet.jit.si", "callName")
                     ),

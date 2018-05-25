@@ -94,9 +94,7 @@ class ProcessWrapper(
         Runtime.getRuntime().exec("kill -s SIGINT $pid")
     }
 
-    fun destroyForcibly() {
-        process.destroyForcibly()
-    }
+    fun destroyForcibly(): Process = process.destroyForcibly()
 
     /**
      * Mimic the "pid" member of Java 9's [Process].  This can't be
@@ -126,9 +124,7 @@ class ProcessWrapper(
      * instance of this call can be read from independently,
      * without affecting the reads on other [InputStream]s
      */
-    fun getOutput(): InputStream {
-        return tee.addBranch()
-    }
+    fun getOutput(): InputStream = tee.addBranch()
 
     fun getMostRecentLine(): String = tail.mostRecentLine
 }

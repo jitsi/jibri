@@ -14,13 +14,15 @@
  * limitations under the License.
  *
  */
-
-package org.jitsi.jibri.capture.ffmpeg.util
+package org.jitsi.jibri.capture.ffmpeg.executor
 
 import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.decimal
+import org.jitsi.jibri.util.extensions.debug
+import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.oneOrMoreNonSpaces
 import org.jitsi.jibri.util.zeroOrMoreSpaces
+import java.util.logging.Logger
 import java.util.regex.Pattern
 
 /**
@@ -114,4 +116,29 @@ fun getFfmpegStatus(process: ProcessWrapper): Pair<FfmpegStatus, String> {
         else -> FfmpegStatus.ERROR
     }
     return Pair(status, mostRecentLine)
+}
+
+fun isFfmpegHealthy(process: ProcessWrapper?, logger: Logger): Boolean {
+    if (process == null) {
+        return false
+    }
+    val (status, mostRecentOutput) = getFfmpegStatus(process)
+    return when (status) {
+        FfmpegStatus.HEALTHY -> {
+            logger.debug("Ffmpeg appears healthy: $mostRecentOutput")
+            true
+        }
+        FfmpegStatus.WARNING -> {
+            logger.info("Ffmpeg is encoding, but issued a warning: $mostRecentOutput")
+            true
+        }
+        FfmpegStatus.ERROR -> {
+            logger.error("Ffmpeg is running but doesn't appear to be encoding: $mostRecentOutput")
+            false
+        }
+        FfmpegStatus.EXITED -> {
+            logger.error("Ffmpeg exited with code ${process.exitValue}.  Its most recent output was $mostRecentOutput")
+            false
+        }
+    }
 }

@@ -18,7 +18,6 @@
 package org.jitsi.jibri.capture.ffmpeg.executor
 
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
-import org.jitsi.jibri.capture.ffmpeg.util.isFfmpegHealthy
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.MonitorableProcess
 import org.jitsi.jibri.util.NameableThreadFactory

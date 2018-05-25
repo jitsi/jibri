@@ -125,7 +125,8 @@ class JibriManager(
                 fileRecordingRequestParams.callLoginParams,
                 fileSystem.getPath(config.finalizeRecordingScriptPath),
                 fileSystem.getPath(config.recordingDirectory)
-            )
+            ),
+            Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
         )
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_RECORDING)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
