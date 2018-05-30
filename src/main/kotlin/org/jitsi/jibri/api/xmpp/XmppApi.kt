@@ -48,6 +48,8 @@ import org.jxmpp.jid.parts.Resourcepart
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 
+typealias MucClientProvider = (XMPPTCPConnectionConfiguration, String) -> MucClient
+
 /**
  * [XmppApi] connects to XMPP MUCs according to the given [XmppEnvironmentConfig]s (which are
  * parsed from config.json) and listens for IQ messages which contain Jibri commands, which it relays
@@ -64,8 +66,8 @@ class XmppApi(
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
-    private val defaultMucClientProvider = { config: XMPPTCPConnectionConfiguration ->
-        MucClient(config)
+    private val defaultMucClientProvider = { config: XMPPTCPConnectionConfiguration, context: String ->
+        MucClient(config, context)
     }
 
     /**
@@ -73,7 +75,7 @@ class XmppApi(
      * connection, we'll listen for incoming [JibriIq] messages and handle them appropriately.  Join the MUC on
      * each connection and send an initial [JibriStatusPacketExt] presence.
      */
-    fun start(mucClientProvider: (XMPPTCPConnectionConfiguration) -> MucClient = defaultMucClientProvider) {
+    fun start(mucClientProvider: MucClientProvider = defaultMucClientProvider) {
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
@@ -94,7 +96,7 @@ class XmppApi(
                     configBuilder.setHostnameVerifier(TrustAllHostnameVerifier())
                 }
                 try {
-                    val mucClient = mucClientProvider(configBuilder.build())
+                    val mucClient = mucClientProvider(configBuilder.build(), host)
                     mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
                         override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
                             return handleJibriIq(jibriIq, config, mucClient)

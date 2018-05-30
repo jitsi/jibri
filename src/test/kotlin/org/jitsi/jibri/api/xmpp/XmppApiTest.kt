@@ -69,7 +69,7 @@ class XmppApiTest : ShouldSpec() {
         "xmppApi" {
             val xmppApi = XmppApi(jibriManager, listOf(xmppConfig))
             val mucClient: MucClient = mock()
-            val mucClientProvider = { _: XMPPTCPConnectionConfiguration ->
+            val mucClientProvider: MucClientProvider = { _: XMPPTCPConnectionConfiguration, _: String ->
                 mucClient
             }
             val iqHandler = argumentCaptor<AbstractIqRequestHandler>()

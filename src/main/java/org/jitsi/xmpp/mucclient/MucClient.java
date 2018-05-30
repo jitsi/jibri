@@ -56,13 +56,19 @@ public class MucClient
      */
     private List<MultiUserChat> mucs = new ArrayList<>();
 
+    public MucClient(XMPPTCPConnectionConfiguration config)
+            throws Exception
+    {
+        this(config, "");
+    }
+
     /**
      * Connect to the xmpp service defined by the given config
      * @param config xmpp connection details
      * @throws Exception from {@link XMPPTCPConnection#connect()} or
      * {@link XMPPTCPConnection#login()}
      */
-    public MucClient(XMPPTCPConnectionConfiguration config)
+    public MucClient(XMPPTCPConnectionConfiguration config, String connectionContext)
         throws Exception
     {
         PingManager.setDefaultPingInterval(30);
@@ -74,43 +80,54 @@ public class MucClient
             @Override
             public void connected(XMPPConnection xmppConnection)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: connected");
+                logger.info("Xmpp connection status ["
+                        + xmppConnection.getXMPPServiceDomain() + " " + connectionContext + "]: connected");
             }
 
             @Override
             public void authenticated(XMPPConnection xmppConnection, boolean b)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: authenticated");
+                logger.info("Xmpp connection status ["
+                        + xmppConnection.getXMPPServiceDomain() + " " + connectionContext + "]: authenticated "
+                        + "(resume from previous? " + b + ")");
             }
 
             @Override
             public void connectionClosed()
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: closed");
+                logger.info("Xmpp connection status ["
+                        + xmppConnection.getXMPPServiceDomain() + " " + connectionContext + "]: closed");
             }
 
             @Override
             public void connectionClosedOnError(Exception e)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: closed on error");
+                logger.info("Xmpp connection status ["
+                        + xmppConnection.getXMPPServiceDomain() + " " + connectionContext + "]: closed on error: "
+                        + e);
             }
 
             @Override
             public void reconnectionSuccessful()
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnection successful");
+                logger.info("Xmpp connection status ["
+                        + xmppConnection.getXMPPServiceDomain() + " " + connectionContext
+                        + "]: reconnection successful");
             }
 
             @Override
             public void reconnectingIn(int i)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnecting in " + i);
+                logger.info("Xmpp connection status ["
+                        + xmppConnection.getXMPPServiceDomain() + " " + connectionContext + "]: reconnecting in " + i);
             }
 
             @Override
             public void reconnectionFailed(Exception e)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnection failed");
+                logger.info("Xmpp connection status ["
+                        + xmppConnection.getXMPPServiceDomain() + " " + connectionContext + "]: reconnection failed: "
+                        + e);
             }
         });
         xmppConnection.connect().login();
