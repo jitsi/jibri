@@ -96,7 +96,8 @@ class XmppApi(
                     configBuilder.setHostnameVerifier(TrustAllHostnameVerifier())
                 }
                 try {
-                    val mucClient = mucClientProvider(configBuilder.build(), host)
+                    val mucClient =
+                        mucClientProvider(configBuilder.build(), "${config.name}: ${config.controlLogin.domain}@$host")
                     mucClient.addIqRequestHandler(object : JibriSyncIqRequestHandler() {
                         override fun handleJibriIqRequest(jibriIq: JibriIq): IQ {
                             return handleJibriIq(jibriIq, config, mucClient)
