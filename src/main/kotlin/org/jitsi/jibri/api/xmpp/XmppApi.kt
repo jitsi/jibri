@@ -39,6 +39,7 @@ import org.jitsi.xmpp.TrustAllHostnameVerifier
 import org.jitsi.xmpp.TrustAllX509TrustManager
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.packet.IQ
+import org.jivesoftware.smack.packet.Presence
 import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
@@ -116,21 +117,31 @@ class XmppApi(
                             mucClient.sendStanza(JibriPresenceHelper.createPresence(status, it))
                         }
                     }
+
+                    val updatePresenceStanza: (Presence) -> Unit = { presence ->
+                        val jibriStatus = JibriStatusPacketExt()
+                        jibriStatus.status =
+                            if (jibriManager.busy()) JibriStatusPacketExt.Status.BUSY
+                            else JibriStatusPacketExt.Status.IDLE
+                        presence.addExtension(jibriStatus)
+                    }
+
                     jibriManager.addStatusHandler(updatePresence)
                     // The recording control muc
                     mucClient.createOrJoinMuc(
                         recordingMucJid.asEntityBareJidIfPossible(),
-                        Resourcepart.from(config.controlMuc.nickname)
+                        Resourcepart.from(config.controlMuc.nickname),
+                        updatePresenceStanza
                     )
                     // The SIP control muc
                     config.sipControlMuc?.let {
                         logger.info("SIP control muc is defined for environment ${config.name}, joining")
                         mucClient.createOrJoinMuc(
                             JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
-                            Resourcepart.from(config.sipControlMuc.nickname)
+                            Resourcepart.from(config.sipControlMuc.nickname),
+                            updatePresenceStanza
                         )
                     }
-                    updatePresence(JibriStatusPacketExt.Status.IDLE)
                 } catch (e: Exception) {
                     logger.error("Error connecting to xmpp environment: $e")
                 }

@@ -21,6 +21,7 @@ import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler;
+import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
@@ -32,6 +33,7 @@ import org.jxmpp.jid.parts.Resourcepart;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -127,13 +129,21 @@ public class MucClient
      * Create and/or join the muc named mucJid with the given nickname
      * @param mucJid the jid of the muc to join
      * @param nickname the nickname to use when joining the muc
+     * @param presenceInterceptor helper to intercept presences sent and add
+     * custom extensions in it.
      * @throws Exception from {@link MultiUserChat#createOrJoin(Resourcepart)}
      */
-    public void createOrJoinMuc(EntityBareJid mucJid, Resourcepart nickname)
+    public void createOrJoinMuc(
+        EntityBareJid mucJid,
+        Resourcepart nickname,
+        Consumer<Presence> presenceInterceptor)
             throws Exception
     {
         MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(xmppConnection);
+        // enables reconnection of the muc if such is connection drop is detected
+        mucManager.setAutoJoinOnReconnect(true);
         MultiUserChat muc = mucManager.getMultiUserChat(mucJid);
+        muc.addPresenceInterceptor(presenceInterceptor::accept);
         muc.createOrJoin(nickname);
         mucs.add(muc);
     }
