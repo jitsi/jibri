@@ -259,7 +259,7 @@ class JibriManager(
     * service"
     */
     @Synchronized
-    private fun busy(): Boolean = currentActiveService != null
+    fun busy(): Boolean = currentActiveService != null
 
     /**
      * Execute the given function the next time Jibri is idle
