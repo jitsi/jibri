@@ -118,20 +118,12 @@ class XmppApi(
                         }
                     }
 
-                    val updatePresenceStanza: (Presence) -> Unit = { presence ->
-                        val jibriStatus = JibriStatusPacketExt()
-                        jibriStatus.status =
-                            if (jibriManager.busy()) JibriStatusPacketExt.Status.BUSY
-                            else JibriStatusPacketExt.Status.IDLE
-                        presence.addExtension(jibriStatus)
-                    }
-
                     jibriManager.addStatusHandler(updatePresence)
                     // The recording control muc
                     mucClient.createOrJoinMuc(
                         recordingMucJid.asEntityBareJidIfPossible(),
                         Resourcepart.from(config.controlMuc.nickname),
-                        updatePresenceStanza
+                        ::updatePresenceStanza
                     )
                     // The SIP control muc
                     config.sipControlMuc?.let {
@@ -139,7 +131,7 @@ class XmppApi(
                         mucClient.createOrJoinMuc(
                             JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"),
                             Resourcepart.from(config.sipControlMuc.nickname),
-                            updatePresenceStanza
+                            ::updatePresenceStanza
                         )
                     }
                 } catch (e: Exception) {
@@ -147,6 +139,17 @@ class XmppApi(
                 }
             }
         }
+    }
+
+    /**
+     * Function to update outgoing [presence] stanza with current jibri status.
+     */
+    private fun updatePresenceStanza(presence: Presence) {
+        val jibriStatus = JibriStatusPacketExt()
+        jibriStatus.status =
+                if (jibriManager.busy()) JibriStatusPacketExt.Status.BUSY
+                else JibriStatusPacketExt.Status.IDLE
+        presence.addExtension(jibriStatus)
     }
 
     /**
