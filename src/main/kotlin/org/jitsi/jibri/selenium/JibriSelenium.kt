@@ -226,9 +226,12 @@ class JibriSelenium(
                 browserOutputLogger.info(it.toString())
             }
         }
+        logger.info("Leaving web call")
         CallPage(chromeDriver).leave()
         currCallUrl = null
+        logger.info("Quitting chrome driver")
         chromeDriver.quit()
+        logger.info("Chrome driver quit")
     }
 
     //TODO: helper func to verify connectivity
