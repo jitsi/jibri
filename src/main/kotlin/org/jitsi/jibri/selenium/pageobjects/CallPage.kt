@@ -45,7 +45,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             WebDriverWait(driver, 30).until {
                 val result = driver.executeScript("""
                     try {
-                        return typeof(APP.conference._room) !== 'undefined';
+                        return APP.conference._room.isJoined();
                     } catch (e) {
                         return e.message;
                     }
