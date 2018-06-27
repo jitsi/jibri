@@ -34,7 +34,6 @@ import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.createIfDoesNotExist
-import org.jitsi.jibri.util.deleteRecursively
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
 import java.nio.file.Files
@@ -113,11 +112,6 @@ class FileRecordingJibriService(
      */
     private val sessionRecordingDirectory =
         fileRecordingParams.recordingDirectory.resolve(fileRecordingParams.sessionId)
-    /**
-     * The directory to where we'll move recording session data if the finalize script fails
-     */
-    private val failedRecordingsDirectory =
-        fileRecordingParams.recordingDirectory.resolve("failed")
 
     init {
         logger.info("Writing recording to $sessionRecordingDirectory")
@@ -223,32 +217,9 @@ class FileRecordingJibriService(
                 // Make sure we get all the logs
                 streamDone.get()
                 logger.info("Recording finalize script finished with exit value $exitValue")
-                when (exitValue) {
-                    0 -> handleFinalizeSuccess()
-                    else -> handleFinalizeError()
-                }
             }
         } catch (e: Exception) {
             logger.error("Failed to run finalize script", e)
-            handleFinalizeError()
         }
-    }
-
-    private fun handleFinalizeSuccess() {
-        logger.info("Finalize finished successfully, deleting files")
-        if (!deleteRecursively(sessionRecordingDirectory, logger)) {
-            logger.error("Error deleting session recording directory")
-        }
-    }
-
-    private fun handleFinalizeError() {
-        logger.error("Error during finalize script, moving recording to failure directory")
-        if (!createIfDoesNotExist(failedRecordingsDirectory, logger)) {
-            logger.error("Couldn't created failed recordings directory")
-        }
-        Files.move(
-            sessionRecordingDirectory,
-            failedRecordingsDirectory.resolve(fileRecordingParams.sessionId)
-        )
     }
 }

@@ -171,7 +171,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     fun leave(): Boolean {
         val result = driver.executeScript("""
             try {
-                return APP.conference._room.connection.disconnect();
+                return APP.conference._room.leave();
             } catch (e) {
                 return e.message;
             }

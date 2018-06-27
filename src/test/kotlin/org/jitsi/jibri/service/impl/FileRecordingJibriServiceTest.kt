@@ -35,7 +35,6 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessWrapper
-import java.io.IOException
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.nio.file.Files
@@ -186,49 +185,6 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                         println(finalizeProcPath.firstValue)
                         finalizeProcPath.firstValue[0] shouldBe finalizeScript.toString()
                         finalizeProcPath.firstValue[1] shouldBe recordingsDir.resolve(sessionId).toString()
-                    }
-                    should("have moved or deleted the recordings dir") {
-                        Files.exists(recordingsDir.resolve(sessionId)) shouldBe false
-                    }
-                }
-                "when finalize succeeds" {
-                    val finalizeProc = setupFinalizeProcessMock(true)
-                    whenever(processFactory.createProcess(any(), anyOrNull(), any())).thenReturn(finalizeProc)
-                    fileRecordingJibriService.stop()
-                    should("have deleted the directory") {
-                        Files.exists(recordingsDir.resolve(sessionId)) shouldBe false
-                        Files.exists(recordingsDir.resolve("failed").resolve(sessionId)) shouldBe false
-                    }
-                }
-                "when finalize fails" {
-                    val finalizeProc = setupFinalizeProcessMock(false)
-                    whenever(processFactory.createProcess(any(), anyOrNull(), any())).thenReturn(finalizeProc)
-                    fileRecordingJibriService.stop()
-
-                    should("create the failed directory") {
-                        Files.exists(recordingsDir.resolve("failed")) shouldBe true
-                    }
-                    should("move the recording directory to the failed directory") {
-                        Files.walk(recordingsDir).forEach { p -> println(p) }
-                        Files.exists(recordingsDir.resolve("failed").resolve(sessionId)) shouldBe true
-                        Files.exists(recordingsDir.resolve("failed").resolve(sessionId).resolve("recording.mp4")) shouldBe true
-                    }
-                }
-                "when trying to run finalize throws" {
-                    val finalizeProc: ProcessWrapper = mock()
-                    whenever(finalizeProc.start()).thenAnswer {
-                        throw IOException()
-                    }
-                    whenever(processFactory.createProcess(any(), anyOrNull(), any())).thenReturn(finalizeProc)
-                    fileRecordingJibriService.stop()
-
-                    should("create the failed directory") {
-                        Files.exists(recordingsDir.resolve("failed")) shouldBe true
-                    }
-                    should("move the recording directory to the failed directory") {
-                        Files.walk(recordingsDir).forEach { p -> println(p) }
-                        Files.exists(recordingsDir.resolve("failed").resolve(sessionId)) shouldBe true
-                        Files.exists(recordingsDir.resolve("failed").resolve(sessionId).resolve("recording.mp4")) shouldBe true
                     }
                 }
             }
