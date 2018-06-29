@@ -138,10 +138,12 @@ org.jitsi.jicofo.jibri.PENDING_TIMEOUT=90
 ## Jitsi Meet
 Edit the `/etc/jitsi/meet/yourdomain.config.js` file, add/set the following properties:
 ```
-recordingType: 'jibri',
-enableRecording: true,
+fileRecordingsEnabled: true, // If you want to enable file recording
+liveStreamingEnabled: true, // If you want to enable live streaming
 hiddenDomain: 'recorder.yourdomain.com',
 ```
+Also make sure that in your interface config (`/usr/share/jitsi-meet/interface_config.js` by default), the `TOOLBAR_BUTTONS` array contains the `recording` value if you want to show the file recording button and the `livestreaming` value if you want to show the live streaming button.
+
 Once recording is enabled in config.js, the recording button will become available in the user interface. However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed. Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
 Make sure to update Jibri's config.json appropriately to match any config done above.
