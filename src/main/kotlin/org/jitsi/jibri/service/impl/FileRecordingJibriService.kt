@@ -164,7 +164,7 @@ class FileRecordingJibriService(
                 logger.info("Trying to restart capturer")
                 numRestarts++
                 // Re-create the sink here because we want a new filename
-                //TODO: we can run into an issue here where this takes a while and the monitor task runs again
+                // TODO: we can run into an issue here where this takes a while and the monitor task runs again
                 // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
                 // and shuts it down.  Add a forced delay to match the initial delay we set when
                 // creating the monitor task?

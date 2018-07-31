@@ -234,5 +234,5 @@ class JibriSelenium(
         logger.info("Chrome driver quit")
     }
 
-    //TODO: helper func to verify connectivity
+    // TODO: helper func to verify connectivity
 }
