@@ -17,6 +17,8 @@
 
 package org.jitsi.jibri.api.xmpp
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqProvider
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
@@ -26,6 +28,7 @@ import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
+import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
@@ -46,6 +49,7 @@ import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jxmpp.jid.BareJid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 
@@ -63,10 +67,10 @@ typealias MucClientProvider = (XMPPTCPConnectionConfiguration, String) -> MucCli
  */
 class XmppApi(
     private val jibriManager: JibriManager,
-    private val xmppConfigs: List<XmppEnvironmentConfig>
+    private val xmppConfigs: List<XmppEnvironmentConfig>,
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
     private val defaultMucClientProvider = { config: XMPPTCPConnectionConfiguration, context: String ->
         MucClient(config, context)
     }
@@ -270,7 +274,10 @@ class XmppApi(
             xmppEnvironment.stripFromRoomDomain,
             xmppEnvironment.xmppDomain
         )
-        val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins)
+        val appData = startIq.appData?.let {
+            jacksonObjectMapper().readValue<AppData>(startIq.appData)
+        }
+        val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
         return when (startIq.mode()) {
