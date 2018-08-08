@@ -17,8 +17,6 @@
 
 package org.jitsi.jibri
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
@@ -120,9 +118,6 @@ class JibriManager(
             statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_RECORDING)
             return StartServiceResult.BUSY
         }
-        val fileRecordingMetadata: Map<Any, Any>? = serviceParams.appData?.fileRecordingMetadata?.let {
-            jacksonObjectMapper().readValue(it)
-        }
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
@@ -130,7 +125,7 @@ class JibriManager(
                 fileRecordingRequestParams.callLoginParams,
                 fileSystem.getPath(config.finalizeRecordingScriptPath),
                 fileSystem.getPath(config.recordingDirectory),
-                fileRecordingMetadata
+                serviceParams.appData?.fileRecordingMetadata
             ),
             Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
         )

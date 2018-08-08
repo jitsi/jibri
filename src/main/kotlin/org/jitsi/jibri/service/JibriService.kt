@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.service
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import org.jitsi.jibri.util.StatusPublisher
 
@@ -30,13 +31,14 @@ enum class JibriServiceStatus {
  * [JibriIq#appData] field.  This entire structure will be parsed
  * from a JSON-encoded string (the [JibriIq#appData] field).
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class AppData(
     /**
-     * A JSON-encoded string representing arbitrary data to be written
+     * A JSON map representing arbitrary data to be written
      * to the metadata file when doing a recording.
      */
     @JsonProperty("file_recording_metadata")
-    val fileRecordingMetadata: String?
+    val fileRecordingMetadata: Map<Any, Any>?
 )
 
 /**
