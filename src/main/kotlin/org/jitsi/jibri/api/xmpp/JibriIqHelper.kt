@@ -23,7 +23,7 @@ import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.Presence
 import org.jxmpp.jid.Jid
 
-//TODO: this functionality should be added to JibriIq
+// TODO: this functionality should be added to JibriIq
 
 /**
  * Create a result iq from the given [JibriIq]

@@ -35,13 +35,13 @@ import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.statsd.ASPECT_BUSY
 import org.jitsi.jibri.statsd.ASPECT_ERROR
+import org.jitsi.jibri.statsd.ASPECT_START
+import org.jitsi.jibri.statsd.ASPECT_STOP
+import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.statsd.TAG_SERVICE_LIVE_STREAM
 import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
 import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
-import org.jitsi.jibri.statsd.ASPECT_START
-import org.jitsi.jibri.statsd.ASPECT_STOP
 import org.jitsi.jibri.util.NameableThreadFactory
-import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
@@ -124,7 +124,8 @@ class JibriManager(
                 fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
                 fileSystem.getPath(config.finalizeRecordingScriptPath),
-                fileSystem.getPath(config.recordingDirectory)
+                fileSystem.getPath(config.recordingDirectory),
+                serviceParams.appData?.fileRecordingMetadata
             ),
             Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
         )

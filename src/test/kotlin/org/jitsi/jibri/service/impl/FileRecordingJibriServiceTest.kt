@@ -17,6 +17,8 @@
 
 package org.jitsi.jibri.service.impl
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.anyOrNull
@@ -24,6 +26,7 @@ import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import io.kotlintest.matchers.maps.shouldContainAll
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
@@ -63,12 +66,17 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
     private val recordingsDir = fs.getPath("/path/to/recordings")
     private val finalizeScript = fs.getPath("/path/to/finalize")
     private val sessionId = "session_id"
+    private val additionalMetadata: Map<Any, Any> = mapOf(
+        "token" to "my_token",
+        "other_info" to "info"
+    )
     private val fileRecordingParams = FileRecordingParams(
         callParams,
         sessionId,
         callLoginParams,
         finalizeScript,
-        recordingsDir
+        recordingsDir,
+        additionalMetadata
     )
     private val executor: ScheduledExecutorService = mock()
     private val jibriSelenium: JibriSelenium = mock()
@@ -161,6 +169,13 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                     whenever(finalizeProc.exitValue).thenReturn(if (shouldSucceed) 0 else 1)
                     whenever(finalizeProc.start()).thenAnswer {
                         Files.exists(recordingsDir.resolve(sessionId).resolve("metadata.json")) shouldBe true
+                        val metadataReader = Files.newBufferedReader(recordingsDir.resolve(sessionId).resolve("metadata.json"))
+                        val metaData: Map<Any, Any> = jacksonObjectMapper().readValue(metadataReader)
+                        metaData.shouldContainAll(mapOf<Any, Any>(
+                            "token" to "my_token",
+                            "other_info" to "info",
+                            "meeting_url" to "baseUrl/callName"
+                        ))
                         op.close()
                     }
                     finalizeProc
@@ -182,7 +197,6 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                         verify(jibriSelenium).leaveCallAndQuitBrowser()
                     }
                     should("call the finalize script with the correct arguments") {
-                        println(finalizeProcPath.firstValue)
                         finalizeProcPath.firstValue[0] shouldBe finalizeScript.toString()
                         finalizeProcPath.firstValue[1] shouldBe recordingsDir.resolve(sessionId).toString()
                     }

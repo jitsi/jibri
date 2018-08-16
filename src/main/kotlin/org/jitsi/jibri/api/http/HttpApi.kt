@@ -110,7 +110,8 @@ class HttpApi(private val jibriManager: JibriManager) {
                 val sipClientParams = startServiceParams.sipClientParams ?: return@run StartServiceResult.ERROR
                 jibriManager.startSipGateway(
                     ServiceParams(usageTimeoutMinutes = 0),
-                    SipGatewayServiceParams(//TODO: add session ID
+                    // TODO: add session ID
+                    SipGatewayServiceParams(
                         startServiceParams.callParams,
                         sipClientParams)
                     )

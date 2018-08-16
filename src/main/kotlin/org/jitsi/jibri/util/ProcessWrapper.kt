@@ -111,7 +111,7 @@ class ProcessWrapper(
                 pid = field.getLong(process)
                 field.isAccessible = false
             }
-        } catch (e: Exception ) {
+        } catch (e: Exception) {
             pid = -1
         }
         return pid

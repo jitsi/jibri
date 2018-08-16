@@ -32,10 +32,10 @@ fun getCallUrlInfoFromJid(roomJid: EntityBareJid, stripFromRoomDomain: String, x
     var domain = roomJid.domain.toString()
     // But the room jid domain may have a subdomain that shouldn't be applied to the url, so strip out any
     // string we've been told to remove from the domain
-    domain = domain.replace(stripFromRoomDomain, "")
+    domain = domain.replace(stripFromRoomDomain, "", ignoreCase = true)
     // Now we need to extract a potential call subdomain, which will be anything that's left in the domain
     //  at this point before the configured xmpp domain.
-    val subdomain = domain.subSequence(0, domain.indexOf(xmppDomain)).trim('.')
+    val subdomain = domain.subSequence(0, domain.indexOf(xmppDomain, ignoreCase = true)).trim('.')
     // Now just grab the call name
     val callName = roomJid.localpart.toString()
     return when {

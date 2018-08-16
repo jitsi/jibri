@@ -17,6 +17,8 @@
 
 package org.jitsi.jibri.service.impl
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
@@ -69,7 +71,12 @@ data class FileRecordingParams(
     /**
      * The directory in which recordings should be created
      */
-    val recordingDirectory: Path
+    val recordingDirectory: Path,
+    /**
+     * A map of arbitrary key, value metadata that will be written
+     * to the metadata file.
+     */
+    val additionalMetadata: Map<Any, Any>? = null
 )
 
 /**
@@ -78,8 +85,18 @@ data class FileRecordingParams(
 data class RecordingMetadata(
     @JsonProperty("meeting_url")
     val meetingUrl: String,
-    val participants: List<Map<String, Any>>
-)
+    val participants: List<Map<String, Any>>,
+    @JsonIgnore val additionalMetadata: Map<Any, Any>? = null
+) {
+    /**
+     * We tell the JSON serializer to ignore the additionalMetadata map (above)
+     * and use this to expose each of its individual fields, that way they
+     * are serialized at the top level (rather than being nested within a
+     * 'additionalMetadata' JSON object)
+     */
+    @JsonAnyGetter
+    fun get(): Map<Any, Any>? = additionalMetadata
+}
 
 /**
  * [FileRecordingJibriService] is the [JibriService] responsible for joining
@@ -164,7 +181,7 @@ class FileRecordingJibriService(
                 logger.info("Trying to restart capturer")
                 numRestarts++
                 // Re-create the sink here because we want a new filename
-                //TODO: we can run into an issue here where this takes a while and the monitor task runs again
+                // TODO: we can run into an issue here where this takes a while and the monitor task runs again
                 // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
                 // and shuts it down.  Add a forced delay to match the initial delay we set when
                 // creating the monitor task?
@@ -187,7 +204,11 @@ class FileRecordingJibriService(
         logger.info("Participants in this recording: $participants")
         if (Files.isWritable(sessionRecordingDirectory)) {
             val metadataFile = sessionRecordingDirectory.resolve("metadata.json")
-            val metadata = RecordingMetadata(fileRecordingParams.callParams.callUrlInfo.callUrl, participants)
+            val metadata = RecordingMetadata(
+                fileRecordingParams.callParams.callUrlInfo.callUrl,
+                participants,
+                fileRecordingParams.additionalMetadata
+            )
             Files.newBufferedWriter(metadataFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use {
                 jacksonObjectMapper().writeValue(it, metadata)
             }
