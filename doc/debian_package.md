@@ -3,7 +3,7 @@ Building the debian package has been tested on Ubuntu Xenial.
 
 ### Steps
 * Install the prerequisites:
-  * `sudo apt install git maven openjdk-8-jdk`
+  * `sudo apt install git maven openjdk-8-jdk devscripts`
   * (`openjdk-8-jdk` specifically is not necessarily required, any java 8 jdk will probably work)
 * Clone the repo:
   * `git clone https://github.com/jibri/jibri.git`
