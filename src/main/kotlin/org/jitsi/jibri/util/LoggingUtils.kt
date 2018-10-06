@@ -23,6 +23,7 @@ import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.logging.FileHandler
 import java.util.logging.Logger
 
 /**
@@ -34,7 +35,7 @@ fun logStream(
     stream: InputStream,
     logger: Logger,
     executor: ExecutorService = Executors.newSingleThreadExecutor(NameableThreadFactory("StreamLogger"))
-): Future<*> {
+): Future<Boolean> {
     return executor.submit(Callable<Boolean> {
         val reader = BufferedReader(InputStreamReader(stream))
 
@@ -45,4 +46,15 @@ fun logStream(
 
         return@Callable true
     })
+}
+
+/**
+ * Create a logger with [name] and all of its inherited
+ * handlers cleared, adding only the given handler
+ */
+fun getLoggerWithHandler(name: String, handler: FileHandler): Logger {
+    val logger = Logger.getLogger(name)
+    logger.useParentHandlers = false
+    logger.addHandler(handler)
+    return logger
 }

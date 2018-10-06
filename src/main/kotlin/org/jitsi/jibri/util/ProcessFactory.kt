@@ -14,19 +14,14 @@
  * limitations under the License.
  *
  */
+package org.jitsi.jibri.util
 
-package org.jitsi.jibri.sink.impl
-
-import org.jitsi.jibri.sink.Sink
-
-/**
- * [StreamSink] represents a sink which will write to a network stream
- */
-class StreamSink(val url: String, val streamingMaxBitrate: Int, val streamingBufSize: Int) : Sink {
-    override val path: String = url
-    override val format: String = "flv"
-    override val options: Array<String> = arrayOf(
-        "-maxrate", "${streamingMaxBitrate}k",
-        "-bufsize", "${streamingBufSize}k"
-    )
+class ProcessFactory {
+    fun createProcess(
+        command: List<String>,
+        environment: Map<String, String> = mapOf(),
+        processBuilder: ProcessBuilder = ProcessBuilder()
+    ): ProcessWrapper {
+        return ProcessWrapper(command, environment, processBuilder)
+    }
 }

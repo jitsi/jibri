@@ -15,34 +15,27 @@
  *
  */
 
-package org.jitsi.jibri.capture.ffmpeg.executor.impl
+package org.jitsi.jibri.capture.ffmpeg.executor
 
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
-import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.helpers.forAllOf
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.within
-import org.jitsi.jibri.sink.Sink
 import java.io.InputStream
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 
-class AbstractFfmpegExecutorTest : FunSpec() {
+internal class FfmpegExecutorTest : FunSpec() {
     override fun isInstancePerTest(): Boolean = true
-    class TestableAbstractFfmpegExecutor(fakeProcessBuilder: ProcessBuilder) : AbstractFfmpegExecutor(fakeProcessBuilder) {
-        override fun getFfmpegCommand(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): String = ""
-    }
-
     private val processBuilder: ProcessBuilder = mock()
     private val process: Process = mock()
-    private val sink: Sink = mock()
     private lateinit var processStdOutWriter: PipedOutputStream
     private lateinit var processStdOut: InputStream
-    private lateinit var ffmpegExecutor: TestableAbstractFfmpegExecutor
+    private lateinit var ffmpegExecutor: FfmpegExecutor
 
     override fun beforeTest(description: Description) {
         super.beforeTest(description)
@@ -52,7 +45,7 @@ class AbstractFfmpegExecutorTest : FunSpec() {
         processStdOut = PipedInputStream(processStdOutWriter)
         whenever(process.inputStream).thenReturn(processStdOut)
 
-        ffmpegExecutor = TestableAbstractFfmpegExecutor(processBuilder)
+        ffmpegExecutor = FfmpegExecutor(processBuilder)
     }
 
     private fun setProcessStdOutLine(line: String) {
@@ -67,13 +60,13 @@ class AbstractFfmpegExecutorTest : FunSpec() {
         }
 
         test("after ffmpeg is launched and is alive, getExitCode should return null") {
-            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            ffmpegExecutor.launchFfmpeg(listOf())
             whenever(process.isAlive).thenReturn(true)
             ffmpegExecutor.getExitCode() shouldBe null
         }
 
         test("after ffmpeg is launched and is encoding, isHealthy should return true") {
-            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            ffmpegExecutor.launchFfmpeg(listOf())
             whenever(process.isAlive).thenReturn(true)
             setProcessStdOutLine("frame=24")
             within(5.seconds()) {
@@ -82,7 +75,7 @@ class AbstractFfmpegExecutorTest : FunSpec() {
         }
 
         test("after ffmpeg is launched and has a warning, isHealthy should return true") {
-            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            ffmpegExecutor.launchFfmpeg(listOf())
             whenever(process.isAlive).thenReturn(true)
             setProcessStdOutLine("Past duration 0.53 too large")
             within(5.seconds()) {
@@ -91,7 +84,7 @@ class AbstractFfmpegExecutorTest : FunSpec() {
         }
 
         test("after ffmpeg is launched and has an error, isHealthy should return false") {
-            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            ffmpegExecutor.launchFfmpeg(listOf())
             setProcessStdOutLine("Error")
             whenever(process.isAlive).thenReturn(true)
             forAllOf(5.seconds()) {
@@ -100,7 +93,7 @@ class AbstractFfmpegExecutorTest : FunSpec() {
         }
 
         test("if the process dies, its exit code is returned") {
-            ffmpegExecutor.launchFfmpeg(FfmpegExecutorParams(), sink)
+            ffmpegExecutor.launchFfmpeg(listOf())
             whenever(process.isAlive).thenReturn(false)
             whenever(process.exitValue()).thenReturn(42)
             ffmpegExecutor.getExitCode() shouldBe 42

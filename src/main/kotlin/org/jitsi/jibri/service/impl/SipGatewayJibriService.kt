@@ -65,10 +65,9 @@ class SipGatewayJibriService(
      */
     private val jibriSelenium = JibriSelenium(
         JibriSeleniumOptions(
-            sipGatewayServiceParams.callParams,
             displayName = sipGatewayServiceParams.sipClientParams.displayName,
-            urlParams = SIP_GW_URL_OPTIONS,
-            extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1")))
+            extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
+    )
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
@@ -96,7 +95,9 @@ class SipGatewayJibriService(
      * and pjsua will use
      */
     override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(sipGatewayServiceParams.callParams.callUrlInfo.callName)) {
+        if (!jibriSelenium.joinCall(
+                sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
+        ) {
             logger.error("Selenium failed to join the call")
             return false
         }

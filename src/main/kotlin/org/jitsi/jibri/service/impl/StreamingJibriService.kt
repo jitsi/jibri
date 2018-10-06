@@ -17,13 +17,13 @@
 
 package org.jitsi.jibri.service.impl
 
+import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.jibri.capture.ffmpeg.executor.impl.FFMPEG_RESTART_ATTEMPTS
+import org.jitsi.jibri.capture.ffmpeg.executor.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
-import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
@@ -49,6 +49,10 @@ data class StreamingParams(
      * Which call we'll join
      */
     val callParams: CallParams,
+    /**
+     * The ID of this session
+     */
+    val sessionId: String,
     /**
      * The login information needed to appear invisible in
      * the call
@@ -83,10 +87,7 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
      * cancel the task
      */
     private var processMonitorTask: ScheduledFuture<*>? = null
-    private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(streamingParams.callParams, urlParams = RECORDING_URL_OPTIONS),
-        executor
-    )
+    private val jibriSelenium = JibriSelenium(executor = executor)
 
     init {
         sink = StreamSink(
@@ -100,7 +101,10 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
     }
 
     override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(streamingParams.callParams.callUrlInfo.callName, streamingParams.callLoginParams)) {
+        if (!jibriSelenium.joinCall(
+                streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+                streamingParams.callLoginParams)
+        ) {
             logger.error("Selenium failed to join the call")
             return false
         }
@@ -110,11 +114,14 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             return false
         }
 
+        jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
+        jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
         streamingParams.youTubeBroadcastId?.let {
             if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
                 logger.error("Error adding live stream url to presence")
             }
         }
+        jibriSelenium.sendPresence()
 
         val processMonitor = createCapturerMonitor(capturer)
         processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)

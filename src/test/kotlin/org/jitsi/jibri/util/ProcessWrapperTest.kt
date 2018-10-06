@@ -19,38 +19,42 @@ package org.jitsi.jibri.util
 
 import com.nhaarman.mockito_kotlin.doThrow
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
+import org.jitsi.jibri.helpers.seconds
+import org.jitsi.jibri.helpers.within
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.util.concurrent.TimeUnit
 
 internal class ProcessWrapperTest : ShouldSpec() {
-    internal class ProcessWrapperImpl(
-        command: List<String> = listOf(),
-        environment: Map<String, String> = mapOf(),
-        processBuilder: ProcessBuilder
-    ) : ProcessWrapper<Boolean>(command, environment, processBuilder) {
-
-        override fun getStatus(): Pair<Boolean, String> {
-            return Pair(true, "status")
-        }
-    }
-
     private val processBuilder: ProcessBuilder = mock()
     private val process: Process = mock()
-    private val outputStream = PipedOutputStream()
-    private val inputStream = PipedInputStream(outputStream)
+    private lateinit var outputStream: PipedOutputStream
+    private lateinit var inputStream: PipedInputStream
+    private lateinit var processWrapper: ProcessWrapper
+
+    override fun beforeTest(description: Description) {
+        super.beforeTest(description)
+
+        outputStream = PipedOutputStream()
+        inputStream = PipedInputStream(outputStream)
+
+        whenever(process.inputStream).thenReturn(inputStream)
+        whenever(process.destroyForcibly()).thenReturn(process)
+        whenever(processBuilder.start()).thenReturn(process)
+
+        processWrapper = ProcessWrapper(listOf(), processBuilder = processBuilder)
+        processWrapper.start()
+    }
 
     init {
-        whenever(process.inputStream).thenReturn(inputStream)
-        whenever(processBuilder.start()).thenReturn(process)
-        val processWrapper = ProcessWrapperImpl(listOf(), processBuilder = processBuilder)
-        processWrapper.start()
-
         "getOutput" {
             should("return independent streams") {
                 val op1 = processWrapper.getOutput()
@@ -62,6 +66,24 @@ internal class ProcessWrapperTest : ShouldSpec() {
                 // Both output streams should see 'hello'
                 reader1.readLine() shouldBe "hello"
                 reader2.readLine() shouldBe "hello"
+            }
+        }
+        "getMostRecentLine" {
+            should("return empty string at first") {
+                processWrapper.getMostRecentLine() shouldBe ""
+            }
+            should("be equal to the process stdout") {
+                outputStream.write("hello\n".toByteArray())
+                within(5.seconds()) {
+                    processWrapper.getMostRecentLine() shouldBe "hello"
+                }
+            }
+            should("update to the most recent line") {
+                outputStream.write("hello\n".toByteArray())
+                outputStream.write("goodbye\n".toByteArray())
+                within(5.seconds()) {
+                    processWrapper.getMostRecentLine() shouldBe "goodbye"
+                }
             }
         }
         "isAlive" {
@@ -78,16 +100,34 @@ internal class ProcessWrapperTest : ShouldSpec() {
             "when the process has exited" {
                 should("return its exit code") {
                     whenever(process.exitValue()).thenReturn(42)
-                    processWrapper.exitValue() shouldBe 42
+                    processWrapper.exitValue shouldBe 42
                 }
             }
             "when the process has not exited" {
                 should("throw IllegalThreadStateException") {
                     whenever(process.exitValue()).doThrow(IllegalThreadStateException())
                     shouldThrow<IllegalThreadStateException> {
-                        processWrapper.exitValue()
+                        processWrapper.exitValue
                     }
                 }
+            }
+        }
+        "waitFor" {
+            should("call the process' waitFor") {
+                processWrapper.waitFor()
+                verify(process).waitFor()
+            }
+        }
+        "waitFor(timeout)" {
+            should("call the process' waitFor(timeout')") {
+                processWrapper.waitFor(10, TimeUnit.SECONDS)
+                verify(process).waitFor(10, TimeUnit.SECONDS)
+            }
+        }
+        "destroyForcibly" {
+            should("call the process' destroyForcibly") {
+                processWrapper.destroyForcibly()
+                verify(process).destroyForcibly()
             }
         }
     }

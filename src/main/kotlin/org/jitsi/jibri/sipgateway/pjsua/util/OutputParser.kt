@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package org.jitsi.jibri.sipgateway.pjsua
+package org.jitsi.jibri.sipgateway.pjsua.util
 
 import org.jitsi.jibri.util.ProcessWrapper
 
@@ -23,15 +23,8 @@ enum class PjsuaStatus {
     EXITED
 }
 
-class PjsuaProcessWrapper(
-    command: List<String>,
-    environment: Map<String, String>,
-    processBuilder: ProcessBuilder = ProcessBuilder()
-) : ProcessWrapper<PjsuaStatus>(command, environment, processBuilder) {
-
-    override fun getStatus(): Pair<PjsuaStatus, String> {
-        val mostRecentLine = getMostRecentLine()
-        val status = if (isAlive) PjsuaStatus.HEALTHY else PjsuaStatus.EXITED
-        return Pair(status, mostRecentLine)
-    }
+fun ProcessWrapper.getPjsuaStatus(): Pair<PjsuaStatus, String> {
+    val mostRecentLine = getMostRecentLine()
+    val status = if (isAlive) PjsuaStatus.HEALTHY else PjsuaStatus.EXITED
+    return Pair(status, mostRecentLine)
 }

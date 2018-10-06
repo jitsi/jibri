@@ -14,19 +14,21 @@
  * limitations under the License.
  *
  */
+package org.jitsi.jibri.util
 
-package org.jitsi.jibri.sink.impl
+import org.jitsi.jibri.util.extensions.error
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.logging.Logger
 
-import org.jitsi.jibri.sink.Sink
-
-/**
- * [StreamSink] represents a sink which will write to a network stream
- */
-class StreamSink(val url: String, val streamingMaxBitrate: Int, val streamingBufSize: Int) : Sink {
-    override val path: String = url
-    override val format: String = "flv"
-    override val options: Array<String> = arrayOf(
-        "-maxrate", "${streamingMaxBitrate}k",
-        "-bufsize", "${streamingBufSize}k"
-    )
+fun createIfDoesNotExist(path: Path, logger: Logger? = null): Boolean {
+    if (!Files.exists(path)) {
+        try {
+            Files.createDirectories(path)
+        } catch (e: Exception) {
+            logger?.error("Error creating directory", e)
+            return false
+        }
+    }
+    return true
 }

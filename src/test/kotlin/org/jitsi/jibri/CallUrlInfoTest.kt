@@ -20,15 +20,31 @@ package org.jitsi.jibri
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
+import io.kotlintest.tables.forAll
+import io.kotlintest.tables.headers
+import io.kotlintest.tables.row
+import io.kotlintest.tables.table
 
 class CallUrlInfoTest : ShouldSpec() {
+    override fun isInstancePerTest(): Boolean = true
+
     init {
         "creating a CallUrlInfo" {
-            val info = CallUrlInfo("baseUrl", "callName")
-            should("assign the fields correctly") {
-                info.baseUrl shouldBe "baseUrl"
-                info.callName shouldBe "callName"
-                info.callUrl shouldBe "baseUrl/callName"
+            "without url params" {
+                val info = CallUrlInfo("baseUrl", "callName")
+                should("assign the fields correctly") {
+                    info.baseUrl shouldBe "baseUrl"
+                    info.callName shouldBe "callName"
+                    info.callUrl shouldBe "baseUrl/callName"
+                }
+            }
+            "with url params" {
+                val info = CallUrlInfo("baseUrl", "callName", listOf("one", "two", "three"))
+                should("assign the fields correctly") {
+                    info.baseUrl shouldBe "baseUrl"
+                    info.callName shouldBe "callName"
+                    info.callUrl shouldBe "baseUrl/callName#one&two&three"
+                }
             }
         }
         "a nullable CallUrlInfo instance" {
@@ -37,59 +53,42 @@ class CallUrlInfoTest : ShouldSpec() {
                 nullableInfo shouldNotBe null
             }
         }
-        val info = CallUrlInfo("baseUrl", "callName")
-        "a CallUrlInfo instance" {
-            should("equal itself") {
-                info shouldBe info
-                info.hashCode() shouldBe info.hashCode()
-            }
-            should("not equal another type") {
-                info.equals("string") shouldBe false
-            }
-        }
-        "two equivalent CallUrlInfo instances" {
-            val duplicateInfo = CallUrlInfo("baseUrl", "callName")
-            should("be equal") {
-                info shouldBe duplicateInfo
-            }
-            should("have the same hash code") {
-                info.hashCode() shouldBe duplicateInfo.hashCode()
-            }
-        }
-        "CallUrlInfo instances with different base urls" {
-            val differentBaseUrl = CallUrlInfo("differentBaseUrl", "callName")
-            should("not be equal") {
-                info shouldNotBe differentBaseUrl
-            }
-            should("not have the same has code") {
-                info.hashCode() shouldNotBe differentBaseUrl.hashCode()
-            }
-        }
-        "CallUrlInfo instances with different call names" {
-            val differentCallName = CallUrlInfo("differentUrl", "differentCallName")
-            should("not be equal") {
-                info shouldNotBe differentCallName
-            }
-            should("not have the same has code") {
-                info.hashCode() shouldNotBe differentCallName.hashCode()
-            }
-        }
-        "CallUrlInfo instances with different base url case" {
-            val differentBaseUrlCase = CallUrlInfo("BASEURL", "callName")
-            should("be equal") {
-                info shouldBe differentBaseUrlCase
-            }
-            should("have the same has code") {
-                info.hashCode() shouldBe differentBaseUrlCase.hashCode()
-            }
-        }
-        "CallUrlInfo instances with different call name case" {
-            val differentCallNameCase = CallUrlInfo("baseUrl", "CALLNAME")
-            should("be equal") {
-                info shouldBe differentCallNameCase
-            }
-            should("have the same has code") {
-                info.hashCode() shouldBe differentCallNameCase.hashCode()
+        "equality and hashcode" {
+            val info = CallUrlInfo("baseUrl", "callName")
+            "a CallUrlInfo instance" {
+                should("not equal another type") {
+                    info.equals("string") shouldBe false
+                }
+                "when compared to other variations" {
+                    should("be equal/not equal where appropriate") {
+                        val duplicateInfo = CallUrlInfo("baseUrl", "callName")
+                        val differentBaseUrl = CallUrlInfo("differentBaseUrl", "callName")
+                        val differentCallName = CallUrlInfo("differentUrl", "differentCallName")
+                        val differentBaseUrlCase = CallUrlInfo("BASEURL", "callName")
+                        val differentCallNameCase = CallUrlInfo("baseUrl", "CALLNAME")
+                        val withUrlParams = CallUrlInfo("baseUrl", "callName", listOf("one", "two", "three"))
+
+                        val t = table(
+                            headers("left", "right", "shouldEqual"),
+                            row(info, info, true),
+                            row(info, duplicateInfo, true),
+                            row(info, differentBaseUrl, false),
+                            row(info, differentCallName, false),
+                            row(info, differentBaseUrlCase, true),
+                            row(info, differentCallNameCase, true),
+                            row(info, withUrlParams, true)
+                        )
+                        forAll(t) { left, right, shouldEqual ->
+                            if (shouldEqual) {
+                                left shouldBe right
+                                left.hashCode() shouldBe right.hashCode()
+                            } else {
+                                left shouldNotBe right
+                                left.hashCode() shouldNotBe right.hashCode()
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -24,12 +24,9 @@ import java.util.concurrent.TimeUnit
  * A wrapper around [Process] that implements
  * behaviors more useful to Jibri.  This isn't done
  * as a subclass because [Process] is abstract
- * and the actual implementation varies by platform, so
- * we'll leave that to the existing [Process] class.
- * Templated on the value that will be return from
- * [getStatus]
+ * and the actual implementation varies by platform.
  */
-abstract class ProcessWrapper<out StatusType>(
+class ProcessWrapper(
     command: List<String>,
     val environment: Map<String, String> = mapOf(),
     private val processBuilder: ProcessBuilder = ProcessBuilder()
@@ -65,7 +62,8 @@ abstract class ProcessWrapper<out StatusType>(
      * Throws if the wrapped process has not exited, so check
      * that [isAlive] is false before calling to avoid that.
      */
-    fun exitValue() = process.exitValue()
+    val exitValue: Int
+        get() = process.exitValue()
 
     init {
         processBuilder.command(command)
@@ -96,9 +94,7 @@ abstract class ProcessWrapper<out StatusType>(
         Runtime.getRuntime().exec("kill -s SIGINT $pid")
     }
 
-    fun destroyForcibly() {
-        process.destroyForcibly()
-    }
+    fun destroyForcibly(): Process = process.destroyForcibly()
 
     /**
      * Mimic the "pid" member of Java 9's [Process].  This can't be
@@ -115,7 +111,7 @@ abstract class ProcessWrapper<out StatusType>(
                 pid = field.getLong(process)
                 field.isAccessible = false
             }
-        } catch (e: Exception ) {
+        } catch (e: Exception) {
             pid = -1
         }
         return pid
@@ -128,21 +124,7 @@ abstract class ProcessWrapper<out StatusType>(
      * instance of this call can be read from independently,
      * without affecting the reads on other [InputStream]s
      */
-    fun getOutput(): InputStream {
-        return tee.addBranch()
-    }
+    fun getOutput(): InputStream = tee.addBranch()
 
-    abstract fun getStatus(): Pair<StatusType, String>
-
-    protected fun getMostRecentLine(): String = tail.mostRecentLine
-}
-
-class SimpleProcessWrapper(
-    command: List<String>,
-    environment: Map<String, String> = mapOf(),
-    processBuilder: ProcessBuilder = ProcessBuilder()
-) : ProcessWrapper<Boolean>(command, environment, processBuilder) {
-    override fun getStatus(): Pair<Boolean, String> {
-        return Pair(true, "")
-    }
+    fun getMostRecentLine(): String = tail.mostRecentLine
 }

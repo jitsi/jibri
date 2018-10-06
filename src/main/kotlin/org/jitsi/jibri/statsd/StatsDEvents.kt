@@ -14,19 +14,13 @@
  * limitations under the License.
  *
  */
+package org.jitsi.jibri.statsd
 
-package org.jitsi.jibri.sink.impl
+const val ASPECT_START = "start"
+const val ASPECT_STOP = "stop"
+const val ASPECT_BUSY = "busy"
+const val ASPECT_ERROR = "error"
 
-import org.jitsi.jibri.sink.Sink
-
-/**
- * [StreamSink] represents a sink which will write to a network stream
- */
-class StreamSink(val url: String, val streamingMaxBitrate: Int, val streamingBufSize: Int) : Sink {
-    override val path: String = url
-    override val format: String = "flv"
-    override val options: Array<String> = arrayOf(
-        "-maxrate", "${streamingMaxBitrate}k",
-        "-bufsize", "${streamingBufSize}k"
-    )
-}
+const val TAG_SERVICE_RECORDING = "recording"
+const val TAG_SERVICE_LIVE_STREAM = "live_stream"
+const val TAG_SERVICE_SIP_GATEWAY = "sip_gateway"

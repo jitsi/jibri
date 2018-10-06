@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.selenium.pageobjects
 
-import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -35,8 +35,9 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         PageFactory.initElements(driver, this)
     }
 
-    override fun visit(callUrlInfo: CallUrlInfo): Boolean {
-        if (!super.visit(callUrlInfo)) {
+    override fun visit(url: String): Boolean {
+        logger.debug("Visiting url $url")
+        if (!super.visit(url)) {
             return false
         }
         val start = System.currentTimeMillis()
@@ -44,7 +45,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             WebDriverWait(driver, 30).until {
                 val result = driver.executeScript("""
                     try {
-                        return typeof(APP.conference._room) !== 'undefined';
+                        return APP.conference._room.isJoined();
                     } catch (e) {
                         return e.message;
                     }
@@ -64,7 +65,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    fun getNumParticipants(driver: RemoteWebDriver): Long {
+    fun getNumParticipants(): Long {
         val result = driver.executeScript("""
             try {
                 return APP.conference.membersCount;
@@ -78,7 +79,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    fun injectParticipantTrackerScript(driver: RemoteWebDriver): Boolean {
+    fun injectParticipantTrackerScript(): Boolean {
         val result = driver.executeScript("""
             try {
                 window._jibriParticipants = [];
@@ -114,7 +115,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    fun getParticipants(driver: RemoteWebDriver): List<Map<String, Any>> {
+    fun getParticipants(): List<Map<String, Any>> {
         val result = driver.executeScript("""
             try {
                 return window._jibriParticipants;
@@ -134,7 +135,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
      * Add the given key, value pair to the presence map and send a new presence
      * message
      */
-    fun addToPresence(driver: RemoteWebDriver, key: String, value: String): Boolean {
+    fun addToPresence(key: String, value: String): Boolean {
         val result = driver.executeScript("""
             try {
                 APP.conference._room.room.addToPresence(
@@ -143,6 +144,19 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                         value: '$value'
                     }
                 );
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin())
+        return when (result) {
+            is String -> false
+            else -> true
+        }
+    }
+
+    fun sendPresence(): Boolean {
+        val result = driver.executeScript("""
+            try {
                 APP.conference._room.room.sendPresence();
             } catch (e) {
                 return e.message;
@@ -157,7 +171,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     fun leave(): Boolean {
         val result = driver.executeScript("""
             try {
-                return APP.conference._room.connection.disconnect();
+                return APP.conference._room.leave();
             } catch (e) {
                 return e.message;
             }

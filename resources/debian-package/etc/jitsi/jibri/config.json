@@ -58,9 +58,6 @@
             //  stopped (cleanly).  A value of 0 means an indefinite amount
             //  of time is allowed
             "usage_timeout": "0"
-        },
-        {
-            // Another environment config like the above
         }
     ]
 }

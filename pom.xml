@@ -16,14 +16,16 @@
     <properties>
         <testng.version>6.13.1</testng.version>
         <selenium.version>3.8.1</selenium.version>
-        <kotlin.version>1.2.31</kotlin.version>
+        <kotlin.version>1.2.41</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <smack.version>4.2.1</smack.version>
-        <jitsi-desktop.version>2.13.c1fc9a7</jitsi-desktop.version>
+        <jitsi-desktop.version>2.13.1f912b9</jitsi-desktop.version>
         <jersey.version>2.26</jersey.version>
         <jackson.version>2.9.5</jackson.version>
+        <junit.version>5.2.0</junit.version>
     </properties>
 
     <dependencies>
@@ -147,12 +149,17 @@
             <artifactId>jitsi-util</artifactId>
             <version>${jitsi-desktop.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.datadoghq</groupId>
+            <artifactId>java-dogstatsd-client</artifactId>
+            <version>2.5</version>
+        </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.kotlintest</groupId>
             <artifactId>kotlintest-runner-junit5</artifactId>
-            <version>3.0.3</version>
+            <version>3.1.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -164,13 +171,19 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.0.3</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.test-framework.providers</groupId>
             <artifactId>jersey-test-framework-provider-jetty</artifactId>
             <version>2.26</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.marschall</groupId>
+            <artifactId>memoryfilesystem</artifactId>
+            <version>1.2.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -248,7 +261,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>make-assembly</id>

@@ -11,5 +11,5 @@ Building the debian package has been tested on Ubuntu Xenial.
   * `cd jibri`
   * `mvn package`
 * Call the `create_debian_package_script` and pass it the location of the jar:
-  * `cd resources/debian_package`
-  * `./create_debian_package.sh ../../target/jibri-1.0-SNAPSHOT-jar-with-dependencies.jar`
+  * `` export WORKSPACE=`pwd` ``
+  * `resources/jenkins/release.sh Minor`

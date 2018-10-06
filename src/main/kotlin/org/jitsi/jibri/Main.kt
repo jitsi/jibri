@@ -36,6 +36,7 @@ import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
 import org.jitsi.jibri.config.JibriConfig
+import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.util.extensions.error
 import java.io.File
 import java.util.logging.Logger
@@ -82,7 +83,8 @@ fun main(args: Array<String>) {
         exitProcess(1)
     }
     val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
-    val jibri = JibriManager(jibriConfig)
+    val statsDClient: JibriStatsDClient? = if (jibriConfig.enabledStatsD) JibriStatsDClient() else null
+    val jibri = JibriManager(jibriConfig, statsDClient = statsDClient)
 
     // InternalHttpApi
     val configChangedHandler = {

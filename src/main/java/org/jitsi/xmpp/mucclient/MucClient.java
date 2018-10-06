@@ -21,6 +21,7 @@ import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.ReconnectionManager;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.iqrequest.IQRequestHandler;
+import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Stanza;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
@@ -32,6 +33,7 @@ import org.jxmpp.jid.parts.Resourcepart;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
@@ -56,13 +58,19 @@ public class MucClient
      */
     private List<MultiUserChat> mucs = new ArrayList<>();
 
+    public MucClient(XMPPTCPConnectionConfiguration config)
+            throws Exception
+    {
+        this(config, config.getXMPPServiceDomain().toString());
+    }
+
     /**
      * Connect to the xmpp service defined by the given config
      * @param config xmpp connection details
      * @throws Exception from {@link XMPPTCPConnection#connect()} or
      * {@link XMPPTCPConnection#login()}
      */
-    public MucClient(XMPPTCPConnectionConfiguration config)
+    public MucClient(XMPPTCPConnectionConfiguration config, String connectionContext)
         throws Exception
     {
         PingManager.setDefaultPingInterval(30);
@@ -74,43 +82,44 @@ public class MucClient
             @Override
             public void connected(XMPPConnection xmppConnection)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: connected");
+                logger.info("[" + connectionContext + "] Xmpp connection status: connected");
             }
 
             @Override
             public void authenticated(XMPPConnection xmppConnection, boolean b)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: authenticated");
+                logger.info("[" + connectionContext + "] Xmpp connection status: authenticated "
+                    + "(resume from previous? " + b + ")");
             }
 
             @Override
             public void connectionClosed()
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: closed");
+                logger.info("[" + connectionContext + "] Xmpp connection status: closed");
             }
 
             @Override
             public void connectionClosedOnError(Exception e)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: closed on error");
+                logger.info("[" + connectionContext + "] Xmpp connection status: closed on error: " + e);
             }
 
             @Override
             public void reconnectionSuccessful()
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnection successful");
+                logger.info("[" + connectionContext + "] Xmpp connection status: reconnection successful");
             }
 
             @Override
             public void reconnectingIn(int i)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnecting in " + i);
+                logger.info("[" + connectionContext + "] Xmpp connection status: reconnecting in " + i);
             }
 
             @Override
             public void reconnectionFailed(Exception e)
             {
-                logger.info("Xmpp connection status [" + xmppConnection.getXMPPServiceDomain() + "]: reconnection failed");
+                logger.info("[" + connectionContext + "] Xmpp connection status: reconnection failed: " + e);
             }
         });
         xmppConnection.connect().login();
@@ -120,13 +129,21 @@ public class MucClient
      * Create and/or join the muc named mucJid with the given nickname
      * @param mucJid the jid of the muc to join
      * @param nickname the nickname to use when joining the muc
+     * @param presenceInterceptor helper to intercept presences sent and add
+     * custom extensions in it.
      * @throws Exception from {@link MultiUserChat#createOrJoin(Resourcepart)}
      */
-    public void createOrJoinMuc(EntityBareJid mucJid, Resourcepart nickname)
+    public void createOrJoinMuc(
+        EntityBareJid mucJid,
+        Resourcepart nickname,
+        Consumer<Presence> presenceInterceptor)
             throws Exception
     {
         MultiUserChatManager mucManager = MultiUserChatManager.getInstanceFor(xmppConnection);
+        // enables reconnection of the muc if such is connection drop is detected
+        mucManager.setAutoJoinOnReconnect(true);
         MultiUserChat muc = mucManager.getMultiUserChat(mucJid);
+        muc.addPresenceInterceptor(presenceInterceptor::accept);
         muc.createOrJoin(nickname);
         mucs.add(muc);
     }

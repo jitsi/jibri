@@ -51,10 +51,6 @@ data class CallParams(
  */
 data class JibriSeleniumOptions(
     /**
-     * The parameters necessary for joining a call
-     */
-    val callParams: CallParams,
-    /**
      * Which display selenium should be started on
      */
     val display: String = ":0",
@@ -74,11 +70,7 @@ data class JibriSeleniumOptions(
      * Chrome command line flags to add (in addition to the common
      * ones)
      */
-    val extraChromeCommandLineFlags: List<String> = listOf(),
-    /**
-     * The url params to be passed in the call url
-     */
-    val urlParams: List<String>
+    val extraChromeCommandLineFlags: List<String> = listOf()
 )
 
 val SIP_GW_URL_OPTIONS = listOf(
@@ -104,13 +96,13 @@ val RECORDING_URL_OPTIONS = listOf(
  * It implements [StatusPublisher] to publish its status
  */
 class JibriSelenium(
-    private val jibriSeleniumOptions: JibriSeleniumOptions,
+    private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions(),
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 ) : StatusPublisher<JibriServiceStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val browserOutputLogger = Logger.getLogger("browser")
     private var chromeDriver: ChromeDriver
-    private val baseUrl: String = jibriSeleniumOptions.callParams.callUrlInfo.baseUrl
+    private var currCallUrl: String? = null
 
     /**
      * A task which checks if Jibri is alone in the call
@@ -164,7 +156,7 @@ class JibriSelenium(
         emptyCallTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
             try {
                 // >1 since the count will include jibri itself
-                if (CallPage(chromeDriver).getNumParticipants(chromeDriver) > 1) {
+                if (CallPage(chromeDriver).getNumParticipants() > 1) {
                     numTimesEmpty = 0
                 } else {
                     numTimesEmpty++
@@ -185,17 +177,19 @@ class JibriSelenium(
      * Jibri is active
      */
     private fun addParticipantTracker() {
-        CallPage(chromeDriver).injectParticipantTrackerScript(chromeDriver)
+        CallPage(chromeDriver).injectParticipantTrackerScript()
     }
 
     fun addToPresence(key: String, value: String): Boolean =
-        CallPage(chromeDriver).addToPresence(chromeDriver, key, value)
+        CallPage(chromeDriver).addToPresence(key, value)
+
+    fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
     /**
      * Join a a web call with Selenium
      */
-    fun joinCall(callName: String, xmppCredentials: XmppCredentials? = null): Boolean {
-        HomePage(chromeDriver).visit(CallUrlInfo(baseUrl, ""))
+    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null): Boolean {
+        HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
         val localStorageValues = mutableMapOf(
             "displayname" to jibriSeleniumOptions.displayName,
@@ -207,24 +201,23 @@ class JibriSelenium(
             localStorageValues["xmpp_password_override"] = xmppCredentials.password
         }
         setLocalStorageValues(localStorageValues)
-        val urlParams = jibriSeleniumOptions.urlParams
-        val callNameWithUrlParams = "$callName#${urlParams.joinToString("&")}"
-        if (!CallPage(chromeDriver).visit(CallUrlInfo(baseUrl, callNameWithUrlParams))) {
+        if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
             return false
         }
         addEmptyCallDetector()
         addParticipantTracker()
+        currCallUrl = callUrlInfo.callUrl
         return true
     }
 
     fun getParticipants(): List<Map<String, Any>> {
-        return CallPage(chromeDriver).getParticipants(chromeDriver)
+        return CallPage(chromeDriver).getParticipants()
     }
 
     fun leaveCallAndQuitBrowser() {
         emptyCallTask?.cancel(true)
 
-        browserOutputLogger.info("Logs for call ${jibriSeleniumOptions.callParams.callUrlInfo.callUrl}")
+        browserOutputLogger.info("Logs for call $currCallUrl")
         chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
             val logEntries = chromeDriver.manage().logs().get(logType)
             logger.info("Got ${logEntries.all.size} log entries for type $logType")
@@ -233,9 +226,13 @@ class JibriSelenium(
                 browserOutputLogger.info(it.toString())
             }
         }
+        logger.info("Leaving web call")
         CallPage(chromeDriver).leave()
+        currCallUrl = null
+        logger.info("Quitting chrome driver")
         chromeDriver.quit()
+        logger.info("Chrome driver quit")
     }
 
-    //TODO: helper func to verify connectivity
+    // TODO: helper func to verify connectivity
 }

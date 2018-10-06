@@ -64,6 +64,17 @@ class TeeLogic(inputStream: InputStream) {
     }
 
     /**
+     * If you want to close the Tee before the underlying
+     * [InputStream] closes, you'll need to call [close] to
+     * properly close all downstream branches. Note that
+     * calling [read] after [close] when there are branches
+     * will result in [java.io.IOException].
+     */
+    fun close() {
+        branches.forEach(OutputStream::close)
+    }
+
+    /**
      * Returns an [InputStream] that will receive
      * all data from the original [InputStream]
      * starting from the time of its creation
@@ -99,5 +110,6 @@ class Tee(inputStream: InputStream) {
 
     fun stop() {
         task.cancel(true)
+        teeLogic.close()
     }
 }
