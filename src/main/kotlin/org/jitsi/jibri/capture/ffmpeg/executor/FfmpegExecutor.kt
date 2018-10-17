@@ -84,7 +84,7 @@ class FfmpegExecutor(
             return false
         }
         return currentFfmpegProc?.let {
-            logger.info("Starting ffmpeg with command $command")
+            logger.info("Starting ffmpeg with command ${command.joinToString(separator = " ")} ($command)")
             it.start()
             processLoggerTask = logStream(it.getOutput(), ffmpegOutputLogger, executor)
             true
