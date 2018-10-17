@@ -280,39 +280,46 @@ class XmppApi(
         val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
-        return when (startIq.mode()) {
-            JibriMode.FILE -> {
-                jibriManager.startFileRecording(
-                    serviceParams,
-                    FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
-                    EnvironmentContext(xmppEnvironment.name),
-                    serviceStatusHandler
-                )
+
+        return try {
+            when (startIq.mode()) {
+                JibriMode.FILE -> {
+                    jibriManager.startFileRecording(
+                        serviceParams,
+                        FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
+                        EnvironmentContext(xmppEnvironment.name),
+                        serviceStatusHandler
+                    )
+                }
+                JibriMode.STREAM -> {
+                    jibriManager.startStreaming(
+                        serviceParams,
+                        StreamingParams(
+                            callParams,
+                            startIq.sessionId,
+                            xmppEnvironment.callLogin,
+                            youTubeStreamKey = startIq.streamId,
+                            youTubeBroadcastId = startIq.youtubeBroadcastId),
+                        EnvironmentContext(xmppEnvironment.name),
+                        serviceStatusHandler
+                    )
+                }
+                JibriMode.SIPGW -> {
+                    jibriManager.startSipGateway(
+                        serviceParams,
+                        SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
+                        EnvironmentContext(xmppEnvironment.name),
+                        serviceStatusHandler
+                    )
+                }
+                else -> {
+                    StartServiceResult.ERROR
+                }
             }
-            JibriMode.STREAM -> {
-                jibriManager.startStreaming(
-                    serviceParams,
-                    StreamingParams(
-                        callParams,
-                        startIq.sessionId,
-                        xmppEnvironment.callLogin,
-                        youTubeStreamKey = startIq.streamId,
-                        youTubeBroadcastId = startIq.youtubeBroadcastId),
-                    EnvironmentContext(xmppEnvironment.name),
-                    serviceStatusHandler
-                )
-            }
-            JibriMode.SIPGW -> {
-                jibriManager.startSipGateway(
-                    serviceParams,
-                    SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
-                    EnvironmentContext(xmppEnvironment.name),
-                    serviceStatusHandler
-                )
-            }
-            else -> {
-                StartServiceResult.ERROR
-            }
+        } catch (e: Exception) {
+            logger.error("Error starting service", e)
+            jibriManager.stopService()
+            StartServiceResult.ERROR
         }
     }
 }

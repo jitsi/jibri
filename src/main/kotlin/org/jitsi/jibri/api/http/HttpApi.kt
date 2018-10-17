@@ -72,7 +72,9 @@ class HttpApi(private val jibriManager: JibriManager) {
     @Produces(MediaType.APPLICATION_JSON)
     fun health(): Response {
         logger.debug("Got health request")
-        return Response.ok(jibriManager.healthCheck()).build()
+        val health = jibriManager.healthCheck()
+        logger.debug("Returning health $health")
+        return Response.ok(health).build()
     }
 
     /**
