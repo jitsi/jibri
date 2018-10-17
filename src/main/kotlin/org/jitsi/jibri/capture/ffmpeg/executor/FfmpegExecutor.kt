@@ -62,13 +62,16 @@ class FfmpegExecutor(
     private val processBuilder: ProcessBuilder = ProcessBuilder()
 ) : MonitorableProcess {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
     private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("FfmpegExecutor"))
     private var processLoggerTask: Future<Boolean>? = null
     /**
      * The currently active (if any) Ffmpeg process
      */
     private var currentFfmpegProc: ProcessWrapper? = null
+
+    companion object {
+        private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
+    }
     /**
      * Launch ffmpeg with the given [FfmpegExecutorParams] and using
      * the given [Sink]

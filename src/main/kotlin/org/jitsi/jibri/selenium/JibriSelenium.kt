@@ -26,6 +26,7 @@ import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
+import org.jitsi.jibri.util.getLoggerWithHandler
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
@@ -100,7 +101,6 @@ class JibriSelenium(
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 ) : StatusPublisher<JibriServiceStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val browserOutputLogger = Logger.getLogger("browser")
     private var chromeDriver: ChromeDriver
     private var currCallUrl: String? = null
 
@@ -109,12 +109,14 @@ class JibriSelenium(
      */
     private var emptyCallTask: ScheduledFuture<*>? = null
 
+    companion object {
+        private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
+    }
+
     /**
      * Set up default chrome driver options (using fake device, etc.)
       */
     init {
-        browserOutputLogger.useParentHandlers = false
-        browserOutputLogger.addHandler(BrowserFileHandler())
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(
