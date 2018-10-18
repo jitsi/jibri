@@ -20,6 +20,9 @@ package org.jitsi.jibri.health
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.JsonInclude
 
+//TODO: these classes are used by the http health check API, but that API should be updated to leverage
+// JibriStatusManager
+
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 data class EnvironmentContext(
     private val name: String
