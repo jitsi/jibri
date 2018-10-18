@@ -24,8 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * of all subscribers (via [addStatusHandler]) and pushes updates to
  * those subscribers (synchronously) in [publishStatus].  Classes
  * interested in publishing their status should inherit from
- * [StatusPublisher].  The data passed as 'status' is templated
- * and can be anything the class wants.
+ * [StatusPublisher].
  */
 open class StatusPublisher<T> {
     private val handlers: MutableList<(T) -> Unit> = CopyOnWriteArrayList()
@@ -38,9 +37,9 @@ open class StatusPublisher<T> {
     }
 
     /**
-     * The function a status publisher should call when it has
+     * The function a [StatusPublisher] subclass should call when it has
      * a new status to publish.  Note that handlers are notified synchronously
-     * in the context of the thread which calls [publishStatus]
+     * in the context of the thread which calls [publishStatus].
      */
     protected fun publishStatus(status: T) {
         handlers.forEach { handler ->
