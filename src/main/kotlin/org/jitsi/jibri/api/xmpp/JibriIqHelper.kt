@@ -70,12 +70,10 @@ fun JibriIq.mode(): JibriMode {
 
 class JibriPresenceHelper {
     companion object {
-        fun createPresence(status: JibriStatusPacketExt.Status, to: Jid): Presence {
-            val jibriStatus = JibriStatusPacketExt()
-            jibriStatus.status = status
+        fun createPresence(status: JibriStatusPacketExt, to: Jid): Presence {
             val pres = Presence(Presence.Type.available)
             pres.to = to
-            pres.overrideExtension(jibriStatus)
+            pres.overrideExtension(status)
             return pres
         }
     }

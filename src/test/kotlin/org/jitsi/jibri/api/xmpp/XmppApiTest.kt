@@ -27,6 +27,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
+import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig
@@ -90,8 +91,9 @@ class XmppApiTest : ShouldSpec() {
             usageTimeoutMins = 0,
             trustAllXmppCerts = true
         )
+        val jibriStatusManager: JibriStatusManager = mock()
         "xmppApi" {
-            val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), executorService)
+            val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), jibriStatusManager, executorService)
             val mucClient: MucClient = mock()
             val mucClientProvider: MucClientProvider = { _: XMPPTCPConnectionConfiguration, _: String ->
                 mucClient

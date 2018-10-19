@@ -22,8 +22,11 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqProvider
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
+import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriManager
+import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
@@ -60,7 +63,8 @@ typealias MucClientProvider = (XMPPTCPConnectionConfiguration, String) -> MucCli
  * parsed from config.json) and listens for IQ messages which contain Jibri commands, which it relays
  * to the given [JibriManager].  The IQ messages are instances of [JibriIq] and allow the
  * starting and stopping of the services Jibri provides.
- * [XmppApi] subscribes to [JibriManager] status updates and translates those into
+ * [XmppApi] subscribes to [JibriStatusManager] status updates and translates those into
+ * XMPP presence (defined by [JibriStatusPacketExt]) updates to advertise the status of this Jibri.
  * XMPP presence (defined by [JibriStatusPacketExt]) updates to advertise the status of this Jibri.
  * [XmppApi] takes care of translating the XMPP commands into the appropriate
  * [JibriManager] API calls and translates the results into XMPP IQ responses.
@@ -68,6 +72,7 @@ typealias MucClientProvider = (XMPPTCPConnectionConfiguration, String) -> MucCli
 class XmppApi(
     private val jibriManager: JibriManager,
     private val xmppConfigs: List<XmppEnvironmentConfig>,
+    private val jibriStatusManager: JibriStatusManager,
     private val executor: ExecutorService = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
@@ -112,17 +117,19 @@ class XmppApi(
                     val sipMucJid: BareJid? = config.sipControlMuc?.let {
                         JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}")
                     }
-                    val updatePresence: (JibriStatusPacketExt.Status) -> Unit = { status ->
-                        logger.info("Jibri reports its status is now $status, publishing presence to connection ${config.name}")
+                    val updatePresence: (status: JibriStatus) -> Unit = { status ->
+                        logger.info("Jibri reports its status is now $status, publishing presence to connection " +
+                                config.name)
                         // We need to update our presence in potentially 2 MUCs: the recording muc and the SIP
                         // MUC
-                        mucClient.sendStanza(JibriPresenceHelper.createPresence(status, recordingMucJid))
-                        sipMucJid?.let {
-                            mucClient.sendStanza(JibriPresenceHelper.createPresence(status, it))
+                        val jibriStatusExt = status.toJibriStatusExt()
+                        mucClient.sendStanza(JibriPresenceHelper.createPresence(jibriStatusExt, recordingMucJid))
+                        sipMucJid?.let { sipMucJid ->
+                            mucClient.sendStanza(JibriPresenceHelper.createPresence(jibriStatusExt, sipMucJid))
                         }
                     }
 
-                    jibriManager.addStatusHandler(updatePresence)
+                    jibriStatusManager.addStatusHandler(updatePresence)
                     // The recording control muc
                     mucClient.createOrJoinMuc(
                         recordingMucJid.asEntityBareJidIfPossible(),
@@ -149,11 +156,7 @@ class XmppApi(
      * Function to update outgoing [presence] stanza with current jibri status.
      */
     private fun updatePresenceStanza(presence: Presence) {
-        val jibriStatus = JibriStatusPacketExt()
-        jibriStatus.status =
-                if (jibriManager.busy()) JibriStatusPacketExt.Status.BUSY
-                else JibriStatusPacketExt.Status.IDLE
-        presence.addExtension(jibriStatus)
+        presence.addExtension(jibriStatusManager.overallStatus.toJibriStatusExt())
     }
 
     /**
@@ -237,6 +240,7 @@ class XmppApi(
                         logger.info("Current service had an error, sending error iq ${toXML()}")
                         mucClient.sendStanza(this)
                     }
+
                 }
                 JibriServiceStatus.FINISHED -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
@@ -319,6 +323,7 @@ class XmppApi(
         } catch (e: Exception) {
             logger.error("Error starting service", e)
             jibriManager.stopService()
+            jibriStatusManager.updateHealth("XMPPAPI", ComponentHealthStatus.UNHEALTHY, e.toString())
             StartServiceResult.ERROR
         }
     }

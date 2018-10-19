@@ -94,7 +94,7 @@ class HttpApiTest : ShouldSpec() {
                 should("call JibriManager#healthCheck") {
                     verify(jibriManager).healthCheck()
                 }
-                should("return a status of 200") {
+                should("return a healthStatus of 200") {
                     res.status shouldBe 200
                 }
                 should("return the right json body") {
@@ -115,7 +115,7 @@ class HttpApiTest : ShouldSpec() {
                     .thenReturn(expectedHealth)
                 val res = jerseyTest.target("/jibri/api/v1.0/health").request()
                     .get()
-                should("return a status of 200") {
+                should("return a healthStatus of 200") {
                     res.status shouldBe 200
                 }
                 should("return the right json body") {
