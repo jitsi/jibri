@@ -240,7 +240,6 @@ class XmppApi(
                         logger.info("Current service had an error, sending error iq ${toXML()}")
                         mucClient.sendStanza(this)
                     }
-
                 }
                 JibriServiceStatus.FINISHED -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
