@@ -156,7 +156,7 @@ class XmppApi(
      * Function to update outgoing [presence] stanza with current jibri status.
      */
     private fun updatePresenceStanza(presence: Presence) {
-        presence.addExtension(jibriStatusManager.overallStatus.toJibriStatusExt())
+        presence.overrideExtension(jibriStatusManager.overallStatus.toJibriStatusExt())
     }
 
     /**
