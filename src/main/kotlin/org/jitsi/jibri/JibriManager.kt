@@ -194,7 +194,7 @@ class JibriManager(
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
         }
-        // The manager adds its own healthStatus handler so that it can stop
+        // The manager adds its own status handler so that it can stop
         // the error'd service and update presence appropriately
         jibriService.addStatusHandler {
             when (it) {
