@@ -37,6 +37,9 @@ import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.statsd.JibriStatsDClient
+import org.jitsi.jibri.status.ComponentBusyStatus
+import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.extensions.error
 import java.io.File
 import java.util.logging.Logger
@@ -82,9 +85,23 @@ fun main(args: Array<String>) {
         logger.error("Error: Config file $configFilePath doesn't exist")
         exitProcess(1)
     }
+    val jibriStatusManager = JibriStatusManager()
     val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
     val statsDClient: JibriStatsDClient? = if (jibriConfig.enabledStatsD) JibriStatsDClient() else null
     val jibri = JibriManager(jibriConfig, statsDClient = statsDClient)
+    jibri.addStatusHandler { jibriStatus ->
+        when (jibriStatus) {
+            is ComponentBusyStatus -> {
+                jibriStatusManager.busyStatus = jibriStatus
+            }
+            is ComponentHealthStatus -> {
+                jibriStatusManager.updateHealth("JibriManager", jibriStatus)
+            }
+            else -> {
+                logger.error("Unrecognized status from JibriManager: ${jibriStatus.javaClass} $jibriStatus")
+            }
+        }
+    }
 
     // InternalHttpApi
     val configChangedHandler = {
@@ -108,7 +125,11 @@ fun main(args: Array<String>) {
     launchHttpServer(3333, internalHttpApi)
 
     // XmppApi
-    val xmppApi = XmppApi(jibriManager = jibri, xmppConfigs = jibriConfig.xmppEnvironments)
+    val xmppApi = XmppApi(
+        jibriManager = jibri,
+        xmppConfigs = jibriConfig.xmppEnvironments,
+        jibriStatusManager = jibriStatusManager
+    )
     xmppApi.start()
 
     // HttpApi

@@ -17,7 +17,6 @@
 
 package org.jitsi.jibri
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
@@ -41,6 +40,7 @@ import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.statsd.TAG_SERVICE_LIVE_STREAM
 import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
 import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
+import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
@@ -90,7 +90,9 @@ class JibriManager(
     private val config: JibriConfig,
     private val fileSystem: FileSystem = FileSystems.getDefault(),
     private val statsDClient: JibriStatsDClient? = null
-) : StatusPublisher<JibriStatusPacketExt.Status>() {
+// TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
+// ComponentBusyStatus and ComponentHealthStatus and i was unable to think of a better solution for that (yet...)
+) : StatusPublisher<Any>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
     private var currentEnvironmentContext: EnvironmentContext? = null
@@ -188,7 +190,7 @@ class JibriManager(
         environmentContext: EnvironmentContext?,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ): StartServiceResult {
-        publishStatus(JibriStatusPacketExt.Status.BUSY)
+        publishStatus(ComponentBusyStatus.BUSY)
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
         }
@@ -243,7 +245,7 @@ class JibriManager(
         // and reset it
         pendingIdleFunc()
         pendingIdleFunc = {}
-        publishStatus(JibriStatusPacketExt.Status.IDLE)
+        publishStatus(ComponentBusyStatus.IDLE)
     }
 
     /**
