@@ -209,8 +209,14 @@ class FileRecordingJibriService(
                 participants,
                 fileRecordingParams.additionalMetadata
             )
-            Files.newBufferedWriter(metadataFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use {
-                jacksonObjectMapper().writeValue(it, metadata)
+            try {
+                Files.newBufferedWriter(metadataFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+                    .use {
+                        jacksonObjectMapper().writeValue(it, metadata)
+                    }
+            } catch (e: Exception) {
+                logger.error("Error writing metadata", e)
+                publishStatus(JibriServiceStatus.ERROR)
             }
         } else {
             logger.error("Unable to write metadata file to recording directory ${fileRecordingParams.recordingDirectory}")
