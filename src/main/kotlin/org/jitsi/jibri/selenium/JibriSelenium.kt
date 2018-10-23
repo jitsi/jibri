@@ -27,6 +27,7 @@ import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
+import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
@@ -170,6 +171,12 @@ class JibriSelenium(
                 }
             } catch (t: Throwable) {
                 logger.error("Error while checking for empty call state: $t")
+                if (t is TimeoutException) {
+                    // We've found that a timeout here often implies chrome has hung so consider this as an error
+                    // which will result in this Jibri being marked as unhealthy
+                    logger.error("Javascript timed out, assuming chrome has hung")
+                    publishStatus(JibriServiceStatus.ERROR)
+                }
             }
         }
     }
