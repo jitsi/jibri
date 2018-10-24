@@ -109,6 +109,10 @@ class JibriSelenium(
      * A task which checks if Jibri is alone in the call
      */
     private var emptyCallTask: ScheduledFuture<*>? = null
+    /**
+     * A task which checks if Jibri is receiving media
+     */
+    private var receivingMediaTask: ScheduledFuture<*>? = null
 
     companion object {
         private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
@@ -182,6 +186,35 @@ class JibriSelenium(
     }
 
     /**
+     * Check if Jibri is receiving media
+     */
+    private fun addReceivingMediaDetector() {
+        var numTimesNotReceiving = 0
+        receivingMediaTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
+            try {
+                val bitrates = CallPage(chromeDriver).getBitrates()
+                logger.info("Jibri client receive bitrates: $bitrates")
+                val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
+                if (downloadBitrate == 0L) {
+                    numTimesNotReceiving++
+                }
+                if (numTimesNotReceiving >= 2) {
+                    logger.info("Jibri has not received any media for 30 seconds, marking as unhealthy." +
+                            "Most recent bitrates: $bitrates")
+                    receivingMediaTask?.cancel(false)
+                    publishStatus(JibriServiceStatus.ERROR)
+                }
+            } catch (t: Throwable) {
+                logger.error("Error while checking for download bitrate", t)
+                if (t is TimeoutException) {
+                    logger.error("Javascript timed out, assuming chrome has hung")
+                    publishStatus(JibriServiceStatus.ERROR)
+                }
+            }
+        }
+    }
+
+    /**
      * Keep track of all the participants who take part in the call while
      * Jibri is active
      */
@@ -214,6 +247,7 @@ class JibriSelenium(
             return false
         }
         addEmptyCallDetector()
+        addReceivingMediaDetector()
         addParticipantTracker()
         currCallUrl = callUrlInfo.callUrl
         return true
@@ -225,6 +259,7 @@ class JibriSelenium(
 
     fun leaveCallAndQuitBrowser() {
         emptyCallTask?.cancel(true)
+        receivingMediaTask?.cancel(true)
 
         browserOutputLogger.info("Logs for call $currCallUrl")
         chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
