@@ -75,10 +75,23 @@ fun main(args: Array<String>) {
         .required(true)
         .type(String::class.java)
         .help("Path to the jibri config file")
+    argParser.addArgument("--internal-http-port")
+        .type(Int::class.java)
+        .setDefault(3333)
+        .help("Port to start the internal HTTP server on")
+    argParser.addArgument("--http-api-port")
+        .type(Int::class.java)
+        .setDefault(2222)
+        .help("Port to start the HTTP API server on")
 
+    logger.info("Jibri run with args ${args.asList()}")
     val ns = argParser.parseArgs(args)
     val configFilePath = ns.getString("config")
     logger.info("Using config file $configFilePath")
+    val internalHttpPort = ns.getInt("internal_http_port")
+    logger.info("Using port $internalHttpPort for internal HTTP API")
+    val httpApiPort = ns.getInt("http_api_port")
+    logger.info("Using port $httpApiPort for the HTTP API")
 
     val jibriConfigFile = File(configFilePath)
     if (!jibriConfigFile.exists()) {
@@ -122,7 +135,7 @@ fun main(args: Array<String>) {
         gracefulShutdownHandler = configChangedHandler,
         shutdownHandler = shutdownHandler
     )
-    launchHttpServer(3333, internalHttpApi)
+    launchHttpServer(internalHttpPort, internalHttpApi)
 
     // XmppApi
     val xmppApi = XmppApi(
@@ -133,7 +146,7 @@ fun main(args: Array<String>) {
     xmppApi.start()
 
     // HttpApi
-    launchHttpServer(2222, HttpApi(jibri))
+    launchHttpServer(httpApiPort, HttpApi(jibri))
 }
 
 fun launchHttpServer(port: Int, component: Any) {

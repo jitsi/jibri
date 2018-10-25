@@ -79,6 +79,27 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun getStats(): Map<String, Any?> {
+        val result = driver.executeScript("""
+            try {
+                return APP.conference.getStats();
+            } catch (e) {
+                return e.message;
+            }
+        """.trimMargin())
+        if (result is String) {
+            return mapOf()
+        }
+        return result as Map<String, Any?>
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun getBitrates(): Map<String, Any?> {
+        val stats = getStats()
+        return stats.getOrDefault("bitrate", mapOf<String, Any?>()) as Map<String, Any?>
+    }
+
     fun injectParticipantTrackerScript(): Boolean {
         val result = driver.executeScript("""
             try {

@@ -41,6 +41,7 @@ import org.jitsi.jibri.statsd.TAG_SERVICE_LIVE_STREAM
 import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
 import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
 import org.jitsi.jibri.status.ComponentBusyStatus
+import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
@@ -200,6 +201,7 @@ class JibriManager(
             when (it) {
                 JibriServiceStatus.ERROR -> {
                     statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
+                    publishStatus(ComponentHealthStatus.UNHEALTHY)
                     stopService()
                 }
                 JibriServiceStatus.FINISHED -> {
@@ -224,6 +226,7 @@ class JibriManager(
         if (!jibriService.start()) {
             stopService()
             statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
+            publishStatus(ComponentHealthStatus.UNHEALTHY)
             return StartServiceResult.ERROR
         }
         return StartServiceResult.SUCCESS

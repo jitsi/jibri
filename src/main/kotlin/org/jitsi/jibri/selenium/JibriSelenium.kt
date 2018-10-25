@@ -27,6 +27,7 @@ import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
+import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
@@ -88,6 +89,7 @@ val RECORDING_URL_OPTIONS = listOf(
     "interfaceConfig.APP_NAME=\"Jibri\""
 )
 
+
 /**
  * The [JibriSelenium] class is responsible for all of the interactions with
  * Selenium.  It:
@@ -105,9 +107,11 @@ class JibriSelenium(
     private var currCallUrl: String? = null
 
     /**
-     * A task which checks if Jibri is alone in the call
+     * A task which executes at an interval and checks various aspects of the call to make sure things are
+     * working correctly
      */
-    private var emptyCallTask: ScheduledFuture<*>? = null
+    private var recurringCallStatusCheckTask: ScheduledFuture<*>? = null
+    private val callStatusChecks: List<CallStatusCheck>
 
     companion object {
         private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
@@ -137,6 +141,14 @@ class JibriSelenium(
         logPrefs.enable(LogType.DRIVER, Level.ALL)
         chromeOptions.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
+
+        // Note that the order here is important: we always want to check for no participants before we check
+        // for media being received, since the call being empty will also mean Jibri is not receiving media but should
+        // not cause Jibri to go unhealthy (like not receiving media when there are others in the call will).
+        callStatusChecks = listOf(
+            EmptyCallStatusCheck(),
+            MediaReceivedStatusCheck(logger)
+        )
     }
 
     /**
@@ -149,27 +161,31 @@ class JibriSelenium(
         }
     }
 
-    /**
-     * Check if Jibri is the only participant in the call.  If it is the only
-     * participant for 30 seconds, it will leave the call.
-     */
-    private fun addEmptyCallDetector() {
-        var numTimesEmpty = 0
-        emptyCallTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
+    private fun startRecurringCallStatusChecks() {
+        recurringCallStatusCheckTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
+            val callPage = CallPage(chromeDriver)
             try {
-                // >1 since the count will include jibri itself
-                if (CallPage(chromeDriver).getNumParticipants() > 1) {
-                    numTimesEmpty = 0
-                } else {
-                    numTimesEmpty++
-                }
-                if (numTimesEmpty >= 2) {
-                    logger.info("Jibri has been in a lonely call for 30 seconds, marking as finished")
-                    emptyCallTask?.cancel(false)
-                    publishStatus(JibriServiceStatus.FINISHED)
+                callStatusCheckLoop@for (callStatusCheck in callStatusChecks) {
+                    val checkResult = callStatusCheck.run(callPage)
+                    if (checkResult.shouldTerminateCall()) {
+                        recurringCallStatusCheckTask?.cancel(false)
+                        if (checkResult.isError()) {
+                            publishStatus(JibriServiceStatus.ERROR)
+                        } else {
+                            publishStatus(JibriServiceStatus.FINISHED)
+                        }
+                        // We don't want to execute any further checks
+                        break@callStatusCheckLoop
+                    }
                 }
             } catch (t: Throwable) {
-                logger.error("Error while checking for empty call state: $t")
+                logger.error("Error while running call status checks", t)
+                if (t is TimeoutException) {
+                    // We've found that a timeout here often implies chrome has hung so consider this as an error
+                    // which will result in this Jibri being marked as unhealthy
+                    logger.error("Javascript timed out, assuming chrome has hung")
+                    publishStatus(JibriServiceStatus.ERROR)
+                }
             }
         }
     }
@@ -206,7 +222,7 @@ class JibriSelenium(
         if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
             return false
         }
-        addEmptyCallDetector()
+        startRecurringCallStatusChecks()
         addParticipantTracker()
         currCallUrl = callUrlInfo.callUrl
         return true
@@ -217,7 +233,7 @@ class JibriSelenium(
     }
 
     fun leaveCallAndQuitBrowser() {
-        emptyCallTask?.cancel(true)
+        recurringCallStatusCheckTask?.cancel(true)
 
         browserOutputLogger.info("Logs for call $currCallUrl")
         chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
@@ -236,5 +252,68 @@ class JibriSelenium(
         logger.info("Chrome driver quit")
     }
 
-    // TODO: helper func to verify connectivity
+    // Below is code for the CallStatusChecks used in the recurring call status run task
+    private enum class CallStatusCheckResult {
+        /**
+         * This status means that, according to the run which returned it, the call is healthy and should continue
+         */
+        HEALTHY_ONGOING,
+        /**
+         * This status means that, according to the run which returned it, the call is healthy but should be ended
+         */
+        HEALTHY_FINISHED,
+        /**
+         * This status means that, according to the run which returned it, the call is unhealthy and should be ended
+         */
+        UNHEALTHY;
+
+        /**
+         * Returns true if this [CallStatusCheckResult] should result in the call being terminated, false
+         * otherwise
+         */
+        fun shouldTerminateCall(): Boolean = this == HEALTHY_FINISHED || this == UNHEALTHY
+
+        /**
+         * Return true if this [CallStatusCheckResult] indicates an error
+         */
+        fun isError(): Boolean = this == UNHEALTHY
+    }
+
+    private interface CallStatusCheck {
+        fun run(callPage: CallPage): CallStatusCheckResult
+    }
+
+    private class EmptyCallStatusCheck : CallStatusCheck {
+        private var numTimesEmpty = 0
+        override fun run(callPage: CallPage): CallStatusCheckResult {
+            // >1 since the count will include jibri itself
+            if (callPage.getNumParticipants() > 1) {
+                numTimesEmpty = 0
+            } else {
+                numTimesEmpty++
+            }
+            if (numTimesEmpty >= 2) {
+                return CallStatusCheckResult.HEALTHY_FINISHED
+            }
+            return CallStatusCheckResult.HEALTHY_ONGOING
+        }
+    }
+
+    private class MediaReceivedStatusCheck(private val logger: Logger) : CallStatusCheck {
+        private var numTimesNoMedia = 0
+        override fun run(callPage: CallPage): CallStatusCheckResult {
+            val bitrates = callPage.getBitrates()
+            logger.info("Jibri client receive bitrates: $bitrates")
+            val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
+            if (downloadBitrate == 0L) {
+                numTimesNoMedia++
+            } else {
+                numTimesNoMedia = 0
+            }
+            if (numTimesNoMedia >= 2) {
+                return CallStatusCheckResult.UNHEALTHY
+            }
+            return CallStatusCheckResult.HEALTHY_ONGOING
+        }
+    }
 }
