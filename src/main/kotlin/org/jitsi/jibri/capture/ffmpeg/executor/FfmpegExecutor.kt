@@ -77,18 +77,18 @@ class FfmpegExecutor(
      * the given [Sink]
      */
     fun launchFfmpeg(command: List<String>): Boolean {
-        try {
-            currentFfmpegProc = ProcessWrapper(command, processBuilder = processBuilder)
-        } catch (t: Throwable) {
-            logger.error("Error starting ffmpeg: $t")
-            return false
-        }
-        return currentFfmpegProc?.let {
-            logger.info("Starting ffmpeg with command ${command.joinToString(separator = " ")} ($command)")
-            it.start()
-            processLoggerTask = logStream(it.getOutput(), ffmpegOutputLogger, executor)
+        currentFfmpegProc = ProcessWrapper(command, processBuilder = processBuilder)
+        logger.info("Starting ffmpeg with command ${command.joinToString(separator = " ")} ($command)")
+        return try {
+            currentFfmpegProc?.let {
+                it.start()
+                processLoggerTask = logStream(it.getOutput(), ffmpegOutputLogger, executor)
+            }
             true
-        } ?: run {
+        } catch (t: Throwable) {
+            logger.error("Error starting ffmpeg", t)
+            // We don't need to call stop because we never successfully started
+            currentFfmpegProc = null
             false
         }
     }
