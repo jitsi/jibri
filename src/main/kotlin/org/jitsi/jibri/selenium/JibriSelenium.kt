@@ -89,7 +89,6 @@ val RECORDING_URL_OPTIONS = listOf(
     "interfaceConfig.APP_NAME=\"Jibri\""
 )
 
-
 /**
  * The [JibriSelenium] class is responsible for all of the interactions with
  * Selenium.  It:
