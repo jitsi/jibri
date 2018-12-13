@@ -20,8 +20,6 @@ import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.util.concurrent.Callable
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.logging.FileHandler
 import java.util.logging.Logger
@@ -33,10 +31,9 @@ import java.util.logging.Logger
  */
 fun logStream(
     stream: InputStream,
-    logger: Logger,
-    executor: ExecutorService = Executors.newSingleThreadExecutor(NameableThreadFactory("StreamLogger"))
+    logger: Logger
 ): Future<Boolean> {
-    return executor.submit(Callable<Boolean> {
+    return TaskPools.ioPool.submit(Callable<Boolean> {
         val reader = BufferedReader(InputStreamReader(stream))
 
         while (true) {

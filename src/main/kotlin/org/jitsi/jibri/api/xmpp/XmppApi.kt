@@ -22,11 +22,8 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqProvider
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
-import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriManager
-import org.jitsi.jibri.status.JibriStatus
-import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
@@ -38,7 +35,10 @@ import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams
-import org.jitsi.jibri.util.NameableThreadFactory
+import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
 import org.jitsi.xmpp.TrustAllHostnameVerifier
@@ -52,8 +52,6 @@ import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration
 import org.jxmpp.jid.BareJid
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Resourcepart
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.logging.Logger
 
 typealias MucClientProvider = (XMPPTCPConnectionConfiguration, String) -> MucClient
@@ -72,8 +70,7 @@ typealias MucClientProvider = (XMPPTCPConnectionConfiguration, String) -> MucCli
 class XmppApi(
     private val jibriManager: JibriManager,
     private val xmppConfigs: List<XmppEnvironmentConfig>,
-    private val jibriStatusManager: JibriStatusManager,
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor(NameableThreadFactory("XmppApi"))
+    private val jibriStatusManager: JibriStatusManager
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val defaultMucClientProvider = { config: XMPPTCPConnectionConfiguration, context: String ->
@@ -189,7 +186,7 @@ class XmppApi(
         logger.info("Received start request")
         // We don't want to block the response to wait for the service to actually start, so submit a job to
         // start the service asynchronously and send an IQ with the status after its done.
-        executor.submit {
+        TaskPools.ioPool.submit {
             val resultIq = JibriIqHelper.create(startJibriIq.from)
             resultIq.sipAddress = startJibriIq.sipAddress
             try {

@@ -24,6 +24,7 @@ import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.selenium.util.BrowserFileHandler
 import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
@@ -34,8 +35,6 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Level
@@ -98,8 +97,7 @@ val RECORDING_URL_OPTIONS = listOf(
  * It implements [StatusPublisher] to publish its status
  */
 class JibriSelenium(
-    private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions(),
-    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions()
 ) : StatusPublisher<JibriServiceStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var chromeDriver: ChromeDriver
@@ -162,7 +160,7 @@ class JibriSelenium(
     }
 
     private fun startRecurringCallStatusChecks() {
-        recurringCallStatusCheckTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
+        recurringCallStatusCheckTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
             val callPage = CallPage(chromeDriver)
             try {
                 callStatusCheckLoop@for (callStatusCheck in callStatusChecks) {

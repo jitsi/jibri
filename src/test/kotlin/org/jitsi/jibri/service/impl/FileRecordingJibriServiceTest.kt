@@ -26,6 +26,7 @@ import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import io.kotlintest.Description
 import io.kotlintest.matchers.maps.shouldContainAll
 import io.kotlintest.matchers.string.contain
 import io.kotlintest.shouldBe
@@ -38,6 +39,7 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessWrapper
+import org.jitsi.jibri.util.TaskPools
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.nio.file.Files
@@ -86,11 +88,14 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
 
     private val fileRecordingJibriService = FileRecordingJibriService(
         fileRecordingParams,
-        executor,
         jibriSelenium,
         capturer,
         processFactory
     )
+
+    override fun beforeTest(description: Description) {
+        TaskPools.recurringTasksPool = executor
+    }
 
     init {
         "start" {

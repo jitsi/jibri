@@ -20,12 +20,10 @@ package org.jitsi.jibri.capture.ffmpeg.executor
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.MonitorableProcess
-import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.jibri.util.logStream
-import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -62,7 +60,6 @@ class FfmpegExecutor(
     private val processBuilder: ProcessBuilder = ProcessBuilder()
 ) : MonitorableProcess {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val executor = Executors.newSingleThreadExecutor(NameableThreadFactory("FfmpegExecutor"))
     private var processLoggerTask: Future<Boolean>? = null
     /**
      * The currently active (if any) Ffmpeg process
@@ -82,7 +79,7 @@ class FfmpegExecutor(
         return try {
             currentFfmpegProc?.let {
                 it.start()
-                processLoggerTask = logStream(it.getOutput(), ffmpegOutputLogger, executor)
+                processLoggerTask = logStream(it.getOutput(), ffmpegOutputLogger)
             }
             true
         } catch (t: Throwable) {

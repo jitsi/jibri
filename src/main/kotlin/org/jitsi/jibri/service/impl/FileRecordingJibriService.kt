@@ -35,13 +35,13 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessMonitor
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -105,8 +105,7 @@ data class RecordingMetadata(
  */
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
-    private val executor: ScheduledExecutorService,
-    private val jibriSelenium: JibriSelenium = JibriSelenium(executor = executor),
+    private val jibriSelenium: JibriSelenium = JibriSelenium(),
     private val capturer: Capturer = FfmpegCapturer(),
     private val processFactory: ProcessFactory = ProcessFactory()
 ) : JibriService() {
@@ -162,7 +161,7 @@ class FileRecordingJibriService(
         jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
         jibriSelenium.sendPresence()
         val processMonitor = createCaptureMonitor(capturer)
-        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
+        processMonitorTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
         return true
     }
 

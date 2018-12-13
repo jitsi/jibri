@@ -28,9 +28,8 @@ import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
 import org.jitsi.jibri.util.ProcessMonitor
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -53,8 +52,7 @@ data class SipGatewayServiceParams(
  * forwarding thenm to the other side.
  */
 class SipGatewayJibriService(
-    private val sipGatewayServiceParams: SipGatewayServiceParams,
-    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+    private val sipGatewayServiceParams: SipGatewayServiceParams
 ) : JibriService() {
     /**
      * The [Logger] for this class
@@ -106,7 +104,7 @@ class SipGatewayJibriService(
             return false
         }
         val processMonitor = createSipClientMonitor(pjsuaClient)
-        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
+        processMonitorTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
         return true
     }
 

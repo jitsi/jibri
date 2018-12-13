@@ -41,14 +41,12 @@ import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
 import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
-import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -105,7 +103,6 @@ class JibriManager(
      * can't be run while a Jibri session is active
      */
     private var pendingIdleFunc: () -> Unit = {}
-    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriManager"))
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
 
     /**
@@ -136,8 +133,7 @@ class JibriManager(
                 fileSystem.getPath(config.finalizeRecordingScriptPath),
                 fileSystem.getPath(config.recordingDirectory),
                 serviceParams.appData?.fileRecordingMetadata
-            ),
-            Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
+            )
         )
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_RECORDING)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
@@ -221,7 +217,7 @@ class JibriManager(
         currentEnvironmentContext = environmentContext
         if (serviceParams.usageTimeoutMinutes != 0) {
             logger.info("This service will have a usage timeout of ${serviceParams.usageTimeoutMinutes} minute(s)")
-            serviceTimeoutTask = executor.schedule(serviceParams.usageTimeoutMinutes.toLong(), TimeUnit.MINUTES) {
+            serviceTimeoutTask = TaskPools.recurringTasksPool.schedule(serviceParams.usageTimeoutMinutes.toLong(), TimeUnit.MINUTES) {
                 logger.info("The usage timeout has elapsed, stopping the currently active service")
                 try {
                     stopService()

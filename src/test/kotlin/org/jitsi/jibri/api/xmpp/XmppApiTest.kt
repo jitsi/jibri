@@ -23,6 +23,7 @@ import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
@@ -34,6 +35,7 @@ import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.config.XmppMuc
 import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.ServiceParams
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler
 import org.jivesoftware.smack.packet.Stanza
@@ -56,12 +58,17 @@ class XmppApiTest : ShouldSpec() {
         }
     }
 
-    init {
+    override fun beforeTest(description: Description) {
+        super.beforeTest(description)
         val executorService: ExecutorService = mock()
         whenever(executorService.submit(any<Runnable>())).then {
             (it.arguments.first() as Runnable).run()
             CompletableFuture<Unit>()
         }
+        TaskPools.ioPool = executorService
+    }
+
+    init {
         val jibriManager: JibriManager = mock()
         val xmppConfig = XmppEnvironmentConfig(
             name = "xmppEnvName",
@@ -93,7 +100,7 @@ class XmppApiTest : ShouldSpec() {
         )
         val jibriStatusManager: JibriStatusManager = mock()
         "xmppApi" {
-            val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), jibriStatusManager, executorService)
+            val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), jibriStatusManager)
             val mucClient: MucClient = mock()
             val mucClientProvider: MucClientProvider = { _: XMPPTCPConnectionConfiguration, _: String ->
                 mucClient

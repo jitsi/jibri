@@ -22,13 +22,10 @@ import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaFileHandler
 import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaStatus
 import org.jitsi.jibri.sipgateway.pjsua.util.getPjsuaStatus
 import org.jitsi.jibri.util.MonitorableProcess
-import org.jitsi.jibri.util.NameableThreadFactory
 import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
@@ -42,7 +39,6 @@ private const val CONFIG_FILE_LOCATION = "/home/jibri/pjsua.config"
 private const val X_DISPLAY = ":1"
 
 class PjsuaExecutor(
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor(NameableThreadFactory("pjsua")),
     private val processBuilder: ProcessBuilder = ProcessBuilder()
 ) : MonitorableProcess {
     private val logger = Logger.getLogger(this::class.qualifiedName)
@@ -81,7 +77,7 @@ class PjsuaExecutor(
         }
         return currentPjsuaProc?.let {
             it.start()
-            logStream(it.getOutput(), pjsuaOutputLogger, executor)
+            logStream(it.getOutput(), pjsuaOutputLogger)
             true
         } ?: run {
             false
