@@ -146,7 +146,7 @@ fun main(args: Array<String>) {
     xmppApi.start()
 
     // HttpApi
-    launchHttpServer(httpApiPort, HttpApi(jibri))
+    launchHttpServer(httpApiPort, HttpApi(jibri, jibriStatusManager))
 }
 
 fun launchHttpServer(port: Int, component: Any) {

@@ -20,7 +20,6 @@ package org.jitsi.jibri
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
-import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatus
@@ -96,7 +95,15 @@ class JibriManager(
 ) : StatusPublisher<Any>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
-    private var currentEnvironmentContext: EnvironmentContext? = null
+    /**
+     * Store some arbitrary context optionally sent in the start service request so that we can report it in our
+     * status
+     */
+    var currentEnvironmentContext: EnvironmentContext? = null
+    /**
+     * A function which will be executed the next time this Jibri is idle.  This can be used to schedule work that
+     * can't be run while a Jibri session is active
+     */
     private var pendingIdleFunc: () -> Unit = {}
     private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriManager"))
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
@@ -249,14 +256,6 @@ class JibriManager(
         pendingIdleFunc()
         pendingIdleFunc = {}
         publishStatus(ComponentBusyStatus.IDLE)
-    }
-
-    /**
-     * Returns an object describing the "health" of this Jibri
-     */
-    @Synchronized
-    fun healthCheck(): JibriHealth {
-        return JibriHealth(busy(), currentEnvironmentContext)
     }
 
     /**
