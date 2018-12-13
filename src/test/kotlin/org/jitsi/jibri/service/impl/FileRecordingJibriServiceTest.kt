@@ -28,7 +28,7 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
 import io.kotlintest.matchers.maps.shouldContainAll
-import io.kotlintest.matchers.string.contain
+import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.CallUrlInfo
@@ -125,8 +125,8 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                             Files.exists(recordingsDir) shouldBe true
                         }
                         should("start the capturer with a sink wtih the right filename") {
-                            sinkCapturer.firstValue.path should contain(recordingsDir.toString())
-                            sinkCapturer.firstValue.path should contain(callParams.callUrlInfo.callName)
+                            sinkCapturer.firstValue.path.shouldContain(recordingsDir.toString())
+                            sinkCapturer.firstValue.path.shouldContain(callParams.callUrlInfo.callName)
                         }
                     }
                     "and the recordings directory exists" {

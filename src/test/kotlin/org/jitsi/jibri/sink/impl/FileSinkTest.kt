@@ -18,8 +18,8 @@
 package org.jitsi.jibri.sink.impl
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import io.kotlintest.matchers.startWith
-import io.kotlintest.matchers.string.contain
+import io.kotlintest.matchers.string.shouldContain
+import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 
@@ -31,9 +31,9 @@ internal class FileSinkTest : ShouldSpec() {
         "when created" {
             val sink = FileSink(fs.getPath("/tmp/xxx"), "callname", "ext")
             should("have the correct path") {
-                sink.path should startWith("/tmp/xxx/")
-                sink.path should contain("callname")
-                sink.path should contain("ext")
+                sink.path.shouldStartWith("/tmp/xxx")
+                sink.path.shouldContain("callname")
+                sink.path.shouldContain("ext")
             }
             should("have the correct format") {
                 sink.format shouldBe "ext"
