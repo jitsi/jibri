@@ -62,3 +62,33 @@ class Tail(inputStream: InputStream) {
         task.cancel(true)
     }
 }
+
+/**
+ * Read every line from the given [InputStream] and invoke the
+ * [onOutput] handler with each line.
+ */
+class PublishingTail(
+        inputStream: InputStream,
+        private val onOutput: (String) -> Unit
+) {
+    private val tailLogic = TailLogic(inputStream)
+    private var task: Future<*>
+
+    init {
+        task = TaskPools.ioPool.submit {
+            while (true) {
+                tailLogic.readLine()
+                onOutput(tailLogic.mostRecentLine)
+            }
+        }
+    }
+
+    fun stop() {
+        task.cancel(true)
+    }
+
+    var mostRecentLine: String = ""
+        get() {
+            return tailLogic.mostRecentLine
+        }
+}
