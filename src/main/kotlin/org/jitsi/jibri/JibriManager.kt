@@ -231,9 +231,9 @@ class JibriManager(
             }
         }
         if (!jibriService.start()) {
-            stopService()
-            statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
             publishStatus(ComponentHealthStatus.UNHEALTHY)
+            statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
+            stopService()
             return StartServiceResult.ERROR
         }
         return StartServiceResult.SUCCESS
