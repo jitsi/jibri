@@ -24,6 +24,12 @@ import java.util.concurrent.Future
 import java.util.logging.FileHandler
 import java.util.logging.Logger
 
+class LoggingUtils {
+    companion object {
+        var createPublishingTail: (InputStream, (String) -> Unit) -> PublishingTail = ::PublishingTail
+    }
+}
+
 /**
  * A helper function to log a given [InputStream] via the given [Logger].
  * A future is returned which will be completed when the end of the given
