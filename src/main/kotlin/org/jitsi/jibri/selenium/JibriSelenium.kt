@@ -127,8 +127,6 @@ class JibriSelenium(
                 "--start-maximized",
                 "--kiosk",
                 "--enabled",
-                "--enable-logging",
-                "--vmodule=*=3",
                 "--disable-infobars",
                 "--alsa-output-device=plug:amix",
                 "--autoplay-policy=no-user-gesture-required"
