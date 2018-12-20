@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri
 
+import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
@@ -41,12 +42,14 @@ import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
 import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -195,21 +198,30 @@ class JibriManager(
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ): StartServiceResult {
         publishStatus(ComponentBusyStatus.BUSY)
+        // TODO: this will go away once the reactive work makes it up to the next layer
+        val serviceStartedFuture = CompletableFuture<Boolean>()
         if (serviceStatusHandler != null) {
-            jibriService.addStatusHandler(serviceStatusHandler)
+            jibriService.addStatusHandler { state ->
+                when (state) {
+                    is ComponentState.Error -> serviceStatusHandler(JibriServiceStatus.ERROR)
+                    is ComponentState.Finished -> serviceStatusHandler(JibriServiceStatus.FINISHED)
+                }
+            }
         }
         // The manager adds its own status handler so that it can stop
         // the error'd service and update presence appropriately
         jibriService.addStatusHandler {
             when (it) {
-                JibriServiceStatus.ERROR -> {
-                    statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
-                    publishStatus(ComponentHealthStatus.UNHEALTHY)
+                is ComponentState.Error -> {
+                    if (it.errorScope == ErrorScope.SYSTEM) {
+                        statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
+                        publishStatus(ComponentHealthStatus.UNHEALTHY)
+                    }
+                    serviceStartedFuture.complete(false)
                     stopService()
                 }
-                JibriServiceStatus.FINISHED -> {
-                    stopService()
-                }
+                is ComponentState.Finished -> stopService()
+                is ComponentState.Running -> serviceStartedFuture.complete(true)
             }
         }
 
@@ -226,13 +238,12 @@ class JibriManager(
                 }
             }
         }
-        if (!jibriService.start()) {
-            publishStatus(ComponentHealthStatus.UNHEALTHY)
-            statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
-            stopService()
-            return StartServiceResult.ERROR
+        jibriService.start()
+        return if (serviceStartedFuture.get()) {
+            StartServiceResult.SUCCESS
+        } else {
+            StartServiceResult.ERROR
         }
-        return StartServiceResult.SUCCESS
     }
 
     /**

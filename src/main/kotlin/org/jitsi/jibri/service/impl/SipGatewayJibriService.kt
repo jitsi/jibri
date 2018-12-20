@@ -97,17 +97,7 @@ class SipGatewayJibriService(
 
     private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
         logger.info("Streaming service transition from state $oldState to $newState")
-        when (newState) {
-            is ComponentState.Running -> allSubComponentsRunning.complete(true)
-            is ComponentState.Finished -> {
-                allSubComponentsRunning.complete(false)
-                publishStatus(JibriServiceStatus.FINISHED)
-            }
-            is ComponentState.Error -> {
-                allSubComponentsRunning.complete(false)
-                publishStatus(JibriServiceStatus.ERROR)
-            }
-        }
+        publishStatus(newState)
     }
 
     /**
@@ -118,14 +108,12 @@ class SipGatewayJibriService(
      * each of the displays and writing to video devices which selenium
      * and pjsua will use
      */
-    override fun start(): Boolean {
+    override fun start() {
         jibriSelenium.joinCall(
             sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
         whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
             pjsuaClient.start()
         }
-
-        return allSubComponentsRunning.get()
     }
 
     override fun stop() {

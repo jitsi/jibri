@@ -25,14 +25,12 @@ import org.jitsi.jibri.selenium.JibriSelenium2
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStateMachine
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
-import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
 private const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
@@ -75,8 +73,6 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
     private val capturer = FfmpegCapturer()
     private val sink: Sink
     private val stateMachine = JibriServiceStateMachine()
-    //TODO: this will go away once we permeate the reactive stuff to the top
-    private val allSubComponentsRunning = CompletableFuture<Boolean>()
     private val jibriSelenium = JibriSelenium2()
 
     init {
@@ -101,20 +97,10 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
 
     private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
         logger.info("Streaming service transition from state $oldState to $newState")
-        when (newState) {
-            is ComponentState.Running -> allSubComponentsRunning.complete(true)
-            is ComponentState.Finished -> {
-                allSubComponentsRunning.complete(false)
-                publishStatus(JibriServiceStatus.FINISHED)
-            }
-            is ComponentState.Error -> {
-                allSubComponentsRunning.complete(false)
-                publishStatus(JibriServiceStatus.ERROR)
-            }
-        }
+        publishStatus(newState)
     }
 
-    override fun start(): Boolean {
+    override fun start() {
         jibriSelenium.joinCall(
                 streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
                 streamingParams.callLoginParams)
@@ -132,9 +118,6 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             }
         }
         jibriSelenium.sendPresence()
-
-        println("Streaming service waiting for all sub components to start up")
-        return allSubComponentsRunning.get()
     }
 
     override fun stop() {
