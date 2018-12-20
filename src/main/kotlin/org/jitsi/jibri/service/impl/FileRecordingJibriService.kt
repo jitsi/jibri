@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
-import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer2
+import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium2
@@ -103,10 +103,10 @@ data class RecordingMetadata(
  * to a file to be replayed later.
  */
 class FileRecordingJibriService(
-    private val fileRecordingParams: FileRecordingParams,
-    private val jibriSelenium: JibriSelenium2 = JibriSelenium2(),
-    private val capturer: FfmpegCapturer2 = FfmpegCapturer2(),
-    private val processFactory: ProcessFactory = ProcessFactory()
+        private val fileRecordingParams: FileRecordingParams,
+        private val jibriSelenium: JibriSelenium2 = JibriSelenium2(),
+        private val capturer: FfmpegCapturer = FfmpegCapturer(),
+        private val processFactory: ProcessFactory = ProcessFactory()
 ) : JibriService() {
     /**
      * The [Logger] for this class
@@ -141,9 +141,9 @@ class FileRecordingJibriService(
             stateMachine.transition(state.toJibriServiceEvent(JibriSelenium2.COMPONENT_ID))
         }
 
-        stateMachine.registerSubComponent(FfmpegCapturer2.COMPONENT_ID)
+        stateMachine.registerSubComponent(FfmpegCapturer.COMPONENT_ID)
         capturer.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer2.COMPONENT_ID))
+            stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer.COMPONENT_ID))
         }
     }
 

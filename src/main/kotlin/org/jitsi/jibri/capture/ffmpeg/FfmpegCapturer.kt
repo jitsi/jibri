@@ -17,67 +17,78 @@
 
 package org.jitsi.jibri.capture.ffmpeg
 
+import org.jitsi.jibri.capture.Capturer2
+import org.jitsi.jibri.capture.UnsupportedOsException
+import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
+import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
+import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
+import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser2
+import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandLinux
+import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandMac
 import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.OsDetector
+import org.jitsi.jibri.util.OsType
+import org.jitsi.jibri.util.ProcessFailedToStart
+import org.jitsi.jibri.util.ProcessState
+import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.extensions.debug
+import java.util.logging.Logger
 
 /**
  * [FfmpegCapturer] is responsible for launching ffmpeg, capturing from the
  * configured audio and video devices, and writing to the given [Sink]
  */
-//class FfmpegCapturer(
-//    osDetector: OsDetector = OsDetector(),
-//    private val ffmpegExecutor: FfmpegExecutor = FfmpegExecutor()
-//) : Capturer {
-//    private val logger = Logger.getLogger(this::class.qualifiedName)
-//    private val getCommand: (Sink) -> List<String>
-//
-//    init {
-//        val osType = osDetector.getOsType()
-//        logger.debug("Detected os as OS: $osType")
-//        getCommand = when (osType) {
-//            OsType.MAC -> { sink: Sink -> getFfmpegCommandMac(FfmpegExecutorParams(), sink) }
-//            OsType.LINUX -> { sink: Sink -> getFfmpegCommandLinux(FfmpegExecutorParams(), sink) }
-//            else -> throw UnsupportedOsException()
-//        }
-//    }
-//
-//    /**
-//     * Start the capturer and write to the given [Sink].  Returns
-//     * true on success, false otherwise
-//     */
-//    override fun start(sink: Sink): Boolean {
-//        val command = getCommand(sink)
-//        if (!ffmpegExecutor.launchFfmpeg(command)) {
-//            return false
-//        }
-//        // Now make sure ffmpeg is actually healthy before returning that start
-//        // was successful in case it starts up (and stays alive) but fails to
-//        // start encoding successfully
-//        for (i in 1..15) {
-//            if (isHealthy()) {
-//                return true
-//            } else if (getExitCode() != null) {
-//                logger.error("Ffmpeg already exited")
-//                break
-//            }
-//            Thread.sleep(1000)
-//        }
-//        logger.error("Ffmpeg started up but did not start encoding after 15 tries, giving up")
-//        return false
-//    }
-//
-//    /**
-//     * Returns true if the capturer is healthy, false otherwise
-//     */
-//    override fun isHealthy(): Boolean = ffmpegExecutor.isHealthy()
-//
-//    /**
-//     * Returns the exit code if the capturer has exited, null if
-//     * it's still running
-//     */
-//    override fun getExitCode(): Int? = ffmpegExecutor.getExitCode()
-//
-//    /**
-//     * Stops the capturer
-//     */
-//    override fun stop() = ffmpegExecutor.stopFfmpeg()
-//}
+class FfmpegCapturer(
+    osDetector: OsDetector = OsDetector(),
+    private val ffmpegExecutor: FfmpegExecutor = FfmpegExecutor()
+) : Capturer2, StatusPublisher<ComponentState>() {
+    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val getCommand: (Sink) -> List<String>
+    private val ffmpegStatusStateMachine = FfmpegStatusStateMachine()
+
+    companion object {
+        const val COMPONENT_ID = "Ffmpeg Capturer"
+    }
+
+    init {
+        val osType = osDetector.getOsType()
+        logger.debug("Detected os as OS: $osType")
+        getCommand = when (osType) {
+            OsType.MAC -> { sink: Sink -> getFfmpegCommandMac(FfmpegExecutorParams(), sink) }
+            OsType.LINUX -> { sink: Sink -> getFfmpegCommandLinux(FfmpegExecutorParams(), sink) }
+            else -> throw UnsupportedOsException()
+        }
+        ffmpegExecutor.addStatusHandler(this::onFfmpegStateUpdate)
+        ffmpegStatusStateMachine.onStateTransition(this::onFfmpegStateChange)
+    }
+
+    /**
+     * Start the capturer and write to the given [Sink].  Returns
+     * true on success, false otherwise
+     */
+    override fun start(sink: Sink) {
+        val command = getCommand(sink)
+        ffmpegExecutor.launchFfmpeg(command)
+    }
+
+    private fun onFfmpegStateUpdate(ffmpegState: ProcessState) {
+        // We handle the case where it failed to start separately, since there is no output
+        if (ffmpegState.runningState is ProcessFailedToStart) {
+            ffmpegStatusStateMachine.transition(FfmpegEvent.ErrorLine(ErrorScope.SYSTEM, "Ffmpeg failed to start"))
+        } else {
+            val status = OutputParser2.parse(ffmpegState.mostRecentOutput)
+            ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
+        }
+    }
+
+    private fun onFfmpegStateChange(oldState: ComponentState, newState: ComponentState) {
+        logger.info("Ffmpeg transition from state $oldState to $newState")
+        publishStatus(newState)
+    }
+
+    /**
+     * Stops the capturer
+     */
+    override fun stop() = ffmpegExecutor.stopFfmpeg()
+}

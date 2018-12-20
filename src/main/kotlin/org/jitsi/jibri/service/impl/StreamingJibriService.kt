@@ -18,7 +18,7 @@
 package org.jitsi.jibri.service.impl
 
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
-import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer2
+import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium2
@@ -72,7 +72,7 @@ data class StreamingParams(
  */
 class StreamingJibriService(private val streamingParams: StreamingParams) : JibriService() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val capturer = FfmpegCapturer2()
+    private val capturer = FfmpegCapturer()
     private val sink: Sink
     private val stateMachine = JibriServiceStateMachine()
     //TODO: this will go away once we permeate the reactive stuff to the top
@@ -93,9 +93,9 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             stateMachine.transition(state.toJibriServiceEvent(JibriSelenium2.COMPONENT_ID))
         }
 
-        stateMachine.registerSubComponent(FfmpegCapturer2.COMPONENT_ID)
+        stateMachine.registerSubComponent(FfmpegCapturer.COMPONENT_ID)
         capturer.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer2.COMPONENT_ID))
+            stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer.COMPONENT_ID))
         }
     }
 
