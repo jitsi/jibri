@@ -40,6 +40,21 @@ class ComponentStateTransitioner(private val statusPublisher: StatusPublisher<Co
             true
         }
     }
+
+    /**
+     * We need a special method for the error state, since the error state is stateful and we don't use a single
+     * instance to model the state.
+     */
+    fun transitionsToError(block: () -> Unit) {
+        statusPublisher.addTemporaryHandler { state ->
+            if (state is ComponentState.Error) {
+                block()
+                return@addTemporaryHandler false
+            }
+            true
+        }
+
+    }
 }
 
 fun whenever(statusPublisher: StatusPublisher<ComponentState>): ComponentStateTransitioner =
