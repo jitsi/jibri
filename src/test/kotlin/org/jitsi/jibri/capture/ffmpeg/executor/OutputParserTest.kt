@@ -17,51 +17,78 @@
 
 package org.jitsi.jibri.capture.ffmpeg.executor
 
-import io.kotlintest.matchers.contain
-import io.kotlintest.matchers.haveKey
+import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
-import io.kotlintest.specs.StringSpec
+import io.kotlintest.specs.ShouldSpec
 
-internal class OutputParserTest : StringSpec({
-    fun verifyHelper(expectedValues: Map<String, Any>, actualValues: Map<String, Any>) {
-        actualValues.size shouldBe expectedValues.size
-        expectedValues.forEach { (field, value) ->
-            actualValues should haveKey(field)
-            actualValues should contain(field, value)
+internal class OutputParserTest : ShouldSpec() {
+    override fun isInstancePerTest(): Boolean = true
+
+    init {
+        "An encoding output line" {
+            val outputLine = "frame=   95 fps= 31 q=27.0 size=     584kB time=00:00:03.60 bitrate=1329.4kbits/s speed=1.19x"
+//            val expectedValues = mapOf(
+//                    "frame" to "95",
+//                    "fps" to "31",
+//                    "q" to "27.0",
+//                    "size" to "584kB",
+//                    "time" to "00:00:03.60",
+//                    "bitrate" to "1329.4kbits/s",
+//                    "speed" to "1.19x"
+//            )
+
+            should("be parsed correctly") {
+                val status = OutputParser.parse(outputLine)
+                status.lineType shouldBe OutputLineClassification.ENCODING
+                status.detail shouldBe outputLine
+            }
+        }
+        "A warning output line" {
+            val outputLine = "Past duration 0.622368 too large"
+            should("be parsed correctly") {
+                val status = OutputParser.parse(outputLine)
+                status.lineType shouldBe OutputLineClassification.UNKNOWN
+                status.detail.shouldBe(outputLine)
+            }
+        }
+        "An error output line" {
+            "with an error on the session scope" {
+                val outputLine = "rtmp://a.rtmp.youtube.com/live2/dkafkjlafkjhsadf: Input/output error"
+                should("be parsed correctly") {
+                    val status = OutputParser.parse(outputLine)
+                    status should beInstanceOf<FfmpegErrorStatus>()
+                    status as FfmpegErrorStatus
+                    status.detail.shouldBe(outputLine)
+                    status.errorScope shouldBe ErrorScope.SESSION
+                }
+            }
+        }
+        "An unexpected exit output line" {
+            val outputLine = "Exiting normally, received signal 15."
+            should("be parsed correctly") {
+                val status = OutputParser.parse(outputLine)
+                status should beInstanceOf<FfmpegErrorStatus>()
+                status as FfmpegErrorStatus
+                status.detail.shouldBe(outputLine)
+                status.errorScope shouldBe ErrorScope.SESSION
+            }
+        }
+        "An expected exit output line" {
+            val outputLine = "Exiting normally, received signal 2."
+            should("be parsed correctly") {
+                val status = OutputParser.parse(outputLine)
+                status.lineType shouldBe OutputLineClassification.FINISHED
+                status.detail.shouldBe(outputLine)
+            }
+        }
+        "An unknonwn output line" {
+            val outputLine = "some unknown ffmpeg status"
+            should("be parsed correctly") {
+                val status = OutputParser.parse(outputLine)
+                status.lineType shouldBe OutputLineClassification.UNKNOWN
+                status.detail.shouldBe(outputLine)
+            }
         }
     }
-
-    "parsing of a normal output line should parse all values" {
-        val outputLine = "frame=   95 fps= 31 q=27.0 size=     584kB time=00:00:03.60 bitrate=1329.4kbits/s speed=1.19x"
-        val expectedValues = mapOf(
-            "frame" to "95",
-            "fps" to "31",
-            "q" to "27.0",
-            "size" to "584kB",
-            "time" to "00:00:03.60",
-            "bitrate" to "1329.4kbits/s",
-            "speed" to "1.19x"
-        )
-
-        val result = OutputParser.parse(outputLine)
-        verifyHelper(expectedValues, result)
-    }
-
-    "parsing of a 'past duration' line should parse a warning line" {
-        val outputLine = "Past duration 0.622368 too large"
-        val result = OutputParser.parse(outputLine)
-        result.size shouldBe 1
-        result should haveKey(WARNING_KEY)
-        result should contain(
-            WARNING_KEY,
-            outputLine as Any
-        )
-    }
-
-    "an unknown line should result in no fields parsed" {
-        val outputLine = "wrong line"
-        val result = OutputParser.parse(outputLine)
-        result.size shouldBe 0
-    }
-})
+}

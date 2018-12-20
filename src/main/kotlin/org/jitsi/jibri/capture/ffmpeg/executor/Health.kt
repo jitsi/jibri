@@ -16,28 +16,37 @@
  */
 package org.jitsi.jibri.capture.ffmpeg.executor
 
-import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.decimal
-import org.jitsi.jibri.util.extensions.debug
-import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.oneOrMoreDigits
 import org.jitsi.jibri.util.oneOrMoreNonSpaces
 import org.jitsi.jibri.util.zeroOrMoreSpaces
-import java.util.logging.Logger
 import java.util.regex.Pattern
 
+enum class ErrorScope {
+    SESSION,
+    SYSTEM
+}
+
+enum class OutputLineClassification {
+    UNKNOWN,
+    ENCODING,
+    FINISHED,
+    ERROR
+}
+
 /**
- * The key (from the set of key, value pairs we parse
- * from ffmpeg's stdout output) that corresponds to
- * successful, ongoing encoding from ffmpeg. i.e.:
- * frame=123
+ * Represents a parsed line of ffmpeg's stdout output.
  */
-const val ENCODING_KEY = "frame"
+open class FfmpegOutputStatus(val lineType: OutputLineClassification, val detail: String = "") {
+    override fun toString(): String {
+        return "Line type: $lineType, detail: $detail"
+    }
+}
+
 /**
- * The key we use when inserting a warning output line
- * from ffmpeg into the map of parsed key, value pairs
- * from parsing ffmpeg's output
+ * Represents a line of ffmpeg output that indicated there was a warning.
  */
-const val WARNING_KEY = "warning"
+class FfmpegErrorStatus(val errorScope: ErrorScope, detail: String) : FfmpegOutputStatus(OutputLineClassification.ERROR, detail)
 
 /**
  * Parses the stdout output of ffmpeg to check if it's working
@@ -52,17 +61,22 @@ class OutputParser {
          * a fieldName or fieldValue).  This pattern will parse all fields from an ffmpeg output
          * string
          */
+        private const val ffmpegOutputFieldName = oneOrMoreNonSpaces
+        private const val ffmpegOutputFieldValue = oneOrMoreNonSpaces
         private const val ffmpegOutputField =
-        // The key
-        "$zeroOrMoreSpaces($oneOrMoreNonSpaces)$zeroOrMoreSpaces" +
-        "=" +
-        // The value
-        "$zeroOrMoreSpaces($oneOrMoreNonSpaces)"
+            "$zeroOrMoreSpaces($ffmpegOutputFieldName)$zeroOrMoreSpaces=$zeroOrMoreSpaces($ffmpegOutputFieldValue)"
 
+        private const val ffmpegEncodingLine = "($ffmpegOutputField)+$zeroOrMoreSpaces"
+        private const val ffmpegExitedLine = "Exiting.*signal$zeroOrMoreSpaces($oneOrMoreDigits).*"
         /**
          * ffmpeg past duration warning line
          */
         private const val ffmpegPastDuration = "Past duration $decimal too large"
+
+        /**
+         * ffmpeg bad rtmp url line
+         */
+        private const val badRtmpUrl = "rtmp://.*Input/output error"
 
         /**
          * Ffmpeg warning lines that denote a 'hiccup' (but not a failure)
@@ -71,74 +85,75 @@ class OutputParser {
             ffmpegPastDuration
         )
 
-        fun parse(outputLine: String): Map<String, Any> {
-            val result = mutableMapOf<String, Any>()
+        /**
+         * Errors are done a bit differently, as different errors have different scopes.  For example,
+         * a bad RTMP url is an error that only affects this session but an error about running out of
+         * disk space affects the entire system.  This map associates the regex of the ffmpeg error output
+         * to its scope.
+         */
+        private val errorTypes = mapOf(
+            badRtmpUrl to ErrorScope.SESSION
+        )
 
-            // First parse the output line as generic field and value fields
-            val matcher = Pattern.compile(ffmpegOutputField).matcher(outputLine)
-            while (matcher.find()) {
-                val fieldName = matcher.group(1).trim()
-                val fieldValue = matcher.group(2).trim()
-                result[fieldName] = fieldValue
-            }
-            for (warningLine in warningLines) {
-                val warningMatcher = Pattern.compile(ffmpegPastDuration).matcher(outputLine)
-                if (warningMatcher.matches()) {
-                    result[WARNING_KEY] = outputLine
-                    break
+        /**
+         * Parse [outputLine], a line of output from Ffmpeg, into an [FfmpegOutputStatus]
+         */
+        fun parse(outputLine: String): FfmpegOutputStatus {
+            // First we'll check if the output represents that ffmpeg has exited
+            val exitedMatcher = Pattern.compile(ffmpegExitedLine).matcher(outputLine)
+            if (exitedMatcher.matches()) {
+                val signal = exitedMatcher.group(1).toInt()
+                when (signal) {
+                    // 2 is the signal we pass to stop ffmpeg
+                    2 -> {
+                        return FfmpegOutputStatus(OutputLineClassification.FINISHED, outputLine)
+                    }
+                    else -> {
+                        return FfmpegErrorStatus(ErrorScope.SESSION, outputLine)
+                    }
                 }
             }
+            // Check if the output is a normal, encoding output
+            val encodingLineMatcher = Pattern.compile(ffmpegEncodingLine).matcher(outputLine)
+            if (encodingLineMatcher.matches()) {
+//                val encodingFieldsMatcher = Pattern.compile(ffmpegOutputField).matcher(outputLine)
+//                val fields = mutableMapOf<String, Any>()
+//                while (encodingFieldsMatcher.find()) {
+//                    val fieldName = encodingFieldsMatcher.group(1).trim()
+//                    val fieldValue = encodingFieldsMatcher.group(2).trim()
+//                    fields[fieldName] = fieldValue
+//                }
+                return FfmpegOutputStatus(OutputLineClassification.ENCODING, outputLine)
+            }
+            // Now we'll look for error output
+            for ((errorLine, errorScope) in errorTypes) {
+                val errorMatcher = Pattern.compile(errorLine).matcher(outputLine)
+                if (errorMatcher.matches()) {
+                    return FfmpegErrorStatus(errorScope, outputLine)
+                }
+            }
+            // Now we'll look for warning output
+//            for (warningLine in warningLines) {
+//                val warningMatcher = Pattern.compile(warningLine).matcher(outputLine)
+//                if (warningMatcher.matches()) {
+//                    //TODO: do we need a separate warning status?
+////                    return FfmpegWarningStatus(outputLine)
+//                }
+//            }
 
-            return result
-        }
-
-        fun isHealthy(outputLine: String): Boolean {
-            val parsedOutputLine = parse(outputLine)
-            return parsedOutputLine.containsKey(ENCODING_KEY) || parsedOutputLine.containsKey(WARNING_KEY)
+            return FfmpegOutputStatus(OutputLineClassification.UNKNOWN, outputLine)
         }
     }
 }
 
-enum class FfmpegStatus {
-    HEALTHY,
-    WARNING,
-    ERROR,
-    EXITED
-}
-
-fun getFfmpegStatus(process: ProcessWrapper): Pair<FfmpegStatus, String> {
-    val mostRecentLine = process.getMostRecentLine()
-    val result = OutputParser.parse(mostRecentLine)
-    val status = when {
-        !process.isAlive -> FfmpegStatus.EXITED
-        result.containsKey(ENCODING_KEY) -> FfmpegStatus.HEALTHY
-        result.containsKey(WARNING_KEY) -> FfmpegStatus.WARNING
-        else -> FfmpegStatus.ERROR
-    }
-    return Pair(status, mostRecentLine)
-}
-
-fun isFfmpegHealthy(process: ProcessWrapper?, logger: Logger): Boolean {
-    if (process == null) {
-        return false
-    }
-    val (status, mostRecentOutput) = getFfmpegStatus(process)
-    return when (status) {
-        FfmpegStatus.HEALTHY -> {
-            logger.debug("Ffmpeg appears healthy: $mostRecentOutput")
-            true
-        }
-        FfmpegStatus.WARNING -> {
-            logger.info("Ffmpeg is encoding, but issued a warning: $mostRecentOutput")
-            true
-        }
-        FfmpegStatus.ERROR -> {
-            logger.error("Ffmpeg is running but doesn't appear to be encoding: $mostRecentOutput")
-            false
-        }
-        FfmpegStatus.EXITED -> {
-            logger.error("Ffmpeg exited with code ${process.exitValue}.  Its most recent output was $mostRecentOutput")
-            false
-        }
-    }
-}
+//fun getFfmpegStatus(processState: ProcessState): ComponentStatus {
+//    val ffmpegOutputStatus = OutputParser.parse(processState.mostRecentLine)
+//    return ffmpegOutputStatus.toNewStatus(processState.runningState)
+//}
+//
+//fun ComponentStatus.isFfmpegEncoding(): Boolean {
+//    return runningState is RunningState &&
+//            status == Status.OK &&
+//            //TODO: is checking for the presence of 'frame=' reliable enough?
+//            detail?.contains("frame=", ignoreCase = true) == true
+//}
