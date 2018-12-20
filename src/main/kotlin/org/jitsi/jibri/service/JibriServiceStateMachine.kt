@@ -38,6 +38,11 @@ fun ComponentState.toJibriServiceEvent(componentId: String): JibriServiceEvent {
 
 sealed class JibriServiceSideEffect
 
+/**
+ * A state machine for the services to use to handle status updates from their subcomponents.  Subcomponents should
+ * be registered via [JibriServiceStateMachine.registerSubComponent] such that the [JibriService]'s overall state
+ * can be computed as a function of the subcomponents' states.
+ */
 class JibriServiceStateMachine : NotifyingStateMachine() {
     private val stateMachine = StateMachine.create<ComponentState, JibriServiceEvent, JibriServiceSideEffect> {
         initialState(ComponentState.StartingUp)

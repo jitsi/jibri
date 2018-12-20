@@ -22,7 +22,7 @@ import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
-import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser2
+import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser
 import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandLinux
 import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandMac
 import org.jitsi.jibri.sink.Sink
@@ -59,7 +59,8 @@ class FfmpegCapturer(
             OsType.LINUX -> { sink: Sink -> getFfmpegCommandLinux(FfmpegExecutorParams(), sink) }
             else -> throw UnsupportedOsException()
         }
-        ffmpegExecutor.addStatusHandler(this::onFfmpegStateUpdate)
+
+        ffmpegExecutor.addStatusHandler(this::onFfmpegProcessUpdate)
         ffmpegStatusStateMachine.onStateTransition(this::onFfmpegStateChange)
     }
 
@@ -72,18 +73,22 @@ class FfmpegCapturer(
         ffmpegExecutor.launchFfmpeg(command)
     }
 
-    private fun onFfmpegStateUpdate(ffmpegState: ProcessState) {
+    /**
+     * Handle a [ProcessState] update from ffmpeg by parsing it into an [FfmpegEvent] and passing it to the state
+     * machine
+     */
+    private fun onFfmpegProcessUpdate(ffmpegState: ProcessState) {
         // We handle the case where it failed to start separately, since there is no output
         if (ffmpegState.runningState is ProcessFailedToStart) {
             ffmpegStatusStateMachine.transition(FfmpegEvent.ErrorLine(ErrorScope.SYSTEM, "Ffmpeg failed to start"))
         } else {
-            val status = OutputParser2.parse(ffmpegState.mostRecentOutput)
+            val status = OutputParser.parse(ffmpegState.mostRecentOutput)
             ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
         }
     }
 
     private fun onFfmpegStateChange(oldState: ComponentState, newState: ComponentState) {
-        logger.info("Ffmpeg transition from state $oldState to $newState")
+        logger.info("Ffmpeg capturer transitioning from state $oldState to $newState")
         publishStatus(newState)
     }
 

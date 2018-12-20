@@ -18,7 +18,7 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.selenium.CallParams
-import org.jitsi.jibri.selenium.JibriSelenium2
+import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
@@ -60,7 +60,7 @@ class SipGatewayJibriService(
     /**
      * Used for the selenium interaction
      */
-    private val jibriSelenium = JibriSelenium2(
+    private val jibriSelenium = JibriSelenium(
         JibriSeleniumOptions(
             displayName = sipGatewayServiceParams.sipClientParams.displayName,
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
@@ -83,9 +83,9 @@ class SipGatewayJibriService(
     init {
         stateMachine.onStateTransition(this::onServiceStateChange)
 
-        stateMachine.registerSubComponent(JibriSelenium2.COMPONENT_ID)
+        stateMachine.registerSubComponent(JibriSelenium.COMPONENT_ID)
         jibriSelenium.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium2.COMPONENT_ID))
+            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium.COMPONENT_ID))
         }
 
         stateMachine.registerSubComponent(PjsuaClient.COMPONENT_ID)

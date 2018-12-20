@@ -26,7 +26,7 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
-import org.jitsi.jibri.selenium.JibriSelenium2
+import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStateMachine
@@ -103,7 +103,7 @@ data class RecordingMetadata(
  */
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
-    private val jibriSelenium: JibriSelenium2 = JibriSelenium2(),
+    private val jibriSelenium: JibriSelenium = JibriSelenium(),
     private val capturer: FfmpegCapturer = FfmpegCapturer(),
     private val processFactory: ProcessFactory = ProcessFactory()
 ) : JibriService() {
@@ -132,9 +132,9 @@ class FileRecordingJibriService(
 
         stateMachine.onStateTransition(this::onServiceStateChange)
 
-        stateMachine.registerSubComponent(JibriSelenium2.COMPONENT_ID)
+        stateMachine.registerSubComponent(JibriSelenium.COMPONENT_ID)
         jibriSelenium.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium2.COMPONENT_ID))
+            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium.COMPONENT_ID))
         }
 
         stateMachine.registerSubComponent(FfmpegCapturer.COMPONENT_ID)
