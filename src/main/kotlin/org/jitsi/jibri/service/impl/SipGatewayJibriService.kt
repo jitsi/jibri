@@ -23,7 +23,6 @@ import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStateMachine
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient

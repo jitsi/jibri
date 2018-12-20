@@ -30,7 +30,6 @@ import org.jitsi.jibri.selenium.JibriSelenium2
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStateMachine
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
@@ -43,7 +42,6 @@ import org.jitsi.jibri.util.whenever
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
 /**
@@ -104,10 +102,10 @@ data class RecordingMetadata(
  * to a file to be replayed later.
  */
 class FileRecordingJibriService(
-        private val fileRecordingParams: FileRecordingParams,
-        private val jibriSelenium: JibriSelenium2 = JibriSelenium2(),
-        private val capturer: FfmpegCapturer = FfmpegCapturer(),
-        private val processFactory: ProcessFactory = ProcessFactory()
+    private val fileRecordingParams: FileRecordingParams,
+    private val jibriSelenium: JibriSelenium2 = JibriSelenium2(),
+    private val capturer: FfmpegCapturer = FfmpegCapturer(),
+    private val processFactory: ProcessFactory = ProcessFactory()
 ) : JibriService() {
     /**
      * The [Logger] for this class

@@ -18,7 +18,6 @@
 package org.jitsi.jibri.sipgateway
 
 import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.util.MonitorableProcess
 import org.jitsi.jibri.util.StatusPublisher
 
 data class SipClientParams(

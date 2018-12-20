@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.capture.ffmpeg
 
-import org.jitsi.jibri.capture.Capturer2
+import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
@@ -42,7 +42,7 @@ import java.util.logging.Logger
 class FfmpegCapturer(
     osDetector: OsDetector = OsDetector(),
     private val ffmpegExecutor: FfmpegExecutor = FfmpegExecutor()
-) : Capturer2, StatusPublisher<ComponentState>() {
+) : Capturer, StatusPublisher<ComponentState>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val getCommand: (Sink) -> List<String>
     private val ffmpegStatusStateMachine = FfmpegStatusStateMachine()

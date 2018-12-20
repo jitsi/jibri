@@ -63,7 +63,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
         whenever(sink.options).thenReturn(arrayOf("option1", "option2"))
         whenever(sink.path).thenReturn("path")
 
-        whenever(ffmpegExecutor.addStatusHandler(ffmpegStateHandler.capture())).thenAnswer {  }
+        whenever(ffmpegExecutor.addStatusHandler(ffmpegStateHandler.capture())).thenAnswer { }
     }
 
     private fun createCapturer(): FfmpegCapturer {
@@ -113,7 +113,6 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                         status.errorScope shouldBe ErrorScope.SYSTEM
                     }
                 }
-
             }
             "stop" {
                 should("call stop on the executor") {

@@ -53,7 +53,6 @@ class ComponentStateTransitioner(private val statusPublisher: StatusPublisher<Co
             }
             true
         }
-
     }
 }
 

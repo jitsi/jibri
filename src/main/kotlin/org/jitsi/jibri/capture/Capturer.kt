@@ -27,13 +27,13 @@ class UnsupportedOsException(override var message: String = "Jibri does not supp
  * [MonitorableProcess] so that its state can be monitored so it can be
  * restarted if it dies.
  */
-interface Capturer : MonitorableProcess {
+interface Capturer {
     /**
      * Start the capturer with the given [Sink].  Returns
      * true if the [Capturer] was started successfully,
      * false otherwise.
      */
-    fun start(sink: Sink): Boolean
+    fun start(sink: Sink)
 
     /**
      * Stop the capturer
