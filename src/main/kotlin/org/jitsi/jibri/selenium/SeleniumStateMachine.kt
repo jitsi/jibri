@@ -22,6 +22,7 @@ import org.jitsi.jibri.status.ComponentState
 
 sealed class SeleniumEvent {
     object CallJoined : SeleniumEvent()
+    object FailedToJoinCall : SeleniumEvent()
     object CallEmpty : SeleniumEvent()
     object NoMediaReceived : SeleniumEvent()
     object ChromeHung : SeleniumEvent()
@@ -41,6 +42,9 @@ class SeleniumStateMachine {
         state<ComponentState.StartingUp> {
             on<SeleniumEvent.CallJoined> {
                 transitionTo(ComponentState.Running)
+            }
+            on<SeleniumEvent.FailedToJoinCall> {
+                transitionTo(ComponentState.Error(ErrorScope.SESSION, "Failed to join call"))
             }
         }
 

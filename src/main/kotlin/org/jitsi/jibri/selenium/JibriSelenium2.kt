@@ -216,28 +216,30 @@ class JibriSelenium2(
     /**
      * Join a a web call with Selenium
      */
-    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null): Boolean {
-        //TODO: make async?  if so, we need to delay the capturer start until after it's done
-        HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
+    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null) {
+        // These are all blocking calls, so offload the work to another thread
+        TaskPools.ioPool.submit {
+            HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
-        val localStorageValues = mutableMapOf(
-            "displayname" to jibriSeleniumOptions.displayName,
-            "email" to jibriSeleniumOptions.email,
-            "callStatsUserName" to "jibri"
-        )
-        xmppCredentials?.let {
-            localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.domain}"
-            localStorageValues["xmpp_password_override"] = xmppCredentials.password
+            val localStorageValues = mutableMapOf(
+                    "displayname" to jibriSeleniumOptions.displayName,
+                    "email" to jibriSeleniumOptions.email,
+                    "callStatsUserName" to "jibri"
+            )
+            xmppCredentials?.let {
+                localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.domain}"
+                localStorageValues["xmpp_password_override"] = xmppCredentials.password
+            }
+            setLocalStorageValues(localStorageValues)
+            if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
+                stateMachine.transition(SeleniumEvent.FailedToJoinCall)
+            } else {
+                startRecurringCallStatusChecks()
+                addParticipantTracker()
+                currCallUrl = callUrlInfo.callUrl
+                stateMachine.transition(SeleniumEvent.CallJoined)
+            }
         }
-        setLocalStorageValues(localStorageValues)
-        if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
-            return false
-        }
-        startRecurringCallStatusChecks()
-        addParticipantTracker()
-        currCallUrl = callUrlInfo.callUrl
-        stateMachine.transition(SeleniumEvent.CallJoined)
-        return true
     }
 
     fun getParticipants(): List<Map<String, Any>> {

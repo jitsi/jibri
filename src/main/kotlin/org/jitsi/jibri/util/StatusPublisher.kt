@@ -27,12 +27,19 @@ import java.util.concurrent.CopyOnWriteArrayList
  * [StatusPublisher].
  */
 open class StatusPublisher<T> {
-    private val handlers: MutableList<(T) -> Unit> = CopyOnWriteArrayList()
+    private val handlers: MutableList<(T) -> Boolean> = CopyOnWriteArrayList()
     /**
      * Add a status handler for this [StatusPublisher].  Handlers
      * will be notified synchronously in the order they were added.
      */
     fun addStatusHandler(handler: (T) -> Unit) {
+        handlers.add { status ->
+            handler(status)
+            true
+        }
+    }
+
+    fun addTemporaryHandler(handler: (T) -> Boolean) {
         handlers.add(handler)
     }
 
@@ -42,8 +49,10 @@ open class StatusPublisher<T> {
      * in the context of the thread which calls [publishStatus].
      */
     protected fun publishStatus(status: T) {
-        handlers.forEach { handler ->
-            handler(status)
-        }
+//        handlers.forEach { handler ->
+//            handler(status)
+//        }
+        // This will run all handlers, but only keep the ones that return true
+        handlers.retainAll { it(status) }
     }
 }

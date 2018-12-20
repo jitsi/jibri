@@ -31,6 +31,7 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.whenever
 import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
@@ -114,16 +115,14 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
     }
 
     override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(
+        jibriSelenium.joinCall(
                 streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
                 streamingParams.callLoginParams)
-        ) {
-            logger.error("Selenium failed to join the call")
-            return false
-        }
-        logger.info("Selenium joined the call")
 
-        capturer.start(sink)
+        whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+            logger.info("Selenium joined the call, starting capturer")
+            capturer.start(sink)
+        }
 
         jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
         jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
@@ -135,10 +134,7 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         jibriSelenium.sendPresence()
 
         println("Streaming service waiting for all sub components to start up")
-        allSubComponentsRunning.get()
-        println("Streaming service: all sub components started up")
-
-        return true
+        return allSubComponentsRunning.get()
     }
 
     override fun stop() {
