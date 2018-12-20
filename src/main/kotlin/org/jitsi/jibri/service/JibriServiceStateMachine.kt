@@ -18,6 +18,7 @@ package org.jitsi.jibri.service
 
 import com.tinder.StateMachine
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.NotifyingStateMachine
 
 sealed class JibriServiceEvent {
     class SubComponentStartingUp(val componentId: String, val subState: ComponentState.StartingUp) : JibriServiceEvent()
@@ -37,7 +38,7 @@ fun ComponentState.toJibriServiceEvent(componentId: String): JibriServiceEvent {
 
 sealed class JibriServiceSideEffect
 
-class JibriServiceStateMachine {
+class JibriServiceStateMachine : NotifyingStateMachine() {
     private val stateMachine = StateMachine.create<ComponentState, JibriServiceEvent, JibriServiceSideEffect> {
         initialState(ComponentState.StartingUp)
 
@@ -77,22 +78,15 @@ class JibriServiceStateMachine {
 
         onTransition {
             val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
-            stateTranstionHandlers.forEach { handler ->
-                handler(validTransition.fromState, validTransition.toState)
-            }
+            notify(validTransition.fromState, validTransition.toState)
         }
     }
 
-    private val stateTranstionHandlers = mutableListOf<(ComponentState, ComponentState) -> Unit>()
     private val subComponentStates = mutableMapOf<String, ComponentState>()
 
     fun registerSubComponent(componentKey: String) {
         //TODO: we'll assume everything starts in 'starting up' ?
         subComponentStates[componentKey] = ComponentState.StartingUp
-    }
-
-    fun onStateTransition(handler: (ComponentState, ComponentState) -> Unit) {
-        stateTranstionHandlers.add(handler)
     }
 
     fun transition(event: JibriServiceEvent): StateMachine.Transition<*, *, *> = stateMachine.transition(event)

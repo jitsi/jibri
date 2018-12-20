@@ -6,6 +6,7 @@ import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegErrorStatus
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegOutputStatus
 import org.jitsi.jibri.capture.ffmpeg.executor.OutputLineClassification
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.NotifyingStateMachine
 
 sealed class FfmpegEvent(val outputLine: String) {
     class EncodingLine(outputLine: String) : FfmpegEvent(outputLine)
@@ -26,10 +27,9 @@ fun FfmpegOutputStatus.toFfmpegEvent(): FfmpegEvent {
     }
 }
 
-sealed class SideEffect {
-}
+sealed class SideEffect
 
-class FfmpegStatusStateMachine {
+class FfmpegStatusStateMachine : NotifyingStateMachine() {
     private val stateMachine = StateMachine.create<ComponentState, FfmpegEvent, SideEffect> {
         initialState(ComponentState.StartingUp)
 
@@ -60,16 +60,8 @@ class FfmpegStatusStateMachine {
 
         onTransition {
             val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
-            stateTranstionHandlers.forEach { handler ->
-                handler(validTransition.fromState, validTransition.toState)
-            }
+            notify(validTransition.fromState, validTransition.toState)
         }
-    }
-
-    private val stateTranstionHandlers = mutableListOf<(ComponentState, ComponentState) -> Unit>()
-
-    fun onStateTransition(handler: (ComponentState, ComponentState) -> Unit) {
-        stateTranstionHandlers.add(handler)
     }
 
     fun transition(event: FfmpegEvent): StateMachine.Transition<*, *, *> = stateMachine.transition(event)

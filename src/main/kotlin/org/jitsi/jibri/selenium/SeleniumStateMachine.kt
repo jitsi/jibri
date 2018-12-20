@@ -19,6 +19,7 @@ package org.jitsi.jibri.selenium
 import com.tinder.StateMachine
 import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.NotifyingStateMachine
 
 sealed class SeleniumEvent {
     object CallJoined : SeleniumEvent()
@@ -28,14 +29,9 @@ sealed class SeleniumEvent {
     object ChromeHung : SeleniumEvent()
 }
 
-sealed class SideEffect {
+sealed class SideEffect
 
-}
-
-
-//TODO: write an abstract state machine which handles the state transition handlers, etc.  can also have all events
-// inherit from a single event class so that we can define the 'transition' method in the base class too?
-class SeleniumStateMachine {
+class SeleniumStateMachine : NotifyingStateMachine() {
     private val stateMachine = StateMachine.create<ComponentState, SeleniumEvent, SideEffect> {
         initialState(ComponentState.StartingUp)
 
@@ -66,16 +62,8 @@ class SeleniumStateMachine {
 
         onTransition {
             val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
-            stateTranstionHandlers.forEach { handler ->
-                handler(validTransition.fromState, validTransition.toState)
-            }
+            notify(validTransition.fromState, validTransition.toState)
         }
-    }
-
-    private val stateTranstionHandlers = mutableListOf<(ComponentState, ComponentState) -> Unit>()
-
-    fun onStateTransition(handler: (ComponentState, ComponentState) -> Unit) {
-        stateTranstionHandlers.add(handler)
     }
 
     fun transition(event: SeleniumEvent): StateMachine.Transition<*, *, *> = stateMachine.transition(event)
