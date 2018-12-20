@@ -49,7 +49,10 @@ class FfmpegCapturer2(
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val getCommand: (Sink) -> List<String>
     private val ffmpegStatusStateMachine = FfmpegStatusStateMachine()
-    private val ffmpegRunningFuture = CompletableFuture<Boolean>()
+
+    companion object {
+        const val COMPONENT_ID = "Ffmpeg Capturer"
+    }
 
     init {
         val osType = osDetector.getOsType()
@@ -74,17 +77,12 @@ class FfmpegCapturer2(
 
     private fun onFfmpegStateUpdate(ffmpegState: ProcessState) {
         val status = OutputParser2.parse(ffmpegState.mostRecentOutput)
-        println("ffmpeg capturer got ffmpeg status $status and then event ${status.toFfmpegEvent()}")
         ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
     }
 
     private fun onFfmpegStateChange(oldState: ComponentState, newState: ComponentState) {
         logger.info("Ffmpeg transition from state $oldState to $newState")
-        if (oldState != ComponentState.Running && newState == ComponentState.Running) {
-            ffmpegRunningFuture.complete(true)
-        } else if (oldState != newState) {
-            publishStatus(newState)
-        }
+        publishStatus(newState)
     }
 
     /**

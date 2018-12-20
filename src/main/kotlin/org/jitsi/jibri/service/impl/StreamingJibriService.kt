@@ -27,12 +27,16 @@ import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceStateMachine
 import org.jitsi.jibri.service.JibriServiceStatus
+import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -76,6 +80,8 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val capturer = FfmpegCapturer2()
     private val sink: Sink
+    private val stateMachine = JibriServiceStateMachine()
+    private val allSubComponentsRunning = CompletableFuture<Boolean>()
     /**
      * The handle to the scheduled process monitor task, which we use to
      * cancel the task
@@ -92,6 +98,20 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
 
         // Bubble up jibriSelenium's status
         jibriSelenium.addStatusHandler(this::publishStatus)
+        capturer.addStatusHandler { state ->
+            stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer2.COMPONENT_ID))
+        }
+
+        stateMachine.onStateTransition(this::onServiceStateChange)
+        stateMachine.registerSubComponent(FfmpegCapturer2.COMPONENT_ID)
+    }
+
+    private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
+        logger.info("Streaming service transition from state $oldState to $newState")
+        when (newState) {
+            is ComponentState.Running -> allSubComponentsRunning.complete(true)
+            is ComponentState.Error -> publishStatus(JibriServiceStatus.ERROR)
+        }
     }
 
     override fun start(): Boolean {
@@ -104,10 +124,6 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         }
         logger.info("Selenium joined the call")
         capturer.start(sink)
-//        if (!capturer.start(sink)) {
-//            logger.error("Capturer failed to start")
-//            return false
-//        }
 
         jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
         jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
@@ -118,31 +134,11 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         }
         jibriSelenium.sendPresence()
 
-//        val processMonitor = createCapturerMonitor(capturer)
-//        processMonitorTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
-        return true
-    }
+        println("Streaming service waiting for all sub components to start up")
+        allSubComponentsRunning.get()
+        println("Streaming service: all sub components started up")
 
-    private fun createCapturerMonitor(process: Capturer): ProcessMonitor {
-        var numRestarts = 0
-        return ProcessMonitor(process) { exitCode ->
-            if (exitCode != null) {
-                logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
-            } else {
-                logger.error("Capturer process is no longer healthy but it is still running, stopping it now")
-            }
-            if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
-                logger.error("Giving up on restarting the capturer")
-                publishStatus(JibriServiceStatus.ERROR)
-            } else {
-                numRestarts++
-                process.stop()
-                if (!process.start(sink)) {
-                    logger.error("Capture failed to restart, giving up")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-            }
-        }
+        return true
     }
 
     override fun stop() {
