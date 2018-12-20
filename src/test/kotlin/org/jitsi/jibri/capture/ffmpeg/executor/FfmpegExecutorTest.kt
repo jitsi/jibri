@@ -23,17 +23,20 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
 import io.kotlintest.Spec
+import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
+import io.kotlintest.matchers.types.shouldBeInstanceOf
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
+import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.ProcessStatePublisher
 import org.jitsi.jibri.util.ProcessWrapper
 
-internal class FfmpegExecutorTest2 : ShouldSpec() {
+internal class FfmpegExecutorTest : ShouldSpec() {
     override fun isInstancePerTest(): Boolean = true
     private val processFactory: ProcessFactory = mock()
     private val processWrapper: ProcessWrapper = mock()
@@ -58,11 +61,11 @@ internal class FfmpegExecutorTest2 : ShouldSpec() {
     init {
         "launching ffmpeg" {
             "without any error launching the process" {
-                val result = ffmpegExecutor.launchFfmpeg(listOf())
-                should("return true") {
-                    result shouldBe true
+                ffmpegExecutor.launchFfmpeg(listOf())
+                should("not publish any state until the proc does") {
+                    executorStateUpdates.shouldBeEmpty()
                 }
-                "and handling process updates" {
+                "when the process publishes a state" {
                     val procState = ProcessState(ProcessRunning(), "most recent output")
                     processStateHandler.firstValue(procState)
                     should("bubble up the state update") {
@@ -73,9 +76,10 @@ internal class FfmpegExecutorTest2 : ShouldSpec() {
             }
             "and the start process throwing" {
                 whenever(processWrapper.start()).thenAnswer { throw Exception() }
-                val result = ffmpegExecutor.launchFfmpeg(listOf())
-                should("return false") {
-                    result shouldBe false
+                ffmpegExecutor.launchFfmpeg(listOf())
+                should("publish a state update with the error") {
+                    executorStateUpdates.shouldNotBeEmpty()
+                    executorStateUpdates[0].runningState.shouldBeInstanceOf<ProcessFailedToStart>()
                 }
             }
         }

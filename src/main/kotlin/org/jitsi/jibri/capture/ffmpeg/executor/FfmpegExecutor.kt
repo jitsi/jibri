@@ -20,7 +20,9 @@ package org.jitsi.jibri.capture.ffmpeg.executor
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.LoggingUtils
+import org.jitsi.jibri.util.ProcessExited
 import org.jitsi.jibri.util.ProcessFactory
+import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.ProcessStatePublisher
 import org.jitsi.jibri.util.ProcessWrapper
@@ -76,22 +78,22 @@ class FfmpegExecutor(
      * Launch ffmpeg with the given [FfmpegExecutorParams] and using
      * the given [Sink]
      */
-    fun launchFfmpeg(command: List<String>): Boolean {
+    fun launchFfmpeg(command: List<String>) {
         currentFfmpegProc = processFactory.createProcess(command)
         logger.info("Starting ffmpeg with command ${command.joinToString(separator = " ")} ($command)")
-        return try {
+        try {
             currentFfmpegProc?.let {
                 it.start()
                 processStatePublisher = processStatePublisherProvider(it)
                 processStatePublisher!!.addStatusHandler(this::publishStatus)
                 processLoggerTask = LoggingUtils.logOutput(it, ffmpegOutputLogger)
             }
-            true
         } catch (t: Throwable) {
             logger.error("Error starting ffmpeg", t)
+            //TODO: need to handle this specially (don't try to parse output)
+            publishStatus(ProcessState(ProcessFailedToStart(), ""))
             // We don't need to call stop because we never successfully started
             currentFfmpegProc = null
-            false
         }
     }
 

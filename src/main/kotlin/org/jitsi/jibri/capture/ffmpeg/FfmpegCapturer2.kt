@@ -67,7 +67,7 @@ class FfmpegCapturer2(
      */
     override fun start(sink: Sink) {
         val command = getCommand(sink)
-        !ffmpegExecutor.launchFfmpeg(command)
+        ffmpegExecutor.launchFfmpeg(command)
     }
 
     private fun onFfmpegStateUpdate(ffmpegState: ProcessState) {

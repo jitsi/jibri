@@ -29,6 +29,8 @@ class ProcessExited(val exitCode: Int) : AliveState(RunningStatus.EXITED) {
     }
 }
 
+class ProcessFailedToStart() : AliveState(RunningStatus.FAILED)
+
 enum class RunningStatus {
     /**
      * The component is currently 'running'.  Note that this does not mean it _should_ still be running, i.e. its
@@ -38,5 +40,9 @@ enum class RunningStatus {
     /**
      * The process has exited
      */
-    EXITED
+    EXITED,
+    /**
+     * The process failed to start
+     */
+    FAILED
 }
