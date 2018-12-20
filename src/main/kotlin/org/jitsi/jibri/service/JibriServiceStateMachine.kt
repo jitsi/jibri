@@ -53,7 +53,7 @@ class JibriServiceStateMachine : NotifyingStateMachine() {
             }
             on<JibriServiceEvent.SubComponentRunning> {
                 subComponentStates[it.componentId] = it.subState
-                if (subComponentStates.values.all { it is ComponentState.Running  }) {
+                if (subComponentStates.values.all { it is ComponentState.Running }) {
                     transitionTo(ComponentState.Running)
                 } else {
                     dontTransition()

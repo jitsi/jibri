@@ -17,36 +17,6 @@
 
 package org.jitsi.jibri.service.impl
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.anyOrNull
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.Description
-import io.kotlintest.matchers.maps.shouldContainAll
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
-import org.jitsi.jibri.CallUrlInfo
-import org.jitsi.jibri.capture.Capturer
-import org.jitsi.jibri.config.XmppCredentials
-import org.jitsi.jibri.selenium.CallParams
-import org.jitsi.jibri.selenium.JibriSelenium
-import org.jitsi.jibri.sink.Sink
-import org.jitsi.jibri.util.ProcessFactory
-import org.jitsi.jibri.util.ProcessWrapper
-import org.jitsi.jibri.util.TaskPools
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.attribute.PosixFilePermissions
-import java.util.concurrent.ScheduledExecutorService
-
 //internal class FileRecordingJibriServiceTest : ShouldSpec() {
 //    override fun isInstancePerTest(): Boolean = true
 //

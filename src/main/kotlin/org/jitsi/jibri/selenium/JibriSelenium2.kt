@@ -21,7 +21,6 @@ import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.selenium.util.BrowserFileHandler
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
@@ -178,7 +177,7 @@ class JibriSelenium2(
                 val event = callStatusChecks
                         .asSequence()
                         .map { check -> check.run(callPage) }
-                        .firstOrNull { result -> result != null}
+                        .firstOrNull { result -> result != null }
                 if (event != null) {
                     logger.info("Recurring call status checks genereated event $event")
                     stateMachine.transition(event)

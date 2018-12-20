@@ -22,14 +22,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
-import org.jitsi.jibri.capture.Capturer
-import org.jitsi.jibri.capture.Capturer2
-import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer2
-import org.jitsi.jibri.capture.ffmpeg.executor.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
-import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSelenium2
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
@@ -40,8 +35,6 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.ProcessFactory
-import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.logStream
@@ -50,8 +43,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 /**

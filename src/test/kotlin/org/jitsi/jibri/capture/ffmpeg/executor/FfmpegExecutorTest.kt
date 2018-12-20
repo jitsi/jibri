@@ -17,86 +17,72 @@
 
 package org.jitsi.jibri.capture.ffmpeg.executor
 
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
+import io.kotlintest.Spec
+import io.kotlintest.matchers.collections.shouldNotBeEmpty
 import io.kotlintest.shouldBe
-import io.kotlintest.specs.FunSpec
-import org.jitsi.jibri.helpers.forAllOf
-import org.jitsi.jibri.helpers.seconds
-import org.jitsi.jibri.helpers.within
-import java.io.InputStream
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
+import io.kotlintest.specs.ShouldSpec
+import org.jitsi.jibri.util.LoggingUtils
+import org.jitsi.jibri.util.ProcessFactory
+import org.jitsi.jibri.util.ProcessRunning
+import org.jitsi.jibri.util.ProcessState
+import org.jitsi.jibri.util.ProcessStatePublisher
+import org.jitsi.jibri.util.ProcessWrapper
 
-internal class FfmpegExecutorTest : FunSpec() {
+internal class FfmpegExecutorTest2 : ShouldSpec() {
     override fun isInstancePerTest(): Boolean = true
-    private val processBuilder: ProcessBuilder = mock()
-    private val process: Process = mock()
-    private lateinit var processStdOutWriter: PipedOutputStream
-    private lateinit var processStdOut: InputStream
-    private lateinit var ffmpegExecutor: FfmpegExecutor
+    private val processFactory: ProcessFactory = mock()
+    private val processWrapper: ProcessWrapper = mock()
+    private val processStatePublisher: ProcessStatePublisher = mock()
+    private val ffmpegExecutor = FfmpegExecutor(processFactory, { _ -> processStatePublisher })
+    private val processStateHandler = argumentCaptor<(ProcessState) -> Unit>()
+    private val executorStateUpdates = mutableListOf<ProcessState>()
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeSpec(description: Description, spec: Spec) {
+        super.beforeSpec(description, spec)
 
-        whenever(processBuilder.start()).thenReturn(process)
-        processStdOutWriter = PipedOutputStream()
-        processStdOut = PipedInputStream(processStdOutWriter)
-        whenever(process.inputStream).thenReturn(processStdOut)
+        LoggingUtils.logOutput = { _, _ -> mock() }
 
-        ffmpegExecutor = FfmpegExecutor(processBuilder)
-    }
+        whenever(processFactory.createProcess(any(), any(), any())).thenReturn(processWrapper)
+        whenever(processStatePublisher.addStatusHandler(processStateHandler.capture())).thenAnswer { }
 
-    private fun setProcessStdOutLine(line: String) {
-        val lineToWrite = if (line.endsWith("\n")) line else "$line\n"
-        processStdOutWriter.write(lineToWrite.toByteArray())
+        ffmpegExecutor.addStatusHandler { status ->
+            executorStateUpdates.add(status)
+        }
     }
 
     init {
-        test("before ffmpeg is launched, getExitCode and isHealthy should act accordingly") {
-            ffmpegExecutor.getExitCode() shouldBe null
-            ffmpegExecutor.isHealthy() shouldBe false
-        }
-
-        test("after ffmpeg is launched and is alive, getExitCode should return null") {
-            ffmpegExecutor.launchFfmpeg(listOf())
-            whenever(process.isAlive).thenReturn(true)
-            ffmpegExecutor.getExitCode() shouldBe null
-        }
-
-        test("after ffmpeg is launched and is encoding, isHealthy should return true") {
-            ffmpegExecutor.launchFfmpeg(listOf())
-            whenever(process.isAlive).thenReturn(true)
-            setProcessStdOutLine("frame=24")
-            within(5.seconds()) {
-                ffmpegExecutor.isHealthy() shouldBe true
+        "launching ffmpeg" {
+            "without any error launching the process" {
+                val result = ffmpegExecutor.launchFfmpeg(listOf())
+                should("return true") {
+                    result shouldBe true
+                }
+                "and handling process updates" {
+                    val procState = ProcessState(ProcessRunning(), "most recent output")
+                    processStateHandler.firstValue(procState)
+                    should("bubble up the state update") {
+                        executorStateUpdates.shouldNotBeEmpty()
+                        executorStateUpdates[0] shouldBe procState
+                    }
+                }
+            }
+            "and the start process throwing" {
+                whenever(processWrapper.start()).thenAnswer { throw Exception() }
+                val result = ffmpegExecutor.launchFfmpeg(listOf())
+                should("return false") {
+                    result shouldBe false
+                }
             }
         }
-
-        test("after ffmpeg is launched and has a warning, isHealthy should return true") {
-            ffmpegExecutor.launchFfmpeg(listOf())
-            whenever(process.isAlive).thenReturn(true)
-            setProcessStdOutLine("Past duration 0.53 too large")
-            within(5.seconds()) {
-                ffmpegExecutor.isHealthy() shouldBe true
+        "calling stop before launch" {
+            should("not cause any errors") {
+                ffmpegExecutor.stopFfmpeg()
             }
-        }
-
-        test("after ffmpeg is launched and has an error, isHealthy should return false") {
-            ffmpegExecutor.launchFfmpeg(listOf())
-            setProcessStdOutLine("Error")
-            whenever(process.isAlive).thenReturn(true)
-            forAllOf(5.seconds()) {
-                ffmpegExecutor.isHealthy() shouldBe false
-            }
-        }
-
-        test("if the process dies, its exit code is returned") {
-            ffmpegExecutor.launchFfmpeg(listOf())
-            whenever(process.isAlive).thenReturn(false)
-            whenever(process.exitValue()).thenReturn(42)
-            ffmpegExecutor.getExitCode() shouldBe 42
         }
     }
 }

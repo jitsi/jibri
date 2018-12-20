@@ -66,4 +66,3 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
 
     fun transition(event: FfmpegEvent): StateMachine.Transition<*, *, *> = stateMachine.transition(event)
 }
-

@@ -89,7 +89,7 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         stateMachine.onStateTransition(this::onServiceStateChange)
 
         stateMachine.registerSubComponent(JibriSelenium2.COMPONENT_ID)
-        jibriSelenium.addStatusHandler {state ->
+        jibriSelenium.addStatusHandler { state ->
             stateMachine.transition(state.toJibriServiceEvent(JibriSelenium2.COMPONENT_ID))
         }
 
