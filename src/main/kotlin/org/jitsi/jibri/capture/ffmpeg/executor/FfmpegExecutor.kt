@@ -20,7 +20,6 @@ package org.jitsi.jibri.capture.ffmpeg.executor
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.util.LoggingUtils
-import org.jitsi.jibri.util.ProcessExited
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessState
@@ -90,10 +89,8 @@ class FfmpegExecutor(
             }
         } catch (t: Throwable) {
             logger.error("Error starting ffmpeg", t)
-            //TODO: need to handle this specially (don't try to parse output)
-            publishStatus(ProcessState(ProcessFailedToStart(), ""))
-            // We don't need to call stop because we never successfully started
             currentFfmpegProc = null
+            publishStatus(ProcessState(ProcessFailedToStart(), ""))
         }
     }
 

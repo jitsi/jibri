@@ -19,6 +19,7 @@ package org.jitsi.jibri.capture.ffmpeg
 
 import org.jitsi.jibri.capture.Capturer2
 import org.jitsi.jibri.capture.UnsupportedOsException
+import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser2
@@ -28,6 +29,7 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.OsDetector
 import org.jitsi.jibri.util.OsType
+import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.debug
@@ -71,8 +73,13 @@ class FfmpegCapturer2(
     }
 
     private fun onFfmpegStateUpdate(ffmpegState: ProcessState) {
-        val status = OutputParser2.parse(ffmpegState.mostRecentOutput)
-        ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
+        // We handle the case where it failed to start separately, since there is no output
+        if (ffmpegState.runningState is ProcessFailedToStart) {
+            ffmpegStatusStateMachine.transition(FfmpegEvent.ErrorLine(ErrorScope.SYSTEM, "Ffmpeg failed to start"))
+        } else {
+            val status = OutputParser2.parse(ffmpegState.mostRecentOutput)
+            ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
+        }
     }
 
     private fun onFfmpegStateChange(oldState: ComponentState, newState: ComponentState) {
