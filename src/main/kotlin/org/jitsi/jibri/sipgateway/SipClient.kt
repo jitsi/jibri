@@ -17,7 +17,9 @@
 
 package org.jitsi.jibri.sipgateway
 
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.MonitorableProcess
+import org.jitsi.jibri.util.StatusPublisher
 
 data class SipClientParams(
     /**
@@ -31,14 +33,14 @@ data class SipClientParams(
     val displayName: String = ""
 )
 
-interface SipClient : MonitorableProcess {
+abstract class SipClient : StatusPublisher<ComponentState>() {
     /**
      * Start the [SipClient]
      */
-    fun start(): Boolean
+    abstract fun start()
 
     /**
      * Stop the [SipClient]
      */
-    fun stop()
+    abstract fun stop()
 }

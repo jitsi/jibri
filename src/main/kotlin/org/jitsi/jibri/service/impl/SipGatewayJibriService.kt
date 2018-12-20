@@ -18,20 +18,20 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.selenium.CallParams
-import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSelenium2
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceStateMachine
 import org.jitsi.jibri.service.JibriServiceStatus
-import org.jitsi.jibri.sipgateway.SipClient
+import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
-import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.TaskPools
-import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.whenever
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 data class SipGatewayServiceParams(
@@ -61,11 +61,14 @@ class SipGatewayJibriService(
     /**
      * Used for the selenium interaction
      */
-    private val jibriSelenium = JibriSelenium(
+    private val jibriSelenium = JibriSelenium2(
         JibriSeleniumOptions(
             displayName = sipGatewayServiceParams.sipClientParams.displayName,
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
     )
+    private val stateMachine = JibriServiceStateMachine()
+    //TODO: this will go away once we permeate the reactive stuff to the top
+    private val allSubComponentsRunning = CompletableFuture<Boolean>()
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
@@ -79,8 +82,31 @@ class SipGatewayJibriService(
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
-        jibriSelenium.addStatusHandler {
-            publishStatus(it)
+        stateMachine.onStateTransition(this::onServiceStateChange)
+
+        stateMachine.registerSubComponent(JibriSelenium2.COMPONENT_ID)
+        jibriSelenium.addStatusHandler { state ->
+            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium2.COMPONENT_ID))
+        }
+
+        stateMachine.registerSubComponent(PjsuaClient.COMPONENT_ID)
+        pjsuaClient.addStatusHandler { state ->
+            stateMachine.transition(state.toJibriServiceEvent(PjsuaClient.COMPONENT_ID))
+        }
+    }
+
+    private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
+        logger.info("Streaming service transition from state $oldState to $newState")
+        when (newState) {
+            is ComponentState.Running -> allSubComponentsRunning.complete(true)
+            is ComponentState.Finished -> {
+                allSubComponentsRunning.complete(false)
+                publishStatus(JibriServiceStatus.FINISHED)
+            }
+            is ComponentState.Error -> {
+                allSubComponentsRunning.complete(false)
+                publishStatus(JibriServiceStatus.ERROR)
+            }
         }
     }
 
@@ -93,42 +119,13 @@ class SipGatewayJibriService(
      * and pjsua will use
      */
     override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(
-                sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
-        ) {
-            logger.error("Selenium failed to join the call")
-            return false
+        jibriSelenium.joinCall(
+            sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
+        whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+            pjsuaClient.start()
         }
-        if (!pjsuaClient.start()) {
-            logger.error("Pjsua failed to start")
-            return false
-        }
-        val processMonitor = createSipClientMonitor(pjsuaClient)
-        processMonitorTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
-        return true
-    }
 
-    private fun createSipClientMonitor(process: SipClient): ProcessMonitor {
-        return ProcessMonitor(process) { exitCode ->
-            when (exitCode) {
-                null -> {
-                    logger.error("SipClient process is still running but no longer healthy")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-                0 -> {
-                    logger.info("SipClient remote side hung up")
-                    publishStatus(JibriServiceStatus.FINISHED)
-                }
-                2 -> {
-                    logger.info("SipClient remote side busy")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-                else -> {
-                    logger.info("Sip client exited with code $exitCode")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-            }
-        }
+        return allSubComponentsRunning.get()
     }
 
     override fun stop() {

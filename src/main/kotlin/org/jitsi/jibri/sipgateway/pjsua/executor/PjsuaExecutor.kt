@@ -19,13 +19,16 @@ package org.jitsi.jibri.sipgateway.pjsua.executor
 
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaFileHandler
-import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaStatus
-import org.jitsi.jibri.sipgateway.pjsua.util.getPjsuaStatus
-import org.jitsi.jibri.util.MonitorableProcess
+import org.jitsi.jibri.util.LoggingUtils
+import org.jitsi.jibri.util.ProcessFactory
+import org.jitsi.jibri.util.ProcessFailedToStart
+import org.jitsi.jibri.util.ProcessState
+import org.jitsi.jibri.util.ProcessStatePublisher
 import org.jitsi.jibri.util.ProcessWrapper
-import org.jitsi.jibri.util.extensions.debug
+import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.error
-import org.jitsi.jibri.util.logStream
+import org.jitsi.jibri.util.getLoggerWithHandler
+import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
@@ -39,23 +42,25 @@ private const val CONFIG_FILE_LOCATION = "/home/jibri/pjsua.config"
 private const val X_DISPLAY = ":1"
 
 class PjsuaExecutor(
-    private val processBuilder: ProcessBuilder = ProcessBuilder()
-) : MonitorableProcess {
+    private val processFactory: ProcessFactory = ProcessFactory(),
+    private val processStatePublisherProvider: (ProcessWrapper) -> ProcessStatePublisher = ::ProcessStatePublisher
+) : StatusPublisher<ProcessState>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val pjsuaOutputLogger = Logger.getLogger("pjsua")
+    private var processLoggerTask: Future<Boolean>? = null
     /**
      * The currently active (if any) pjsua process
      */
     private var currentPjsuaProc: ProcessWrapper? = null
+    private var processStatePublisher: ProcessStatePublisher? = null
 
-    init {
-        pjsuaOutputLogger.useParentHandlers = false
-        pjsuaOutputLogger.addHandler(PjsuaFileHandler())
+    companion object {
+        private val pjsuaOutputLogger = getLoggerWithHandler("pjsua", PjsuaFileHandler())
     }
+
     /**
      * Launch pjsua with the given [PjsuaExecutorParams]
      */
-    fun launchPjsua(pjsuaExecutorParams: PjsuaExecutorParams): Boolean {
+    fun launchPjsua(pjsuaExecutorParams: PjsuaExecutorParams) {
         val command = listOf(
             "pjsua",
             "--capture-dev=$CAPTURE_DEVICE",
@@ -66,21 +71,20 @@ class PjsuaExecutor(
             "sip:${pjsuaExecutorParams.sipClientParams.sipAddress}"
         )
 
-        try {
-            currentPjsuaProc = ProcessWrapper(
+        currentPjsuaProc = processFactory.createProcess(
                 command,
-                mapOf("DISPLAY" to X_DISPLAY),
-                processBuilder)
-        } catch (t: Throwable) {
-            logger.error("Error starting pjsua: $t")
-            return false
-        }
-        return currentPjsuaProc?.let {
-            it.start()
-            logStream(it.getOutput(), pjsuaOutputLogger)
-            true
-        } ?: run {
-            false
+                mapOf("DISPLAY" to X_DISPLAY)
+        ).also {
+            try {
+                it.start()
+                processStatePublisher = processStatePublisherProvider(it)
+                processStatePublisher!!.addStatusHandler(this::publishStatus)
+                processLoggerTask = LoggingUtils.logOutput(it, pjsuaOutputLogger)
+            } catch (t: Throwable) {
+                logger.error("Error starting pjsua: $t")
+                currentPjsuaProc = null
+                publishStatus(ProcessState(ProcessFailedToStart(), ""))
+            }
         }
     }
 
@@ -89,6 +93,7 @@ class PjsuaExecutor(
      */
     fun stopPjsua() {
         logger.info("Stopping pjsua process")
+        processStatePublisher?.stop()
         currentPjsuaProc?.apply {
             stop()
             waitFor(10, TimeUnit.SECONDS)
@@ -97,30 +102,7 @@ class PjsuaExecutor(
                 destroyForcibly()
             }
         }
+        processLoggerTask?.get()
         logger.info("Pjsua exited with value ${currentPjsuaProc?.exitValue}")
-    }
-
-    override fun getExitCode(): Int? {
-        return currentPjsuaProc?.let {
-            if (it.isAlive) null else it.exitValue
-        }
-    }
-
-    override fun isHealthy(): Boolean {
-        return currentPjsuaProc?.let {
-            val (status, mostRecentOutput) = it.getPjsuaStatus()
-            return@let when (status) {
-                PjsuaStatus.HEALTHY -> {
-                    logger.debug("Pjsua appears healthy: $mostRecentOutput")
-                    true
-                }
-                PjsuaStatus.EXITED -> {
-                    logger.debug("Pjsua exited with code ${getExitCode()}: $mostRecentOutput")
-                    false
-                }
-            }
-        } ?: run {
-            false
-        }
     }
 }

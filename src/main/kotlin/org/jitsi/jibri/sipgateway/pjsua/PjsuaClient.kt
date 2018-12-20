@@ -17,23 +17,44 @@
 
 package org.jitsi.jibri.sipgateway.pjsua
 
+import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.executor.PjsuaExecutor
 import org.jitsi.jibri.sipgateway.pjsua.executor.PjsuaExecutorParams
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.ProcessExited
 
 data class PjsuaClientParams(
     val sipClientParams: SipClientParams
 )
 
-class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient {
+class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient() {
     private val pjsuaExecutor = PjsuaExecutor()
 
-    override fun start(): Boolean = pjsuaExecutor.launchPjsua(PjsuaExecutorParams(pjsuaClientParams.sipClientParams))
+    companion object {
+        const val COMPONENT_ID = "Pjsua"
+    }
+
+    init {
+        pjsuaExecutor.addStatusHandler { processState ->
+            when {
+                processState.runningState is ProcessExited -> {
+                    when (processState.runningState.exitCode) {
+                        //TODO: add detail?
+                        // Remote side hung up
+                        0 -> publishStatus(ComponentState.Finished)
+                        2 -> publishStatus(ComponentState.Error(ErrorScope.SESSION, "Remote side busy"))
+                        else -> publishStatus(ComponentState.Error(ErrorScope.SESSION, "Pjsua exited with code ${processState.runningState.exitCode}"))
+                    }
+                }
+                //TODO: i think everything else just counts as running?
+                else -> publishStatus(ComponentState.Running)
+            }
+        }
+    }
+
+    override fun start() = pjsuaExecutor.launchPjsua(PjsuaExecutorParams(pjsuaClientParams.sipClientParams))
 
     override fun stop() = pjsuaExecutor.stopPjsua()
-
-    override fun getExitCode(): Int? = pjsuaExecutor.getExitCode()
-
-    override fun isHealthy(): Boolean = pjsuaExecutor.isHealthy()
 }
