@@ -18,13 +18,10 @@
 package org.jitsi.jibri.service.impl
 
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
-import org.jitsi.jibri.capture.Capturer
-import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer2
-import org.jitsi.jibri.capture.ffmpeg.executor.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
-import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSelenium2
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStateMachine
@@ -33,12 +30,8 @@ import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 private const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
@@ -81,13 +74,9 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
     private val capturer = FfmpegCapturer2()
     private val sink: Sink
     private val stateMachine = JibriServiceStateMachine()
+    //TODO: this will go away once we permeate the reactive stuff to the top
     private val allSubComponentsRunning = CompletableFuture<Boolean>()
-    /**
-     * The handle to the scheduled process monitor task, which we use to
-     * cancel the task
-     */
-    private var processMonitorTask: ScheduledFuture<*>? = null
-    private val jibriSelenium = JibriSelenium()
+    private val jibriSelenium = JibriSelenium2()
 
     init {
         sink = StreamSink(
@@ -96,21 +85,31 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             streamingBufSize = 2 * STREAMING_MAX_BITRATE
         )
 
-        // Bubble up jibriSelenium's status
-        jibriSelenium.addStatusHandler(this::publishStatus)
+        stateMachine.onStateTransition(this::onServiceStateChange)
+
+        stateMachine.registerSubComponent(JibriSelenium2.COMPONENT_ID)
+        jibriSelenium.addStatusHandler {state ->
+            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium2.COMPONENT_ID))
+        }
+
+        stateMachine.registerSubComponent(FfmpegCapturer2.COMPONENT_ID)
         capturer.addStatusHandler { state ->
             stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer2.COMPONENT_ID))
         }
-
-        stateMachine.onStateTransition(this::onServiceStateChange)
-        stateMachine.registerSubComponent(FfmpegCapturer2.COMPONENT_ID)
     }
 
     private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
         logger.info("Streaming service transition from state $oldState to $newState")
         when (newState) {
             is ComponentState.Running -> allSubComponentsRunning.complete(true)
-            is ComponentState.Error -> publishStatus(JibriServiceStatus.ERROR)
+            is ComponentState.Finished -> {
+                allSubComponentsRunning.complete(false)
+                publishStatus(JibriServiceStatus.FINISHED)
+            }
+            is ComponentState.Error -> {
+                allSubComponentsRunning.complete(false)
+                publishStatus(JibriServiceStatus.ERROR)
+            }
         }
     }
 
@@ -123,6 +122,7 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             return false
         }
         logger.info("Selenium joined the call")
+
         capturer.start(sink)
 
         jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
@@ -142,7 +142,6 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
     }
 
     override fun stop() {
-        processMonitorTask?.cancel(false)
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Stopped capturer")

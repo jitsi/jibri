@@ -17,13 +17,10 @@
 
 package org.jitsi.jibri.capture.ffmpeg
 
-import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.Capturer2
 import org.jitsi.jibri.capture.UnsupportedOsException
-import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor2
 import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
-import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser
 import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser2
 import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandLinux
 import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandMac
@@ -34,8 +31,6 @@ import org.jitsi.jibri.util.OsType
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.debug
-import org.jitsi.jibri.util.extensions.error
-import java.util.concurrent.CompletableFuture
 import java.util.logging.Logger
 
 /**

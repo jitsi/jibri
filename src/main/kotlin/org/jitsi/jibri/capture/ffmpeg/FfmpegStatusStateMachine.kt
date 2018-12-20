@@ -73,8 +73,5 @@ class FfmpegStatusStateMachine {
     }
 
     fun transition(event: FfmpegEvent): StateMachine.Transition<*, *, *> = stateMachine.transition(event)
-
-    init {
-    }
 }
 
