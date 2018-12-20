@@ -20,6 +20,7 @@ package org.jitsi.jibri.service.impl
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer2
 import org.jitsi.jibri.capture.ffmpeg.executor.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
@@ -73,7 +74,7 @@ data class StreamingParams(
  */
 class StreamingJibriService(private val streamingParams: StreamingParams) : JibriService() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
-    private val capturer = FfmpegCapturer()
+    private val capturer = FfmpegCapturer2()
     private val sink: Sink
     /**
      * The handle to the scheduled process monitor task, which we use to
@@ -102,10 +103,11 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             return false
         }
         logger.info("Selenium joined the call")
-        if (!capturer.start(sink)) {
-            logger.error("Capturer failed to start")
-            return false
-        }
+        capturer.start(sink)
+//        if (!capturer.start(sink)) {
+//            logger.error("Capturer failed to start")
+//            return false
+//        }
 
         jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
         jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
@@ -116,8 +118,8 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
         }
         jibriSelenium.sendPresence()
 
-        val processMonitor = createCapturerMonitor(capturer)
-        processMonitorTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
+//        val processMonitor = createCapturerMonitor(capturer)
+//        processMonitorTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
         return true
     }
 

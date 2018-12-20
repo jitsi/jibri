@@ -68,8 +68,8 @@ class Tail(inputStream: InputStream) {
  * [onOutput] handler with each line.
  */
 class PublishingTail(
-        inputStream: InputStream,
-        private val onOutput: (String) -> Unit
+    inputStream: InputStream,
+    private val onOutput: (String) -> Unit
 ) {
     private val tailLogic = TailLogic(inputStream)
     private var task: Future<*>
