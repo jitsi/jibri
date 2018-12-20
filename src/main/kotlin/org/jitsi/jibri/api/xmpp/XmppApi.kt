@@ -23,19 +23,18 @@ import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqProvider
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.FileRecordingRequestParams
+import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
-import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.AppData
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams
-import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.TaskPools
@@ -55,6 +54,8 @@ import org.jxmpp.jid.parts.Resourcepart
 import java.util.logging.Logger
 
 typealias MucClientProvider = (XMPPTCPConnectionConfiguration, String) -> MucClient
+
+private class UnsupportedIqMode(val iqMode: String) : Exception()
 
 /**
  * [XmppApi] connects to XMPP MUCs according to the given [XmppEnvironmentConfig]s (which are
@@ -189,35 +190,28 @@ class XmppApi(
         TaskPools.ioPool.submit {
             val resultIq = JibriIqHelper.create(startJibriIq.from)
             resultIq.sipAddress = startJibriIq.sipAddress
+            logger.info("Starting service")
+            // If there is an issue with the service while it's running, we need to send an IQ
+            // to notify the caller who invoked the service of its status, so we'll listen
+            // for the service's status while it's running and this method will be invoked
+            // if it changes
+            val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
             try {
-                logger.info("Starting service")
-
-                // If there is an issue with the service while it's running, we need to send an IQ
-                // to notify the caller who invoked the service of its status, so we'll listen
-                // for the service's status while it's running and this method will be invoked
-                // if it changes
-                val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
-                val startServiceResult = handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
-
-                when (startServiceResult) {
-                    StartServiceResult.SUCCESS -> {
-                        resultIq.status = JibriIq.Status.ON
-                    }
-                    StartServiceResult.BUSY -> {
-                        resultIq.status = JibriIq.Status.OFF
-                        resultIq.failureReason = JibriIq.FailureReason.BUSY
-                    }
-                    StartServiceResult.ERROR -> {
-                        resultIq.status = JibriIq.Status.OFF
-                        resultIq.failureReason = JibriIq.FailureReason.ERROR
-                    }
-                }
-            } catch (e: Throwable) {
-                logger.error("Error in startService task", e)
+                handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
+            } catch (busy: JibriBusyException) {
+                logger.error("Jibri is currently busy, cannot service this request")
+                resultIq.status = JibriIq.Status.OFF
+                resultIq.failureReason = JibriIq.FailureReason.BUSY
+                mucClient.sendStanza(resultIq)
+            } catch (iq: UnsupportedIqMode) {
+                logger.error("Unsupported IQ mode: ${iq.iqMode}")
                 resultIq.status = JibriIq.Status.OFF
                 resultIq.failureReason = JibriIq.FailureReason.ERROR
-            } finally {
-                logger.info("Sending start service response iq: ${resultIq.toXML()}")
+                mucClient.sendStanza(resultIq)
+            } catch (t: Throwable) {
+                logger.error("Error starting Jibri service ", t)
+                resultIq.status = JibriIq.Status.OFF
+                resultIq.failureReason = JibriIq.FailureReason.ERROR
                 mucClient.sendStanza(resultIq)
             }
         }
@@ -227,10 +221,10 @@ class XmppApi(
         return initialResponse
     }
 
-    private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): (JibriServiceStatus) -> Unit {
-        return { serviceStatus ->
-            when (serviceStatus) {
-                JibriServiceStatus.ERROR -> {
+    private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): JibriServiceStatusHandler {
+        return { serviceState ->
+            when (serviceState) {
+                is ComponentState.Error -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
                         failureReason = JibriIq.FailureReason.ERROR
                         sipAddress = request.sipAddress
@@ -238,10 +232,17 @@ class XmppApi(
                         mucClient.sendStanza(this)
                     }
                 }
-                JibriServiceStatus.FINISHED -> {
+                is ComponentState.Finished -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
                         sipAddress = request.sipAddress
                         logger.info("Current service finished, sending off iq ${toXML()}")
+                        mucClient.sendStanza(this)
+                    }
+                }
+                is ComponentState.Running -> {
+                    with(JibriIqHelper.create(request.from, status = JibriIq.Status.ON)) {
+                        sipAddress = request.sipAddress
+                        logger.info("Current service started up successfully, sending off iq ${toXML()}")
                         mucClient.sendStanza(this)
                     }
                 }
@@ -268,7 +269,7 @@ class XmppApi(
         startIq: JibriIq,
         xmppEnvironment: XmppEnvironmentConfig,
         serviceStatusHandler: JibriServiceStatusHandler
-    ): StartServiceResult {
+    ) {
         val callUrlInfo = getCallUrlInfoFromJid(
             startIq.room,
             xmppEnvironment.stripFromRoomDomain,
@@ -281,46 +282,39 @@ class XmppApi(
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
 
-        return try {
-            when (startIq.mode()) {
-                JibriMode.FILE -> {
-                    jibriManager.startFileRecording(
-                        serviceParams,
-                        FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
-                        EnvironmentContext(xmppEnvironment.name),
-                        serviceStatusHandler
-                    )
-                }
-                JibriMode.STREAM -> {
-                    jibriManager.startStreaming(
-                        serviceParams,
-                        StreamingParams(
-                            callParams,
-                            startIq.sessionId,
-                            xmppEnvironment.callLogin,
-                            youTubeStreamKey = startIq.streamId,
-                            youTubeBroadcastId = startIq.youtubeBroadcastId),
-                        EnvironmentContext(xmppEnvironment.name),
-                        serviceStatusHandler
-                    )
-                }
-                JibriMode.SIPGW -> {
-                    jibriManager.startSipGateway(
-                        serviceParams,
-                        SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
-                        EnvironmentContext(xmppEnvironment.name),
-                        serviceStatusHandler
-                    )
-                }
-                else -> {
-                    StartServiceResult.ERROR
-                }
+        when (startIq.mode()) {
+            JibriMode.FILE -> {
+                jibriManager.startFileRecording(
+                    serviceParams,
+                    FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
+                    EnvironmentContext(xmppEnvironment.name),
+                    serviceStatusHandler
+                )
             }
-        } catch (e: Exception) {
-            logger.error("Error starting service", e)
-            jibriManager.stopService()
-            jibriStatusManager.updateHealth("XMPPAPI", ComponentHealthStatus.UNHEALTHY, e.toString())
-            StartServiceResult.ERROR
+            JibriMode.STREAM -> {
+                jibriManager.startStreaming(
+                    serviceParams,
+                    StreamingParams(
+                        callParams,
+                        startIq.sessionId,
+                        xmppEnvironment.callLogin,
+                        youTubeStreamKey = startIq.streamId,
+                        youTubeBroadcastId = startIq.youtubeBroadcastId),
+                    EnvironmentContext(xmppEnvironment.name),
+                    serviceStatusHandler
+                )
+            }
+            JibriMode.SIPGW -> {
+                jibriManager.startSipGateway(
+                    serviceParams,
+                    SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
+                    EnvironmentContext(xmppEnvironment.name),
+                    serviceStatusHandler
+                )
+            }
+            else -> {
+                throw UnsupportedIqMode(startIq.mode().toString())
+            }
         }
     }
 }

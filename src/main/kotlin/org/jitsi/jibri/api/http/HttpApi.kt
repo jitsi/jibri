@@ -20,7 +20,6 @@ package org.jitsi.jibri.api.http
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
-import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.CallParams
@@ -87,49 +86,49 @@ class HttpApi(
      * Returns a response with [Response.Status.OK] on success, [Response.Status.PRECONDITION_FAILED]
      * if this Jibri is already busy and [Response.Status.INTERNAL_SERVER_ERROR] on error
      */
-    @POST
-    @Path("startService")
-    @Consumes(MediaType.APPLICATION_JSON)
-    fun startService(startServiceParams: StartServiceParams): Response {
-        logger.debug("Got a start service request with params $startServiceParams")
-        val result = when (startServiceParams.sinkType) {
-            RecordingSinkType.FILE -> run {
-                // If it's a file recording, it must have the callLoginParams set
-                val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
-                jibriManager.startFileRecording(
-                    ServiceParams(usageTimeoutMinutes = 0),
-                    FileRecordingRequestParams(startServiceParams.callParams, startServiceParams.sessionId, callLoginParams),
-                    environmentContext = null
-                )
-            }
-            RecordingSinkType.STREAM -> run {
-                val youTubeStreamKey = startServiceParams.youTubeStreamKey ?: return@run StartServiceResult.ERROR
-                // If it's a stream, it must have the callLoginParams set
-                val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
-                jibriManager.startStreaming(
-                    ServiceParams(usageTimeoutMinutes = 0),
-                    StreamingParams(startServiceParams.callParams, startServiceParams.sessionId, callLoginParams, youTubeStreamKey),
-                    environmentContext = null
-                )
-            }
-            RecordingSinkType.GATEWAY -> run {
-                // If it's a sip gateway, it must have sipClientParams set
-                val sipClientParams = startServiceParams.sipClientParams ?: return@run StartServiceResult.ERROR
-                jibriManager.startSipGateway(
-                    ServiceParams(usageTimeoutMinutes = 0),
-                    // TODO: add session ID
-                    SipGatewayServiceParams(
-                        startServiceParams.callParams,
-                        sipClientParams)
-                    )
-            }
-        }
-        return when (result) {
-            StartServiceResult.SUCCESS -> Response.ok().build()
-            StartServiceResult.BUSY -> Response.status(Response.Status.PRECONDITION_FAILED).build()
-            StartServiceResult.ERROR -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
-        }
-    }
+//    @POST
+//    @Path("startService")
+//    @Consumes(MediaType.APPLICATION_JSON)
+//    fun startService(startServiceParams: StartServiceParams): Response {
+//        logger.debug("Got a start service request with params $startServiceParams")
+//        val result = when (startServiceParams.sinkType) {
+//            RecordingSinkType.FILE -> run {
+//                // If it's a file recording, it must have the callLoginParams set
+//                val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
+//                jibriManager.startFileRecording(
+//                    ServiceParams(usageTimeoutMinutes = 0),
+//                    FileRecordingRequestParams(startServiceParams.callParams, startServiceParams.sessionId, callLoginParams),
+//                    environmentContext = null
+//                )
+//            }
+//            RecordingSinkType.STREAM -> run {
+//                val youTubeStreamKey = startServiceParams.youTubeStreamKey ?: return@run StartServiceResult.ERROR
+//                // If it's a stream, it must have the callLoginParams set
+//                val callLoginParams = startServiceParams.callLoginParams ?: return@run StartServiceResult.ERROR
+//                jibriManager.startStreaming(
+//                    ServiceParams(usageTimeoutMinutes = 0),
+//                    StreamingParams(startServiceParams.callParams, startServiceParams.sessionId, callLoginParams, youTubeStreamKey),
+//                    environmentContext = null
+//                )
+//            }
+//            RecordingSinkType.GATEWAY -> run {
+//                // If it's a sip gateway, it must have sipClientParams set
+//                val sipClientParams = startServiceParams.sipClientParams ?: return@run StartServiceResult.ERROR
+//                jibriManager.startSipGateway(
+//                    ServiceParams(usageTimeoutMinutes = 0),
+//                    // TODO: add session ID
+//                    SipGatewayServiceParams(
+//                        startServiceParams.callParams,
+//                        sipClientParams)
+//                    )
+//            }
+//        }
+//        return when (result) {
+//            StartServiceResult.SUCCESS -> Response.ok().build()
+//            StartServiceResult.BUSY -> Response.status(Response.Status.PRECONDITION_FAILED).build()
+//            StartServiceResult.ERROR -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build()
+//        }
+//    }
 
     /**
      * [stopService] will stop the current service immediately

@@ -29,12 +29,13 @@ import io.kotlintest.specs.ShouldSpec
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.status.JibriStatusManager
-import org.jitsi.jibri.StartServiceResult
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.config.XmppMuc
 import org.jitsi.jibri.service.AppData
+import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler
@@ -112,16 +113,20 @@ class XmppApiTest : ShouldSpec() {
             "when receiving a start recording iq" {
                 val jibriIq = createJibriIq(JibriIq.Action.START, JibriIq.RecordingMode.FILE)
                 "and jibri is idle" {
-                    whenever(jibriManager.startFileRecording(any(), any(), any(), any())).thenReturn(StartServiceResult.SUCCESS)
+                    val statusHandler = argumentCaptor<JibriServiceStatusHandler>()
+                    whenever(jibriManager.startFileRecording(any(), any(), any(), statusHandler.capture())).thenAnswer { }
                     val response = iqHandler.firstValue.handleIQRequest(jibriIq)
-                    val sentStanzas = argumentCaptor<Stanza>()
-                    verify(mucClient).sendStanza(sentStanzas.capture())
                     should("send a pending response to the original IQ request") {
                         (response as JibriIq).status shouldBe JibriIq.Status.PENDING
                     }
-                    should("send a success response") {
-                        sentStanzas.allValues.size shouldBe 1
-                        (sentStanzas.firstValue as JibriIq).status shouldBe JibriIq.Status.ON
+                    "after the service status up" {
+                        statusHandler.firstValue(ComponentState.Running)
+                        should("send a success response") {
+                            val sentStanzas = argumentCaptor<Stanza>()
+                            verify(mucClient).sendStanza(sentStanzas.capture())
+                            sentStanzas.allValues.size shouldBe 1
+                            (sentStanzas.firstValue as JibriIq).status shouldBe JibriIq.Status.ON
+                        }
                     }
                 }
                 "with application data" {
@@ -138,7 +143,7 @@ class XmppApiTest : ShouldSpec() {
                     jibriIq.appData = jsonString
 
                     val serviceParams = argumentCaptor<ServiceParams>()
-                    whenever(jibriManager.startFileRecording(serviceParams.capture(), any(), any(), any())).thenReturn(StartServiceResult.SUCCESS)
+                    whenever(jibriManager.startFileRecording(serviceParams.capture(), any(), any(), any())).thenAnswer { }
                     iqHandler.firstValue.handleIQRequest(jibriIq)
                     should("parse and pass the app data") {
                         serviceParams.allValues.size shouldBe 1

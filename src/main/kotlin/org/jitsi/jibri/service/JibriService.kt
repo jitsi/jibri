@@ -50,7 +50,7 @@ data class ServiceParams(
     val appData: AppData? = null
 )
 
-typealias JibriServiceStatusHandler = (JibriServiceStatus) -> Unit
+typealias JibriServiceStatusHandler = (ComponentState) -> Unit
 
 /**
  * Interface implemented by all implemented [JibriService]s.  A [JibriService]
