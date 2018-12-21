@@ -34,10 +34,10 @@ import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
-import org.jitsi.jibri.util.logStream
 import org.jitsi.jibri.util.whenever
 import java.nio.file.Files
 import java.nio.file.Path
@@ -212,7 +212,7 @@ class FileRecordingJibriService(
             )
             with(processFactory.createProcess(finalizeCommand)) {
                 start()
-                val streamDone = logStream(getOutput(), logger)
+                val streamDone = LoggingUtils.logOutput(this, logger)
                 waitFor()
                 // Make sure we get all the logs
                 streamDone.get()

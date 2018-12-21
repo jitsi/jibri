@@ -15,7 +15,6 @@
  */
 package org.jitsi.jibri.capture.ffmpeg
 
-import org.jitsi.jibri.util.decimal
 import org.jitsi.jibri.util.oneOrMoreDigits
 import org.jitsi.jibri.util.oneOrMoreNonSpaces
 import org.jitsi.jibri.util.zeroOrMoreSpaces

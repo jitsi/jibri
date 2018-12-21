@@ -22,6 +22,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
@@ -33,6 +34,9 @@ import java.util.logging.Logger
 import kotlin.concurrent.thread
 
 internal class LoggingUtilsKtTest : FunSpec() {
+    override fun isInstancePerTest(): Boolean = true
+
+    private val process: ProcessWrapper = mock()
     private lateinit var pipedOutputStream: PipedOutputStream
     private lateinit var inputStream: PipedInputStream
     private val logger: Logger = mock()
@@ -42,11 +46,12 @@ internal class LoggingUtilsKtTest : FunSpec() {
         pipedOutputStream = PipedOutputStream()
         inputStream = PipedInputStream(pipedOutputStream)
         reset(logger)
+        whenever(process.getOutput()).thenReturn(inputStream)
     }
 
     init {
         test("logStream should write log lines to the given logger") {
-            logStream(inputStream, logger)
+            LoggingUtils.logOutput(process, logger)
             thread {
                 for (i in 0..4) {
                     pipedOutputStream.write("$i\n".toByteArray())
@@ -63,7 +68,7 @@ internal class LoggingUtilsKtTest : FunSpec() {
         }
 
         test("logStream should complete the task when EOF is reached") {
-            val streamClosed = logStream(inputStream, logger)
+            val streamClosed = LoggingUtils.logOutput(process, logger)
             thread {
                 for (i in 0..4) {
                     pipedOutputStream.write("$i\n".toByteArray())
