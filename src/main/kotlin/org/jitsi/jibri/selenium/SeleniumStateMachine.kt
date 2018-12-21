@@ -17,7 +17,7 @@
 package org.jitsi.jibri.selenium
 
 import com.tinder.StateMachine
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
+import org.jitsi.jibri.capture.ffmpeg.ErrorScope
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.NotifyingStateMachine
 

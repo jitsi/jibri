@@ -1,6 +1,6 @@
 package org.jitsi.jibri.status
 
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
+import org.jitsi.jibri.capture.ffmpeg.ErrorScope
 
 sealed class ComponentState {
     object StartingUp : ComponentState() {

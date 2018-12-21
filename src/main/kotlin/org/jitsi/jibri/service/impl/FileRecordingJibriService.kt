@@ -23,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
+import org.jitsi.jibri.capture.ffmpeg.ErrorScope
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium

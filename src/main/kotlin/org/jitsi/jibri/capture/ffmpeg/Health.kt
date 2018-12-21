@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-package org.jitsi.jibri.capture.ffmpeg.executor
+package org.jitsi.jibri.capture.ffmpeg
 
 import org.jitsi.jibri.util.decimal
 import org.jitsi.jibri.util.oneOrMoreDigits
@@ -82,7 +81,7 @@ class OutputParser {
          * Ffmpeg warning lines that denote a 'hiccup' (but not a failure)
          */
         private val warningLines = listOf(
-            ffmpegPastDuration
+                ffmpegPastDuration
         )
 
         /**

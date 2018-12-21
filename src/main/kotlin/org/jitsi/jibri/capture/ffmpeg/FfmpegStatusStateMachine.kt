@@ -1,10 +1,6 @@
 package org.jitsi.jibri.capture.ffmpeg
 
 import com.tinder.StateMachine
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
-import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegErrorStatus
-import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegOutputStatus
-import org.jitsi.jibri.capture.ffmpeg.executor.OutputLineClassification
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.NotifyingStateMachine
 

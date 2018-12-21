@@ -19,10 +19,6 @@ package org.jitsi.jibri.capture.ffmpeg
 
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.UnsupportedOsException
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
-import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser
-import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandLinux
-import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandMac
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState

@@ -32,7 +32,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.capture.UnsupportedOsException
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess

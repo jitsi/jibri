@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri
 
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
+import org.jitsi.jibri.capture.ffmpeg.ErrorScope
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext

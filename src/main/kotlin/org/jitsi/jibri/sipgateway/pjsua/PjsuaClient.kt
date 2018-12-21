@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.sipgateway.pjsua
 
-import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
+import org.jitsi.jibri.capture.ffmpeg.ErrorScope
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
