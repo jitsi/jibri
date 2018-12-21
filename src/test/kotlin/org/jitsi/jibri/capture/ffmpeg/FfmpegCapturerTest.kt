@@ -33,9 +33,9 @@ import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
-import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.OsDetector
 import org.jitsi.jibri.util.OsType
 import org.jitsi.jibri.util.ProcessExited
@@ -47,7 +47,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
     override fun isInstancePerTest(): Boolean = true
 
     private val osDetector: OsDetector = mock()
-    private val ffmpegExecutor: FfmpegExecutor = mock()
+    private val ffmpeg: JibriSubprocess = mock()
     private val ffmpegStateHandler = argumentCaptor<(ProcessState) -> Unit>()
     private val capturerStateUpdates = mutableListOf<ComponentState>()
     private val sink: Sink = mock()
@@ -63,11 +63,11 @@ internal class FfmpegCapturerTest : ShouldSpec() {
         whenever(sink.options).thenReturn(arrayOf("option1", "option2"))
         whenever(sink.path).thenReturn("path")
 
-        whenever(ffmpegExecutor.addStatusHandler(ffmpegStateHandler.capture())).thenAnswer { }
+        whenever(ffmpeg.addStatusHandler(ffmpegStateHandler.capture())).thenAnswer { }
     }
 
     private fun createCapturer(): FfmpegCapturer {
-        val capturer = FfmpegCapturer(osDetector, ffmpegExecutor)
+        val capturer = FfmpegCapturer(osDetector, ffmpeg)
         capturer.addStatusHandler { status ->
             capturerStateUpdates.add(status)
         }
@@ -80,7 +80,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
             whenever(osDetector.getOsType()).thenReturn(OsType.LINUX)
             val ffmpegCapturer = createCapturer()
             "when launching ffmpeg succeeds" {
-                whenever(ffmpegExecutor.launchFfmpeg(any())).thenAnswer {
+                whenever(ffmpeg.launch(any(), any())).thenAnswer {
                     ffmpegStateHandler.firstValue(FFMPEG_ENCODING_STATE)
                 }
                 ffmpegCapturer.start(sink)
@@ -100,7 +100,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                 }
             }
             "when ffmpeg fails to start" {
-                whenever(ffmpegExecutor.launchFfmpeg(any())).thenAnswer {
+                whenever(ffmpeg.launch(any(), any())).thenAnswer {
                     ffmpegStateHandler.firstValue(FFMPEG_FAILED_TO_START)
                 }
                 ffmpegCapturer.start(sink)
@@ -117,7 +117,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
             "stop" {
                 should("call stop on the executor") {
                     ffmpegCapturer.stop()
-                    verify(ffmpegExecutor).stopFfmpeg()
+                    verify(ffmpeg).stop()
                 }
             }
         }
@@ -128,7 +128,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                 should("be correct for linux") {
                     ffmpegCapturer.start(sink)
                     val commandCaptor = argumentCaptor<List<String>>()
-                    verify(ffmpegExecutor).launchFfmpeg(commandCaptor.capture())
+                    verify(ffmpeg).launch(commandCaptor.capture(), any())
                     commandCaptor.firstValue should contain("x11grab")
                     commandCaptor.firstValue should contain("alsa")
                     commandCaptor.firstValue should contain("option1")
@@ -143,7 +143,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                 should("be correct for mac") {
                     ffmpegCapturer.start(sink)
                     val commandCaptor = argumentCaptor<List<String>>()
-                    verify(ffmpegExecutor).launchFfmpeg(commandCaptor.capture())
+                    verify(ffmpeg).launch(commandCaptor.capture(), any())
                     commandCaptor.firstValue should contain("avfoundation")
                 }
             }
@@ -151,7 +151,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
         "on an unsupported platform" {
             whenever(osDetector.getOsType()).thenReturn(OsType.UNSUPPORTED)
             shouldThrow<UnsupportedOsException> {
-                FfmpegCapturer(osDetector, ffmpegExecutor)
+                FfmpegCapturer(osDetector, ffmpeg)
             }
         }
     }

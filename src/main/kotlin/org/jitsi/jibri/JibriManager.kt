@@ -209,6 +209,7 @@ class JibriManager(
                     stopService()
                 }
                 is ComponentState.Finished -> stopService()
+                else -> { /* No op */ }
             }
         }
 

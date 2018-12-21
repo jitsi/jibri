@@ -16,6 +16,7 @@
  */
 package org.jitsi.jibri.capture.ffmpeg.executor
 
+import org.jitsi.jibri.capture.ffmpeg.FfmpegExecutorParams
 import org.jitsi.jibri.sink.Sink
 
 fun getFfmpegCommandLinux(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): List<String> {

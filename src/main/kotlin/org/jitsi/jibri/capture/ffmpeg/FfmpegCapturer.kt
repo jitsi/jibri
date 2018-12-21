@@ -20,20 +20,42 @@ package org.jitsi.jibri.capture.ffmpeg
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
-import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutor
-import org.jitsi.jibri.capture.ffmpeg.executor.FfmpegExecutorParams
 import org.jitsi.jibri.capture.ffmpeg.executor.OutputParser
 import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandLinux
 import org.jitsi.jibri.capture.ffmpeg.executor.getFfmpegCommandMac
+import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.OsDetector
 import org.jitsi.jibri.util.OsType
 import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.debug
+import org.jitsi.jibri.util.getLoggerWithHandler
 import java.util.logging.Logger
+
+/**
+ * Parameters which will be passed to ffmpeg
+ */
+data class FfmpegExecutorParams(
+    val resolution: String = "1280x720",
+    val framerate: Int = 30,
+    val videoEncodePreset: String = "veryfast",
+    val queueSize: Int = 4096,
+    val streamingMaxBitrate: Int = 2976,
+    val streamingBufSize: Int = streamingMaxBitrate * 2,
+        // The range of the CRF scale is 0–51, where 0 is lossless,
+        // 23 is the default, and 51 is worst quality possible. A lower value
+        // generally leads to higher quality, and a subjectively sane range is
+        // 17–28. Consider 17 or 18 to be visually lossless or nearly so;
+        // it should look the same or nearly the same as the input but it
+        // isn't technically lossless.
+        // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
+    val h264ConstantRateFactor: Int = 25,
+    val gopSize: Int = framerate * 2
+)
 
 /**
  * [FfmpegCapturer] is responsible for launching ffmpeg, capturing from the
@@ -41,7 +63,7 @@ import java.util.logging.Logger
  */
 class FfmpegCapturer(
     osDetector: OsDetector = OsDetector(),
-    private val ffmpegExecutor: FfmpegExecutor = FfmpegExecutor()
+    private val ffmpeg: JibriSubprocess = JibriSubprocess("ffmpeg", ffmpegOutputLogger)
 ) : Capturer, StatusPublisher<ComponentState>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val getCommand: (Sink) -> List<String>
@@ -49,6 +71,7 @@ class FfmpegCapturer(
 
     companion object {
         const val COMPONENT_ID = "Ffmpeg Capturer"
+        private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
     }
 
     init {
@@ -60,7 +83,7 @@ class FfmpegCapturer(
             else -> throw UnsupportedOsException()
         }
 
-        ffmpegExecutor.addStatusHandler(this::onFfmpegProcessUpdate)
+        ffmpeg.addStatusHandler(this::onFfmpegProcessUpdate)
         ffmpegStatusStateMachine.onStateTransition(this::onFfmpegStateChange)
     }
 
@@ -70,7 +93,7 @@ class FfmpegCapturer(
      */
     override fun start(sink: Sink) {
         val command = getCommand(sink)
-        ffmpegExecutor.launchFfmpeg(command)
+        ffmpeg.launch(command)
     }
 
     /**
@@ -95,5 +118,5 @@ class FfmpegCapturer(
     /**
      * Stops the capturer
      */
-    override fun stop() = ffmpegExecutor.stopFfmpeg()
+    override fun stop() = ffmpeg.stop()
 }

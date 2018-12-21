@@ -20,24 +20,28 @@ package org.jitsi.jibri.sipgateway.pjsua
 import org.jitsi.jibri.capture.ffmpeg.executor.ErrorScope
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
-import org.jitsi.jibri.sipgateway.pjsua.executor.PjsuaExecutor
-import org.jitsi.jibri.sipgateway.pjsua.executor.PjsuaExecutorParams
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
 
 data class PjsuaClientParams(
     val sipClientParams: SipClientParams
 )
 
+private const val CAPTURE_DEVICE = 23
+private const val PLAYBACK_DEVICE = 24
+private const val CONFIG_FILE_LOCATION = "/home/jibri/pjsua.config"
+private const val X_DISPLAY = ":1"
+
 class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient() {
-    private val pjsuaExecutor = PjsuaExecutor()
+    private val pjsua: JibriSubprocess = JibriSubprocess("pjsua")
 
     companion object {
         const val COMPONENT_ID = "Pjsua"
     }
 
     init {
-        pjsuaExecutor.addStatusHandler { processState ->
+        pjsua.addStatusHandler { processState ->
             when {
                 processState.runningState is ProcessExited -> {
                     when (processState.runningState.exitCode) {
@@ -54,7 +58,18 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
         }
     }
 
-    override fun start() = pjsuaExecutor.launchPjsua(PjsuaExecutorParams(pjsuaClientParams.sipClientParams))
+    override fun start() {
+        val command = listOf(
+                "pjsua",
+                "--capture-dev=$CAPTURE_DEVICE",
+                "--playback-dev=$PLAYBACK_DEVICE",
+                "--id", "${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>",
+                "--config-file", CONFIG_FILE_LOCATION,
+                "--log-file", "/tmp/pjsua.out",
+                "sip:${pjsuaClientParams.sipClientParams.sipAddress}"
+        )
+        pjsua.launch(command, mapOf("DISPLAY" to X_DISPLAY))
+    }
 
-    override fun stop() = pjsuaExecutor.stopPjsua()
+    override fun stop() = pjsua.stop()
 }
