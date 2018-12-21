@@ -68,7 +68,12 @@ class ProcessStatePublisher(
             if (timeSinceLastStatusUpdate > Duration.ofSeconds(2)) {
                 logger.debug("Process $name hasn't written in 2 seconds, publishing periodic update")
                 ProcessState(processRunningState, tail.mostRecentLine).also {
-                    publishStatus(it)
+                    TaskPools.ioPool.submit {
+                        // We fire all state transitions in the ioPool, otherwise we may try and cancel the
+                        // processAliveChecks from within the thread it was executing in.  Another solution would've been
+                        // to pass 'false' to wrecurringProcessAliveTask.cancel, but it felt cleaner to separate the threads
+                        publishStatus(it)
+                    }
                 }
             }
         }
