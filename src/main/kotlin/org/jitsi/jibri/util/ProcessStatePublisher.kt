@@ -29,10 +29,10 @@ class ProcessStatePublisher(
                 ProcessExited(process.exitValue)
             }
         }
+    private val logger = Logger.getLogger("${this::class.qualifiedName}.$name")
 
     companion object {
         private val NO_OUTPUT_TIMEOUT = Duration.ofSeconds(2)
-        private val logger = Logger.getLogger(this::class.qualifiedName)
     }
 
     init {

@@ -86,11 +86,13 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
 
         stateMachine.registerSubComponent(JibriSelenium.COMPONENT_ID)
         jibriSelenium.addStatusHandler { state ->
+            logger.info("Subcomponent selenium transitioned to state $state")
             stateMachine.transition(state.toJibriServiceEvent(JibriSelenium.COMPONENT_ID))
         }
 
         stateMachine.registerSubComponent(FfmpegCapturer.COMPONENT_ID)
         capturer.addStatusHandler { state ->
+            logger.info("Subcomponent ffmpeg transitioned to state $state")
             stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer.COMPONENT_ID))
         }
     }

@@ -165,7 +165,7 @@ class JibriSelenium(
     }
 
     private fun onSeleniumStateChange(oldState: ComponentState, newState: ComponentState) {
-        logger.info("Selenium transition from state $oldState to $newState")
+        logger.info("Transitioning from state $oldState to $newState")
         publishStatus(newState)
     }
 

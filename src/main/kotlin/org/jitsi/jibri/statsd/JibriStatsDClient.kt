@@ -27,8 +27,7 @@ import java.util.logging.Logger
 /**
  * Client for pushing statsd values
  */
-class JibriStatsDClient
-    (hostname: String = "localhost", port: Int = 8125) {
+class JibriStatsDClient(hostname: String = "localhost", port: Int = 8125) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val statsd = NonBlockingStatsDClient(
         "jibri",
