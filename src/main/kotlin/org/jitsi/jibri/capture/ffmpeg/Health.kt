@@ -67,22 +67,11 @@ class OutputParser {
 
         private const val ffmpegEncodingLine = "($ffmpegOutputField)+$zeroOrMoreSpaces"
         private const val ffmpegExitedLine = "Exiting.*signal$zeroOrMoreSpaces($oneOrMoreDigits).*"
-        /**
-         * ffmpeg past duration warning line
-         */
-        private const val ffmpegPastDuration = "Past duration $decimal too large"
 
         /**
          * ffmpeg bad rtmp url line
          */
         private const val badRtmpUrl = "rtmp://.*Input/output error"
-
-        /**
-         * Ffmpeg warning lines that denote a 'hiccup' (but not a failure)
-         */
-        private val warningLines = listOf(
-                ffmpegPastDuration
-        )
 
         /**
          * Errors are done a bit differently, as different errors have different scopes.  For example,
@@ -131,28 +120,7 @@ class OutputParser {
                     return FfmpegErrorStatus(errorScope, outputLine)
                 }
             }
-            // Now we'll look for warning output
-//            for (warningLine in warningLines) {
-//                val warningMatcher = Pattern.compile(warningLine).matcher(outputLine)
-//                if (warningMatcher.matches()) {
-//                    //TODO: do we need a separate warning status?
-////                    return FfmpegWarningStatus(outputLine)
-//                }
-//            }
-
             return FfmpegOutputStatus(OutputLineClassification.UNKNOWN, outputLine)
         }
     }
 }
-
-//fun getFfmpegStatus(processState: ProcessState): ComponentStatus {
-//    val ffmpegOutputStatus = OutputParser.parse(processState.mostRecentLine)
-//    return ffmpegOutputStatus.toNewStatus(processState.runningState)
-//}
-//
-//fun ComponentStatus.isFfmpegEncoding(): Boolean {
-//    return runningState is RunningState &&
-//            status == Status.OK &&
-//            //TODO: is checking for the presence of 'frame=' reliable enough?
-//            detail?.contains("frame=", ignoreCase = true) == true
-//}
