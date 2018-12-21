@@ -207,8 +207,7 @@ class JibriSelenium(
         CallPage(chromeDriver).injectParticipantTrackerScript()
     }
 
-    fun addToPresence(key: String, value: String): Boolean =
-        CallPage(chromeDriver).addToPresence(key, value)
+    fun addToPresence(key: String, value: String): Boolean = CallPage(chromeDriver).addToPresence(key, value)
 
     fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
