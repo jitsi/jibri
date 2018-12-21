@@ -265,33 +265,6 @@ class JibriSelenium(
         logger.info("Chrome driver quit")
     }
 
-    // Below is code for the CallStatusChecks used in the recurring call status run task
-    private enum class CallStatusCheckResult {
-        /**
-         * This status means that, according to the run which returned it, the call is healthy and should continue
-         */
-        HEALTHY_ONGOING,
-        /**
-         * This status means that, according to the run which returned it, the call is healthy but should be ended
-         */
-        HEALTHY_FINISHED,
-        /**
-         * This status means that, according to the run which returned it, the call is unhealthy and should be ended
-         */
-        UNHEALTHY;
-
-        /**
-         * Returns true if this [CallStatusCheckResult] should result in the call being terminated, false
-         * otherwise
-         */
-        fun shouldTerminateCall(): Boolean = this == HEALTHY_FINISHED || this == UNHEALTHY
-
-        /**
-         * Return true if this [CallStatusCheckResult] indicates an error
-         */
-        fun isError(): Boolean = this == UNHEALTHY
-    }
-
     private interface CallStatusCheck {
         fun run(callPage: CallPage): SeleniumEvent?
     }
