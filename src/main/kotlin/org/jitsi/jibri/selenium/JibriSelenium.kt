@@ -37,6 +37,7 @@ import org.openqa.selenium.remote.CapabilityType
 import org.openqa.selenium.remote.UnreachableBrowserException
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -103,6 +104,7 @@ class JibriSelenium(
     private var chromeDriver: ChromeDriver
     private var currCallUrl: String? = null
     private val stateMachine = SeleniumStateMachine()
+    private var shuttingDown = AtomicBoolean(false)
 
     /**
      * A task which executes at an interval and checks various aspects of the call to make sure things are
@@ -168,6 +170,14 @@ class JibriSelenium(
     }
 
     private fun startRecurringCallStatusChecks() {
+        // We fire all state transitions in the ioPool, otherwise we may try and cancel the
+        // recurringCallStatusCheckTask from within the thread it was executing in.  Another solution would've been
+        // to pass 'false' to recurringCallStatusCheckTask.cancel, but it felt cleaner to separate the threads
+        val transitionState = { event: SeleniumEvent ->
+            TaskPools.ioPool.submit {
+                stateMachine.transition(event)
+            }
+        }
         recurringCallStatusCheckTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
             val callPage = CallPage(chromeDriver)
             try {
@@ -179,22 +189,23 @@ class JibriSelenium(
                         .map { check -> check.run(callPage) }
                         .firstOrNull { result -> result != null }
                 if (event != null) {
-                    logger.info("Recurring call status checks genereated event $event")
-                    stateMachine.transition(event)
+                    logger.info("Recurring call status checks generated event $event")
+                    transitionState(event)
+                }
+            } catch (t: TimeoutException) {
+                // We've found that a timeout here often implies chrome has hung so consider this as an error
+                // which will result in this Jibri being marked as unhealthy
+                logger.error("Javascript timed out, assuming chrome has hung", t)
+                transitionState(SeleniumEvent.ChromeHung)
+            } catch (t: UnreachableBrowserException) {
+                if (!shuttingDown.get()) {
+                    logger.error("Can't reach browser", t)
+                    transitionState(SeleniumEvent.ChromeHung)
                 }
             } catch (t: Throwable) {
                 logger.error("Error while running call status checks", t)
-                if (t is TimeoutException) {
-                    // We've found that a timeout here often implies chrome has hung so consider this as an error
-                    // which will result in this Jibri being marked as unhealthy
-                    logger.error("Javascript timed out, assuming chrome has hung")
-                    stateMachine.transition(SeleniumEvent.ChromeHung)
-                }
-            } catch (u: UnreachableBrowserException) {
-                //TODO: i've seen this happen when we ran checks right as we were shutting down, but maybe we'd
-                // also get it if chrome crashed?  maybe we need to have some 'shuttingDown' flag we set that
-                // we could check here to know if it's an error or to just ignore it?
-                logger.error("Check running right as we quit(?)")
+                // We'll just assume anything here is an issue
+                transitionState(SeleniumEvent.ChromeHung)
             }
         }
     }
@@ -245,6 +256,7 @@ class JibriSelenium(
     }
 
     fun leaveCallAndQuitBrowser() {
+        shuttingDown.set(true)
         recurringCallStatusCheckTask?.cancel(true)
 
         browserOutputLogger.info("Logs for call $currCallUrl")
