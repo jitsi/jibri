@@ -194,7 +194,7 @@ class JibriSelenium(
                 //TODO: i've seen this happen when we ran checks right as we were shutting down, but maybe we'd
                 // also get it if chrome crashed?  maybe we need to have some 'shuttingDown' flag we set that
                 // we could check here to know if it's an error or to just ignore it?
-                println("Check running right as we quit(?)")
+                logger.error("Check running right as we quit(?)")
             }
         }
     }
