@@ -21,7 +21,7 @@ import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.jibri.capture.ffmpeg.ErrorScope
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.capture.ffmpeg.FfmpegErrorStatus
 import org.jitsi.jibri.capture.ffmpeg.OutputLineClassification
 import org.jitsi.jibri.capture.ffmpeg.OutputParser

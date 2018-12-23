@@ -15,15 +15,11 @@
  */
 package org.jitsi.jibri.capture.ffmpeg
 
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.oneOrMoreDigits
 import org.jitsi.jibri.util.oneOrMoreNonSpaces
 import org.jitsi.jibri.util.zeroOrMoreSpaces
 import java.util.regex.Pattern
-
-enum class ErrorScope {
-    SESSION,
-    SYSTEM
-}
 
 enum class OutputLineClassification {
     UNKNOWN,

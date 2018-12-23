@@ -2,6 +2,7 @@ package org.jitsi.jibri.capture.ffmpeg
 
 import com.tinder.StateMachine
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.NotifyingStateMachine
 
 sealed class FfmpegEvent(val outputLine: String) {

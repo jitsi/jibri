@@ -22,6 +22,7 @@ import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.OsDetector
 import org.jitsi.jibri.util.OsType

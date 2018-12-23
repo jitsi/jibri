@@ -1,7 +1,5 @@
 package org.jitsi.jibri.status
 
-import org.jitsi.jibri.capture.ffmpeg.ErrorScope
-
 sealed class ComponentState {
     object StartingUp : ComponentState() {
         override fun toString(): String = "Starting up"
@@ -15,4 +13,9 @@ sealed class ComponentState {
     object Finished : ComponentState() {
         override fun toString(): String = "Finished"
     }
+}
+
+enum class ErrorScope {
+    SESSION,
+    SYSTEM
 }
