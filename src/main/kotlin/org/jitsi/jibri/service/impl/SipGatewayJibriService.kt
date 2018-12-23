@@ -29,7 +29,6 @@ import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.whenever
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ScheduledFuture
 import java.util.logging.Logger
 
@@ -66,8 +65,6 @@ class SipGatewayJibriService(
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
     )
     private val stateMachine = JibriServiceStateMachine()
-    //TODO: this will go away once we permeate the reactive stuff to the top
-    private val allSubComponentsRunning = CompletableFuture<Boolean>()
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
