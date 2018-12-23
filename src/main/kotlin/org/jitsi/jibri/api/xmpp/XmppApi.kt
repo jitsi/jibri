@@ -246,6 +246,9 @@ class XmppApi(
                         mucClient.sendStanza(this)
                     }
                 }
+                else -> {
+                    logger.info("XmppAPI ignoring service state update: $serviceState")
+                }
             }
         }
     }
