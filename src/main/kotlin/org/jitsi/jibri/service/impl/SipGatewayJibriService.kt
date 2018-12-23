@@ -22,15 +22,12 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceStateMachine
-import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.whenever
 import java.util.concurrent.ScheduledFuture
-import java.util.logging.Logger
 
 data class SipGatewayServiceParams(
     /**
@@ -51,11 +48,7 @@ data class SipGatewayServiceParams(
  */
 class SipGatewayJibriService(
     private val sipGatewayServiceParams: SipGatewayServiceParams
-) : JibriService() {
-    /**
-     * The [Logger] for this class
-     */
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+) : StatefulJibriService("SIP gateway") {
     /**
      * Used for the selenium interaction
      */
@@ -64,7 +57,6 @@ class SipGatewayJibriService(
             displayName = sipGatewayServiceParams.sipClientParams.displayName,
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
     )
-    private val stateMachine = JibriServiceStateMachine()
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
@@ -78,22 +70,8 @@ class SipGatewayJibriService(
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
-        stateMachine.onStateTransition(this::onServiceStateChange)
-
-        stateMachine.registerSubComponent(JibriSelenium.COMPONENT_ID)
-        jibriSelenium.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium.COMPONENT_ID))
-        }
-
-        stateMachine.registerSubComponent(PjsuaClient.COMPONENT_ID)
-        pjsuaClient.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(PjsuaClient.COMPONENT_ID))
-        }
-    }
-
-    private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
-        logger.info("Streaming service transition from state $oldState to $newState")
-        publishStatus(newState)
+        registerSubcomponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubcomponent(PjsuaClient.COMPONENT_ID, pjsuaClient)
     }
 
     /**

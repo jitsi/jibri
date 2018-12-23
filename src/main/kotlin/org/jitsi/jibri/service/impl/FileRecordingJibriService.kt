@@ -23,17 +23,15 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceStateMachine
-import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
@@ -42,7 +40,6 @@ import org.jitsi.jibri.util.whenever
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.logging.Logger
 
 /**
  * Parameters needed for starting a [FileRecordingJibriService]
@@ -106,16 +103,11 @@ class FileRecordingJibriService(
     private val jibriSelenium: JibriSelenium = JibriSelenium(),
     private val capturer: FfmpegCapturer = FfmpegCapturer(),
     private val processFactory: ProcessFactory = ProcessFactory()
-) : JibriService() {
-    /**
-     * The [Logger] for this class
-     */
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+) : StatefulJibriService("File recording") {
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
     private var sink: Sink
-    private val stateMachine = JibriServiceStateMachine()
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
      * be nested within [FileRecordingParams.recordingDirectory].
@@ -130,22 +122,8 @@ class FileRecordingJibriService(
             fileRecordingParams.callParams.callUrlInfo.callName
         )
 
-        stateMachine.onStateTransition(this::onServiceStateChange)
-
-        stateMachine.registerSubComponent(JibriSelenium.COMPONENT_ID)
-        jibriSelenium.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium.COMPONENT_ID))
-        }
-
-        stateMachine.registerSubComponent(FfmpegCapturer.COMPONENT_ID)
-        capturer.addStatusHandler { state ->
-            stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer.COMPONENT_ID))
-        }
-    }
-
-    private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
-        logger.info("Recording service transition from state $oldState to $newState")
-        publishStatus(newState)
+        registerSubcomponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubcomponent(FfmpegCapturer.COMPONENT_ID, capturer)
     }
 
     override fun start() {

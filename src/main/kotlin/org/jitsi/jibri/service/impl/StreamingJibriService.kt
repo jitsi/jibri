@@ -24,14 +24,11 @@ import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceStateMachine
-import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
-import java.util.logging.Logger
 
 private const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
 private const val STREAMING_MAX_BITRATE = 2976
@@ -68,11 +65,11 @@ data class StreamingParams(
  * web call, capturing its audio and video, and streaming that audio and video
  * to a url
  */
-class StreamingJibriService(private val streamingParams: StreamingParams) : JibriService() {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+class StreamingJibriService(
+    private val streamingParams: StreamingParams
+) : StatefulJibriService("Streaming") {
     private val capturer = FfmpegCapturer()
     private val sink: Sink
-    private val stateMachine = JibriServiceStateMachine()
     private val jibriSelenium = JibriSelenium()
 
     init {
@@ -82,24 +79,8 @@ class StreamingJibriService(private val streamingParams: StreamingParams) : Jibr
             streamingBufSize = 2 * STREAMING_MAX_BITRATE
         )
 
-        stateMachine.onStateTransition(this::onServiceStateChange)
-
-        stateMachine.registerSubComponent(JibriSelenium.COMPONENT_ID)
-        jibriSelenium.addStatusHandler { state ->
-            logger.info("Subcomponent selenium transitioned to state $state")
-            stateMachine.transition(state.toJibriServiceEvent(JibriSelenium.COMPONENT_ID))
-        }
-
-        stateMachine.registerSubComponent(FfmpegCapturer.COMPONENT_ID)
-        capturer.addStatusHandler { state ->
-            logger.info("Subcomponent ffmpeg transitioned to state $state")
-            stateMachine.transition(state.toJibriServiceEvent(FfmpegCapturer.COMPONENT_ID))
-        }
-    }
-
-    private fun onServiceStateChange(@Suppress("UNUSED_PARAMETER") oldState: ComponentState, newState: ComponentState) {
-        logger.info("Streaming service transition from state $oldState to $newState")
-        publishStatus(newState)
+        registerSubcomponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubcomponent(FfmpegCapturer.COMPONENT_ID, capturer)
     }
 
     override fun start() {
