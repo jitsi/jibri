@@ -86,8 +86,7 @@ class FfmpegCapturer(
     }
 
     /**
-     * Start the capturer and write to the given [Sink].  Returns
-     * true on success, false otherwise
+     * Start the capturer and write to the given [Sink].
      */
     override fun start(sink: Sink) {
         val command = getCommand(sink)

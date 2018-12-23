@@ -26,9 +26,7 @@ class UnsupportedOsException(override var message: String = "Jibri does not supp
  */
 interface Capturer {
     /**
-     * Start the capturer with the given [Sink].  Returns
-     * true if the [Capturer] was started successfully,
-     * false otherwise.
+     * Start the capturer with the given [Sink].
      */
     fun start(sink: Sink)
 

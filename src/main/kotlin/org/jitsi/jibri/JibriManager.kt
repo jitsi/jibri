@@ -118,8 +118,7 @@ class JibriManager(
 
     /**
      * Starts a [FileRecordingJibriService] to record the call described
-     * in the params to a file.  Returns a [StartServiceResult] to denote
-     * whether the service was started successfully or not.
+     * in the params to a file.
      */
     @Synchronized
     fun startFileRecording(
@@ -148,8 +147,7 @@ class JibriManager(
 
     /**
      * Starts a [StreamingJibriService] to capture the call according
-     * to [streamingParams].  Returns a [StartServiceResult] to
-     * denote whether the service was started successfully or not.
+     * to [streamingParams].
      */
     @Synchronized
     fun startStreaming(
@@ -184,8 +182,6 @@ class JibriManager(
 
     /**
      * Helper method to handle the boilerplate of starting a [JibriService].
-     * Returns a [StartServiceResult] to denote whether the service was
-     * started successfully or not.
      */
     private fun startService(
         jibriService: JibriService,
