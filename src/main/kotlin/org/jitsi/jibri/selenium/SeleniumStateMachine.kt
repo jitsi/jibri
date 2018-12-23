@@ -42,6 +42,9 @@ class SeleniumStateMachine : NotifyingStateMachine() {
             on<SeleniumEvent.FailedToJoinCall> {
                 transitionTo(ComponentState.Error(ErrorScope.SESSION, "Failed to join call"))
             }
+            on<SeleniumEvent.ChromeHung> {
+                transitionTo(ComponentState.Error(ErrorScope.SESSION, "Chrome hung"))
+            }
         }
 
         state<ComponentState.Running> {
