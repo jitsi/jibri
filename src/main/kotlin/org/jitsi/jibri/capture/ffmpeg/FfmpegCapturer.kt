@@ -82,7 +82,7 @@ class FfmpegCapturer(
         }
 
         ffmpeg.addStatusHandler(this::onFfmpegProcessUpdate)
-        ffmpegStatusStateMachine.onStateTransition(this::onFfmpegStateChange)
+        ffmpegStatusStateMachine.onStateTransition(this::onFfmpegStateMachineStateChange)
     }
 
     /**
@@ -110,7 +110,7 @@ class FfmpegCapturer(
         }
     }
 
-    private fun onFfmpegStateChange(oldState: ComponentState, newState: ComponentState) {
+    private fun onFfmpegStateMachineStateChange(oldState: ComponentState, newState: ComponentState) {
         logger.info("Ffmpeg capturer transitioning from state $oldState to $newState")
         publishStatus(newState)
     }
