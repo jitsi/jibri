@@ -242,7 +242,7 @@ class XmppApi(
                 is ComponentState.Running -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.ON)) {
                         sipAddress = request.sipAddress
-                        logger.info("Current service started up successfully, sending off iq ${toXML()}")
+                        logger.info("Current service started up successfully, sending on iq ${toXML()}")
                         mucClient.sendStanza(this)
                     }
                 }
