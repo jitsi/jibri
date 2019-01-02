@@ -59,9 +59,17 @@ class SeleniumStateMachine : NotifyingStateMachine() {
             }
         }
 
-        state<ComponentState.Error> {}
+        state<ComponentState.Error> {
+            on(any<SeleniumEvent>()) {
+                dontTransition()
+            }
+        }
 
-        state<ComponentState.Finished> {}
+        state<ComponentState.Finished> {
+            on(any<SeleniumEvent>()) {
+                dontTransition()
+            }
+        }
 
         onTransition {
             val validTransition = it as? StateMachine.Transition.Valid ?: run {

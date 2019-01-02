@@ -18,6 +18,7 @@ package org.jitsi.jibri.service
 
 import com.tinder.StateMachine
 import io.kotlintest.specs.ShouldSpec
+import com.tinder.StateMachine.Matcher.Companion.any
 
 sealed class State {
     object Off : State()
@@ -27,11 +28,15 @@ sealed class State {
 sealed class Event {
     class Event1 : Event()
     class Event2 : Event()
+    class Event3 : Event()
 }
 
 sealed class SideEffect
 
 internal class StateMachineTest : ShouldSpec() {
+    private fun event1or3() = any<Event, Event>().where {
+        (this is Event.Event1) || (this is Event.Event3)
+    }
     val stateMachine = StateMachine.create<State, Event, SideEffect> {
         initialState(State.Off)
 
@@ -47,6 +52,9 @@ internal class StateMachineTest : ShouldSpec() {
                 println("event 1")
                 transitionTo(State.On)
             }
+            on(event1or3()) {
+                dontTransition()
+            }
         }
 
         onTransition {
@@ -54,13 +62,13 @@ internal class StateMachineTest : ShouldSpec() {
                 println("invalid transition!")
                 return@onTransition
             }
-            println("valid treansition: $validTransition")
+            println("valid transition: $validTransition")
         }
     }
 
     init {
         stateMachine.transition(Event.Event1())
 
-        stateMachine.transition(Event.Event2())
+        stateMachine.transition(Event.Event3())
     }
 }

@@ -80,9 +80,17 @@ class JibriServiceStateMachine : NotifyingStateMachine() {
             }
         }
 
-        state<ComponentState.Error> {}
+        state<ComponentState.Error> {
+            on(any<JibriServiceEvent>()) {
+                dontTransition()
+            }
+        }
 
-        state<ComponentState.Finished> {}
+        state<ComponentState.Finished> {
+            on(any<JibriServiceEvent>()) {
+                dontTransition()
+            }
+        }
 
         onTransition {
             val validTransition = it as? StateMachine.Transition.Valid ?: run {

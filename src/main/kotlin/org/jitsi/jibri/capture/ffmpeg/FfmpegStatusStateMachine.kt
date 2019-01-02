@@ -76,9 +76,17 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
             }
         }
 
-        state<ComponentState.Error> {}
+        state<ComponentState.Error> {
+            on(any<FfmpegEvent>()) {
+                dontTransition()
+            }
+        }
 
-        state<ComponentState.Finished> {}
+        state<ComponentState.Finished> {
+            on(any<FfmpegEvent>()) {
+                dontTransition()
+            }
+        }
 
         onTransition {
             val validTransition = it as? StateMachine.Transition.Valid ?: run {
