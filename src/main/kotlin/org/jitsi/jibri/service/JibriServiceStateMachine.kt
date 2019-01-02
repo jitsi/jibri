@@ -64,6 +64,9 @@ class JibriServiceStateMachine : NotifyingStateMachine() {
                     dontTransition()
                 }
             }
+            on<JibriServiceEvent.SubComponentStartingUp> {
+                dontTransition()
+            }
         }
 
         state<ComponentState.Running> {
@@ -82,8 +85,12 @@ class JibriServiceStateMachine : NotifyingStateMachine() {
         state<ComponentState.Finished> {}
 
         onTransition {
-            val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
-            notify(validTransition.fromState, validTransition.toState)
+            val validTransition = it as? StateMachine.Transition.Valid ?: run {
+                throw Exception("Invalid state transition: $it")
+            }
+            if (validTransition.fromState::class != validTransition.toState::class) {
+                notify(validTransition.fromState, validTransition.toState)
+            }
         }
     }
 

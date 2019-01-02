@@ -56,14 +56,23 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
             on<FfmpegEvent.FinishLine> {
                 transitionTo(ComponentState.Finished)
             }
+            on<FfmpegEvent.OtherLine> {
+                dontTransition()
+            }
         }
 
         state<ComponentState.Running> {
+            on<FfmpegEvent.EncodingLine> {
+                dontTransition()
+            }
             on<FfmpegEvent.ErrorLine> {
                 transitionTo(ComponentState.Error(it.errorScope, it.outputLine))
             }
             on<FfmpegEvent.FinishLine> {
                 transitionTo(ComponentState.Finished)
+            }
+            on<FfmpegEvent.OtherLine> {
+                dontTransition()
             }
         }
 
@@ -72,8 +81,12 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
         state<ComponentState.Finished> {}
 
         onTransition {
-            val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
-            notify(validTransition.fromState, validTransition.toState)
+            val validTransition = it as? StateMachine.Transition.Valid ?: run {
+                throw Exception("Invalid state transition: $it")
+            }
+            if (validTransition.fromState::class != validTransition.toState::class) {
+                notify(validTransition.fromState, validTransition.toState)
+            }
         }
     }
 
