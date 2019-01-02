@@ -17,7 +17,6 @@
 
 package org.jitsi.jibri
 
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
@@ -42,6 +41,7 @@ import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
