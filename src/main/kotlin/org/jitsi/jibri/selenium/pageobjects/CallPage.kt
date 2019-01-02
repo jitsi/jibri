@@ -26,7 +26,9 @@ import org.openqa.selenium.support.ui.WebDriverWait
 import java.util.logging.Logger
 
 /**
- * Page object representing the in-call page on a jitsi-meet server
+ * Page object representing the in-call page on a jitsi-meet server.
+ * NOTE that all the calls here which execute javascript may throw (if, for example, chrome has crashed).  It is
+ * intentional that this exceptions are propagated up: the caller should handle those cases.
  */
 class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     private val logger = Logger.getLogger(this::class.qualifiedName)

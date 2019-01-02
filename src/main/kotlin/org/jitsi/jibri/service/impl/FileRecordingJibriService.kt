@@ -142,16 +142,27 @@ class FileRecordingJibriService(
             logger.info("Selenium joined the call, starting the capturer")
             capturer.start(sink)
         }
-        jibriSelenium.addToPresence("session_id", fileRecordingParams.sessionId)
-        jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
-        jibriSelenium.sendPresence()
+        try {
+            jibriSelenium.addToPresence("session_id", fileRecordingParams.sessionId)
+            jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
+            jibriSelenium.sendPresence()
+        } catch (t: Throwable) {
+            logger.error("Error while setting fields in presence", t)
+            publishStatus(ComponentState.Error(ErrorScope.SESSION, "Unable to set presence values"))
+        }
     }
 
     override fun stop() {
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")
-        val participants = jibriSelenium.getParticipants()
+        val participants = try {
+            jibriSelenium.getParticipants()
+        } catch (t: Throwable) {
+            logger.error("An error occurred while trying to get the participants list, proceeding with " +
+                    "an empty participants list", t)
+            listOf<Map<String, Any>>()
+        }
         logger.info("Participants in this recording: $participants")
         if (Files.isWritable(sessionRecordingDirectory)) {
             val metadataFile = sessionRecordingDirectory.resolve("metadata.json")
