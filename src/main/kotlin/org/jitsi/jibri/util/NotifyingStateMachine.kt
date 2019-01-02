@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,24 +12,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.jitsi.jibri.util
 
-/**
- * [MonitorableProcess] provides an interface for monitoring the status
- * of a launched process which may die (e.g. a subprocess launched)
- */
-interface MonitorableProcess {
-    /**
-     * Returns true if this [MonitorableProcess] considers
-     * itself "healthy", false otherwise
-     */
-    fun isHealthy(): Boolean
-    /**
-     * Return the exit code of this [MonitorableProcess],
-     * or null if it's still alive
-     */
-    fun getExitCode(): Int?
+import org.jitsi.jibri.status.ComponentState
+
+abstract class NotifyingStateMachine {
+    private val stateTranstionHandlers = mutableListOf<(ComponentState, ComponentState) -> Unit>()
+
+    protected fun notify(fromState: ComponentState, toState: ComponentState) {
+        stateTranstionHandlers.forEach { handler ->
+            handler(fromState, toState)
+        }
+    }
+
+    fun onStateTransition(handler: (ComponentState, ComponentState) -> Unit) {
+        stateTranstionHandlers.add(handler)
+    }
 }

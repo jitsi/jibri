@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.jitsi.jibri.selenium
@@ -22,8 +21,9 @@ import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.selenium.util.BrowserFileHandler
-import org.jitsi.jibri.service.JibriServiceStatus
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
@@ -34,10 +34,10 @@ import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
+import org.openqa.selenium.remote.UnreachableBrowserException
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -98,12 +98,13 @@ val RECORDING_URL_OPTIONS = listOf(
  * It implements [StatusPublisher] to publish its status
  */
 class JibriSelenium(
-    private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions(),
-    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-) : StatusPublisher<JibriServiceStatus>() {
+    private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions()
+) : StatusPublisher<ComponentState>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var chromeDriver: ChromeDriver
     private var currCallUrl: String? = null
+    private val stateMachine = SeleniumStateMachine()
+    private var shuttingDown = AtomicBoolean(false)
 
     /**
      * A task which executes at an interval and checks various aspects of the call to make sure things are
@@ -114,6 +115,7 @@ class JibriSelenium(
 
     companion object {
         private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
+        const val COMPONENT_ID = "Selenium"
     }
 
     /**
@@ -147,6 +149,7 @@ class JibriSelenium(
             EmptyCallStatusCheck(),
             MediaReceivedStatusCheck(logger)
         )
+        stateMachine.onStateTransition(this::onSeleniumStateChange)
     }
 
     /**
@@ -159,31 +162,48 @@ class JibriSelenium(
         }
     }
 
+    private fun onSeleniumStateChange(oldState: ComponentState, newState: ComponentState) {
+        logger.info("Transitioning from state $oldState to $newState")
+        publishStatus(newState)
+    }
+
     private fun startRecurringCallStatusChecks() {
-        recurringCallStatusCheckTask = executor.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
+        // We fire all state transitions in the ioPool, otherwise we may try and cancel the
+        // recurringCallStatusCheckTask from within the thread it was executing in.  Another solution would've been
+        // to pass 'false' to recurringCallStatusCheckTask.cancel, but it felt cleaner to separate the threads
+        val transitionState = { event: SeleniumEvent ->
+            TaskPools.ioPool.submit {
+                stateMachine.transition(event)
+            }
+        }
+        recurringCallStatusCheckTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
             val callPage = CallPage(chromeDriver)
             try {
-                callStatusCheckLoop@for (callStatusCheck in callStatusChecks) {
-                    val checkResult = callStatusCheck.run(callPage)
-                    if (checkResult.shouldTerminateCall()) {
-                        recurringCallStatusCheckTask?.cancel(false)
-                        if (checkResult.isError()) {
-                            publishStatus(JibriServiceStatus.ERROR)
-                        } else {
-                            publishStatus(JibriServiceStatus.FINISHED)
-                        }
-                        // We don't want to execute any further checks
-                        break@callStatusCheckLoop
-                    }
+                // Run through each of the checks.  If we hit one that returns an event, then we stop and process the
+                // state transition from that event. Note: it's intentional that we stop at the first check that fails
+                // and 'asSequence' is necessary to do that.
+                val event = callStatusChecks
+                        .asSequence()
+                        .map { check -> check.run(callPage) }
+                        .firstOrNull { result -> result != null }
+                if (event != null) {
+                    logger.info("Recurring call status checks generated event $event")
+                    transitionState(event)
+                }
+            } catch (t: TimeoutException) {
+                // We've found that a timeout here often implies chrome has hung so consider this as an error
+                // which will result in this Jibri being marked as unhealthy
+                logger.error("Javascript timed out, assuming chrome has hung", t)
+                transitionState(SeleniumEvent.ChromeHung)
+            } catch (t: UnreachableBrowserException) {
+                if (!shuttingDown.get()) {
+                    logger.error("Can't reach browser", t)
+                    transitionState(SeleniumEvent.ChromeHung)
                 }
             } catch (t: Throwable) {
                 logger.error("Error while running call status checks", t)
-                if (t is TimeoutException) {
-                    // We've found that a timeout here often implies chrome has hung so consider this as an error
-                    // which will result in this Jibri being marked as unhealthy
-                    logger.error("Javascript timed out, assuming chrome has hung")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
+                // We'll just assume anything here is an issue
+                transitionState(SeleniumEvent.ChromeHung)
             }
         }
     }
@@ -196,34 +216,37 @@ class JibriSelenium(
         CallPage(chromeDriver).injectParticipantTrackerScript()
     }
 
-    fun addToPresence(key: String, value: String): Boolean =
-        CallPage(chromeDriver).addToPresence(key, value)
+    fun addToPresence(key: String, value: String): Boolean = CallPage(chromeDriver).addToPresence(key, value)
 
     fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
     /**
      * Join a a web call with Selenium
      */
-    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null): Boolean {
-        HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
+    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null) {
+        // These are all blocking calls, so offload the work to another thread
+        TaskPools.ioPool.submit {
+            HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
-        val localStorageValues = mutableMapOf(
-            "displayname" to jibriSeleniumOptions.displayName,
-            "email" to jibriSeleniumOptions.email,
-            "callStatsUserName" to "jibri"
-        )
-        xmppCredentials?.let {
-            localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.domain}"
-            localStorageValues["xmpp_password_override"] = xmppCredentials.password
+            val localStorageValues = mutableMapOf(
+                    "displayname" to jibriSeleniumOptions.displayName,
+                    "email" to jibriSeleniumOptions.email,
+                    "callStatsUserName" to "jibri"
+            )
+            xmppCredentials?.let {
+                localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.domain}"
+                localStorageValues["xmpp_password_override"] = xmppCredentials.password
+            }
+            setLocalStorageValues(localStorageValues)
+            if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
+                stateMachine.transition(SeleniumEvent.FailedToJoinCall)
+            } else {
+                startRecurringCallStatusChecks()
+                addParticipantTracker()
+                currCallUrl = callUrlInfo.callUrl
+                stateMachine.transition(SeleniumEvent.CallJoined)
+            }
         }
-        setLocalStorageValues(localStorageValues)
-        if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
-            return false
-        }
-        startRecurringCallStatusChecks()
-        addParticipantTracker()
-        currCallUrl = callUrlInfo.callUrl
-        return true
     }
 
     fun getParticipants(): List<Map<String, Any>> {
@@ -231,6 +254,7 @@ class JibriSelenium(
     }
 
     fun leaveCallAndQuitBrowser() {
+        shuttingDown.set(true)
         recurringCallStatusCheckTask?.cancel(true)
 
         browserOutputLogger.info("Logs for call $currCallUrl")
@@ -250,40 +274,21 @@ class JibriSelenium(
         logger.info("Chrome driver quit")
     }
 
-    // Below is code for the CallStatusChecks used in the recurring call status run task
-    private enum class CallStatusCheckResult {
-        /**
-         * This status means that, according to the run which returned it, the call is healthy and should continue
-         */
-        HEALTHY_ONGOING,
-        /**
-         * This status means that, according to the run which returned it, the call is healthy but should be ended
-         */
-        HEALTHY_FINISHED,
-        /**
-         * This status means that, according to the run which returned it, the call is unhealthy and should be ended
-         */
-        UNHEALTHY;
-
-        /**
-         * Returns true if this [CallStatusCheckResult] should result in the call being terminated, false
-         * otherwise
-         */
-        fun shouldTerminateCall(): Boolean = this == HEALTHY_FINISHED || this == UNHEALTHY
-
-        /**
-         * Return true if this [CallStatusCheckResult] indicates an error
-         */
-        fun isError(): Boolean = this == UNHEALTHY
-    }
-
+    /**
+     * [CallStatusCheck]s are executed periodically and perform checks via javascripe on the call page to make sure
+     * everything is running correctly.
+     */
     private interface CallStatusCheck {
-        fun run(callPage: CallPage): CallStatusCheckResult
+        /**
+         * Run a check via [callPage], return a [SeleniumEvent] if something notable has been detected (i.e. an error),
+         * null if whatever the check is looking for was fine.
+         */
+        fun run(callPage: CallPage): SeleniumEvent?
     }
 
     private class EmptyCallStatusCheck : CallStatusCheck {
         private var numTimesEmpty = 0
-        override fun run(callPage: CallPage): CallStatusCheckResult {
+        override fun run(callPage: CallPage): SeleniumEvent? {
             // >1 since the count will include jibri itself
             if (callPage.getNumParticipants() > 1) {
                 numTimesEmpty = 0
@@ -291,15 +296,15 @@ class JibriSelenium(
                 numTimesEmpty++
             }
             if (numTimesEmpty >= 2) {
-                return CallStatusCheckResult.HEALTHY_FINISHED
+                return SeleniumEvent.CallEmpty
             }
-            return CallStatusCheckResult.HEALTHY_ONGOING
+            return null
         }
     }
 
     private class MediaReceivedStatusCheck(private val logger: Logger) : CallStatusCheck {
         private var numTimesNoMedia = 0
-        override fun run(callPage: CallPage): CallStatusCheckResult {
+        override fun run(callPage: CallPage): SeleniumEvent? {
             val bitrates = callPage.getBitrates()
             logger.info("Jibri client receive bitrates: $bitrates")
             val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
@@ -309,9 +314,9 @@ class JibriSelenium(
                 numTimesNoMedia = 0
             }
             if (numTimesNoMedia >= 2) {
-                return CallStatusCheckResult.UNHEALTHY
+                return SeleniumEvent.NoMediaReceived
             }
-            return CallStatusCheckResult.HEALTHY_ONGOING
+            return null
         }
     }
 }

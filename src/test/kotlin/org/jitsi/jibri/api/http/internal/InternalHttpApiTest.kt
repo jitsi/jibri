@@ -24,6 +24,7 @@ import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
+import org.jitsi.jibri.util.TaskPools
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 
@@ -35,6 +36,7 @@ class InternalHttpApiTest : ShouldSpec() {
         super.beforeTest(description)
         reset(executor, future)
         whenever(executor.schedule(any(), any(), any())).thenReturn(future)
+        TaskPools.recurringTasksPool = executor
     }
 
     init {
@@ -44,7 +46,7 @@ class InternalHttpApiTest : ShouldSpec() {
                 val gracefulShutdownHandler = {
                     gracefulShutdownHandlerCalled = true
                 }
-                val internalHttpApi = InternalHttpApi(executor, gracefulShutdownHandler, {})
+                val internalHttpApi = InternalHttpApi(gracefulShutdownHandler, {})
                 val response = internalHttpApi.gracefulShutdown()
                 response.status shouldBe 200
                 gracefulShutdownHandlerCalled shouldBe false
@@ -57,7 +59,7 @@ class InternalHttpApiTest : ShouldSpec() {
                 val shutdownHandler = {
                     shutdownHandlerCalled = true
                 }
-                val internalHttpApi = InternalHttpApi(executor, {}, shutdownHandler)
+                val internalHttpApi = InternalHttpApi({}, shutdownHandler)
                 val response = internalHttpApi.shutdown()
                 response.status shouldBe 200
                 shutdownHandlerCalled shouldBe false

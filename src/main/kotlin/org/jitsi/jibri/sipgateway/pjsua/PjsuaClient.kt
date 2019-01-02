@@ -17,23 +17,59 @@
 
 package org.jitsi.jibri.sipgateway.pjsua
 
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
-import org.jitsi.jibri.sipgateway.pjsua.executor.PjsuaExecutor
-import org.jitsi.jibri.sipgateway.pjsua.executor.PjsuaExecutorParams
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.JibriSubprocess
+import org.jitsi.jibri.util.ProcessExited
 
 data class PjsuaClientParams(
     val sipClientParams: SipClientParams
 )
 
-class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient {
-    private val pjsuaExecutor = PjsuaExecutor()
+private const val CAPTURE_DEVICE = 23
+private const val PLAYBACK_DEVICE = 24
+private const val CONFIG_FILE_LOCATION = "/home/jibri/pjsua.config"
+private const val X_DISPLAY = ":1"
 
-    override fun start(): Boolean = pjsuaExecutor.launchPjsua(PjsuaExecutorParams(pjsuaClientParams.sipClientParams))
+class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient() {
+    private val pjsua: JibriSubprocess = JibriSubprocess("pjsua")
 
-    override fun stop() = pjsuaExecutor.stopPjsua()
+    companion object {
+        const val COMPONENT_ID = "Pjsua"
+    }
 
-    override fun getExitCode(): Int? = pjsuaExecutor.getExitCode()
+    init {
+        pjsua.addStatusHandler { processState ->
+            when {
+                processState.runningState is ProcessExited -> {
+                    when (processState.runningState.exitCode) {
+                        //TODO: add detail?
+                        // Remote side hung up
+                        0 -> publishStatus(ComponentState.Finished)
+                        2 -> publishStatus(ComponentState.Error(ErrorScope.SESSION, "Remote side busy"))
+                        else -> publishStatus(ComponentState.Error(ErrorScope.SESSION, "Pjsua exited with code ${processState.runningState.exitCode}"))
+                    }
+                }
+                //TODO: i think everything else just counts as running?
+                else -> publishStatus(ComponentState.Running)
+            }
+        }
+    }
 
-    override fun isHealthy(): Boolean = pjsuaExecutor.isHealthy()
+    override fun start() {
+        val command = listOf(
+                "pjsua",
+                "--capture-dev=$CAPTURE_DEVICE",
+                "--playback-dev=$PLAYBACK_DEVICE",
+                "--id", "${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>",
+                "--config-file", CONFIG_FILE_LOCATION,
+                "--log-file", "/tmp/pjsua.out",
+                "sip:${pjsuaClientParams.sipClientParams.sipAddress}"
+        )
+        pjsua.launch(command, mapOf("DISPLAY" to X_DISPLAY))
+    }
+
+    override fun stop() = pjsua.stop()
 }

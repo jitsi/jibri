@@ -19,6 +19,7 @@ package org.jitsi.jibri.service
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
 
 enum class JibriServiceStatus {
@@ -49,18 +50,18 @@ data class ServiceParams(
     val appData: AppData? = null
 )
 
-typealias JibriServiceStatusHandler = (JibriServiceStatus) -> Unit
+typealias JibriServiceStatusHandler = (ComponentState) -> Unit
 
 /**
  * Interface implemented by all implemented [JibriService]s.  A [JibriService]
  * is responsible for an entire feature of Jibri, such as recording a call
  * to a file or streaming a call to a url.
  */
-abstract class JibriService : StatusPublisher<JibriServiceStatus>() {
+abstract class JibriService : StatusPublisher<ComponentState>() {
     /**
      * Starts this [JibriService]
      */
-    abstract fun start(): Boolean
+    abstract fun start()
 
     /**
      * Stops this [JibriService]

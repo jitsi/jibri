@@ -22,18 +22,12 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceStatus
-import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
-import org.jitsi.jibri.util.ProcessMonitor
-import org.jitsi.jibri.util.extensions.error
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.whenever
 import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 data class SipGatewayServiceParams(
     /**
@@ -53,13 +47,8 @@ data class SipGatewayServiceParams(
  * forwarding thenm to the other side.
  */
 class SipGatewayJibriService(
-    private val sipGatewayServiceParams: SipGatewayServiceParams,
-    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-) : JibriService() {
-    /**
-     * The [Logger] for this class
-     */
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val sipGatewayServiceParams: SipGatewayServiceParams
+) : StatefulJibriService("SIP gateway") {
     /**
      * Used for the selenium interaction
      */
@@ -81,9 +70,8 @@ class SipGatewayJibriService(
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
-        jibriSelenium.addStatusHandler {
-            publishStatus(it)
-        }
+        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubComponent(PjsuaClient.COMPONENT_ID, pjsuaClient)
     }
 
     /**
@@ -94,42 +82,11 @@ class SipGatewayJibriService(
      * each of the displays and writing to video devices which selenium
      * and pjsua will use
      */
-    override fun start(): Boolean {
-        if (!jibriSelenium.joinCall(
-                sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
-        ) {
-            logger.error("Selenium failed to join the call")
-            return false
-        }
-        if (!pjsuaClient.start()) {
-            logger.error("Pjsua failed to start")
-            return false
-        }
-        val processMonitor = createSipClientMonitor(pjsuaClient)
-        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
-        return true
-    }
-
-    private fun createSipClientMonitor(process: SipClient): ProcessMonitor {
-        return ProcessMonitor(process) { exitCode ->
-            when (exitCode) {
-                null -> {
-                    logger.error("SipClient process is still running but no longer healthy")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-                0 -> {
-                    logger.info("SipClient remote side hung up")
-                    publishStatus(JibriServiceStatus.FINISHED)
-                }
-                2 -> {
-                    logger.info("SipClient remote side busy")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-                else -> {
-                    logger.info("Sip client exited with code $exitCode")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-            }
+    override fun start() {
+        jibriSelenium.joinCall(
+            sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
+        whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+            pjsuaClient.start()
         }
     }
 

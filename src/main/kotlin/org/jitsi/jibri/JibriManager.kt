@@ -22,7 +22,6 @@ import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
@@ -41,23 +40,19 @@ import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
 import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
-import org.jitsi.jibri.util.NameableThreadFactory
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
-enum class StartServiceResult {
-    SUCCESS,
-    BUSY,
-    ERROR
-}
+class JibriBusyException : Exception()
 
 /**
  * Some of the values in [FileRecordingParams] come from the configuration
@@ -91,7 +86,7 @@ class JibriManager(
     private val fileSystem: FileSystem = FileSystems.getDefault(),
     private val statsDClient: JibriStatsDClient? = null
 // TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
-// ComponentBusyStatus and ComponentHealthStatus and i was unable to think of a better solution for that (yet...)
+// ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
 ) : StatusPublisher<Any>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
@@ -105,13 +100,25 @@ class JibriManager(
      * can't be run while a Jibri session is active
      */
     private var pendingIdleFunc: () -> Unit = {}
-    private val executor: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("JibriManager"))
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
 
     /**
+     * Note: should only be called if the instance-wide lock is held (i.e. called from
+     * one of the synchronized methods)
+     * TODO: instead of the synchronized decorators, use a synchronized(this) block
+     * which we can also use here
+     */
+    private fun throwIfBusy() {
+        if (busy()) {
+            logger.info("Jibri is busy, can't start service")
+            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_RECORDING)
+            throw JibriBusyException()
+        }
+    }
+
+    /**
      * Starts a [FileRecordingJibriService] to record the call described
-     * in the params to a file.  Returns a [StartServiceResult] to denote
-     * whether the service was started successfully or not.
+     * in the params to a file.
      */
     @Synchronized
     fun startFileRecording(
@@ -119,15 +126,11 @@ class JibriManager(
         fileRecordingRequestParams: FileRecordingRequestParams,
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
-    ): StartServiceResult {
+    ) {
         logger.info("Starting a file recording with params: $fileRecordingRequestParams " +
                 "finalize script path: ${config.finalizeRecordingScriptPath} and " +
                 "recordings directory: ${config.recordingDirectory}")
-        if (busy()) {
-            logger.info("Jibri is busy, can't start service")
-            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_RECORDING)
-            return StartServiceResult.BUSY
-        }
+        throwIfBusy()
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
@@ -136,17 +139,15 @@ class JibriManager(
                 fileSystem.getPath(config.finalizeRecordingScriptPath),
                 fileSystem.getPath(config.recordingDirectory),
                 serviceParams.appData?.fileRecordingMetadata
-            ),
-            Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("FileRecordingJibriService"))
+            )
         )
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_RECORDING)
-        return startService(service, serviceParams, environmentContext, serviceStatusHandler)
+        startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
     /**
      * Starts a [StreamingJibriService] to capture the call according
-     * to [streamingParams].  Returns a [StartServiceResult] to
-     * denote whether the service was started successfully or not.
+     * to [streamingParams].
      */
     @Synchronized
     fun startStreaming(
@@ -154,16 +155,12 @@ class JibriManager(
         streamingParams: StreamingParams,
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
-    ): StartServiceResult {
+    ) {
         logger.info("Starting a stream with params: $serviceParams $streamingParams")
-        if (busy()) {
-            logger.info("Jibri is busy, can't start service")
-            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_LIVE_STREAM)
-            return StartServiceResult.BUSY
-        }
+        throwIfBusy()
         val service = StreamingJibriService(streamingParams)
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_LIVE_STREAM)
-        return startService(service, serviceParams, environmentContext, serviceStatusHandler)
+        startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
     @Synchronized
@@ -172,13 +169,9 @@ class JibriManager(
         sipGatewayServiceParams: SipGatewayServiceParams,
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
-    ): StartServiceResult {
+    ) {
         logger.info("Starting a SIP gateway with params: $serviceParams $sipGatewayServiceParams")
-        if (busy()) {
-            logger.info("Jibri is busy, can't start service")
-            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_SIP_GATEWAY)
-            return StartServiceResult.BUSY
-        }
+        throwIfBusy()
         val service = SipGatewayJibriService(SipGatewayServiceParams(
             sipGatewayServiceParams.callParams,
             sipGatewayServiceParams.sipClientParams
@@ -189,15 +182,13 @@ class JibriManager(
 
     /**
      * Helper method to handle the boilerplate of starting a [JibriService].
-     * Returns a [StartServiceResult] to denote whether the service was
-     * started successfully or not.
      */
     private fun startService(
         jibriService: JibriService,
         serviceParams: ServiceParams,
         environmentContext: EnvironmentContext?,
         serviceStatusHandler: JibriServiceStatusHandler? = null
-    ): StartServiceResult {
+    ) {
         publishStatus(ComponentBusyStatus.BUSY)
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
@@ -206,14 +197,15 @@ class JibriManager(
         // the error'd service and update presence appropriately
         jibriService.addStatusHandler {
             when (it) {
-                JibriServiceStatus.ERROR -> {
-                    statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
-                    publishStatus(ComponentHealthStatus.UNHEALTHY)
+                is ComponentState.Error -> {
+                    if (it.errorScope == ErrorScope.SYSTEM) {
+                        statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
+                        publishStatus(ComponentHealthStatus.UNHEALTHY)
+                    }
                     stopService()
                 }
-                JibriServiceStatus.FINISHED -> {
-                    stopService()
-                }
+                is ComponentState.Finished -> stopService()
+                else -> { /* No op */ }
             }
         }
 
@@ -221,7 +213,7 @@ class JibriManager(
         currentEnvironmentContext = environmentContext
         if (serviceParams.usageTimeoutMinutes != 0) {
             logger.info("This service will have a usage timeout of ${serviceParams.usageTimeoutMinutes} minute(s)")
-            serviceTimeoutTask = executor.schedule(serviceParams.usageTimeoutMinutes.toLong(), TimeUnit.MINUTES) {
+            serviceTimeoutTask = TaskPools.recurringTasksPool.schedule(serviceParams.usageTimeoutMinutes.toLong(), TimeUnit.MINUTES) {
                 logger.info("The usage timeout has elapsed, stopping the currently active service")
                 try {
                     stopService()
@@ -230,13 +222,7 @@ class JibriManager(
                 }
             }
         }
-        if (!jibriService.start()) {
-            publishStatus(ComponentHealthStatus.UNHEALTHY)
-            statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
-            stopService()
-            return StartServiceResult.ERROR
-        }
-        return StartServiceResult.SUCCESS
+        jibriService.start()
     }
 
     /**

@@ -22,29 +22,24 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
-import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.jibri.capture.ffmpeg.executor.FFMPEG_RESTART_ATTEMPTS
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.JibriServiceStatus
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
+import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
-import org.jitsi.jibri.util.ProcessMonitor
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
-import org.jitsi.jibri.util.logStream
+import org.jitsi.jibri.util.whenever
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 /**
  * Parameters needed for starting a [FileRecordingJibriService]
@@ -105,24 +100,14 @@ data class RecordingMetadata(
  */
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
-    private val executor: ScheduledExecutorService,
-    private val jibriSelenium: JibriSelenium = JibriSelenium(executor = executor),
-    private val capturer: Capturer = FfmpegCapturer(),
+    private val jibriSelenium: JibriSelenium = JibriSelenium(),
+    private val capturer: FfmpegCapturer = FfmpegCapturer(),
     private val processFactory: ProcessFactory = ProcessFactory()
-) : JibriService() {
-    /**
-     * The [Logger] for this class
-     */
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+) : StatefulJibriService("File recording") {
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
     private var sink: Sink
-    /**
-     * The handle to the scheduled process monitor task, which we use to
-     * cancel the task
-     */
-    private var processMonitorTask: ScheduledFuture<*>? = null
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
      * be nested within [FileRecordingParams.recordingDirectory].
@@ -136,67 +121,33 @@ class FileRecordingJibriService(
             sessionRecordingDirectory,
             fileRecordingParams.callParams.callUrlInfo.callName
         )
-        jibriSelenium.addStatusHandler(this::publishStatus)
+
+        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
     }
 
-    override fun start(): Boolean {
+    override fun start() {
         if (!createIfDoesNotExist(sessionRecordingDirectory, logger)) {
-            return false
+            publishStatus(ComponentState.Error(ErrorScope.SYSTEM, "Could not create recordings directory"))
         }
         if (!Files.isWritable(sessionRecordingDirectory)) {
             logger.error("Unable to write to ${fileRecordingParams.recordingDirectory}")
-            return false
+            publishStatus(ComponentState.Error(ErrorScope.SYSTEM, "Recordings directory is not writable"))
         }
-        if (!jibriSelenium.joinCall(
+        jibriSelenium.joinCall(
                 fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
                 fileRecordingParams.callLoginParams)
-        ) {
-            logger.error("Selenium failed to join the call")
-            return false
-        }
-        if (!capturer.start(sink)) {
-            logger.error("Capturer failed to start")
-            return false
+
+        whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+            logger.info("Selenium joined the call, starting the capturer")
+            capturer.start(sink)
         }
         jibriSelenium.addToPresence("session_id", fileRecordingParams.sessionId)
         jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
         jibriSelenium.sendPresence()
-        val processMonitor = createCaptureMonitor(capturer)
-        processMonitorTask = executor.scheduleAtFixedRate(processMonitor, 30, 10, TimeUnit.SECONDS)
-        return true
-    }
-
-    private fun createCaptureMonitor(process: Capturer): ProcessMonitor {
-        var numRestarts = 0
-        return ProcessMonitor(process) { exitCode ->
-            if (exitCode != null) {
-                logger.error("Capturer process is no longer healthy.  It exited with code $exitCode")
-            } else {
-                logger.error("Capturer process is no longer healthy but it is still running, stopping it now")
-            }
-            if (numRestarts == FFMPEG_RESTART_ATTEMPTS) {
-                logger.error("Giving up on restarting the capturer")
-                publishStatus(JibriServiceStatus.ERROR)
-            } else {
-                logger.info("Trying to restart capturer")
-                numRestarts++
-                // Re-create the sink here because we want a new filename
-                // TODO: we can run into an issue here where this takes a while and the monitor task runs again
-                // and, while ffmpeg is still starting up, detects it as 'not encoding' for the second time
-                // and shuts it down.  Add a forced delay to match the initial delay we set when
-                // creating the monitor task?
-                sink = FileSink(sessionRecordingDirectory, fileRecordingParams.callParams.callUrlInfo.callName)
-                process.stop()
-                if (!process.start(sink)) {
-                    logger.error("Capture failed to restart, giving up")
-                    publishStatus(JibriServiceStatus.ERROR)
-                }
-            }
-        }
     }
 
     override fun stop() {
-        processMonitorTask?.cancel(false)
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")
@@ -216,7 +167,7 @@ class FileRecordingJibriService(
                     }
             } catch (e: Exception) {
                 logger.error("Error writing metadata", e)
-                publishStatus(JibriServiceStatus.ERROR)
+                publishStatus(ComponentState.Error(ErrorScope.SYSTEM, "Could not write meeting metadata"))
             }
         } else {
             logger.error("Unable to write metadata file to recording directory ${fileRecordingParams.recordingDirectory}")
@@ -239,7 +190,7 @@ class FileRecordingJibriService(
             )
             with(processFactory.createProcess(finalizeCommand)) {
                 start()
-                val streamDone = logStream(getOutput(), logger)
+                val streamDone = LoggingUtils.logOutput(this, logger)
                 waitFor()
                 // Make sure we get all the logs
                 streamDone.get()

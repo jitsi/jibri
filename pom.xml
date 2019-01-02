@@ -154,12 +154,17 @@
             <artifactId>java-dogstatsd-client</artifactId>
             <version>2.5</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.tinder</groupId>
+            <artifactId>statemachine</artifactId>
+            <version>0.1.2</version>
+        </dependency>
 
         <!-- testing -->
         <dependency>
             <groupId>io.kotlintest</groupId>
             <artifactId>kotlintest-runner-junit5</artifactId>
-            <version>3.1.1</version>
+            <version>3.1.10</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -249,14 +254,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.junit.platform</groupId>
-                        <artifactId>junit-platform-surefire-provider</artifactId>
-                        <version>1.1.0</version>
-                    </dependency>
-                </dependencies>
+                <version>2.22.1</version>
+                <configuration>
+                    <!-- Since we now have some things that are accesed globally but overwritten by tests
+                     (task pools, for example), we don't want the tests interfering with one another as they
+                     mock things out, so make sure we run each in isolation -->
+                    <reuseForks>false</reuseForks>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -336,6 +340,10 @@
                 <enabled>true</enabled>
             </snapshots>
             <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
