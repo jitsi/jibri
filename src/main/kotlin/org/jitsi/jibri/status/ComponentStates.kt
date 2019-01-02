@@ -32,6 +32,13 @@ sealed class ComponentState {
 }
 
 enum class ErrorScope {
+    /**
+     * [SESSION] errors are errors which only affect the current session.  A session error still leaves Jibri as a
+     * whole 'healthy'
+     */
     SESSION,
+    /**
+     * [SYSTEM] errors are unrecoverable, and will put Jibri in an unhealthy state
+     */
     SYSTEM
 }
