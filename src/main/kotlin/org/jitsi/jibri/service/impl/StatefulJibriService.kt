@@ -40,7 +40,7 @@ abstract class StatefulJibriService(private val name: String) : JibriService() {
         publishStatus(newState)
     }
 
-    protected fun registerSubcomponent(subComponentId: String, subComponent: StatusPublisher<ComponentState>) {
+    protected fun registerSubComponent(subComponentId: String, subComponent: StatusPublisher<ComponentState>) {
         stateMachine.registerSubComponent(subComponentId)
         subComponent.addStatusHandler { stateUpdate ->
             stateMachine.transition(stateUpdate.toJibriServiceEvent(subComponentId))

@@ -122,8 +122,8 @@ class FileRecordingJibriService(
             fileRecordingParams.callParams.callUrlInfo.callName
         )
 
-        registerSubcomponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubcomponent(FfmpegCapturer.COMPONENT_ID, capturer)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
     }
 
     override fun start() {

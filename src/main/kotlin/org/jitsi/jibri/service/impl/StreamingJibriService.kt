@@ -79,8 +79,8 @@ class StreamingJibriService(
             streamingBufSize = 2 * STREAMING_MAX_BITRATE
         )
 
-        registerSubcomponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubcomponent(FfmpegCapturer.COMPONENT_ID, capturer)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
     }
 
     override fun start() {

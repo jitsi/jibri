@@ -70,8 +70,8 @@ class SipGatewayJibriService(
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
-        registerSubcomponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubcomponent(PjsuaClient.COMPONENT_ID, pjsuaClient)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubComponent(PjsuaClient.COMPONENT_ID, pjsuaClient)
     }
 
     /**
