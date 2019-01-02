@@ -27,6 +27,7 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 
@@ -93,14 +94,19 @@ class StreamingJibriService(
             capturer.start(sink)
         }
 
-        jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
-        jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
-        streamingParams.youTubeBroadcastId?.let {
-            if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
-                logger.error("Error adding live stream url to presence")
+        try {
+            jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
+            jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
+            streamingParams.youTubeBroadcastId?.let {
+                if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
+                    logger.error("Error adding live stream url to presence")
+                }
             }
+            jibriSelenium.sendPresence()
+        } catch (t: Throwable) {
+            logger.error("Error while setting fields in presence", t)
+            publishStatus(ComponentState.Error(ErrorScope.SESSION, "Unable to set presence values"))
         }
-        jibriSelenium.sendPresence()
     }
 
     override fun stop() {

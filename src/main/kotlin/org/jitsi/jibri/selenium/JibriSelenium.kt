@@ -226,25 +226,30 @@ class JibriSelenium(
     fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null) {
         // These are all blocking calls, so offload the work to another thread
         TaskPools.ioPool.submit {
-            HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
+            try {
+                HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
-            val localStorageValues = mutableMapOf(
-                    "displayname" to jibriSeleniumOptions.displayName,
-                    "email" to jibriSeleniumOptions.email,
-                    "callStatsUserName" to "jibri"
-            )
-            xmppCredentials?.let {
-                localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.domain}"
-                localStorageValues["xmpp_password_override"] = xmppCredentials.password
-            }
-            setLocalStorageValues(localStorageValues)
-            if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
+                val localStorageValues = mutableMapOf(
+                        "displayname" to jibriSeleniumOptions.displayName,
+                        "email" to jibriSeleniumOptions.email,
+                        "callStatsUserName" to "jibri"
+                )
+                xmppCredentials?.let {
+                    localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.domain}"
+                    localStorageValues["xmpp_password_override"] = xmppCredentials.password
+                }
+                setLocalStorageValues(localStorageValues)
+                if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
+                    stateMachine.transition(SeleniumEvent.FailedToJoinCall)
+                } else {
+                    startRecurringCallStatusChecks()
+                    addParticipantTracker()
+                    currCallUrl = callUrlInfo.callUrl
+                    stateMachine.transition(SeleniumEvent.CallJoined)
+                }
+            } catch (t: Throwable) {
+                logger.error("An error occurred while joining the call", t)
                 stateMachine.transition(SeleniumEvent.FailedToJoinCall)
-            } else {
-                startRecurringCallStatusChecks()
-                addParticipantTracker()
-                currCallUrl = callUrlInfo.callUrl
-                stateMachine.transition(SeleniumEvent.CallJoined)
             }
         }
     }
@@ -267,7 +272,11 @@ class JibriSelenium(
             }
         }
         logger.info("Leaving web call")
-        CallPage(chromeDriver).leave()
+        try {
+            CallPage(chromeDriver).leave()
+        } catch (t: Throwable) {
+            logger.error("Error trying to leave the call", t)
+        }
         currCallUrl = null
         logger.info("Quitting chrome driver")
         chromeDriver.quit()
