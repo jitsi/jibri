@@ -176,8 +176,8 @@ class FileRecordingJibriService(
                     .use {
                         jacksonObjectMapper().writeValue(it, metadata)
                     }
-            } catch (e: Exception) {
-                logger.error("Error writing metadata", e)
+            } catch (t: Throwable) {
+                logger.error("Error writing metadata", t)
                 publishStatus(ComponentState.Error(ErrorScope.SYSTEM, "Could not write meeting metadata"))
             }
         } else {
