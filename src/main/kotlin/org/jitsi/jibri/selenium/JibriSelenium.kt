@@ -141,6 +141,7 @@ class JibriSelenium(
         logPrefs.enable(LogType.DRIVER, Level.ALL)
         chromeOptions.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
+        chromeDriver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS)
 
         // Note that the order here is important: we always want to check for no participants before we check
         // for media being received, since the call being empty will also mean Jibri is not receiving media but should
