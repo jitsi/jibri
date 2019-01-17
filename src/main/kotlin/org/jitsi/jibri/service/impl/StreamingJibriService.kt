@@ -91,21 +91,20 @@ class StreamingJibriService(
 
         whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
             logger.info("Selenium joined the call, starting capturer")
-            capturer.start(sink)
-        }
-
-        try {
-            jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
-            jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
-            streamingParams.youTubeBroadcastId?.let {
-                if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
-                    logger.error("Error adding live stream url to presence")
+            try {
+                jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
+                jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
+                streamingParams.youTubeBroadcastId?.let {
+                    if (!jibriSelenium.addToPresence("live-stream-view-url", "http://youtu.be/$it")) {
+                        logger.error("Error adding live stream url to presence")
+                    }
                 }
+                jibriSelenium.sendPresence()
+                capturer.start(sink)
+            } catch (t: Throwable) {
+                logger.error("Error while setting fields in presence", t)
+                publishStatus(ComponentState.Error(ErrorScope.SESSION, "Unable to set presence values"))
             }
-            jibriSelenium.sendPresence()
-        } catch (t: Throwable) {
-            logger.error("Error while setting fields in presence", t)
-            publishStatus(ComponentState.Error(ErrorScope.SESSION, "Unable to set presence values"))
         }
     }
 
