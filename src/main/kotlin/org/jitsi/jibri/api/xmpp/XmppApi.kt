@@ -44,9 +44,7 @@ import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientConfiguration
 import org.jitsi.xmpp.mucclient.MucClientManager
-import org.jivesoftware.smack.PresenceListener
 import org.jivesoftware.smack.packet.IQ
-import org.jivesoftware.smack.packet.Presence
 import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jxmpp.jid.impl.JidCreate
@@ -85,9 +83,9 @@ class XmppApi(
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
         )
+        updatePresence(jibriStatusManager.overallStatus)
         jibriStatusManager.addStatusHandler(::updatePresence)
 
-        mucClientManager.presenceInterceptor = PresenceListener(::updatePresenceStanza)
         mucClientManager.registerIQ(JibriIq())
         mucClientManager.setIQListener(this)
 
@@ -121,12 +119,8 @@ class XmppApi(
     }
 
     /**
-     * Function to update outgoing [presence] stanza with current jibri status.
+     * Function to update outgoing [presence] stanza with jibri status.
      */
-    private fun updatePresenceStanza(presence: Presence) {
-        presence.overrideExtension(jibriStatusManager.overallStatus.toJibriStatusExt())
-    }
-
     private fun updatePresence(status: JibriStatus) {
         logger.info("Jibri reports its status is now $status, publishing presence to connections")
         mucClientManager.setPresenceExtension(status.toJibriStatusExt())

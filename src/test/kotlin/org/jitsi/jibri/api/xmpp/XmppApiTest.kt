@@ -28,7 +28,6 @@ import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
-import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
@@ -39,7 +38,11 @@ import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.status.OverallHealth
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
@@ -104,6 +107,11 @@ class XmppApiTest : ShouldSpec() {
             trustAllXmppCerts = true
         )
         val jibriStatusManager: JibriStatusManager = mock()
+        // the initial status is idle
+        val expectedStatus =
+                JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
+        whenever(jibriStatusManager.overallStatus).thenReturn(expectedStatus)
+
         "xmppApi" {
             val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), jibriStatusManager)
             val mucClientManager: MucClientManager = mock()
