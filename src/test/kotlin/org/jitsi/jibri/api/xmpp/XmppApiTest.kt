@@ -40,7 +40,6 @@ import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.Stanza
@@ -106,7 +105,7 @@ class XmppApiTest : ShouldSpec() {
         "xmppApi" {
             val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), jibriStatusManager)
             val mucClientManager: MucClientManager = mock()
-            // A dummy MucClient we'll use
+            // A dummy MucClient we'll use to be the one incoming messages are received on
             val mucClient: MucClient = mock()
             whenever(mucClient.id).thenReturn(xmppConfig.name)
             xmppApi.start(mucClientManager)
@@ -125,15 +124,15 @@ class XmppApiTest : ShouldSpec() {
                         response as JibriIq
                         response.status shouldBe JibriIq.Status.PENDING
                     }
-//                    "after the service status up" {
-//                        statusHandler.firstValue(ComponentState.Running)
-//                        should("send a success response") {
-//                            val sentStanzas = argumentCaptor<Stanza>()
-//                            verify(mucClientManager).setPresenceExtension(sentStanzas.capture())
-//                            sentStanzas.allValues.size shouldBe 1
-//                            (sentStanzas.firstValue as JibriIq).status shouldBe JibriIq.Status.ON
-//                        }
-//                    }
+                    "after the service starts up" {
+                        statusHandler.firstValue(ComponentState.Running)
+                        should("send a success response") {
+                            val sentStanzas = argumentCaptor<Stanza>()
+                            verify(mucClient).sendStanza(sentStanzas.capture())
+                            sentStanzas.allValues.size shouldBe 1
+                            (sentStanzas.firstValue as JibriIq).status shouldBe JibriIq.Status.ON
+                        }
+                    }
                 }
                 "with application data" {
                     val fileMetaData = mapOf<Any, Any>(
