@@ -28,6 +28,7 @@ import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
+import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
 import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
@@ -154,6 +155,20 @@ class XmppApiTest : ShouldSpec() {
                         serviceParams.allValues.size shouldBe 1
                         serviceParams.firstValue.appData shouldBe appData
                     }
+                }
+                "from a muc client it doesn't recognize" {
+                    val unknownMucClient: MucClient = mock()
+                    whenever(unknownMucClient.id).thenReturn("unknown name")
+                    xmppApi.handleIq(jibriIq, unknownMucClient)
+                    val sentStanzas = argumentCaptor<Stanza>()
+                    verify(unknownMucClient).sendStanza(sentStanzas.capture())
+                    println(sentStanzas.allValues)
+                    val result = sentStanzas.lastValue
+                    result shouldNotBe null
+                    result should beInstanceOf<JibriIq>()
+                    result as JibriIq
+                    result.status shouldBe JibriIq.Status.OFF
+                    result.failureReason shouldBe JibriIq.FailureReason.ERROR
                 }
             }
         }
