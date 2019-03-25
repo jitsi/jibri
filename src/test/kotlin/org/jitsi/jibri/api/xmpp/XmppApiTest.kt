@@ -24,6 +24,8 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
+import io.kotlintest.matchers.beInstanceOf
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
@@ -39,6 +41,7 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.xmpp.mucclient.IQListener
+import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.Stanza
 import org.jxmpp.jid.impl.JidCreate
@@ -103,6 +106,9 @@ class XmppApiTest : ShouldSpec() {
         "xmppApi" {
             val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), jibriStatusManager)
             val mucClientManager: MucClientManager = mock()
+            // A dummy MucClient we'll use
+            val mucClient: MucClient = mock()
+            whenever(mucClient.id).thenReturn(xmppConfig.name)
             xmppApi.start(mucClientManager)
             // XmppApi should install itself as the IQ listener
             verify(mucClientManager).setIQListener(xmppApi)
@@ -112,9 +118,12 @@ class XmppApiTest : ShouldSpec() {
                 "and jibri is idle" {
                     val statusHandler = argumentCaptor<JibriServiceStatusHandler>()
                     whenever(jibriManager.startFileRecording(any(), any(), any(), statusHandler.capture())).thenAnswer { }
-                    val response = xmppApi.handleIq(jibriIq)
+                    val response = xmppApi.handleIq(jibriIq, mucClient)
                     should("send a pending response to the original IQ request") {
-                        (response as JibriIq).status shouldBe JibriIq.Status.PENDING
+                        response shouldNotBe null
+                        response should beInstanceOf<JibriIq>()
+                        response as JibriIq
+                        response.status shouldBe JibriIq.Status.PENDING
                     }
 //                    "after the service status up" {
 //                        statusHandler.firstValue(ComponentState.Running)
@@ -141,7 +150,7 @@ class XmppApiTest : ShouldSpec() {
 
                     val serviceParams = argumentCaptor<ServiceParams>()
                     whenever(jibriManager.startFileRecording(serviceParams.capture(), any(), any(), any())).thenAnswer { }
-                    xmppApi.handleIq(jibriIq)
+                    xmppApi.handleIq(jibriIq, mucClient)
                     should("parse and pass the app data") {
                         serviceParams.allValues.size shouldBe 1
                         serviceParams.firstValue.appData shouldBe appData
