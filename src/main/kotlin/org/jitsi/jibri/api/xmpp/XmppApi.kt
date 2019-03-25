@@ -186,9 +186,8 @@ class XmppApi(
             // if it changes
             val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
             try {
-                val xmppEnvironment = xmppConfigs.find { it.name === mucClient.id }
-                if (xmppEnvironment === null)
-                    throw NullPointerException("No such environment found")
+                val xmppEnvironment = xmppConfigs.find { it.name == mucClient.id } ?:
+                    throw Exception("No XMPP environment found with name ${mucClient.id}")
 
                 handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
             } catch (busy: JibriBusyException) {
