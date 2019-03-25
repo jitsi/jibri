@@ -153,8 +153,10 @@ class XmppApi(
      */
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
         logger.info("Received JibriIq ${jibriIq.toXML()} from environment $mucClient")
+        val xmppEnvironment = xmppConfigs.find { it.name == mucClient.id }
+                ?: return IQ.createErrorResponse(jibriIq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
         return when (jibriIq.action) {
-            JibriIq.Action.START -> handleStartJibriIq(jibriIq, mucClient)
+            JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
             JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)
             else -> IQ.createErrorResponse(
                 jibriIq,
@@ -171,6 +173,7 @@ class XmppApi(
      */
     private fun handleStartJibriIq(
         startJibriIq: JibriIq,
+        xmppEnvironment: XmppEnvironmentConfig,
         mucClient: MucClient
     ): IQ {
         logger.info("Received start request")
@@ -186,9 +189,6 @@ class XmppApi(
             // if it changes
             val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
             try {
-                val xmppEnvironment = xmppConfigs.find { it.name == mucClient.id } ?:
-                    throw Exception("No XMPP environment found with name ${mucClient.id}")
-
                 handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
             } catch (busy: JibriBusyException) {
                 logger.error("Jibri is currently busy, cannot service this request")

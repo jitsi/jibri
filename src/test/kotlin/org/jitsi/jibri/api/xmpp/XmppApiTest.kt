@@ -44,6 +44,7 @@ import org.jitsi.jibri.util.TaskPools
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.Stanza
+import org.jivesoftware.smack.packet.XMPPError
 import org.jxmpp.jid.impl.JidCreate
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
@@ -159,16 +160,9 @@ class XmppApiTest : ShouldSpec() {
                 "from a muc client it doesn't recognize" {
                     val unknownMucClient: MucClient = mock()
                     whenever(unknownMucClient.id).thenReturn("unknown name")
-                    xmppApi.handleIq(jibriIq, unknownMucClient)
-                    val sentStanzas = argumentCaptor<Stanza>()
-                    verify(unknownMucClient).sendStanza(sentStanzas.capture())
-                    println(sentStanzas.allValues)
-                    val result = sentStanzas.lastValue
-                    result shouldNotBe null
-                    result should beInstanceOf<JibriIq>()
-                    result as JibriIq
-                    result.status shouldBe JibriIq.Status.OFF
-                    result.failureReason shouldBe JibriIq.FailureReason.ERROR
+                    val result = xmppApi.handleIq(jibriIq, unknownMucClient)
+                    result.error shouldNotBe null
+                    result.error.condition shouldBe XMPPError.Condition.bad_request
                 }
             }
         }
