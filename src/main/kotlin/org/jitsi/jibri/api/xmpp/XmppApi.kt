@@ -85,11 +85,9 @@ class XmppApi(
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
         )
-        jibriStatusManager.addStatusHandler(this::updatePresence)
+        jibriStatusManager.addStatusHandler(::updatePresence)
 
-        mucClientManager.presenceInterceptor = PresenceListener { p ->
-            updatePresenceStanza(p)
-        }
+        mucClientManager.presenceInterceptor = PresenceListener(::updatePresenceStanza)
         mucClientManager.registerIQ(JibriIq())
         mucClientManager.setIQListener(this)
 
