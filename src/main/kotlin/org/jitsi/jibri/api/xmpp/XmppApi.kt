@@ -47,6 +47,7 @@ import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
+import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
 import java.util.logging.Logger
 
@@ -79,6 +80,7 @@ class XmppApi(
     fun start(mucManager: MucClientManager = MucClientManager()) {
         this.mucClientManager = mucManager
 
+        PingManager.setDefaultPingInterval(30)
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
