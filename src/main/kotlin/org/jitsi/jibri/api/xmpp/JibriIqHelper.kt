@@ -17,8 +17,8 @@
 
 package org.jitsi.jibri.api.xmpp
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
+import org.jitsi.xmpp.extensions.jibri.JibriIq
+import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.Presence
 import org.jxmpp.jid.Jid

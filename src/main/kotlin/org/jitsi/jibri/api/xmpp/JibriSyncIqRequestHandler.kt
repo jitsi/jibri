@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.api.xmpp
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jivesoftware.smack.iqrequest.AbstractIqRequestHandler
 import org.jivesoftware.smack.iqrequest.IQRequestHandler
 import org.jivesoftware.smack.packet.IQ

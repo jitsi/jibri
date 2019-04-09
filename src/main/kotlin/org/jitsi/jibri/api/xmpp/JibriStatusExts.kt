@@ -16,9 +16,9 @@
  */
 package org.jitsi.jibri.api.xmpp
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.health.HealthStatusPacketExt
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriBusyStatusPacketExt
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
+import org.jitsi.xmpp.extensions.health.HealthStatusPacketExt
+import org.jitsi.xmpp.extensions.jibri.JibriBusyStatusPacketExt
+import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
