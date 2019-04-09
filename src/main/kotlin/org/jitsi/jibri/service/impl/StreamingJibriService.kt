@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.service.impl
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams

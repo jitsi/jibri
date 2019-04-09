@@ -17,7 +17,7 @@
 package org.jitsi.jibri.status
 
 import org.jitsi.jibri.util.StatusPublisher
-import org.jitsi.util.Logger
+import org.jitsi.utils.logging.Logger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.Delegates
 

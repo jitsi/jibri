@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.util
 
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.CallUrlInfo
 import org.jxmpp.jid.EntityBareJid
 

@@ -29,7 +29,7 @@ import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig

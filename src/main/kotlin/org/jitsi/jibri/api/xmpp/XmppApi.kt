@@ -19,9 +19,9 @@ package org.jitsi.jibri.api.xmpp
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIq
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriIqProvider
-import net.java.sip.communicator.impl.protocol.jabber.extensions.jibri.JibriStatusPacketExt
+import org.jitsi.xmpp.extensions.jibri.JibriIq
+import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
+import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
