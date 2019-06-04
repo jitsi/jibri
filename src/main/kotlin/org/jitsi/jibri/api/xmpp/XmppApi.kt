@@ -96,7 +96,9 @@ class XmppApi(
             for (host in config.xmppServerHosts) {
                 logger.info("Connecting to xmpp environment on $host with config $config")
 
-                val clientConfig = MucClientConfiguration(config.name)
+                // We need to use the host as the ID because we'll only get one MUC client per 'ID' and
+                // we may have multiple hosts for the same environment
+                val clientConfig = MucClientConfiguration(host)
                 clientConfig.hostname = host
                 clientConfig.domain = config.controlLogin.domain
                 clientConfig.username = config.controlLogin.username
@@ -149,7 +151,7 @@ class XmppApi(
      */
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
         logger.info("Received JibriIq ${jibriIq.toXML()} from environment $mucClient")
-        val xmppEnvironment = xmppConfigs.find { it.name == mucClient.id }
+        val xmppEnvironment = xmppConfigs.find { it.xmppServerHosts.contains(mucClient.id) }
                 ?: return IQ.createErrorResponse(jibriIq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
         return when (jibriIq.action) {
             JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)

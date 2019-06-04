@@ -21,6 +21,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
@@ -80,7 +81,7 @@ class XmppApiTest : ShouldSpec() {
         val jibriManager: JibriManager = mock()
         val xmppConfig = XmppEnvironmentConfig(
             name = "xmppEnvName",
-            xmppServerHosts = listOf("xmppServeHost"),
+            xmppServerHosts = listOf("xmppServerHost1", "xmppServerHost2"),
             xmppDomain = "xmppDomain",
             controlLogin = XmppCredentials(
                 domain = "controlXmppDomain",
@@ -117,10 +118,14 @@ class XmppApiTest : ShouldSpec() {
             val mucClientManager: MucClientManager = mock()
             // A dummy MucClient we'll use to be the one incoming messages are received on
             val mucClient: MucClient = mock()
-            whenever(mucClient.id).thenReturn(xmppConfig.name)
+            whenever(mucClient.id).thenReturn(xmppConfig.xmppServerHosts.first())
             xmppApi.start(mucClientManager)
-            // XmppApi should install itself as the IQ listener
-            verify(mucClientManager).setIQListener(xmppApi)
+            should("add itself as the IQ listener for the MUC client manager") {
+                verify(mucClientManager).setIQListener(xmppApi)
+            }
+            should("create a muc client for each xmpp host") {
+                verify(mucClientManager, times(2)).addMucClient(any())
+            }
 
             "when receiving a start recording iq" {
                 val jibriIq = createJibriIq(JibriIq.Action.START, JibriIq.RecordingMode.FILE)
