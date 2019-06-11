@@ -98,24 +98,25 @@ class XmppApi(
 
                 // We need to use the host as the ID because we'll only get one MUC client per 'ID' and
                 // we may have multiple hosts for the same environment
-                val clientConfig = MucClientConfiguration(host)
-                clientConfig.hostname = host
-                clientConfig.domain = config.controlLogin.domain
-                clientConfig.username = config.controlLogin.username
-                clientConfig.password = config.controlLogin.password
+                val clientConfig = MucClientConfiguration(host).apply {
+                    hostname = host
+                    domain = config.controlLogin.domain
+                    username = config.controlLogin.username
+                    password = config.controlLogin.password
 
-                if (config.trustAllXmppCerts) {
-                    logger.info("The trustAllXmppCerts config is enabled for this domain, " +
-                            "all XMPP server provided certificates will be accepted")
-                    clientConfig.disableCertificateVerification = config.trustAllXmppCerts
-                }
+                    if (config.trustAllXmppCerts) {
+                        logger.info("The trustAllXmppCerts config is enabled for this domain, " +
+                                "all XMPP server provided certificates will be accepted")
+                        disableCertificateVerification = config.trustAllXmppCerts
+                    }
 
-                val recordingMucJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}").toString()
-                val sipMucJid: String? = config.sipControlMuc?.let {
-                    JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}").toString()
+                    val recordingMucJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}").toString()
+                    val sipMucJid: String? = config.sipControlMuc?.let {
+                        JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}").toString()
+                    }
+                    mucJids = listOfNotNull(recordingMucJid, sipMucJid)
+                    mucNickname = config.controlMuc.nickname
                 }
-                clientConfig.mucJids = listOfNotNull(recordingMucJid, sipMucJid)
-                clientConfig.mucNickname = config.controlMuc.nickname
 
                 mucClientManager.addMucClient(clientConfig)
             }
