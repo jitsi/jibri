@@ -40,6 +40,8 @@ import org.jitsi.jibri.util.whenever
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * Parameters needed for starting a [FileRecordingJibriService]
@@ -204,7 +206,15 @@ class FileRecordingJibriService(
                 val streamDone = LoggingUtils.logOutput(this, logger)
                 waitFor()
                 // Make sure we get all the logs
-                streamDone.get()
+                try {
+                    streamDone.get(10, TimeUnit.SECONDS)
+                } catch (e: TimeoutException) {
+                    logger.error("Timed out waiting for process logger task to complete")
+                    streamDone.cancel(true)
+                } catch (e: Exception) {
+                    logger.error("Exception while waiting for process logger task to complete")
+                    streamDone.cancel(true)
+                }
                 logger.info("Recording finalize script finished with exit value $exitValue")
             }
         } catch (e: Exception) {

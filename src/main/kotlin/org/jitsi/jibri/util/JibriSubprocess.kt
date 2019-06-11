@@ -19,6 +19,7 @@ package org.jitsi.jibri.util
 import org.jitsi.jibri.util.extensions.error
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.logging.Logger
 
 class JibriSubprocess(
@@ -65,7 +66,15 @@ class JibriSubprocess(
                 destroyForcibly()
             }
         }
-        processLoggerTask?.get()
+        try {
+            processLoggerTask?.get(10, TimeUnit.SECONDS)
+        } catch (e: TimeoutException) {
+            logger.error("Timed out waiting for process logger task to complete")
+            processLoggerTask?.cancel(true)
+        } catch (e: Exception) {
+            logger.error("Exception while waiting for process logger task to complete", e)
+            processLoggerTask?.cancel(true)
+        }
         logger.info("$name exited with value ${process?.exitValue}")
     }
 }
