@@ -29,7 +29,7 @@ fun getFfmpegCommandLinux(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink
         "-i", ":0.0+0,0",
         "-f", "alsa",
         "-thread_queue_size", ffmpegExecutorParams.queueSize.toString(),
-        "-i", "hw:0,1,0",
+        "-i", "plug:cloop",
         "-acodec", "aac", "-strict", "-2", "-ar", "44100",
         "-c:v", "libx264", "-preset", ffmpegExecutorParams.videoEncodePreset,
         *sink.options, "-pix_fmt", "yuv420p", "-r", ffmpegExecutorParams.framerate.toString(),
