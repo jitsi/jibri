@@ -135,6 +135,7 @@ class JibriSelenium(
                 "--alsa-output-device=plug:amix",
                 "--autoplay-policy=no-user-gesture-required"
         )
+        chromeOptions.setExperimentalOption("w3c", false)
         chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
             mapOf("DISPLAY" to jibriSeleniumOptions.display)
