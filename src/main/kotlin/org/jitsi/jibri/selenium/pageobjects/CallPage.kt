@@ -172,7 +172,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             is Number -> result.toInt()
             else -> {
                 logger.error("error running numRemoteParticipantsMuted script: $result ${result::class.java}")
-                1
+                0
             }
         }
     }
