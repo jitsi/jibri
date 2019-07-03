@@ -67,7 +67,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    fun getNumParticipants(): Long {
+    fun getNumParticipants(): Int {
         val result = driver.executeScript("""
             try {
                 return APP.conference.membersCount;
@@ -76,7 +76,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             }
         """.trimMargin())
         return when (result) {
-            is Long -> result
+            is Number -> result.toInt()
             else -> 1
         }
     }
@@ -151,6 +151,29 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             return result as List<Map<String, Any>>
         } else {
             return listOf()
+        }
+    }
+
+    /**
+     * Returns a count of how many remote participants are totally muted (audio
+     * and video).
+     */
+    fun numRemoteParticipantsMuted(): Int {
+        val result = driver.executeScript("""
+            try {
+                return APP.conference._room.getParticipants()
+                    .filter(participant => participant.isAudioMuted() && participant.isVideoMuted())
+                    .length;
+            } catch (e) {
+                return e.message;
+            }
+        """.trimMargin())
+        return when (result) {
+            is Number -> result.toInt()
+            else -> {
+                logger.error("error running numRemoteParticipantsMuted script: $result ${result::class.java}")
+                1
+            }
         }
     }
 
