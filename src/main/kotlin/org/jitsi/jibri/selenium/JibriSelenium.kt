@@ -319,9 +319,11 @@ class JibriSelenium(
         private var numTimesNoMedia = 0
         override fun run(callPage: CallPage): SeleniumEvent? {
             val bitrates = callPage.getBitrates()
-            logger.info("Jibri client receive bitrates: $bitrates")
+            // getNumParticipants includes Jibri, so subtract 1
+            val allClientsMuted = callPage.numRemoteParticipantsMuted() == (callPage.getNumParticipants() - 1)
+            logger.info("Jibri client receive bitrates: $bitrates, all clients muted? $allClientsMuted")
             val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
-            if (downloadBitrate == 0L) {
+            if (downloadBitrate == 0L && !allClientsMuted) {
                 numTimesNoMedia++
             } else {
                 numTimesNoMedia = 0
