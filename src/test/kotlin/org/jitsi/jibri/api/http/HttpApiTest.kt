@@ -26,7 +26,6 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.Description
 import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
 import io.kotlintest.matchers.string.contain
@@ -60,8 +59,8 @@ class HttpApiTest : ShouldSpec() {
     private val jibriStatusManager: JibriStatusManager = mock()
     private lateinit var jerseyTest: JerseyTest
 
-    override fun beforeSpec(description: Description, spec: Spec) {
-        super.beforeSpec(description, spec)
+    override fun beforeSpec(spec: Spec) {
+        super.beforeSpec(spec)
         jerseyTest = object : JerseyTest() {
             override fun configure(): Application {
                 return ResourceConfig(object : ResourceConfig() {
@@ -78,8 +77,8 @@ class HttpApiTest : ShouldSpec() {
         jerseyTest.setUp()
     }
 
-    override fun afterSpec(description: Description, spec: Spec) {
-        super.afterSpec(description, spec)
+    override fun afterSpec(spec: Spec) {
+        super.afterSpec(spec)
         jerseyTest.tearDown()
     }
 

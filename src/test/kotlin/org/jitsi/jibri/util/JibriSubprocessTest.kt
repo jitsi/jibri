@@ -46,8 +46,8 @@ internal class JibriSubprocessTest : ShouldSpec() {
     // after this test is done
     private val oldLogOutput = LoggingUtils.logOutput
 
-    override fun beforeSpec(description: io.kotlintest.Description, spec: Spec) {
-        super.beforeSpec(description, spec)
+    override fun beforeSpec(spec: Spec) {
+        super.beforeSpec(spec)
 
         LoggingUtils.logOutput = { _, _ -> mock() }
 
@@ -59,8 +59,8 @@ internal class JibriSubprocessTest : ShouldSpec() {
         }
     }
 
-    override fun afterSpec(description: Description, spec: Spec) {
-        super.afterSpec(description, spec)
+    override fun afterSpec(spec: Spec) {
+        super.afterSpec(spec)
         LoggingUtils.logOutput = oldLogOutput
     }
 

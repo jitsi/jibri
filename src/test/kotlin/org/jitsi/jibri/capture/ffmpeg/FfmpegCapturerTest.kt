@@ -22,7 +22,6 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.Description
 import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
 import io.kotlintest.matchers.collections.contain
@@ -57,8 +56,8 @@ internal class FfmpegCapturerTest : ShouldSpec() {
     private val FFMPEG_ERROR_STATE = ProcessState(ProcessExited(255), "rtmp://blah Input/output error")
     private val FFMPEG_FAILED_TO_START = ProcessState(ProcessFailedToStart(), "Failed to start")
 
-    override fun beforeSpec(description: Description, spec: Spec) {
-        super.beforeSpec(description, spec)
+    override fun beforeSpec(spec: Spec) {
+        super.beforeSpec(spec)
 
         whenever(sink.format).thenReturn("format")
         whenever(sink.options).thenReturn(arrayOf("option1", "option2"))
