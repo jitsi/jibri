@@ -27,9 +27,9 @@ import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import io.kotlintest.Description
-import io.kotlintest.Matcher
-import io.kotlintest.Result
+import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
+import io.kotlintest.matchers.string.contain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNot
 import io.kotlintest.specs.ShouldSpec
@@ -53,14 +53,9 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.core.Application
 import javax.ws.rs.ext.ContextResolver
 
-fun containStr(str: String) = object : Matcher<String> {
-    override fun test(value: String) = Result(
-        value.contains(str),
-        "String $value should contain $str",
-        "String $value should not contain $str")
-}
-
 class HttpApiTest : ShouldSpec() {
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+
     private val jibriManager: JibriManager = mock()
     private val jibriStatusManager: JibriStatusManager = mock()
     private lateinit var jerseyTest: JerseyTest
@@ -102,7 +97,7 @@ class HttpApiTest : ShouldSpec() {
                 val res = jerseyTest.target("/jibri/api/v1.0/health").request()
                     .get()
                 should("call JibriStatusManager#overallStatus") {
-                    verify(jibriStatusManager)
+                    verify(jibriStatusManager).overallStatus
                 }
                 should("call JibriManager#currentEnvironmentContext") {
                     verify(jibriManager).currentEnvironmentContext
@@ -114,7 +109,7 @@ class HttpApiTest : ShouldSpec() {
                     val json = res.readEntity(String::class.java)
                     // The json should not include the 'environmentContext' field at all, since it
                     // will be null
-                    json shouldNot containStr("environmentContext")
+                    json shouldNot contain("environmentContext")
                     val health = jacksonObjectMapper().readValue(json, JibriHealth::class.java)
                     health shouldBe expectedHealth
                 }

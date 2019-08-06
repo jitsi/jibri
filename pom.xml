@@ -11,7 +11,7 @@
     <properties>
         <testng.version>6.13.1</testng.version>
         <selenium.version>3.12.0</selenium.version>
-        <kotlin.version>1.2.41</kotlin.version>
+        <kotlin.version>1.3.40</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -164,7 +164,7 @@
         <dependency>
             <groupId>io.kotlintest</groupId>
             <artifactId>kotlintest-runner-junit5</artifactId>
-            <version>3.1.10</version>
+            <version>3.4.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -209,7 +209,9 @@
                                 <sourceDir>${project.basedir}/src/main/java</sourceDir>
                             </sourceDirs>
                             <args>
-                                <arg>-Werror</arg>
+                                <!--Disabled until  mockito-kotlin is upgraded, because it relies on an older
+                                kotlin stdlib version-->
+<!--                                <arg>-Werror</arg>-->
                             </args>
                         </configuration>
                     </execution>
