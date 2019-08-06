@@ -17,10 +17,10 @@
 
 package org.jitsi.jibri.api.http.internal
 
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.reset
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
+import com.nhaarman.mockitokotlin2.whenever
 import io.kotlintest.Description
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
