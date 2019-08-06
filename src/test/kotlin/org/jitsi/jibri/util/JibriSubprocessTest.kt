@@ -20,6 +20,7 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
+import io.kotlintest.Description
 import io.kotlintest.Spec
 import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
@@ -36,6 +37,13 @@ internal class JibriSubprocessTest : ShouldSpec() {
     private val processStateHandler = argumentCaptor<(ProcessState) -> Unit>()
     private val executorStateUpdates = mutableListOf<ProcessState>()
 
+    //NOTE(brian): because we set useForks=false in the maven-surefire-plugin configuration, we should get
+    // an isolated VM for each test, meaning we don't have to worry about overriding globals (like we do with
+    // LoggingUtils.logOutput below), but, although it works fine from the command line, it's not working correctly
+    // here in Intellij and is affecting other tests.  To work around this, save the current value and restore it
+    // after this test is done
+    private val oldLogOutput = LoggingUtils.logOutput
+
     override fun beforeSpec(description: io.kotlintest.Description, spec: Spec) {
         super.beforeSpec(description, spec)
 
@@ -47,6 +55,11 @@ internal class JibriSubprocessTest : ShouldSpec() {
         subprocess.addStatusHandler { status ->
             executorStateUpdates.add(status)
         }
+    }
+
+    override fun afterSpec(description: Description, spec: Spec) {
+        super.afterSpec(description, spec)
+        LoggingUtils.logOutput = oldLogOutput
     }
 
     init {
