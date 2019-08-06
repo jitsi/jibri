@@ -14,8 +14,10 @@ import java.util.logging.Logger
  * in the call but they are audio and video muted; eventually even in this scenario we'll
  * timeout, but return [SeleniumEvent.CallEmpty].
  */
-class MediaReceivedStatusCheck(private val logger: Logger) : CallStatusCheck {
-    private val clock = Clock.systemDefaultZone()
+class MediaReceivedStatusCheck(
+    private val logger: Logger,
+    private val clock: Clock = Clock.systemDefaultZone()
+) : CallStatusCheck {
     // The last timestamp where we saw non-zero media.  We default with the
     // assumption we're receiving media.
     private var timeOfLastMedia = clock.instant()
@@ -30,7 +32,7 @@ class MediaReceivedStatusCheck(private val logger: Logger) : CallStatusCheck {
         logger.info("Jibri client receive bitrates: $bitrates, all clients muted? $allClientsMuted")
         if (allClientsMuted && firstTimeAllClientsMuted == null) {
             firstTimeAllClientsMuted = now
-        } else {
+        } else if (!allClientsMuted) {
             firstTimeAllClientsMuted = null
         }
         // There are a couple possible outcomes here:
