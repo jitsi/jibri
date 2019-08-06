@@ -24,8 +24,8 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.Description
 import io.kotlintest.IsolationMode
+import io.kotlintest.TestCase
 import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
@@ -68,8 +68,8 @@ class XmppApiTest : ShouldSpec() {
         }
     }
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
         val executorService: ExecutorService = mock()
         whenever(executorService.submit(any<Runnable>())).then {
             (it.arguments.first() as Runnable).run()

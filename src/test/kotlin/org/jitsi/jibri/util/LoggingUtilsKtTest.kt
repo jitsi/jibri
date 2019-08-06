@@ -23,8 +23,8 @@ import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.Description
 import io.kotlintest.IsolationMode
+import io.kotlintest.TestCase
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
 import org.jitsi.jibri.helpers.seconds
@@ -42,8 +42,8 @@ internal class LoggingUtilsKtTest : FunSpec() {
     private lateinit var inputStream: PipedInputStream
     private val logger: Logger = mock()
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
         pipedOutputStream = PipedOutputStream()
         inputStream = PipedInputStream(pipedOutputStream)
         reset(logger)
