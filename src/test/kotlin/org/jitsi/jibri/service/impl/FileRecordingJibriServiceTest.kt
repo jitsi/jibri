@@ -17,8 +17,6 @@
 
 package org.jitsi.jibri.service.impl
 
-import io.kotlintest.IsolationMode
-
 //internal class FileRecordingJibriServiceTest : ShouldSpec() {
 //    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 //

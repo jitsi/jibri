@@ -20,7 +20,6 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.Description
 import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
 import io.kotlintest.matchers.collections.shouldBeEmpty
