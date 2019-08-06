@@ -16,7 +16,7 @@
 
 package org.jitsi.jibri.selenium
 
-import io.kotlintest.Description
+import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
 import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.matchers.haveSize
@@ -27,13 +27,13 @@ import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.status.ComponentState
 
 internal class SeleniumStateMachineTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val stateUpdates = mutableListOf<Pair<ComponentState, ComponentState>>()
     private val seleniumStateMachine = SeleniumStateMachine()
 
-    override fun beforeSpec(description: Description, spec: Spec) {
-        super.beforeSpec(description, spec)
+    override fun beforeSpec(spec: Spec) {
+        super.beforeSpec(spec)
         seleniumStateMachine.onStateTransition { fromState, toState ->
             stateUpdates.add((fromState to toState))
         }

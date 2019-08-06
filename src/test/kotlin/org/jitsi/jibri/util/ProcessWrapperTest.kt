@@ -17,11 +17,11 @@
 
 package org.jitsi.jibri.util
 
-import com.nhaarman.mockito_kotlin.doThrow
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.Description
+import com.nhaarman.mockitokotlin2.doThrow
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.kotlintest.TestCase
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
@@ -40,8 +40,8 @@ internal class ProcessWrapperTest : ShouldSpec() {
     private lateinit var inputStream: PipedInputStream
     private lateinit var processWrapper: ProcessWrapper
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
 
         outputStream = PipedOutputStream()
         inputStream = PipedInputStream(outputStream)

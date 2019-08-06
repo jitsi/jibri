@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri
 
+import io.kotlintest.IsolationMode
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
@@ -26,7 +27,7 @@ import io.kotlintest.tables.row
 import io.kotlintest.tables.table
 
 class CallUrlInfoTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
         "creating a CallUrlInfo" {

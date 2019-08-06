@@ -20,16 +20,15 @@ package org.jitsi.jibri.api.http
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.anyOrNull
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.Description
-import io.kotlintest.Matcher
-import io.kotlintest.Result
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.anyOrNull
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
+import io.kotlintest.matchers.string.contain
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNot
 import io.kotlintest.specs.ShouldSpec
@@ -53,20 +52,15 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.core.Application
 import javax.ws.rs.ext.ContextResolver
 
-fun containStr(str: String) = object : Matcher<String> {
-    override fun test(value: String) = Result(
-        value.contains(str),
-        "String $value should contain $str",
-        "String $value should not contain $str")
-}
-
 class HttpApiTest : ShouldSpec() {
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+
     private val jibriManager: JibriManager = mock()
     private val jibriStatusManager: JibriStatusManager = mock()
     private lateinit var jerseyTest: JerseyTest
 
-    override fun beforeSpec(description: Description, spec: Spec) {
-        super.beforeSpec(description, spec)
+    override fun beforeSpec(spec: Spec) {
+        super.beforeSpec(spec)
         jerseyTest = object : JerseyTest() {
             override fun configure(): Application {
                 return ResourceConfig(object : ResourceConfig() {
@@ -83,8 +77,8 @@ class HttpApiTest : ShouldSpec() {
         jerseyTest.setUp()
     }
 
-    override fun afterSpec(description: Description, spec: Spec) {
-        super.afterSpec(description, spec)
+    override fun afterSpec(spec: Spec) {
+        super.afterSpec(spec)
         jerseyTest.tearDown()
     }
 
@@ -102,7 +96,7 @@ class HttpApiTest : ShouldSpec() {
                 val res = jerseyTest.target("/jibri/api/v1.0/health").request()
                     .get()
                 should("call JibriStatusManager#overallStatus") {
-                    verify(jibriStatusManager)
+                    verify(jibriStatusManager).overallStatus
                 }
                 should("call JibriManager#currentEnvironmentContext") {
                     verify(jibriManager).currentEnvironmentContext
@@ -114,7 +108,7 @@ class HttpApiTest : ShouldSpec() {
                     val json = res.readEntity(String::class.java)
                     // The json should not include the 'environmentContext' field at all, since it
                     // will be null
-                    json shouldNot containStr("environmentContext")
+                    json shouldNot contain("environmentContext")
                     val health = jacksonObjectMapper().readValue(json, JibriHealth::class.java)
                     health shouldBe expectedHealth
                 }

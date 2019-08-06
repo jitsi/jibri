@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.capture.ffmpeg.executor
 
+import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
@@ -27,7 +28,7 @@ import org.jitsi.jibri.capture.ffmpeg.OutputLineClassification
 import org.jitsi.jibri.capture.ffmpeg.OutputParser
 
 internal class OutputParserTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
         "An encoding output line" {

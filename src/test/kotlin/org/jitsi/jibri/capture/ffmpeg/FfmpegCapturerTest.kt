@@ -17,12 +17,12 @@
 
 package org.jitsi.jibri.capture.ffmpeg
 
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.Description
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
 import io.kotlintest.matchers.collections.contain
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
@@ -44,7 +44,7 @@ import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
 
 internal class FfmpegCapturerTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val osDetector: OsDetector = mock()
     private val ffmpeg: JibriSubprocess = mock()
@@ -56,8 +56,8 @@ internal class FfmpegCapturerTest : ShouldSpec() {
     private val FFMPEG_ERROR_STATE = ProcessState(ProcessExited(255), "rtmp://blah Input/output error")
     private val FFMPEG_FAILED_TO_START = ProcessState(ProcessFailedToStart(), "Failed to start")
 
-    override fun beforeSpec(description: Description, spec: Spec) {
-        super.beforeSpec(description, spec)
+    override fun beforeSpec(spec: Spec) {
+        super.beforeSpec(spec)
 
         whenever(sink.format).thenReturn("format")
         whenever(sink.options).thenReturn(arrayOf("option1", "option2"))

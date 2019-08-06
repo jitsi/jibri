@@ -17,11 +17,11 @@
 
 package org.jitsi.jibri.api.http.internal
 
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.reset
-import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.Description
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.reset
+import com.nhaarman.mockitokotlin2.whenever
+import io.kotlintest.TestCase
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.jibri.util.TaskPools
@@ -32,8 +32,8 @@ class InternalHttpApiTest : ShouldSpec() {
     private val executor: ScheduledExecutorService = mock()
     private val future: ScheduledFuture<*> = mock()
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
         reset(executor, future)
         whenever(executor.schedule(any(), any(), any())).thenReturn(future)
         TaskPools.recurringTasksPool = executor

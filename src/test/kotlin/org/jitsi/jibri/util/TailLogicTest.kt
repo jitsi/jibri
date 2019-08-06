@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.util
 
-import io.kotlintest.Description
+import io.kotlintest.TestCase
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import java.io.PipedInputStream
@@ -35,8 +35,8 @@ class TailLogicTest : ShouldSpec() {
         }
     }
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
         outputStream = PipedOutputStream()
         inputStream = PipedInputStream(outputStream)
         tail = TailLogic(inputStream)

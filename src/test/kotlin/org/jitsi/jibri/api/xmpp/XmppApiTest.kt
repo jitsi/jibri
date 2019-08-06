@@ -18,13 +18,14 @@
 package org.jitsi.jibri.api.xmpp
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.nhaarman.mockito_kotlin.any
-import com.nhaarman.mockito_kotlin.argumentCaptor
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.times
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
-import io.kotlintest.Description
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.argumentCaptor
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
+import com.nhaarman.mockitokotlin2.verify
+import com.nhaarman.mockitokotlin2.whenever
+import io.kotlintest.IsolationMode
+import io.kotlintest.TestCase
 import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
@@ -54,7 +55,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 
 class XmppApiTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private fun createJibriIq(iqAction: JibriIq.Action, iqMode: JibriIq.RecordingMode): JibriIq {
         return JibriIq().apply {
@@ -67,8 +68,8 @@ class XmppApiTest : ShouldSpec() {
         }
     }
 
-    override fun beforeTest(description: Description) {
-        super.beforeTest(description)
+    override fun beforeTest(testCase: TestCase) {
+        super.beforeTest(testCase)
         val executorService: ExecutorService = mock()
         whenever(executorService.submit(any<Runnable>())).then {
             (it.arguments.first() as Runnable).run()
