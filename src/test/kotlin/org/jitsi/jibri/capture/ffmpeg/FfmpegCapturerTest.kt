@@ -23,6 +23,7 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.kotlintest.Description
+import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
 import io.kotlintest.matchers.collections.contain
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
@@ -44,7 +45,7 @@ import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
 
 internal class FfmpegCapturerTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val osDetector: OsDetector = mock()
     private val ffmpeg: JibriSubprocess = mock()

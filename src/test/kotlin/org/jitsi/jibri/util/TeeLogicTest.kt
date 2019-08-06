@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.util
 
+import io.kotlintest.IsolationMode
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.ShouldSpec
@@ -27,7 +28,7 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 
 internal class TeeLogicTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val outputStream = PipedOutputStream()
     private val inputStream = PipedInputStream(outputStream)

@@ -18,13 +18,15 @@
 package org.jitsi.jibri.sink.impl
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
+import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 
 internal class FileSinkTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+
     private val fs = MemoryFileSystemBuilder.newLinux().build()
 
     init {

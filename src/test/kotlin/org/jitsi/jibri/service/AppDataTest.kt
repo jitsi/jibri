@@ -19,13 +19,14 @@ package org.jitsi.jibri.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.maps.shouldContainExactly
 import io.kotlintest.matchers.maps.shouldContainKey
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
 
 internal class AppDataTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
         "a json-encoded app data structure" {

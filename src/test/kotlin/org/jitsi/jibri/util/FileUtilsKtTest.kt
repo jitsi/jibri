@@ -18,6 +18,7 @@
 package org.jitsi.jibri.util
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
+import io.kotlintest.IsolationMode
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import java.nio.file.Files
@@ -25,7 +26,8 @@ import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
 
 internal class FileUtilsKtTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+
     private val fs = MemoryFileSystemBuilder.newLinux().build()
 
     private fun setPerms(permsStr: String, p: Path) {

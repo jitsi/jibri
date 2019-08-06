@@ -21,6 +21,7 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.kotlintest.Description
+import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
 import io.kotlintest.matchers.collections.shouldBeEmpty
 import io.kotlintest.matchers.collections.shouldNotBeEmpty
@@ -29,7 +30,8 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 
 internal class JibriSubprocessTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+
     private val processFactory: ProcessFactory = mock()
     private val processWrapper: ProcessWrapper = mock()
     private val processStatePublisher: ProcessStatePublisher = mock()

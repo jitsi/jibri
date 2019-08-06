@@ -17,8 +17,10 @@
 
 package org.jitsi.jibri.service.impl
 
+import io.kotlintest.IsolationMode
+
 //internal class FileRecordingJibriServiceTest : ShouldSpec() {
-//    override fun isInstancePerTest(): Boolean = true
+//    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 //
 //    private fun setPerms(permsStr: String, p: Path) {
 //        val perms = PosixFilePermissions.fromString(permsStr)

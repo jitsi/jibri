@@ -24,6 +24,7 @@ import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.kotlintest.Description
+import io.kotlintest.IsolationMode
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.FunSpec
 import org.jitsi.jibri.helpers.seconds
@@ -34,7 +35,7 @@ import java.util.logging.Logger
 import kotlin.concurrent.thread
 
 internal class LoggingUtilsKtTest : FunSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val process: ProcessWrapper = mock()
     private lateinit var pipedOutputStream: PipedOutputStream
