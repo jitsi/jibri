@@ -45,20 +45,31 @@ class MediaReceivedStatusCheck(
             timeOfLastMedia = now
         }
         val timeSinceLastMedia = Duration.between(timeOfLastMedia, now)
-        if (timeSinceLastMedia > Duration.ofSeconds(30)) {
-            firstTimeAllClientsMuted?.let {
-                // All clients are muted, has this been the case for too long?
-                val timeSinceAllClientsMuted = Duration.between(it, now)
-                return if (timeSinceAllClientsMuted > Duration.ofMinutes(10)) {
-                    SeleniumEvent.CallEmpty
-                } else {
-                    null
-                }
-            } ?: run {
-                // Not all the clients are muted, so there's a media flow issue
-                return SeleniumEvent.NoMediaReceived
+
+        if (allClientsMuted) {
+            val timeSinceAllClientsMuted = Duration.between(firstTimeAllClientsMuted!!, now)
+            return if (timeSinceAllClientsMuted > ALL_MUTED_TIMEOUT) {
+                SeleniumEvent.CallEmpty
+            } else {
+                null
             }
+        } else if (timeSinceLastMedia > NO_MEDIA_TIMEOUT) {
+            return SeleniumEvent.NoMediaReceived
         }
+
         return null
+    }
+
+    companion object {
+        /**
+         * How long we'll stay in the call if we're not receiving any incoming media (assuming all participants
+         * are not muted)
+         */
+        private val NO_MEDIA_TIMEOUT: Duration = Duration.ofSeconds(30)
+
+        /**
+         * How long we'll stay in the call if all participants are muted
+         */
+        private val ALL_MUTED_TIMEOUT: Duration = Duration.ofMinutes(10)
     }
 }
