@@ -62,15 +62,21 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                     should("not report any event") {
                         check.run(callPage) shouldBe null
                     }
+                    "and media starts back up before the no-media timeout" {
+                        whenever(callPage.getBitrates()).thenReturn(mapOf(
+                                "download" to 1024L
+                        ))
+                        clock.elapse(Duration.ofMinutes(1))
+                        should("not report any event") {
+                            check.run(callPage) shouldBe null
+                        }
+                    }
                 }
                 "after the no-media timeout" {
                     clock.elapse(Duration.ofSeconds(45))
                     should("report a no media error") {
                         check.run(callPage) shouldBe SeleniumEvent.NoMediaReceived
                     }
-                }
-                "and media starts back up before the no-media timeout" {
-
                 }
             }
         }
