@@ -20,6 +20,9 @@ import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
+import org.jitsi.jibri.selenium.status_checks.CallStatusCheck
+import org.jitsi.jibri.selenium.status_checks.EmptyCallStatusCheck
+import org.jitsi.jibri.selenium.status_checks.MediaReceivedStatusCheck
 import org.jitsi.jibri.selenium.util.BrowserFileHandler
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
@@ -35,6 +38,9 @@ import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
 import org.openqa.selenium.remote.UnreachableBrowserException
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -287,51 +293,6 @@ class JibriSelenium(
         logger.info("Chrome driver quit")
     }
 
-    /**
-     * [CallStatusCheck]s are executed periodically and perform checks via javascripe on the call page to make sure
-     * everything is running correctly.
-     */
-    private interface CallStatusCheck {
-        /**
-         * Run a check via [callPage], return a [SeleniumEvent] if something notable has been detected (i.e. an error),
-         * null if whatever the check is looking for was fine.
-         */
-        fun run(callPage: CallPage): SeleniumEvent?
-    }
 
-    private class EmptyCallStatusCheck : CallStatusCheck {
-        private var numTimesEmpty = 0
-        override fun run(callPage: CallPage): SeleniumEvent? {
-            // >1 since the count will include jibri itself
-            if (callPage.getNumParticipants() > 1) {
-                numTimesEmpty = 0
-            } else {
-                numTimesEmpty++
-            }
-            if (numTimesEmpty >= 2) {
-                return SeleniumEvent.CallEmpty
-            }
-            return null
-        }
-    }
 
-    private class MediaReceivedStatusCheck(private val logger: Logger) : CallStatusCheck {
-        private var numTimesNoMedia = 0
-        override fun run(callPage: CallPage): SeleniumEvent? {
-            val bitrates = callPage.getBitrates()
-            // getNumParticipants includes Jibri, so subtract 1
-            val allClientsMuted = callPage.numRemoteParticipantsMuted() == (callPage.getNumParticipants() - 1)
-            logger.info("Jibri client receive bitrates: $bitrates, all clients muted? $allClientsMuted")
-            val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
-            if (downloadBitrate == 0L && !allClientsMuted) {
-                numTimesNoMedia++
-            } else {
-                numTimesNoMedia = 0
-            }
-            if (numTimesNoMedia >= 2) {
-                return SeleniumEvent.NoMediaReceived
-            }
-            return null
-        }
-    }
 }
