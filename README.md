@@ -47,6 +47,12 @@ echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /et
 apt-get -y update
 apt-get -y install google-chrome-stable
 ```
+Add chrome managed policies file and set `CommandLineFlagSecurityWarningsEnabled` to `false`. It will hide warnings in Chrome.
+You can set it like so:
+```
+mkdir -p /etc/opt/chrome/policies/managed
+echo '{ "CommandLineFlagSecurityWarningsEnabled": false }' >>/etc/opt/chrome/policies/managed/managed_policies.json
+```
 Chromedriver is also required and can be installed like so:
 ```
 CHROME_DRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`
