@@ -1,8 +1,5 @@
 #!/usr/bin/make -f
 
-override_dh_auto_build-indep:
-	mv target/jibri-1.0-SNAPSHOT-jar-with-dependencies.jar target/jibri.jar
-
 override_dh_strip_nondeterminism:
 	# Disables dh_strip_nondeterminism to speed up the debian package creation
 
