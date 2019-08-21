@@ -11,7 +11,7 @@ cd $WORKSPACE
 # Let's get version from maven
 MVNVER=`xmllint --xpath "/*[local-name()='project']/*[local-name()='version']/text()" pom.xml`
 TAG_NAME="v${MVNVER/-SNAPSHOT/}"
-echo $TAG_NAME
+echo "Current tag name: $TAG_NAME"
 
 if ! git rev-parse $TAG_NAME >/dev/null 2>&1
 then
@@ -24,8 +24,7 @@ fi
 VERSION_FULL=`git describe --match "v[0-9\.]*" --long`
 echo "Full version: ${VERSION_FULL}"
 
-VERSION=`echo ${VERSION_FULL} | awk -F- '{print $1"-"$2}'`
-VERSION=${VERSION:1}
+VERSION=${VERSION_FULL:1}
 echo "Package version: ${VERSION}"
 
 REV=$(git log --pretty=format:'%h' -n 1)
