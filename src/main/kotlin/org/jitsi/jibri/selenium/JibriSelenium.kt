@@ -85,7 +85,8 @@ val SIP_GW_URL_OPTIONS = listOf(
     "config.iAmRecorder=true",
     "config.iAmSipGateway=true",
     "config.ignoreStartMuted=true",
-    "config.analytics.disabled=true"
+    "config.analytics.disabled=true",
+    "config.p2p.enabled=false"
 )
 
 val RECORDING_URL_OPTIONS = listOf(
@@ -94,7 +95,8 @@ val RECORDING_URL_OPTIONS = listOf(
     "config.startWithAudioMuted=true",
     "config.startWithVideoMuted=true",
     "interfaceConfig.APP_NAME=\"Jibri\"",
-    "config.analytics.disabled=true"
+    "config.analytics.disabled=true",
+    "config.p2p.enabled=false"
 )
 
 /**
