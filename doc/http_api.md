@@ -43,6 +43,7 @@ None
 	},
 	"sinkType": String, // "stream" for streaming, "file" for recording
 	"youTubeStreamKey": String // If using "stream" above, this is the YouTube stream key to use
+	"rtmpUrl": String // If using "stream" above, this is the full RTMP URL to broadcast to. Overrides youtubeStreamKey if both are present.
 }
 ```
 ##### Success Response

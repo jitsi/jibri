@@ -56,6 +56,10 @@ data class StreamingParams(
      */
     val youTubeStreamKey: String,
     /**
+     * The full RTMP url to use for this stream
+     */
+    val rtmpUrl: String,
+    /**
      * The YouTube broadcast ID for this stream, if we have it
      */
     val youTubeBroadcastId: String? = null
@@ -74,11 +78,19 @@ class StreamingJibriService(
     private val jibriSelenium = JibriSelenium()
 
     init {
-        sink = StreamSink(
-            url = "$YOUTUBE_URL/${streamingParams.youTubeStreamKey}",
-            streamingMaxBitrate = STREAMING_MAX_BITRATE,
-            streamingBufSize = 2 * STREAMING_MAX_BITRATE
-        )
+        if (streamingParams.rtmpUrl) {
+            sink = StreamSink(
+                url = "${streamingParams.rtmpUrl}",
+                streamingMaxBitrate = STREAMING_MAX_BITRATE,
+                streamingBufSize = 2 * STREAMING_MAX_BITRATE
+            )
+        } else {
+            sink = StreamSink(
+                url = "$YOUTUBE_URL/${streamingParams.youTubeStreamKey}",
+                streamingMaxBitrate = STREAMING_MAX_BITRATE,
+                streamingBufSize = 2 * STREAMING_MAX_BITRATE
+            )
+        }
 
         registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
