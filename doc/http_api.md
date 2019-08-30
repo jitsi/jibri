@@ -30,16 +30,17 @@ None
 ##### Data Params
 ```
 {
+	"sessionId": String, // the recording operation session (e.g. RecordTest)
 	"callParams": {
 		"callUrlInfo": {
 			"baseUrl": String, // the base url of the call (e.g. https://meet.jit.si)
 			"callName": String // the call name to be appended to the base url
-		},
-		"callLoginParams": {
-			"domain": String, // The xmpp domain the Jibri client should log into when joining the call
-			"username": String, // The username to use for logging in to the above domain
-			"password": String // The password to use for logging in to the above domain
 		}
+	},
+	"callLoginParams": {
+		"domain": String, // The xmpp domain the Jibri client should log into when joining the call
+		"username": String, // The username to use for logging in to the above domain
+		"password": String // The password to use for logging in to the above domain
 	},
 	"sinkType": String, // "stream" for streaming, "file" for recording
 	"youTubeStreamKey": String // If using "stream" above, this is the YouTube stream key to use
