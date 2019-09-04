@@ -32,7 +32,7 @@ abstract class StatefulJibriService(private val name: String) : JibriService() {
     protected val logger = Logger.getLogger(this::class.qualifiedName)
 
     init {
-        stateMachine.onStateTransition(this::onServiceStateChange)
+        stateMachine.onStateTransition { oldState, newState -> this.onServiceStateChange(oldState, newState) }
     }
 
     private fun onServiceStateChange(oldState: ComponentState, newState: ComponentState) {
