@@ -241,7 +241,11 @@ class JibriManager(
         // and reset it
         pendingIdleFunc()
         pendingIdleFunc = {}
-        publishStatus(ComponentBusyStatus.IDLE)
+        if (!config.singleUseMode) {
+            publishStatus(ComponentBusyStatus.IDLE)
+        } else {
+            logger.info("Jibri is in single-use mode, not returning to IDLE")
+        }
     }
 
     /**

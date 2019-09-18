@@ -97,6 +97,15 @@ data class JibriConfig(
     @JsonProperty("recording_directory")
     val recordingDirectory: String,
     /**
+     * Whether or not Jibri should return to idle state
+     * after handling (successfully or unsuccessfully)
+     * a request.  A value of 'true' here means that a Jibri
+     * will NOT return back to the IDLE state and will need
+     * to be restarted in order to be used again.
+     */
+    @JsonProperty("single_use_mode")
+    val singleUseMode: Boolean = false,
+    /**
      * Whether or not pushing stats to statsd
      * should be enabled.  See [org.jitsi.jibri.statsd.JibriStatsDClient].
      */
