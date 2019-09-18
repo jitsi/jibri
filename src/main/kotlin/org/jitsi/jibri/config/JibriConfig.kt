@@ -104,7 +104,7 @@ data class JibriConfig(
      * to be restarted in order to be used again.
      */
     @JsonProperty("single_use_mode")
-    val singleUseMode: Boolean = false,
+    val singleUseMode: Boolean = true,
     /**
      * Whether or not pushing stats to statsd
      * should be enabled.  See [org.jitsi.jibri.statsd.JibriStatsDClient].
