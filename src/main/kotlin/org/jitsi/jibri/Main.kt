@@ -101,8 +101,8 @@ fun main(args: Array<String>) {
     val jibriStatusManager = JibriStatusManager()
     val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
     val statsDClient: JibriStatsDClient? = if (jibriConfig.enabledStatsD) JibriStatsDClient() else null
-    val jibri = JibriManager(jibriConfig, statsDClient = statsDClient)
-    jibri.addStatusHandler { jibriStatus ->
+    val jibriManager = JibriManager(jibriConfig, statsDClient = statsDClient)
+    jibriManager.addStatusHandler { jibriStatus ->
         when (jibriStatus) {
             is ComponentBusyStatus -> {
                 jibriStatusManager.busyStatus = jibriStatus
@@ -119,7 +119,7 @@ fun main(args: Array<String>) {
     // InternalHttpApi
     val configChangedHandler = {
         logger.info("The config file has changed, waiting for Jibri to be idle before exiting")
-        jibri.executeWhenIdle {
+        jibriManager.executeWhenIdle {
             logger.info("Jibri is idle and there are config file changes, exiting")
             // Exit so we can be restarted and load the new config
             exitProcess(0)
@@ -127,7 +127,7 @@ fun main(args: Array<String>) {
     }
     val gracefulShutdownHandler = {
         logger.info("Jibri has been told to graceful shutdown, waiting to be idle before exiting")
-        jibri.executeWhenIdle {
+        jibriManager.executeWhenIdle {
             logger.info("Jibri is idle and has been told to gracefully shutdown, exiting")
             // Exit with code 255 to indicate we do not want process restart
             exitProcess(255)
@@ -135,7 +135,7 @@ fun main(args: Array<String>) {
     }
     val shutdownHandler = {
         logger.info("Jibri has been told to shutdown, stopping any active service")
-        jibri.stopService()
+        jibriManager.stopService()
         logger.info("Service stopped")
         exitProcess(255)
     }
@@ -148,14 +148,14 @@ fun main(args: Array<String>) {
 
     // XmppApi
     val xmppApi = XmppApi(
-        jibriManager = jibri,
+        jibriManager = jibriManager,
         xmppConfigs = jibriConfig.xmppEnvironments,
         jibriStatusManager = jibriStatusManager
     )
     xmppApi.start()
 
     // HttpApi
-    launchHttpServer(httpApiPort, HttpApi(jibri, jibriStatusManager))
+    launchHttpServer(httpApiPort, HttpApi(jibriManager, jibriStatusManager))
 }
 
 fun launchHttpServer(port: Int, component: Any) {
