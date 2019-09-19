@@ -10,7 +10,6 @@ PermissionsStartOnly=true
 ExecStart=/opt/jitsi/jibri/launch.sh
 ExecStop=/opt/jitsi/jibri/graceful_shutdown.sh
 ExecReload=/opt/jitsi/jibri/graceful_shutdown.sh
-KillMode=process
 Restart=always
 RestartPreventExitStatus=255
 Type=simple
