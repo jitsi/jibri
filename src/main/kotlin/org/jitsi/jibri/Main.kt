@@ -125,14 +125,24 @@ fun main(args: Array<String>) {
             exitProcess(0)
         }
     }
+    val gracefulShutdownHandler = {
+        logger.info("Jibri has been told to graceful shutdown, waiting to be idle before exiting")
+        jibri.executeWhenIdle {
+            logger.info("Jibri is idle and there are config file changes, exiting")
+            // Exit with code 255 to indicate we do not want process restart
+            logger.info("Service stopped")
+            exitProcess(255)
+        }
+    }
     val shutdownHandler = {
         logger.info("Jibri has been told to shutdown, stopping any active service")
         jibri.stopService()
         logger.info("Service stopped")
-        exitProcess(0)
+        exitProcess(255)
     }
     val internalHttpApi = InternalHttpApi(
-        gracefulShutdownHandler = configChangedHandler,
+        configChangedHandler = configChangedHandler,
+        gracefulShutdownHandler = gracefulShutdownHandler,
         shutdownHandler = shutdownHandler
     )
     launchHttpServer(internalHttpPort, internalHttpApi)
