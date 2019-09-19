@@ -130,7 +130,6 @@ fun main(args: Array<String>) {
         jibri.executeWhenIdle {
             logger.info("Jibri is idle and there are config file changes, exiting")
             // Exit with code 255 to indicate we do not want process restart
-            logger.info("Service stopped")
             exitProcess(255)
         }
     }
