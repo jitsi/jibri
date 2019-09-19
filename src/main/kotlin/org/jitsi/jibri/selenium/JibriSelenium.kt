@@ -38,9 +38,6 @@ import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
 import org.openqa.selenium.remote.UnreachableBrowserException
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -294,7 +291,4 @@ class JibriSelenium(
         chromeDriver.quit()
         logger.info("Chrome driver quit")
     }
-
-
-
 }

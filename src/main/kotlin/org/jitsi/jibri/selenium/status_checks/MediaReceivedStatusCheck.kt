@@ -87,4 +87,3 @@ private class StateTransitionTimeTracker(private val clock: Clock) {
         } ?: false
     }
 }
-
