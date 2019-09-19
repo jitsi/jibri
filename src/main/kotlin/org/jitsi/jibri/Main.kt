@@ -128,7 +128,7 @@ fun main(args: Array<String>) {
     val gracefulShutdownHandler = {
         logger.info("Jibri has been told to graceful shutdown, waiting to be idle before exiting")
         jibri.executeWhenIdle {
-            logger.info("Jibri is idle and there are config file changes, exiting")
+            logger.info("Jibri is idle and has been told to gracefully shutdown, exiting")
             // Exit with code 255 to indicate we do not want process restart
             exitProcess(255)
         }
