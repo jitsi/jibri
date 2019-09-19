@@ -204,7 +204,13 @@ class JibriManager(
                     }
                     stopService()
                 }
-                is ComponentState.Finished -> stopService()
+                is ComponentState.Finished -> {
+                    // If a 'stop' was received externally, then this stopService call
+                    // will be redundant, but we need to make it anyway as the service
+                    // can also signal that it has finished (based on its own checks)
+                    // and needs to be stopped (cleaned up)
+                    stopService()
+                }
                 else -> { /* No op */ }
             }
         }
@@ -230,11 +236,15 @@ class JibriManager(
      */
     @Synchronized
     fun stopService() {
-        statsDClient?.incrementCounter(ASPECT_STOP, JibriStatsDClient.getTagForService(currentActiveService))
+        val currentService = currentActiveService ?: run {
+            logger.info("No service active, ignoring stop")
+            return
+        }
+        statsDClient?.incrementCounter(ASPECT_STOP, JibriStatsDClient.getTagForService(currentService))
         logger.info("Stopping the current service")
         serviceTimeoutTask?.cancel(false)
         // Note that this will block until the service is completely stopped
-        currentActiveService?.stop()
+        currentService.stop()
         currentActiveService = null
         currentEnvironmentContext = null
         // Invoke the function we've been told to next time we're idle
