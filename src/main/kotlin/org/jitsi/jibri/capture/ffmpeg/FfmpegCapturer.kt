@@ -99,14 +99,20 @@ class FfmpegCapturer(
      */
     private fun onFfmpegProcessUpdate(ffmpegState: ProcessState) {
         // We handle the case where it failed to start separately, since there is no output
-        if (ffmpegState.runningState is ProcessFailedToStart) {
-            ffmpegStatusStateMachine.transition(FfmpegEvent.ErrorLine(ErrorScope.SYSTEM, "Ffmpeg failed to start"))
-        } else if (ffmpegState.runningState is ProcessExited) {
-            logger.info("Ffmpeg quit abruptly.  Last output line: ${ffmpegState.mostRecentOutput}")
-            ffmpegStatusStateMachine.transition(FfmpegEvent.ErrorLine(ErrorScope.SESSION, "Ffmpeg failed to start"))
-        } else {
-            val status = OutputParser.parse(ffmpegState.mostRecentOutput)
-            ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
+        when (ffmpegState.runningState) {
+            is ProcessFailedToStart -> {
+                ffmpegStatusStateMachine.transition(
+                    FfmpegEvent.ErrorLine(ErrorScope.SYSTEM, "Ffmpeg failed to start"))
+            }
+            is ProcessExited -> {
+                logger.info("Ffmpeg quit abruptly.  Last output line: ${ffmpegState.mostRecentOutput}")
+                ffmpegStatusStateMachine.transition(
+                    FfmpegEvent.ErrorLine(ErrorScope.SESSION, "Ffmpeg failed to start"))
+            }
+            else -> {
+                val status = OutputParser.parse(ffmpegState.mostRecentOutput)
+                ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
+            }
         }
     }
 
