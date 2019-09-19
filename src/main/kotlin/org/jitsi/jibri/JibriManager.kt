@@ -237,6 +237,13 @@ class JibriManager(
     @Synchronized
     fun stopService() {
         val currentService = currentActiveService ?: run {
+            // After an initial call to 'stopService', we'll stop ffmpeg and it will transition
+            // to 'finished', causing the entire service to transition to 'finished' and trigger
+            // another call to stopService (see the note above when installing the status handler
+            // on the jibri service).  A more complete fix for this is much larger, so for now
+            // we'll just check if the currentActiveService has already been cleared to prevent
+            // doing a double stop (which is mostly harmless, but does fire an extra 'stop'
+            // statsd event with an empty service tag)
             logger.info("No service active, ignoring stop")
             return
         }
