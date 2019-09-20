@@ -26,10 +26,12 @@ import javax.ws.rs.core.Response
 
 @Path("/jibri/api/internal/v1.0")
 class InternalHttpApi(
+    private val configChangedHandler: () -> Unit,
     private val gracefulShutdownHandler: () -> Unit,
     private val shutdownHandler: () -> Unit
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
+
     /**
      * Signal this Jibri to shutdown gracefully, meaning shut down when
      * it is idle (i.e. finish any currently running service). Returns a 200
@@ -42,6 +44,20 @@ class InternalHttpApi(
         // Schedule firing the handler so we have a chance to send the successful
         // response.
         TaskPools.recurringTasksPool.schedule(1, action = gracefulShutdownHandler)
+        return Response.ok().build()
+    }
+
+    /**
+     * Signal this Jibri to reload its config file at the soonest opportunity
+     * (when it does not have a currently running service). Returns a 200
+     */
+    @POST
+    @Path("notifyConfigChanged")
+    fun reloadConfig(): Response {
+        logger.info("Config file changed")
+        // Schedule firing the handler so we have a chance to send the successful
+        // response.
+        TaskPools.recurringTasksPool.schedule(1, action = configChangedHandler)
         return Response.ok().build()
     }
 

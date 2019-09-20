@@ -46,10 +46,23 @@ class InternalHttpApiTest : ShouldSpec() {
                 val gracefulShutdownHandler = {
                     gracefulShutdownHandlerCalled = true
                 }
-                val internalHttpApi = InternalHttpApi(gracefulShutdownHandler, {})
+                val internalHttpApi = InternalHttpApi({}, gracefulShutdownHandler, {})
                 val response = internalHttpApi.gracefulShutdown()
                 response.status shouldBe 200
                 gracefulShutdownHandlerCalled shouldBe false
+            }
+        }
+
+        "notifyConfigChanged" {
+            should("return a 200 and not invoke the config changed handler directly") {
+                var configChangedHandlerCalled = false
+                val configChangedHandler = {
+                    configChangedHandlerCalled = true
+                }
+                val internalHttpApi = InternalHttpApi({}, configChangedHandler, {})
+                val response = internalHttpApi.reloadConfig()
+                response.status shouldBe 200
+                configChangedHandlerCalled shouldBe false
             }
         }
 
@@ -59,7 +72,7 @@ class InternalHttpApiTest : ShouldSpec() {
                 val shutdownHandler = {
                     shutdownHandlerCalled = true
                 }
-                val internalHttpApi = InternalHttpApi({}, shutdownHandler)
+                val internalHttpApi = InternalHttpApi({}, {}, shutdownHandler)
                 val response = internalHttpApi.shutdown()
                 response.status shouldBe 200
                 shutdownHandlerCalled shouldBe false
