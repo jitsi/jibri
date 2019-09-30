@@ -222,6 +222,13 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 return e.message;
             }
         """.trimMargin())
+
+        // Let's wait till we are alone in the room
+        // (give time for the js Promise to finish before quiting selenium)
+        WebDriverWait(driver, 2).until {
+            getNumParticipants() == 1
+        }
+
         return when (result) {
             is String -> false
             else -> true
