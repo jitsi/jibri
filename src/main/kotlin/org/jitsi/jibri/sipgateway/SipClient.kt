@@ -29,7 +29,12 @@ data class SipClientParams(
      * The display name we'll use for the web conference
      * in the pjsua call
      */
-    val displayName: String = ""
+    val displayName: String = "",
+    /**
+     * Whether auto-answer is enabled, if it is, the client will listen for
+     * incoming invites and will auto answer the first one.
+     */
+    val autoAnswer: Boolean = false
 )
 
 abstract class SipClient : StatusPublisher<ComponentState>() {

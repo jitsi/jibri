@@ -66,7 +66,9 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
                 "--id", "${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>",
                 "--config-file", CONFIG_FILE_LOCATION,
                 "--log-file", "/tmp/pjsua.out",
-                "sip:${pjsuaClientParams.sipClientParams.sipAddress}"
+                "--max-calls=1",
+                if (pjsuaClientParams.sipClientParams.autoAnswer)
+                    "--auto-answer=200" else "sip:${pjsuaClientParams.sipClientParams.sipAddress}"
         )
         pjsua.launch(command, mapOf("DISPLAY" to X_DISPLAY))
     }

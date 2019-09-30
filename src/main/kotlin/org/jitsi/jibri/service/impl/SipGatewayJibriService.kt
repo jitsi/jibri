@@ -44,7 +44,7 @@ data class SipGatewayServiceParams(
 /**
  * A [JibriService] responsible for joining both a web call
  * and a SIP call, capturing the audio and video from each, and
- * forwarding thenm to the other side.
+ * forwarding them to the other side.
  */
 class SipGatewayJibriService(
     private val sipGatewayServiceParams: SipGatewayServiceParams
