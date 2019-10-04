@@ -68,7 +68,7 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
                 "the check" {
                     should("return empty after the timeout") {
                         check.run(callPage) shouldBe null
-                        clock.elapse(11.seconds)
+                        clock.elapse(31.seconds)
                         check.run(callPage) shouldBe SeleniumEvent.CallEmpty
                     }
                 }

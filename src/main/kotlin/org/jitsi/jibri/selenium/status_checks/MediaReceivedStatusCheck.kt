@@ -62,4 +62,3 @@ class MediaReceivedStatusCheck(
         private val ALL_MUTED_TIMEOUT: Duration = Duration.ofMinutes(10)
     }
 }
-
