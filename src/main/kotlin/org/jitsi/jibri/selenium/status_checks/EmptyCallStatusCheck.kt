@@ -18,6 +18,9 @@ class EmptyCallStatusCheck(
     private val callEmptyTimeout: Duration = DEFAULT_CALL_EMPTY_TIMEOUT,
     private val clock: Clock = Clock.systemUTC()
 ) : CallStatusCheck {
+    init {
+        logger.info("Starting empty call check with a timeout of $callEmptyTimeout")
+    }
     // The timestamp at which we last saw the call transition from
     // non-empty to empty
     private val callWentEmptyTime = StateTransitionTimeTracker(clock)

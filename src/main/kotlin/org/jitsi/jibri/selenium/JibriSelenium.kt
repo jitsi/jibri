@@ -78,7 +78,11 @@ data class JibriSeleniumOptions(
      * Chrome command line flags to add (in addition to the common
      * ones)
      */
-    val extraChromeCommandLineFlags: List<String> = listOf()
+    val extraChromeCommandLineFlags: List<String> = listOf(),
+    /**
+     * How long we should stay in a call with no other participants before quitting
+     */
+    val emptyCallTimeout: Duration = EmptyCallStatusCheck.DEFAULT_CALL_EMPTY_TIMEOUT
 )
 
 val SIP_GW_URL_OPTIONS = listOf(
@@ -158,7 +162,7 @@ class JibriSelenium(
         // for media being received, since the call being empty will also mean Jibri is not receiving media but should
         // not cause Jibri to go unhealthy (like not receiving media when there are others in the call will).
         callStatusChecks = listOf(
-            EmptyCallStatusCheck(logger),
+            EmptyCallStatusCheck(logger, callEmptyTimeout = jibriSeleniumOptions.emptyCallTimeout),
             MediaReceivedStatusCheck(logger)
         )
         stateMachine.onStateTransition(this::onSeleniumStateChange)
