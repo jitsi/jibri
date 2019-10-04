@@ -4,7 +4,6 @@ import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import java.time.Clock
 import java.time.Duration
-import java.time.Instant
 import java.util.logging.Logger
 
 /**
@@ -61,30 +60,6 @@ class MediaReceivedStatusCheck(
          * How long we'll stay in the call if all participants are muted
          */
         private val ALL_MUTED_TIMEOUT: Duration = Duration.ofMinutes(10)
-    }
-}
-
-/**
- * Track the most recent timestamp at which we transitioned from
- * an event having not occurred to when it did occur.  Note this
- * tracks the timestamp of that *transition*, not the most recent
- * time the event itself occurred.
- */
-private class StateTransitionTimeTracker(private val clock: Clock) {
-    private var timestampTransitionOccured: Instant? = null
-
-    fun maybeUpdate(eventOccurred: Boolean) {
-        if (eventOccurred && timestampTransitionOccured == null) {
-            timestampTransitionOccured = clock.instant()
-        } else if (!eventOccurred) {
-            timestampTransitionOccured = null
-        }
-    }
-
-    fun exceededTimeout(timeout: Duration): Boolean {
-        return timestampTransitionOccured?.let {
-            Duration.between(it, clock.instant()) > timeout
-        } ?: false
     }
 }
 
