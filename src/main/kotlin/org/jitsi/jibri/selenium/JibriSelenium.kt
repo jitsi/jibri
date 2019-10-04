@@ -158,7 +158,7 @@ class JibriSelenium(
         // for media being received, since the call being empty will also mean Jibri is not receiving media but should
         // not cause Jibri to go unhealthy (like not receiving media when there are others in the call will).
         callStatusChecks = listOf(
-            EmptyCallStatusCheck(),
+            EmptyCallStatusCheck(logger),
             MediaReceivedStatusCheck(logger)
         )
         stateMachine.onStateTransition(this::onSeleniumStateChange)

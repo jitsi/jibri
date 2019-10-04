@@ -27,7 +27,8 @@ import java.time.Instant
  * time the event itself occurred.
  */
 class StateTransitionTimeTracker(private val clock: Clock) {
-    private var timestampTransitionOccured: Instant? = null
+    var timestampTransitionOccured: Instant? = null
+        private set
 
     fun maybeUpdate(eventOccurred: Boolean) {
         if (eventOccurred && timestampTransitionOccured == null) {
