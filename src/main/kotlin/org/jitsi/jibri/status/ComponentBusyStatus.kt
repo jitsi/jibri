@@ -18,5 +18,10 @@ package org.jitsi.jibri.status
 
 enum class ComponentBusyStatus {
     BUSY,
-    IDLE
+    IDLE,
+    /**
+     * This Jibri has exhausted its 'use' and needs action
+     * (e.g. a restart) before it can be used again
+     */
+    EXPIRED
 }

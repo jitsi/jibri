@@ -127,8 +127,12 @@ class XmppApi(
      * Function to update outgoing [presence] stanza with jibri status.
      */
     private fun updatePresence(status: JibriStatus) {
-        logger.info("Jibri reports its status is now $status, publishing presence to connections")
-        mucClientManager.setPresenceExtension(status.toJibriStatusExt())
+        if (status.shouldBeSentToMuc()) {
+            logger.info("Jibri reports its status is now $status, publishing presence to connections")
+            mucClientManager.setPresenceExtension(status.toJibriStatusExt())
+        } else {
+            logger.info("Not forwarding status $status to the MUC")
+        }
     }
 
     /**
