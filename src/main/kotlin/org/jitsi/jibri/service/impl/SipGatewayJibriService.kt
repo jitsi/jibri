@@ -85,8 +85,15 @@ class SipGatewayJibriService(
     override fun start() {
         jibriSelenium.joinCall(
             sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
-        whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+
+        // when in auto-answer mode we want to start as quick as possible as
+        // we will be waiting for a sip call to come
+        if (sipGatewayServiceParams.sipClientParams.autoAnswer) {
             pjsuaClient.start()
+        } else {
+            whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+                pjsuaClient.start()
+            }
         }
     }
 
