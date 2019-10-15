@@ -59,11 +59,16 @@ class JibriSubprocess(
         logger.info("Stopping $name process")
         processStatePublisher?.stop()
         process?.apply {
-            stop()
-            waitFor(10, TimeUnit.SECONDS)
+            try {
+                stop()
+                waitFor(10, TimeUnit.SECONDS)
+            } catch (t: Throwable) {
+                logger.error("Error trying to gracefully stop subprocess $name: $t")
+            }
             if (isAlive) {
                 logger.error("$name didn't stop, killing $name")
                 destroyForcibly()
+                waitFor(10, TimeUnit.SECONDS)
             }
         }
         try {
@@ -75,6 +80,10 @@ class JibriSubprocess(
             logger.error("Exception while waiting for process logger task to complete", e)
             processLoggerTask?.cancel(true)
         }
-        logger.info("$name exited with value ${process?.exitValue}")
+        try {
+            logger.info("$name exited with value ${process?.exitValue}")
+        } catch (e: IllegalThreadStateException) {
+            logger.error("$name has still not exited!  Unable to stop it")
+        }
     }
 }
