@@ -27,6 +27,7 @@ import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.whenever
+import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 
 data class SipGatewayServiceParams(
@@ -55,6 +56,8 @@ class SipGatewayJibriService(
     private val jibriSelenium = JibriSelenium(
         JibriSeleniumOptions(
             displayName = sipGatewayServiceParams.sipClientParams.displayName,
+            // by default we wait 30 minutes alone in the call before deciding to hangup
+            emptyCallTimeout = Duration.ofMinutes(30),
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
     )
     /**
