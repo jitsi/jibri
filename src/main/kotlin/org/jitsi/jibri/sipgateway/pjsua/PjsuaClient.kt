@@ -59,15 +59,23 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
     }
 
     override fun start() {
-        val command = listOf(
+        val command = mutableListOf(
                 "pjsua",
                 "--capture-dev=$CAPTURE_DEVICE",
                 "--playback-dev=$PLAYBACK_DEVICE",
                 "--id", "${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>",
                 "--config-file", CONFIG_FILE_LOCATION,
                 "--log-file", "/tmp/pjsua.out",
-                "sip:${pjsuaClientParams.sipClientParams.sipAddress}"
+                "--max-calls=1"
         )
+
+        if (pjsuaClientParams.sipClientParams.autoAnswer) {
+            command.add("--auto-answer-timer=30")
+            command.add("--auto-answer=200")
+        } else {
+            command.add("sip:${pjsuaClientParams.sipClientParams.sipAddress}")
+        }
+
         pjsua.launch(command, mapOf("DISPLAY" to X_DISPLAY))
     }
 

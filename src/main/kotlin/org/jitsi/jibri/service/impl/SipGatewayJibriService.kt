@@ -27,6 +27,7 @@ import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.whenever
+import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 
 data class SipGatewayServiceParams(
@@ -44,7 +45,7 @@ data class SipGatewayServiceParams(
 /**
  * A [JibriService] responsible for joining both a web call
  * and a SIP call, capturing the audio and video from each, and
- * forwarding thenm to the other side.
+ * forwarding them to the other side.
  */
 class SipGatewayJibriService(
     private val sipGatewayServiceParams: SipGatewayServiceParams
@@ -55,6 +56,8 @@ class SipGatewayJibriService(
     private val jibriSelenium = JibriSelenium(
         JibriSeleniumOptions(
             displayName = sipGatewayServiceParams.sipClientParams.displayName,
+            // by default we wait 30 minutes alone in the call before deciding to hangup
+            emptyCallTimeout = Duration.ofMinutes(30),
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
     )
     /**
@@ -85,8 +88,15 @@ class SipGatewayJibriService(
     override fun start() {
         jibriSelenium.joinCall(
             sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
-        whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+
+        // when in auto-answer mode we want to start as quick as possible as
+        // we will be waiting for a sip call to come
+        if (sipGatewayServiceParams.sipClientParams.autoAnswer) {
             pjsuaClient.start()
+        } else {
+            whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+                pjsuaClient.start()
+            }
         }
     }
 
