@@ -204,7 +204,13 @@ class JibriManager(
                     }
                     stopService()
                 }
-                is ComponentState.Finished -> stopService()
+                is ComponentState.Finished -> {
+                    // If a 'stop' was received externally, then this stopService call
+                    // will be redundant, but we need to make it anyway as the service
+                    // can also signal that it has finished (based on its own checks)
+                    // and needs to be stopped (cleaned up)
+                    stopService()
+                }
                 else -> { /* No op */ }
             }
         }
@@ -230,18 +236,34 @@ class JibriManager(
      */
     @Synchronized
     fun stopService() {
-        statsDClient?.incrementCounter(ASPECT_STOP, JibriStatsDClient.getTagForService(currentActiveService))
+        val currentService = currentActiveService ?: run {
+            // After an initial call to 'stopService', we'll stop ffmpeg and it will transition
+            // to 'finished', causing the entire service to transition to 'finished' and trigger
+            // another call to stopService (see the note above when installing the status handler
+            // on the jibri service).  A more complete fix for this is much larger, so for now
+            // we'll just check if the currentActiveService has already been cleared to prevent
+            // doing a double stop (which is mostly harmless, but does fire an extra 'stop'
+            // statsd event with an empty service tag)
+            logger.info("No service active, ignoring stop")
+            return
+        }
+        statsDClient?.incrementCounter(ASPECT_STOP, JibriStatsDClient.getTagForService(currentService))
         logger.info("Stopping the current service")
         serviceTimeoutTask?.cancel(false)
         // Note that this will block until the service is completely stopped
-        currentActiveService?.stop()
+        currentService.stop()
         currentActiveService = null
         currentEnvironmentContext = null
         // Invoke the function we've been told to next time we're idle
         // and reset it
         pendingIdleFunc()
         pendingIdleFunc = {}
-        publishStatus(ComponentBusyStatus.IDLE)
+        if (!config.singleUseMode) {
+            publishStatus(ComponentBusyStatus.IDLE)
+        } else {
+            logger.info("Jibri is in single-use mode, not returning to IDLE")
+            publishStatus(ComponentBusyStatus.EXPIRED)
+        }
     }
 
     /**

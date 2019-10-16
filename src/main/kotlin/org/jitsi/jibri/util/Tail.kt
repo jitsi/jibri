@@ -45,7 +45,7 @@ class TailLogic(inputStream: InputStream) {
 class Tail(inputStream: InputStream) {
     private val tailLogic = TailLogic(inputStream)
     private var task: Future<*>
-    var mostRecentLine: String = ""
+    val mostRecentLine: String
         get() {
             return tailLogic.mostRecentLine
         }
@@ -87,7 +87,7 @@ class PublishingTail(
         task.cancel(true)
     }
 
-    var mostRecentLine: String = ""
+    val mostRecentLine: String
         get() {
             return tailLogic.mostRecentLine
         }

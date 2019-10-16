@@ -22,6 +22,7 @@ import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
+import java.lang.RuntimeException
 
 /**
  * Translate the Jibri busy status enum to the jitsi-protocol-jabber version
@@ -30,6 +31,7 @@ private fun ComponentBusyStatus.toBusyStatusExt(): JibriBusyStatusPacketExt.Busy
     return when (this) {
         ComponentBusyStatus.BUSY -> JibriBusyStatusPacketExt.BusyStatus.BUSY
         ComponentBusyStatus.IDLE -> JibriBusyStatusPacketExt.BusyStatus.IDLE
+        ComponentBusyStatus.EXPIRED -> throw RuntimeException("'EXPIRED' not supported in JibriBusyStatusPacketExt")
     }
 }
 
@@ -45,6 +47,8 @@ private fun ComponentHealthStatus.toHealthStatusExt(): HealthStatusPacketExt.Hea
 
 /**
  * Convert a [JibriStatus] to [JibriStatusPacketExt]
+ * [shouldBeSentToMuc] should be called before calling this function to ensure the
+ * status can be translated.
  */
 fun JibriStatus.toJibriStatusExt(): JibriStatusPacketExt {
     val jibriStatusExt = JibriStatusPacketExt()
@@ -58,4 +62,16 @@ fun JibriStatus.toJibriStatusExt(): JibriStatusPacketExt {
     jibriStatusExt.healthStatus = jibriHealthStatusExt
 
     return jibriStatusExt
+}
+
+/**
+ * 'Expired' is not a state we reflect in the control MUC (and isn't
+ * defined by [JibriStatusPacketExt]), it's used only for the
+ * internal health status so for now we don't see it to the MUC.
+ */
+fun JibriStatus.shouldBeSentToMuc(): Boolean {
+    return when (this.busyStatus) {
+        ComponentBusyStatus.EXPIRED -> false
+        else -> true
+    }
 }
