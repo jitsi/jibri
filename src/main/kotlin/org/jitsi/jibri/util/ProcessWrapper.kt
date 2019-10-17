@@ -18,7 +18,6 @@ package org.jitsi.jibri.util
 
 import org.jitsi.jibri.util.extensions.pid
 import java.io.InputStream
-import java.lang.reflect.Field
 import java.util.concurrent.TimeUnit
 
 /**
@@ -26,6 +25,9 @@ import java.util.concurrent.TimeUnit
  * behaviors more useful to Jibri.  This isn't done
  * as a subclass because [Process] is abstract
  * and the actual implementation varies by platform.
+ *
+ * NOTE that many methods in this class throw exceptions
+ * which must be handled
  */
 class ProcessWrapper(
     command: List<String>,
