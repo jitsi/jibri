@@ -29,7 +29,8 @@ import java.util.concurrent.TimeUnit
 class ProcessWrapper(
     command: List<String>,
     val environment: Map<String, String> = mapOf(),
-    private val processBuilder: ProcessBuilder = ProcessBuilder()
+    private val processBuilder: ProcessBuilder = ProcessBuilder(),
+    private val runtime: Runtime = Runtime.getRuntime()
 ) {
     /**
      * The actual underlying [Process] this wrapper
@@ -91,7 +92,7 @@ class ProcessWrapper(
         // process' inputstream. Once it's done, they'll read
         // the EOF and close things up correctly
         val pid = pid(process)
-        Runtime.getRuntime().exec("kill -s SIGINT $pid")
+        runtime.exec("kill -s SIGINT $pid")
     }
 
     fun destroyForcibly(): Process = process.destroyForcibly()
