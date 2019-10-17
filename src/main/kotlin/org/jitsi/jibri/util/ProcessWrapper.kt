@@ -16,6 +16,7 @@
  */
 package org.jitsi.jibri.util
 
+import org.jitsi.jibri.util.extensions.pid
 import java.io.InputStream
 import java.lang.reflect.Field
 import java.util.concurrent.TimeUnit
@@ -91,32 +92,10 @@ class ProcessWrapper(
         // because we want them to read everything available from the
         // process' inputstream. Once it's done, they'll read
         // the EOF and close things up correctly
-        val pid = pid(process)
-        runtime.exec("kill -s SIGINT $pid")
+        runtime.exec("kill -s SIGINT ${process.pid}")
     }
 
     fun destroyForcibly(): Process = process.destroyForcibly()
-
-    /**
-     * Mimic the "pid" member of Java 9's [Process].  This can't be
-     * an extension function as it gets called from a Java context
-     * (which wouldn't see the extension function as a normal
-     * member)
-     */
-    private fun pid(process: Process): Long {
-        var pid: Long = -1
-        try {
-            if (process.javaClass.name == "java.lang.UNIXProcess") {
-                val field: Field = process.javaClass.getDeclaredField("pid")
-                field.isAccessible = true
-                pid = field.getLong(process)
-                field.isAccessible = false
-            }
-        } catch (e: Exception) {
-            pid = -1
-        }
-        return pid
-    }
 
     /**
      * Returns an [InputStream] representing the output of the wrapped
