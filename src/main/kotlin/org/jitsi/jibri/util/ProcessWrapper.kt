@@ -16,9 +16,12 @@
  */
 package org.jitsi.jibri.util
 
+import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.pid
 import java.io.InputStream
+import java.time.Duration
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 /**
  * A wrapper around [Process] that implements
@@ -35,6 +38,7 @@ class ProcessWrapper(
     private val processBuilder: ProcessBuilder = ProcessBuilder(),
     private val runtime: Runtime = Runtime.getRuntime()
 ) {
+    private val logger = Logger.getLogger("${this::class.qualifiedName}")
     /**
      * The actual underlying [Process] this wrapper
      * wraps
@@ -97,7 +101,39 @@ class ProcessWrapper(
         runtime.exec("kill -s SIGINT ${process.pid}")
     }
 
+    /**
+     * A convenience method on top of [stop] and [waitFor] which
+     * not only combines the two calls but handles any exceptions
+     * thrown.  'true' is returned if the process was successfully
+     * ended, false otherwise
+     */
+    fun stopAndWaitFor(timeout: Duration): Boolean {
+        return try {
+            stop()
+            waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        } catch (t: Throwable) {
+            logger.error("Error stopping process", t)
+            false
+        }
+    }
+
     fun destroyForcibly(): Process = process.destroyForcibly()
+
+    /**
+     * A convenience method on top of [destroyForcibly] and [waitFor] which
+     * not only combines the two calls but handles any exceptions
+     * thrown.  'true' is returned if the process was successfully
+     * ended, false otherwise
+     */
+    fun destroyForciblyAndWaitFor(timeout: Duration): Boolean {
+        return try {
+            destroyForcibly()
+            waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        } catch (t: Throwable) {
+            logger.error("Error forcibly destroying process", t)
+            false
+        }
+    }
 
     /**
      * Returns an [InputStream] representing the output of the wrapped

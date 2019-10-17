@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.util
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
@@ -36,6 +37,7 @@ import java.io.IOException
 import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 internal class ProcessWrapperTest : ShouldSpec() {
@@ -158,6 +160,30 @@ internal class ProcessWrapperTest : ShouldSpec() {
                 whenever(runtime.exec(anyString())).thenAnswer { throw RuntimeException() }
                 should("let the exception bubble up") {
                     shouldThrow<java.lang.RuntimeException> { processWrapper.stop() }
+                }
+            }
+        }
+        "stopAndWaitFor" {
+            should("invoke the correct command") {
+                val execCaptor = argumentCaptor<String>()
+                whenever(runtime.exec(execCaptor.capture())).thenReturn(process)
+                whenever(process.waitFor(any(), any())).thenReturn(true)
+                processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe true
+                execCaptor.firstValue.let {
+                    it shouldContain "kill -s SIGINT"
+                }
+            }
+            "when the runtime throws IOException" {
+                whenever(runtime.exec(anyString())).thenAnswer { throw IOException() }
+                should("handle it correctly") {
+                    processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
+                }
+
+            }
+            "when the runtime throws RuntimeException" {
+                whenever(runtime.exec(anyString())).thenAnswer { throw RuntimeException() }
+                should("handle it correctly") {
+                    processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
                 }
             }
         }
