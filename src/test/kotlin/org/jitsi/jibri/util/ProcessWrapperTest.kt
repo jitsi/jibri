@@ -154,7 +154,6 @@ internal class ProcessWrapperTest : ShouldSpec() {
                 should("let the exception bubble up") {
                     shouldThrow<IOException> { processWrapper.stop() }
                 }
-
             }
             "when the runtime throws RuntimeException" {
                 whenever(runtime.exec(anyString())).thenAnswer { throw RuntimeException() }
@@ -178,13 +177,27 @@ internal class ProcessWrapperTest : ShouldSpec() {
                 should("handle it correctly") {
                     processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
                 }
-
             }
             "when the runtime throws RuntimeException" {
                 whenever(runtime.exec(anyString())).thenAnswer { throw RuntimeException() }
                 should("handle it correctly") {
                     processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
                 }
+            }
+        }
+        "destroyForciblyAndWaitFor" {
+            should("invoke the correct command") {
+                whenever(process.waitFor(any(), any())).thenReturn(true)
+                processWrapper.destroyForciblyAndWaitFor(Duration.ofSeconds(10)) shouldBe true
+                verify(process).destroyForcibly()
+            }
+            "when waitFor returns false" {
+                whenever(process.waitFor(any(), any())).thenReturn(false)
+                processWrapper.destroyForciblyAndWaitFor(Duration.ofSeconds(10)) shouldBe false
+            }
+            "when waitFor throws" {
+                whenever(process.waitFor(any(), any())).thenAnswer { throw InterruptedException() }
+                processWrapper.destroyForciblyAndWaitFor(Duration.ofSeconds(10)) shouldBe false
             }
         }
     }
