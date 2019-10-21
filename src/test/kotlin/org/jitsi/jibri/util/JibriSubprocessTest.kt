@@ -19,6 +19,7 @@ package org.jitsi.jibri.util
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.kotlintest.IsolationMode
 import io.kotlintest.Spec
@@ -88,9 +89,21 @@ internal class JibriSubprocessTest : ShouldSpec() {
                 }
             }
         }
-        "calling stop before launch" {
-            should("not cause any errors") {
-                subprocess.stop()
+        "stopping the subprocess" {
+            "before launch" {
+                should("not cause any errors") {
+                    subprocess.stop()
+                }
+            }
+            "after it launches" {
+                subprocess.launch(emptyList())
+                "when it refuses to stop gracefully" {
+                    whenever(processWrapper.stopAndWaitFor(any())).thenReturn(false)
+                    should("try and destroy it forcibly") {
+                        subprocess.stop()
+                        verify(processWrapper).destroyForciblyAndWaitFor(any())
+                    }
+                }
             }
         }
     }

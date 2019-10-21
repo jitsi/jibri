@@ -16,21 +16,29 @@
  */
 package org.jitsi.jibri.util
 
+import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.extensions.pid
 import java.io.InputStream
-import java.lang.reflect.Field
+import java.time.Duration
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 /**
  * A wrapper around [Process] that implements
  * behaviors more useful to Jibri.  This isn't done
  * as a subclass because [Process] is abstract
  * and the actual implementation varies by platform.
+ *
+ * NOTE that many methods in this class throw exceptions
+ * which must be handled
  */
 class ProcessWrapper(
     command: List<String>,
     val environment: Map<String, String> = mapOf(),
-    private val processBuilder: ProcessBuilder = ProcessBuilder()
+    private val processBuilder: ProcessBuilder = ProcessBuilder(),
+    private val runtime: Runtime = Runtime.getRuntime()
 ) {
+    private val logger = Logger.getLogger("${this::class.qualifiedName}")
     /**
      * The actual underlying [Process] this wrapper
      * wraps
@@ -90,31 +98,41 @@ class ProcessWrapper(
         // because we want them to read everything available from the
         // process' inputstream. Once it's done, they'll read
         // the EOF and close things up correctly
-        val pid = pid(process)
-        Runtime.getRuntime().exec("kill -s SIGINT $pid")
+        runtime.exec("kill -s SIGINT ${process.pid}")
+    }
+
+    /**
+     * A convenience method on top of [stop] and [waitFor] which
+     * not only combines the two calls but handles any exceptions
+     * thrown.  'true' is returned if the process was successfully
+     * ended, false otherwise
+     */
+    fun stopAndWaitFor(timeout: Duration): Boolean {
+        return try {
+            stop()
+            waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        } catch (t: Throwable) {
+            logger.error("Error stopping process", t)
+            false
+        }
     }
 
     fun destroyForcibly(): Process = process.destroyForcibly()
 
     /**
-     * Mimic the "pid" member of Java 9's [Process].  This can't be
-     * an extension function as it gets called from a Java context
-     * (which wouldn't see the extension function as a normal
-     * member)
+     * A convenience method on top of [destroyForcibly] and [waitFor] which
+     * not only combines the two calls but handles any exceptions
+     * thrown.  'true' is returned if the process was successfully
+     * ended, false otherwise
      */
-    private fun pid(process: Process): Long {
-        var pid: Long = -1
-        try {
-            if (process.javaClass.name == "java.lang.UNIXProcess") {
-                val field: Field = process.javaClass.getDeclaredField("pid")
-                field.isAccessible = true
-                pid = field.getLong(process)
-                field.isAccessible = false
-            }
-        } catch (e: Exception) {
-            pid = -1
+    fun destroyForciblyAndWaitFor(timeout: Duration): Boolean {
+        return try {
+            destroyForcibly()
+            waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+        } catch (t: Throwable) {
+            logger.error("Error forcibly destroying process", t)
+            false
         }
-        return pid
     }
 
     /**

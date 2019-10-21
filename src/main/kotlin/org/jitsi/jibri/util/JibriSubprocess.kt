@@ -17,6 +17,7 @@
 package org.jitsi.jibri.util
 
 import org.jitsi.jibri.util.extensions.error
+import java.time.Duration
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -55,24 +56,9 @@ class JibriSubprocess(
         }
     }
 
-    fun stop() {
-        logger.info("Stopping $name process")
-        processStatePublisher?.stop()
-        process?.apply {
-            try {
-                stop()
-                waitFor(10, TimeUnit.SECONDS)
-            } catch (t: Throwable) {
-                logger.error("Error trying to gracefully stop subprocess $name: $t")
-            }
-            if (isAlive) {
-                logger.error("$name didn't stop, killing $name")
-                destroyForcibly()
-                waitFor(10, TimeUnit.SECONDS)
-            }
-        }
+    private fun waitForProcessLoggerTaskToFinish(timeout: Duration) {
         try {
-            processLoggerTask?.get(10, TimeUnit.SECONDS)
+            processLoggerTask?.get(timeout.toMillis(), TimeUnit.MILLISECONDS)
         } catch (e: TimeoutException) {
             logger.error("Timed out waiting for process logger task to complete")
             processLoggerTask?.cancel(true)
@@ -80,6 +66,22 @@ class JibriSubprocess(
             logger.error("Exception while waiting for process logger task to complete", e)
             processLoggerTask?.cancel(true)
         }
+    }
+
+    fun stop() {
+        logger.info("Stopping $name process")
+        processStatePublisher?.stop()
+
+        process?.apply {
+            if (!stopAndWaitFor(Duration.ofSeconds(10))) {
+                logger.error("Error trying to gracefully stop $name, destroying forcibly")
+                if (!destroyForciblyAndWaitFor(Duration.ofSeconds(10))) {
+                    logger.error("Error trying to destroy $name forcibly")
+                }
+            }
+        }
+        waitForProcessLoggerTaskToFinish(Duration.ofSeconds(10))
+
         try {
             logger.info("$name exited with value ${process?.exitValue}")
         } catch (e: IllegalThreadStateException) {
