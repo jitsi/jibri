@@ -28,7 +28,7 @@ data class PjsuaClientParams(
     val sipClientParams: SipClientParams
 )
 
-private const val CAPTURE_DEVICE = 23
+private const val CAPTURE_DEVICE = 21
 private const val PLAYBACK_DEVICE = 24
 private const val CONFIG_FILE_LOCATION = "/home/jibri/pjsua.config"
 private const val X_DISPLAY = ":1"
@@ -63,15 +63,26 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
                 "pjsua",
                 "--capture-dev=$CAPTURE_DEVICE",
                 "--playback-dev=$PLAYBACK_DEVICE",
-                "--id", "${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>",
                 "--config-file", CONFIG_FILE_LOCATION,
                 "--log-file", "/tmp/pjsua.out",
                 "--max-calls=1"
         )
 
+        if (pjsuaClientParams.sipClientParams.userName != null &&
+            pjsuaClientParams.sipClientParams.password != null) {
+            command.add("--id=${pjsuaClientParams.sipClientParams.displayName} <sip:${pjsuaClientParams.sipClientParams.userName}>")
+            command.add("--registrar=sip:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')}")
+            command.add("--realm=*")
+            command.add("--username=${pjsuaClientParams.sipClientParams.userName.substringBefore('@')}")
+            command.add("--password=${pjsuaClientParams.sipClientParams.password}")
+        } else {
+            command.add("--id=${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>")
+        }
+
         if (pjsuaClientParams.sipClientParams.autoAnswer) {
             command.add("--auto-answer-timer=30")
             command.add("--auto-answer=200")
+            command.add("--max-calls=1")
         } else {
             command.add("sip:${pjsuaClientParams.sipClientParams.sipAddress}")
         }

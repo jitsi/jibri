@@ -34,7 +34,17 @@ data class SipClientParams(
      * Whether auto-answer is enabled, if it is, the client will listen for
      * incoming invites and will auto answer the first one.
      */
-    val autoAnswer: Boolean = false
+    val autoAnswer: Boolean = false,
+
+    /**
+     * The username to use if registration is needed.
+     */
+    val userName: String? = null,
+
+    /**
+     * The password to use if registration is needed.
+     */
+    val password: String? = null
 )
 
 abstract class SipClient : StatusPublisher<ComponentState>() {
