@@ -17,7 +17,6 @@
 package org.jitsi.jibri.selenium
 
 import com.tinder.StateMachine
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.NotifyingStateMachine
 
@@ -40,10 +39,10 @@ class SeleniumStateMachine : NotifyingStateMachine() {
                 transitionTo(ComponentState.Running)
             }
             on<SeleniumEvent.FailedToJoinCall> {
-                transitionTo(ComponentState.Error(ErrorScope.SESSION, "Failed to join call"))
+                transitionTo(ComponentState.Error(FailedToJoinCall()))
             }
             on<SeleniumEvent.ChromeHung> {
-                transitionTo(ComponentState.Error(ErrorScope.SESSION, "Chrome hung"))
+                transitionTo(ComponentState.Error(ChromeHung()))
             }
         }
 
@@ -52,10 +51,10 @@ class SeleniumStateMachine : NotifyingStateMachine() {
                 transitionTo(ComponentState.Finished)
             }
             on<SeleniumEvent.NoMediaReceived> {
-                transitionTo(ComponentState.Error(ErrorScope.SESSION, "No media received"))
+                transitionTo(ComponentState.Error(NoMediaReceived()))
             }
             on<SeleniumEvent.ChromeHung> {
-                transitionTo(ComponentState.Error(ErrorScope.SESSION, "Chrome hung"))
+                transitionTo(ComponentState.Error(ChromeHung()))
             }
         }
 

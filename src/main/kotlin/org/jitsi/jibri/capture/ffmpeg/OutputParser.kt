@@ -15,6 +15,7 @@
  */
 package org.jitsi.jibri.capture.ffmpeg
 
+import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.oneOrMoreDigits
 import org.jitsi.jibri.util.oneOrMoreNonSpaces
@@ -40,7 +41,7 @@ open class FfmpegOutputStatus(val lineType: OutputLineClassification, val detail
 /**
  * Represents a line of ffmpeg output that indicated there was a warning.
  */
-class FfmpegErrorStatus(val errorScope: ErrorScope, detail: String) : FfmpegOutputStatus(OutputLineClassification.ERROR, detail)
+class FfmpegErrorStatus(val error: JibriError) : FfmpegOutputStatus(OutputLineClassification.ERROR, error.detail)
 
 /**
  * Parses the stdout output of ffmpeg to check if it's working
@@ -86,13 +87,13 @@ class OutputParser {
             val exitedMatcher = Pattern.compile(ffmpegExitedLine).matcher(outputLine)
             if (exitedMatcher.matches()) {
                 val signal = exitedMatcher.group(1).toInt()
-                when (signal) {
+                return when (signal) {
                     // 2 is the signal we pass to stop ffmpeg
                     2 -> {
-                        return FfmpegOutputStatus(OutputLineClassification.FINISHED, outputLine)
+                        FfmpegOutputStatus(OutputLineClassification.FINISHED, outputLine)
                     }
                     else -> {
-                        return FfmpegErrorStatus(ErrorScope.SESSION, outputLine)
+                        FfmpegErrorStatus(JibriError(ErrorScope.SESSION, outputLine))
                     }
                 }
             }
@@ -112,7 +113,7 @@ class OutputParser {
             for ((errorLine, errorScope) in errorTypes) {
                 val errorMatcher = Pattern.compile(errorLine).matcher(outputLine)
                 if (errorMatcher.matches()) {
-                    return FfmpegErrorStatus(errorScope, outputLine)
+                    return FfmpegErrorStatus(JibriError(errorScope, outputLine))
                 }
             }
             return FfmpegOutputStatus(OutputLineClassification.UNKNOWN, outputLine)

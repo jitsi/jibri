@@ -17,9 +17,10 @@
 
 package org.jitsi.jibri.sipgateway.pjsua
 
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
+import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaExitedPrematurely
+import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
@@ -46,8 +47,8 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
                         //TODO: add detail?
                         // Remote side hung up
                         0 -> publishStatus(ComponentState.Finished)
-                        2 -> publishStatus(ComponentState.Error(ErrorScope.SESSION, "Remote side busy"))
-                        else -> publishStatus(ComponentState.Error(ErrorScope.SESSION, "Pjsua exited with code ${processState.runningState.exitCode}"))
+                        2 -> publishStatus(ComponentState.Error(RemoteSipClientBusy()))
+                        else -> publishStatus(ComponentState.Error(PjsuaExitedPrematurely(processState.runningState.exitCode)))
                     }
                 }
                 //TODO: i think everything else just counts as running?

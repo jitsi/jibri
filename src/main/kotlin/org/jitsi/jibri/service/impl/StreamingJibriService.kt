@@ -23,11 +23,11 @@ import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
+import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 
@@ -103,7 +103,7 @@ class StreamingJibriService(
                 capturer.start(sink)
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)
-                publishStatus(ComponentState.Error(ErrorScope.SESSION, "Unable to set presence values"))
+                publishStatus(ComponentState.Error(ErrorSettingPresenceFields()))
             }
         }
     }

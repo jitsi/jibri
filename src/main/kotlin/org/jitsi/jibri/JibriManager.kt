@@ -198,7 +198,7 @@ class JibriManager(
         jibriService.addStatusHandler {
             when (it) {
                 is ComponentState.Error -> {
-                    if (it.errorScope == ErrorScope.SYSTEM) {
+                    if (it.error.scope == ErrorScope.SYSTEM) {
                         statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
                         publishStatus(ComponentHealthStatus.UNHEALTHY)
                     }

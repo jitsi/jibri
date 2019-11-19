@@ -24,9 +24,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
+import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
@@ -130,11 +132,11 @@ class FileRecordingJibriService(
 
     override fun start() {
         if (!createIfDoesNotExist(sessionRecordingDirectory, logger)) {
-            publishStatus(ComponentState.Error(ErrorScope.SYSTEM, "Could not create recordings directory"))
+            publishStatus(ComponentState.Error(ErrorCreatingRecordingsDirectory()))
         }
         if (!Files.isWritable(sessionRecordingDirectory)) {
             logger.error("Unable to write to ${fileRecordingParams.recordingDirectory}")
-            publishStatus(ComponentState.Error(ErrorScope.SYSTEM, "Recordings directory is not writable"))
+            publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable()))
         }
         jibriSelenium.joinCall(
                 fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
@@ -149,7 +151,7 @@ class FileRecordingJibriService(
                 capturer.start(sink)
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)
-                publishStatus(ComponentState.Error(ErrorScope.SESSION, "Unable to set presence values"))
+                publishStatus(ComponentState.Error(ErrorSettingPresenceFields()))
             }
         }
     }
@@ -180,7 +182,7 @@ class FileRecordingJibriService(
                     }
             } catch (t: Throwable) {
                 logger.error("Error writing metadata", t)
-                publishStatus(ComponentState.Error(ErrorScope.SYSTEM, "Could not write meeting metadata"))
+                publishStatus(ComponentState.Error(CouldntWriteMeetingMetadata()))
             }
         } else {
             logger.error("Unable to write metadata file to recording directory ${fileRecordingParams.recordingDirectory}")
@@ -222,3 +224,7 @@ class FileRecordingJibriService(
         }
     }
 }
+
+class ErrorCreatingRecordingsDirectory : JibriError(ErrorScope.SYSTEM, "Could not creat recordings director")
+class RecordingsDirectoryNotWritable : JibriError(ErrorScope.SYSTEM, "Recordings directory is not writable")
+class CouldntWriteMeetingMetadata : JibriError(ErrorScope.SYSTEM, "Could not write meeting metadata")
