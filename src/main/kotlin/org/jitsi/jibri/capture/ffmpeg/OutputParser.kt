@@ -16,7 +16,6 @@
 package org.jitsi.jibri.capture.ffmpeg
 
 import org.jitsi.jibri.error.JibriError
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.oneOrMoreDigits
 import org.jitsi.jibri.util.oneOrMoreNonSpaces
 import org.jitsi.jibri.util.zeroOrMoreSpaces
@@ -41,7 +40,16 @@ open class FfmpegOutputStatus(val lineType: OutputLineClassification, val detail
 /**
  * Represents a line of ffmpeg output that indicated there was a warning.
  */
-class FfmpegErrorStatus(val error: JibriError) : FfmpegOutputStatus(OutputLineClassification.ERROR, error.detail)
+open class FfmpegErrorStatus(val error: JibriError) : FfmpegOutputStatus(OutputLineClassification.ERROR, error.detail)
+/**
+ * Represents a line of ffmpeg output that indicated a bad RTMP URL
+ */
+class BadRtmpUrlStatus(outputLine: String) : FfmpegErrorStatus(BadRtmpUrl(outputLine))
+
+/**
+ * Ffmpeg quit due to a signal other than what we sent to it
+ */
+class FfmpegUnexpectedSignalStatus(outputLine: String) : FfmpegErrorStatus(FfmpegUnexpectedSignal(outputLine))
 
 /**
  * Parses the stdout output of ffmpeg to check if it's working
@@ -73,10 +81,10 @@ class OutputParser {
          * Errors are done a bit differently, as different errors have different scopes.  For example,
          * a bad RTMP url is an error that only affects this session but an error about running out of
          * disk space affects the entire system.  This map associates the regex of the ffmpeg error output
-         * to its scope.
+         * to a function which takes in the output line and returns an [FfmpegErrorStatus]
          */
-        private val errorTypes = mapOf(
-            badRtmpUrl to ErrorScope.SESSION
+        private val errorTypes = mapOf<String, (String) -> FfmpegErrorStatus>(
+            badRtmpUrl to ::BadRtmpUrlStatus
         )
 
         /**
@@ -89,12 +97,8 @@ class OutputParser {
                 val signal = exitedMatcher.group(1).toInt()
                 return when (signal) {
                     // 2 is the signal we pass to stop ffmpeg
-                    2 -> {
-                        FfmpegOutputStatus(OutputLineClassification.FINISHED, outputLine)
-                    }
-                    else -> {
-                        FfmpegErrorStatus(JibriError(ErrorScope.SESSION, outputLine))
-                    }
+                    2 -> FfmpegOutputStatus(OutputLineClassification.FINISHED, outputLine)
+                    else -> FfmpegUnexpectedSignalStatus(outputLine)
                 }
             }
             // Check if the output is a normal, encoding output
@@ -110,10 +114,10 @@ class OutputParser {
                 return FfmpegOutputStatus(OutputLineClassification.ENCODING, outputLine)
             }
             // Now we'll look for error output
-            for ((errorLine, errorScope) in errorTypes) {
+            for ((errorLine, createError) in errorTypes) {
                 val errorMatcher = Pattern.compile(errorLine).matcher(outputLine)
                 if (errorMatcher.matches()) {
-                    return FfmpegErrorStatus(JibriError(errorScope, outputLine))
+                    return createError(outputLine)
                 }
             }
             return FfmpegOutputStatus(OutputLineClassification.UNKNOWN, outputLine)

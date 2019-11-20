@@ -19,4 +19,9 @@ package org.jitsi.jibri.capture.ffmpeg
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.status.ErrorScope
 
-class FfmpegFailedToStart : JibriError(ErrorScope.SYSTEM, "Ffmpeg failed to start")
+open class FfmpegError(scope: ErrorScope, detail: String) : JibriError(scope, detail)
+class FfmpegFailedToStart : FfmpegError(ErrorScope.SYSTEM, "Ffmpeg failed to start")
+class FfmpegUnexpectedSignal(outputLine: String) : FfmpegError(ErrorScope.SESSION, outputLine)
+class BadRtmpUrl(outputLine: String) : FfmpegError(ErrorScope.SESSION, outputLine) {
+    override fun shouldRetry(): Boolean = false
+}

@@ -110,7 +110,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                         val status = capturerStateUpdates.last()
                         status.shouldBeInstanceOf<ComponentState.Error>()
                         status as ComponentState.Error
-                        status.errorScope shouldBe ErrorScope.SYSTEM
+                        status.error.scope shouldBe ErrorScope.SYSTEM
                     }
                 }
             }

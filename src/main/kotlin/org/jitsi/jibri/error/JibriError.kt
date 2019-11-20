@@ -22,6 +22,6 @@ open class JibriError(
     val scope: ErrorScope,
     val detail: String
 ) {
-
-    override fun toString(): String = "Error: $scope $detail"
+    open fun shouldRetry(): Boolean = true
+    override fun toString(): String = "Error: ${this::class.java.simpleName} $scope $detail"
 }
