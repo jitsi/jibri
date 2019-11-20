@@ -197,16 +197,19 @@ class XmppApi(
                 logger.error("Jibri is currently busy, cannot service this request")
                 resultIq.status = JibriIq.Status.OFF
                 resultIq.failureReason = JibriIq.FailureReason.BUSY
+                resultIq.shouldRetry = true
                 mucClient.sendStanza(resultIq)
             } catch (iq: UnsupportedIqMode) {
                 logger.error("Unsupported IQ mode: ${iq.iqMode}")
                 resultIq.status = JibriIq.Status.OFF
                 resultIq.failureReason = JibriIq.FailureReason.ERROR
+                resultIq.shouldRetry = false
                 mucClient.sendStanza(resultIq)
             } catch (t: Throwable) {
                 logger.error("Error starting Jibri service ", t)
                 resultIq.status = JibriIq.Status.OFF
                 resultIq.failureReason = JibriIq.FailureReason.ERROR
+                resultIq.shouldRetry = true
                 mucClient.sendStanza(resultIq)
             }
         }
@@ -223,7 +226,9 @@ class XmppApi(
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
                         failureReason = JibriIq.FailureReason.ERROR
                         sipAddress = request.sipAddress
-                        logger.info("Current service had an error, sending error iq ${toXML()}")
+                        shouldRetry = serviceState.error.shouldRetry()
+                        logger.info("Current service had an error ${serviceState.error}, " +
+                            "sending error iq ${toXML()}")
                         mucClient.sendStanza(this)
                     }
                 }
