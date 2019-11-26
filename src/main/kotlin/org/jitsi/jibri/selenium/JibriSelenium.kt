@@ -142,7 +142,6 @@ class JibriSelenium(
                 "--kiosk",
                 "--enabled",
                 "--disable-infobars",
-                "--alsa-output-device=plug:amix",
                 "--autoplay-policy=no-user-gesture-required"
         )
         chromeOptions.setExperimentalOption("w3c", false)
