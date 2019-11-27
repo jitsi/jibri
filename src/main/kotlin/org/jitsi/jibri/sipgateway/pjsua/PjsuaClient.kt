@@ -60,8 +60,7 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
         val command = mutableListOf(
                 "pjsua",
                 "--config-file", CONFIG_FILE_LOCATION,
-                "--log-file", "/tmp/pjsua.out",
-                "--max-calls=1"
+                "--log-file", "/tmp/pjsua.out"
         )
 
         if (pjsuaClientParams.sipClientParams.userName != null &&
@@ -75,11 +74,7 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
             command.add("--id=${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>")
         }
 
-        if (pjsuaClientParams.sipClientParams.autoAnswer) {
-            command.add("--auto-answer-timer=30")
-            command.add("--auto-answer=200")
-            command.add("--max-calls=1")
-        } else {
+        if (!pjsuaClientParams.sipClientParams.autoAnswer) {
             command.add("sip:${pjsuaClientParams.sipClientParams.sipAddress}")
         }
 
