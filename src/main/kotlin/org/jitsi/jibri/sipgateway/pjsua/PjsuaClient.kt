@@ -28,8 +28,6 @@ data class PjsuaClientParams(
     val sipClientParams: SipClientParams
 )
 
-private const val CAPTURE_DEVICE = 21
-private const val PLAYBACK_DEVICE = 24
 private const val CONFIG_FILE_LOCATION = "/home/jibri/pjsua.config"
 private const val X_DISPLAY = ":1"
 
@@ -61,8 +59,6 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
     override fun start() {
         val command = mutableListOf(
                 "pjsua",
-                "--capture-dev=$CAPTURE_DEVICE",
-                "--playback-dev=$PLAYBACK_DEVICE",
                 "--config-file", CONFIG_FILE_LOCATION,
                 "--log-file", "/tmp/pjsua.out",
                 "--max-calls=1"
