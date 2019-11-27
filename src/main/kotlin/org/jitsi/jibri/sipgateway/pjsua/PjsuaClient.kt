@@ -28,7 +28,7 @@ data class PjsuaClientParams(
     val sipClientParams: SipClientParams
 )
 
-private const val CONFIG_FILE_LOCATION = "/home/jibri/pjsua.config"
+private const val CONFIG_FILE_LOCATION = "/etc/jitsi/jibri/pjsua.config"
 private const val X_DISPLAY = ":1"
 
 class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient() {
