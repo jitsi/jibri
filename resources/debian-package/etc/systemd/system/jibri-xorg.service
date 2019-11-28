@@ -6,7 +6,7 @@ After=network.target
 User=jibri
 Group=jibri
 Environment=DISPLAY=:0
-ExecStart=/usr/bin/Xorg -nocursor -noreset  +extension RANDR +extension RENDER -logfile /tmp/xorg.log  -config /etc/jitsi/jibri/xorg-video-dummy.conf :0
+ExecStart=/usr/bin/Xorg -nocursor -noreset  +extension RANDR +extension RENDER -logfile /var/log/xorg.log  -config /etc/jitsi/jibri/xorg-video-dummy.conf :0
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=process
 Restart=on-failure
