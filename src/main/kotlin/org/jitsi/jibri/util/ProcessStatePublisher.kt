@@ -87,7 +87,7 @@ class ProcessStatePublisher(
                     TaskPools.ioPool.submit {
                         // We fire all state transitions in the ioPool, otherwise we may try and cancel the
                         // processAliveChecks from within the thread it was executing in.  Another solution would've been
-                        // to pass 'false' to wrecurringProcessAliveTask.cancel, but it felt cleaner to separate the threads
+                        // to pass 'false' to recurringProcessAliveTask.cancel, but it felt cleaner to separate the threads
                         publishStatus(it)
                     }
                 }

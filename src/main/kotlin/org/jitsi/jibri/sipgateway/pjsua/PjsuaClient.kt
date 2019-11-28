@@ -28,7 +28,7 @@ data class PjsuaClientParams(
     val sipClientParams: SipClientParams
 )
 
-private const val CONFIG_FILE_LOCATION = "/etc/jitsi/jibri/pjsua.config"
+private const val PJSUA_SCRIPT_FILE_LOCATION = "/opt/jitsi/jibri/pjsua.sh"
 private const val X_DISPLAY = ":1"
 
 class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient() {
@@ -58,9 +58,7 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
 
     override fun start() {
         val command = mutableListOf(
-                "pjsua",
-                "--config-file", CONFIG_FILE_LOCATION,
-                "--log-file", "/tmp/pjsua.out"
+            PJSUA_SCRIPT_FILE_LOCATION
         )
 
         if (pjsuaClientParams.sipClientParams.userName != null &&
