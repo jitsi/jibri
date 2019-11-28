@@ -72,7 +72,10 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
             command.add("--id=${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>")
         }
 
-        if (!pjsuaClientParams.sipClientParams.autoAnswer) {
+        if (pjsuaClientParams.sipClientParams.autoAnswer) {
+            command.add("--auto-answer-timer=30")
+            command.add("--auto-answer=200")
+        } else {
             command.add("sip:${pjsuaClientParams.sipClientParams.sipAddress}")
         }
 
