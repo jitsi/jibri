@@ -6,8 +6,6 @@ set -e
 # Prune any local tags that aren't on the remote
 git fetch --prune origin "+refs/tags/*:refs/tags/*"
 
-cd $WORKSPACE
-
 # Let's get version from maven
 MVNVER=`xmllint --xpath "/*[local-name()='project']/*[local-name()='version']/text()" pom.xml`
 TAG_NAME="v${MVNVER/-SNAPSHOT/}"
