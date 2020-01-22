@@ -141,7 +141,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-xmpp-extensions</artifactId>
-            <version>1.0-4-g9de57e2</version>
+            <version>1.0-6-g009420d</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
