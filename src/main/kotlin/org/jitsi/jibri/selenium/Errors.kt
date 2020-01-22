@@ -19,6 +19,6 @@ package org.jitsi.jibri.selenium
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.status.ErrorScope
 
-class FailedToJoinCall : JibriError(ErrorScope.SESSION, "Failed to join the call")
-class ChromeHung : JibriError(ErrorScope.SESSION, "Chrome hung")
-class NoMediaReceived : JibriError(ErrorScope.SESSION, "No media received")
+object FailedToJoinCall : JibriError(ErrorScope.SESSION, "Failed to join the call")
+object ChromeHung : JibriError(ErrorScope.SESSION, "Chrome hung")
+object NoMediaReceived : JibriError(ErrorScope.SESSION, "No media received")

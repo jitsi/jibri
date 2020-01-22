@@ -39,10 +39,10 @@ class SeleniumStateMachine : NotifyingStateMachine() {
                 transitionTo(ComponentState.Running)
             }
             on<SeleniumEvent.FailedToJoinCall> {
-                transitionTo(ComponentState.Error(FailedToJoinCall()))
+                transitionTo(ComponentState.Error(FailedToJoinCall))
             }
             on<SeleniumEvent.ChromeHung> {
-                transitionTo(ComponentState.Error(ChromeHung()))
+                transitionTo(ComponentState.Error(ChromeHung))
             }
         }
 
@@ -51,10 +51,10 @@ class SeleniumStateMachine : NotifyingStateMachine() {
                 transitionTo(ComponentState.Finished)
             }
             on<SeleniumEvent.NoMediaReceived> {
-                transitionTo(ComponentState.Error(NoMediaReceived()))
+                transitionTo(ComponentState.Error(NoMediaReceived))
             }
             on<SeleniumEvent.ChromeHung> {
-                transitionTo(ComponentState.Error(ChromeHung()))
+                transitionTo(ComponentState.Error(ChromeHung))
             }
         }
 

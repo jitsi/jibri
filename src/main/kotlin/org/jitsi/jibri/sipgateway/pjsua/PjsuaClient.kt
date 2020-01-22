@@ -47,7 +47,7 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
                         //TODO: add detail?
                         // Remote side hung up
                         0 -> publishStatus(ComponentState.Finished)
-                        2 -> publishStatus(ComponentState.Error(RemoteSipClientBusy()))
+                        2 -> publishStatus(ComponentState.Error(RemoteSipClientBusy))
                         else -> publishStatus(ComponentState.Error(PjsuaExitedPrematurely(processState.runningState.exitCode)))
                     }
                 }

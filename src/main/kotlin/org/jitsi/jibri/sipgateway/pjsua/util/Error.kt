@@ -19,7 +19,7 @@ package org.jitsi.jibri.sipgateway.pjsua.util
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.status.ErrorScope
 
-class RemoteSipClientBusy : JibriError(ErrorScope.SESSION, "Remote side busy")
+object RemoteSipClientBusy : JibriError(ErrorScope.SESSION, "Remote side busy")
 
 class PjsuaExitedPrematurely(exitCode: Int) :
     JibriError(ErrorScope.SESSION, "Pjsua exited with code $exitCode")

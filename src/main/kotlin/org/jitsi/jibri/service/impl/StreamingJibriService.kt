@@ -103,7 +103,7 @@ class StreamingJibriService(
                 capturer.start(sink)
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)
-                publishStatus(ComponentState.Error(ErrorSettingPresenceFields()))
+                publishStatus(ComponentState.Error(ErrorSettingPresenceFields))
             }
         }
     }

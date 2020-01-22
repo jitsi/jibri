@@ -19,4 +19,4 @@ package org.jitsi.jibri.service
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.status.ErrorScope
 
-class ErrorSettingPresenceFields : JibriError(ErrorScope.SESSION, "Unable to set presence values")
+object ErrorSettingPresenceFields : JibriError(ErrorScope.SESSION, "Unable to set presence values")

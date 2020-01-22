@@ -132,11 +132,11 @@ class FileRecordingJibriService(
 
     override fun start() {
         if (!createIfDoesNotExist(sessionRecordingDirectory, logger)) {
-            publishStatus(ComponentState.Error(ErrorCreatingRecordingsDirectory()))
+            publishStatus(ComponentState.Error(ErrorCreatingRecordingsDirectory))
         }
         if (!Files.isWritable(sessionRecordingDirectory)) {
             logger.error("Unable to write to ${fileRecordingParams.recordingDirectory}")
-            publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable()))
+            publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable))
         }
         jibriSelenium.joinCall(
                 fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
@@ -151,7 +151,7 @@ class FileRecordingJibriService(
                 capturer.start(sink)
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)
-                publishStatus(ComponentState.Error(ErrorSettingPresenceFields()))
+                publishStatus(ComponentState.Error(ErrorSettingPresenceFields))
             }
         }
     }
@@ -182,7 +182,7 @@ class FileRecordingJibriService(
                     }
             } catch (t: Throwable) {
                 logger.error("Error writing metadata", t)
-                publishStatus(ComponentState.Error(CouldntWriteMeetingMetadata()))
+                publishStatus(ComponentState.Error(CouldntWriteMeetingMetadata))
             }
         } else {
             logger.error("Unable to write metadata file to recording directory ${fileRecordingParams.recordingDirectory}")
@@ -225,6 +225,6 @@ class FileRecordingJibriService(
     }
 }
 
-class ErrorCreatingRecordingsDirectory : JibriError(ErrorScope.SYSTEM, "Could not creat recordings director")
-class RecordingsDirectoryNotWritable : JibriError(ErrorScope.SYSTEM, "Recordings directory is not writable")
-class CouldntWriteMeetingMetadata : JibriError(ErrorScope.SYSTEM, "Could not write meeting metadata")
+object ErrorCreatingRecordingsDirectory : JibriError(ErrorScope.SYSTEM, "Could not creat recordings director")
+object RecordingsDirectoryNotWritable : JibriError(ErrorScope.SYSTEM, "Recordings directory is not writable")
+object CouldntWriteMeetingMetadata : JibriError(ErrorScope.SYSTEM, "Could not write meeting metadata")
