@@ -17,13 +17,13 @@
 package org.jitsi.jibri.capture.ffmpeg
 
 import com.tinder.StateMachine
+import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.NotifyingStateMachine
 
 sealed class FfmpegEvent(val outputLine: String) {
     class EncodingLine(outputLine: String) : FfmpegEvent(outputLine)
-    class ErrorLine(val errorScope: ErrorScope, outputLine: String) : FfmpegEvent(outputLine)
+    class ErrorLine(val error: JibriError) : FfmpegEvent(error.detail)
     class FinishLine(outputLine: String) : FfmpegEvent(outputLine)
     class OtherLine(outputLine: String) : FfmpegEvent(outputLine)
 }
@@ -35,7 +35,7 @@ fun FfmpegOutputStatus.toFfmpegEvent(): FfmpegEvent {
         OutputLineClassification.FINISHED -> FfmpegEvent.FinishLine(detail)
         OutputLineClassification.ERROR -> {
             this as FfmpegErrorStatus
-            FfmpegEvent.ErrorLine(this.errorScope, detail)
+            FfmpegEvent.ErrorLine(this.error)
         }
     }
 }
@@ -51,7 +51,7 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
                 transitionTo(ComponentState.Running)
             }
             on<FfmpegEvent.ErrorLine> {
-                transitionTo(ComponentState.Error(it.errorScope, it.outputLine))
+                transitionTo(ComponentState.Error(it.error))
             }
             on<FfmpegEvent.FinishLine> {
                 transitionTo(ComponentState.Finished)
@@ -66,7 +66,7 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
                 dontTransition()
             }
             on<FfmpegEvent.ErrorLine> {
-                transitionTo(ComponentState.Error(it.errorScope, it.outputLine))
+                transitionTo(ComponentState.Error(it.error))
             }
             on<FfmpegEvent.FinishLine> {
                 transitionTo(ComponentState.Finished)

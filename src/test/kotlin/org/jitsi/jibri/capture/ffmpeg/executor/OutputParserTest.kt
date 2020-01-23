@@ -65,7 +65,7 @@ internal class OutputParserTest : ShouldSpec() {
                     status should beInstanceOf<FfmpegErrorStatus>()
                     status as FfmpegErrorStatus
                     status.detail.shouldBe(outputLine)
-                    status.errorScope shouldBe ErrorScope.SESSION
+                    status.error.scope shouldBe ErrorScope.SESSION
                 }
             }
         }
@@ -76,7 +76,7 @@ internal class OutputParserTest : ShouldSpec() {
                 status should beInstanceOf<FfmpegErrorStatus>()
                 status as FfmpegErrorStatus
                 status.detail.shouldBe(outputLine)
-                status.errorScope shouldBe ErrorScope.SESSION
+                status.error.scope shouldBe ErrorScope.SESSION
             }
         }
         "An expected exit output line" {

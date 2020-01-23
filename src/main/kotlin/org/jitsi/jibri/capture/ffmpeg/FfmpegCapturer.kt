@@ -22,7 +22,6 @@ import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.OsDetector
 import org.jitsi.jibri.util.OsType
@@ -102,12 +101,12 @@ class FfmpegCapturer(
         when (ffmpegState.runningState) {
             is ProcessFailedToStart -> {
                 ffmpegStatusStateMachine.transition(
-                    FfmpegEvent.ErrorLine(ErrorScope.SYSTEM, "Ffmpeg failed to start"))
+                    FfmpegEvent.ErrorLine(FfmpegFailedToStart))
             }
             is ProcessExited -> {
                 logger.info("Ffmpeg quit abruptly.  Last output line: ${ffmpegState.mostRecentOutput}")
                 ffmpegStatusStateMachine.transition(
-                    FfmpegEvent.ErrorLine(ErrorScope.SESSION, "Ffmpeg failed to start"))
+                    FfmpegEvent.ErrorLine(FfmpegFailedToStart))
             }
             else -> {
                 val status = OutputParser.parse(ffmpegState.mostRecentOutput)

@@ -16,6 +16,8 @@
 
 package org.jitsi.jibri.status
 
+import org.jitsi.jibri.error.JibriError
+
 sealed class ComponentState {
     object StartingUp : ComponentState() {
         override fun toString(): String = "Starting up"
@@ -23,8 +25,8 @@ sealed class ComponentState {
     object Running : ComponentState() {
         override fun toString(): String = "Running"
     }
-    class Error(val errorScope: ErrorScope, val detail: String) : ComponentState() {
-        override fun toString(): String = "Error: $errorScope $detail"
+    class Error(val error: JibriError) : ComponentState() {
+        override fun toString(): String = error.toString()
     }
     object Finished : ComponentState() {
         override fun toString(): String = "Finished"

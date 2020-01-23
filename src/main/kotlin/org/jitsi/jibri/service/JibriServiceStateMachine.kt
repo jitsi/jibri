@@ -50,7 +50,7 @@ class JibriServiceStateMachine : NotifyingStateMachine() {
         state<ComponentState.StartingUp> {
             on<JibriServiceEvent.SubComponentError> {
                 subComponentStates[it.componentId] = it.subState
-                transitionTo(ComponentState.Error(it.subState.errorScope, it.subState.detail))
+                transitionTo(ComponentState.Error(it.subState.error))
             }
             on<JibriServiceEvent.SubComponentFinished> {
                 subComponentStates[it.componentId] = it.subState
@@ -72,7 +72,7 @@ class JibriServiceStateMachine : NotifyingStateMachine() {
         state<ComponentState.Running> {
             on<JibriServiceEvent.SubComponentError> {
                 subComponentStates[it.componentId] = it.subState
-                transitionTo(ComponentState.Error(it.subState.errorScope, it.subState.detail))
+                transitionTo(ComponentState.Error(it.subState.error))
             }
             on<JibriServiceEvent.SubComponentFinished> {
                 subComponentStates[it.componentId] = it.subState
