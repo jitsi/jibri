@@ -174,6 +174,7 @@ class JibriManager(
         throwIfBusy()
         val service = SipGatewayJibriService(SipGatewayServiceParams(
             sipGatewayServiceParams.callParams,
+            sipGatewayServiceParams.callLoginParams,
             sipGatewayServiceParams.sipClientParams
         ))
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_SIP_GATEWAY)

@@ -139,6 +139,7 @@ class HttpApi(
                             // TODO: add session ID
                             SipGatewayServiceParams(
                                     startServiceParams.callParams,
+                                    startServiceParams.callLoginParams,
                                     sipClientParams)
                     )
                 }

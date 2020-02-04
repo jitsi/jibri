@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.service.impl
 
+import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
@@ -35,6 +36,10 @@ data class SipGatewayServiceParams(
      * The params needed to join the web call
      */
     val callParams: CallParams,
+    /**
+     * The login information needed to use when establishing the call
+     */
+    val callLoginParams: XmppCredentials?,
     /**
      * The params needed for bringing a SIP client into
      * the call
@@ -87,7 +92,8 @@ class SipGatewayJibriService(
      */
     override fun start() {
         jibriSelenium.joinCall(
-            sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS))
+            sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS),
+            sipGatewayServiceParams.callLoginParams)
 
         // when in auto-answer mode we want to start as quick as possible as
         // we will be waiting for a sip call to come
