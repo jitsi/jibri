@@ -310,7 +310,10 @@ class XmppApi(
             JibriMode.SIPGW -> {
                 jibriManager.startSipGateway(
                     serviceParams,
-                    SipGatewayServiceParams(callParams, SipClientParams(startIq.sipAddress, startIq.displayName)),
+                    SipGatewayServiceParams(
+                        callParams,
+                        xmppEnvironment.callLogin,
+                        SipClientParams(startIq.sipAddress, startIq.displayName)),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
