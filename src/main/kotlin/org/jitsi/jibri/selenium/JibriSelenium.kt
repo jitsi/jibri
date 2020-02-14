@@ -272,7 +272,7 @@ class JibriSelenium(
     }
 
     fun leaveCallAndQuitBrowser() {
-        logger.info("Leaving call and quitting borwser")
+        logger.info("Leaving call and quitting browser")
         shuttingDown.set(true)
         recurringCallStatusCheckTask?.cancel(true)
         logger.info("Recurring call status checks cancelled")
