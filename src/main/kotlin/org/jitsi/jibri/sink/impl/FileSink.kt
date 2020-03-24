@@ -18,7 +18,6 @@
 package org.jitsi.jibri.sink.impl
 
 import org.jitsi.jibri.sink.Sink
-import java.lang.Integer.max
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -33,14 +32,8 @@ import java.time.format.DateTimeFormatter
 class FileSink(recordingsDirectory: Path, callName: String, extension: String = "mp4") : Sink {
     val file: Path
     init {
-        val timestampStr = LocalDateTime.now().format(TIMESTAMP_FORMATTER)
-        // How much of the call name we'll use is determined by how many characters are leftover
-        // counting the timestamp and underscore separator
-        val maxCallNameLength = MAX_FILENAME_LENGTH - timestampStr.length - 1
-        val truncatedCallName = callName.take(maxCallNameLength)
-        // We take only the first 100 characters of the callname
-        // val filename = "${callName.take(100)}_${currentTime.format(formatter)}.$extension"
-        val filename = "${truncatedCallName}_$timestampStr.$extension"
+        val suffix = "_${LocalDateTime.now().format(TIMESTAMP_FORMATTER)}.$extension"
+        val filename = "${callName.take(MAX_FILENAME_LENGTH - suffix.length)}$suffix"
         file = recordingsDirectory.resolve(filename)
     }
     override val path: String = file.toString()

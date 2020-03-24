@@ -47,15 +47,9 @@ internal class FileSinkTest : ShouldSpec() {
             val reallyLongCallName = String.randomAlphas(200)
             val sink = FileSink(fs.getPath("/tmp/xxx"), reallyLongCallName, "ext")
             should("not generate a filename longer than the max file length") {
-                sink.file.baseName().length shouldBe 125
+                sink.file.fileName.toString().length shouldBe FileSink.MAX_FILENAME_LENGTH
             }
         }
-    }
-
-    // Returns the filename (without the extension)
-    private fun Path.baseName(): String {
-        val extStart = fileName.toString().lastIndexOf(".")
-        return fileName.toString().subSequence(0, extStart).toString()
     }
 
     // Generates a random string of lower-case a-z letters with the given size
