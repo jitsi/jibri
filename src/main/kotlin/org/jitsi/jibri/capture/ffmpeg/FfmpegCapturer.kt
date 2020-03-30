@@ -103,12 +103,10 @@ class FfmpegCapturer(
                 ffmpegStatusStateMachine.transition(
                     FfmpegEvent.ErrorLine(FfmpegFailedToStart))
             }
-            is ProcessExited -> {
-                logger.info("Ffmpeg quit abruptly.  Last output line: ${ffmpegState.mostRecentOutput}")
-                ffmpegStatusStateMachine.transition(
-                    FfmpegEvent.ErrorLine(FfmpegFailedToStart))
-            }
             else -> {
+                if (ffmpegState.runningState is ProcessExited) {
+                    logger.info("Ffmpeg quit abruptly.  Last output line: ${ffmpegState.mostRecentOutput}")
+                }
                 val status = OutputParser.parse(ffmpegState.mostRecentOutput)
                 ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
             }
