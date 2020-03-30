@@ -23,7 +23,6 @@ import io.kotlintest.matchers.string.shouldContain
 import io.kotlintest.matchers.string.shouldStartWith
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import java.nio.file.Path
 import kotlin.random.Random
 
 internal class FileSinkTest : ShouldSpec() {
