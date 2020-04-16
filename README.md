@@ -105,6 +105,8 @@ By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the 
 
 Jibri requires some settings to be enabled within a Jitsi Meet configuration. These changes include virtualhosts and accounts in Prosody, settings for the jitsi meet web (within config.js) as well as `jicofo sip-communicator.properties`.
 
+NB: Port 5222 has to be opened on the Jitst Meet server to allow inbound connections
+
 ## Prosody
 
 Create the internal MUC component entry.  This is required so that the jibri clients can be discovered by Jicofo in a MUC that's not externally accessible by jitsi meet users.  Add the following in `/etc/prosody/prosody.cfg.lua`:
