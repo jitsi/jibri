@@ -46,6 +46,8 @@ open class FfmpegErrorStatus(val error: JibriError) : FfmpegOutputStatus(OutputL
  */
 class BadRtmpUrlStatus(outputLine: String) : FfmpegErrorStatus(BadRtmpUrl(outputLine))
 
+class BrokenPipeStatus(outputLine: String) : FfmpegErrorStatus(BrokenPipe(outputLine))
+
 /**
  * Ffmpeg quit due to a signal other than what we sent to it
  */
@@ -76,6 +78,7 @@ class OutputParser {
          * ffmpeg bad rtmp url line
          */
         private const val badRtmpUrl = "rtmp://.*Input/output error"
+        private const val brokenPipe = ".*Broken pipe.*"
 
         /**
          * Errors are done a bit differently, as different errors have different scopes.  For example,
@@ -84,7 +87,8 @@ class OutputParser {
          * to a function which takes in the output line and returns an [FfmpegErrorStatus]
          */
         private val errorTypes = mapOf<String, (String) -> FfmpegErrorStatus>(
-            badRtmpUrl to ::BadRtmpUrlStatus
+            badRtmpUrl to ::BadRtmpUrlStatus,
+            brokenPipe to ::BrokenPipeStatus
         )
 
         /**

@@ -25,3 +25,4 @@ class FfmpegUnexpectedSignal(outputLine: String) : FfmpegError(ErrorScope.SESSIO
 class BadRtmpUrl(outputLine: String) : FfmpegError(ErrorScope.SESSION, outputLine) {
     override fun shouldRetry(): Boolean = false
 }
+class BrokenPipe(outputLine: String) : FfmpegError(ErrorScope.SESSION, outputLine)
