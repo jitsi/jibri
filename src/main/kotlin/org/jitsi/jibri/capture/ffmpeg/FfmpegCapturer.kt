@@ -27,6 +27,7 @@ import org.jitsi.jibri.util.OsDetector
 import org.jitsi.jibri.util.OsType
 import org.jitsi.jibri.util.ProcessExited
 import org.jitsi.jibri.util.ProcessFailedToStart
+import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.debug
@@ -108,7 +109,7 @@ class FfmpegCapturer(
                     logger.info("Ffmpeg quit abruptly.  Last output line: ${ffmpegState.mostRecentOutput}")
                 }
                 val status = OutputParser.parse(ffmpegState.mostRecentOutput)
-                ffmpegStatusStateMachine.transition(status.toFfmpegEvent())
+                ffmpegStatusStateMachine.transition(status.toFfmpegEvent(ffmpegState.runningState is ProcessRunning))
             }
         }
     }
