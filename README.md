@@ -142,7 +142,7 @@ org.jitsi.jicofo.jibri.PENDING_TIMEOUT=90
 ```
 
 ## Jitsi Meet
-Edit the `/etc/jitsi/meet/yourdomain.config.js` file, add/set the following properties:
+Edit the `/etc/jitsi/meet/yourdomain-config.js` file, add/set the following properties:
 ```
 fileRecordingsEnabled: true, // If you want to enable file recording
 liveStreamingEnabled: true, // If you want to enable live streaming
