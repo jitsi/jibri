@@ -55,7 +55,10 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 )
                 when (result) {
                     is Boolean -> result
-                    else -> false
+                    else -> {
+                        logger.debug("Not joined yet: $result")
+                        false
+                    }
                 }
             }
             val totalTime = System.currentTimeMillis() - start

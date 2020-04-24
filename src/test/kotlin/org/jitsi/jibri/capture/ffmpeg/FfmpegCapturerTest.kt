@@ -90,11 +90,43 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                         capturerStateUpdates.last().shouldBeInstanceOf<ComponentState.Running>()
                     }
                 }
+                "and then finishes cleanly" {
+                    ffmpegStateHandler.firstValue(ProcessState(ProcessRunning(), "Exiting with signal 2"))
+                    "capturer" {
+                        should("report its status as finished") {
+                            capturerStateUpdates.last().shouldBeInstanceOf<ComponentState.Finished>()
+                        }
+                    }
+                }
                 "and then encounters an error" {
                     ffmpegStateHandler.firstValue(FFMPEG_ERROR_STATE)
                     "capturer" {
                         should("report its status as error") {
                             capturerStateUpdates.last().shouldBeInstanceOf<ComponentState.Error>()
+                        }
+                    }
+                }
+                "and quits abruptly" {
+                    "with a normal last output line" {
+                        ffmpegStateHandler.firstValue(ProcessState(ProcessExited(139), "frame=42"))
+                        "capture" {
+                            should("report its stats as error") {
+                                val error = capturerStateUpdates.last()
+                                error.shouldBeInstanceOf<ComponentState.Error>()
+                                error as ComponentState.Error
+                                error.error.scope shouldBe ErrorScope.SESSION
+                            }
+                        }
+                    }
+                    "with an unknown output line" {
+                        ffmpegStateHandler.firstValue(ProcessState(ProcessExited(139), "something!"))
+                        "capture" {
+                            should("report its stats as error") {
+                                val error = capturerStateUpdates.last()
+                                error.shouldBeInstanceOf<ComponentState.Error>()
+                                error as ComponentState.Error
+                                error.error.scope shouldBe ErrorScope.SESSION
+                            }
                         }
                     }
                 }

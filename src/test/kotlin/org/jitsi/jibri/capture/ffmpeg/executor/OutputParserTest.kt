@@ -69,6 +69,16 @@ internal class OutputParserTest : ShouldSpec() {
                 }
             }
         }
+        "A broken pipe output line" {
+            val outputLine = "av_interleaved_write_frame(): Broken pipe"
+            should("be parsed correctly") {
+                val status = OutputParser.parse(outputLine)
+                status should beInstanceOf<FfmpegErrorStatus>()
+                status as FfmpegErrorStatus
+                status.detail.shouldBe(outputLine)
+                status.error.scope shouldBe ErrorScope.SESSION
+            }
+        }
         "An unexpected exit output line" {
             val outputLine = "Exiting normally, received signal 15."
             should("be parsed correctly") {

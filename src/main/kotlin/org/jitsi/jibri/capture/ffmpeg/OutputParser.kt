@@ -46,6 +46,8 @@ open class FfmpegErrorStatus(val error: JibriError) : FfmpegOutputStatus(OutputL
  */
 class BadRtmpUrlStatus(outputLine: String) : FfmpegErrorStatus(BadRtmpUrl(outputLine))
 
+class BrokenPipeStatus(outputLine: String) : FfmpegErrorStatus(BrokenPipe(outputLine))
+
 /**
  * Ffmpeg quit due to a signal other than what we sent to it
  */
@@ -71,11 +73,8 @@ class OutputParser {
 
         private const val ffmpegEncodingLine = "($ffmpegOutputField)+$zeroOrMoreSpaces"
         private const val ffmpegExitedLine = "Exiting.*signal$zeroOrMoreSpaces($oneOrMoreDigits).*"
-
-        /**
-         * ffmpeg bad rtmp url line
-         */
         private const val badRtmpUrl = "rtmp://.*Input/output error"
+        private const val brokenPipe = ".*Broken pipe.*"
 
         /**
          * Errors are done a bit differently, as different errors have different scopes.  For example,
@@ -84,7 +83,8 @@ class OutputParser {
          * to a function which takes in the output line and returns an [FfmpegErrorStatus]
          */
         private val errorTypes = mapOf<String, (String) -> FfmpegErrorStatus>(
-            badRtmpUrl to ::BadRtmpUrlStatus
+            badRtmpUrl to ::BadRtmpUrlStatus,
+            brokenPipe to ::BrokenPipeStatus
         )
 
         /**
@@ -94,8 +94,7 @@ class OutputParser {
             // First we'll check if the output represents that ffmpeg has exited
             val exitedMatcher = Pattern.compile(ffmpegExitedLine).matcher(outputLine)
             if (exitedMatcher.matches()) {
-                val signal = exitedMatcher.group(1).toInt()
-                return when (signal) {
+                return when (exitedMatcher.group(1).toInt()) {
                     // 2 is the signal we pass to stop ffmpeg
                     2 -> FfmpegOutputStatus(OutputLineClassification.FINISHED, outputLine)
                     else -> FfmpegUnexpectedSignalStatus(outputLine)

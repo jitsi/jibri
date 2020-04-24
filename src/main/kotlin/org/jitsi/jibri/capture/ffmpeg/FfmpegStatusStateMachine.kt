@@ -26,12 +26,36 @@ sealed class FfmpegEvent(val outputLine: String) {
     class ErrorLine(val error: JibriError) : FfmpegEvent(error.detail)
     class FinishLine(outputLine: String) : FfmpegEvent(outputLine)
     class OtherLine(outputLine: String) : FfmpegEvent(outputLine)
+    /**
+     * Used any time Ffmpeg has exited, regardless of what [outputLine] contains. However,
+     * [error] will be set if [outputLine] contains an error, so that we may describe the
+     * scope of that error.
+     */
+    class FfmpegExited(outputLine: String, val error: JibriError? = null) : FfmpegEvent(outputLine)
 }
 
-fun FfmpegOutputStatus.toFfmpegEvent(): FfmpegEvent {
+/**
+ * To properly translate an [FfmpegOutputStatus] to an [FfmpegEvent], we need to take into
+ * account what the status of the parsed line indicates, but also the current running state
+ * of ffmpeg itself: if ffmpeg crashes, then its last output line may be "normal", but we need
+ * to react to the fact that ffmpeg is no longer running.
+ */
+fun FfmpegOutputStatus.toFfmpegEvent(ffmpegStillRunning: Boolean): FfmpegEvent {
     return when (lineType) {
-        OutputLineClassification.ENCODING -> FfmpegEvent.EncodingLine(detail)
-        OutputLineClassification.UNKNOWN -> FfmpegEvent.OtherLine(detail)
+        OutputLineClassification.ENCODING -> {
+            if (ffmpegStillRunning) {
+                FfmpegEvent.EncodingLine(detail)
+            } else {
+                FfmpegEvent.FfmpegExited(detail, QuitUnexpectedly(detail))
+            }
+        }
+        OutputLineClassification.UNKNOWN -> {
+            if (ffmpegStillRunning) {
+                FfmpegEvent.OtherLine(detail)
+            } else {
+                FfmpegEvent.FfmpegExited(detail, QuitUnexpectedly(detail))
+            }
+        }
         OutputLineClassification.FINISHED -> FfmpegEvent.FinishLine(detail)
         OutputLineClassification.ERROR -> {
             this as FfmpegErrorStatus
@@ -59,6 +83,11 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
             on<FfmpegEvent.OtherLine> {
                 dontTransition()
             }
+            on<FfmpegEvent.FfmpegExited> {
+                it.error?.let {
+                    transitionTo(ComponentState.Error(it))
+                } ?: transitionTo(ComponentState.Finished)
+            }
         }
 
         state<ComponentState.Running> {
@@ -73,6 +102,11 @@ class FfmpegStatusStateMachine : NotifyingStateMachine() {
             }
             on<FfmpegEvent.OtherLine> {
                 dontTransition()
+            }
+            on<FfmpegEvent.FfmpegExited> {
+                it.error?.let {
+                    transitionTo(ComponentState.Error(it))
+                } ?: transitionTo(ComponentState.Finished)
             }
         }
 
