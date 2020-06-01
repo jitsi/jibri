@@ -103,6 +103,7 @@ class XmppApi(
                     domain = config.controlLogin.domain
                     username = config.controlLogin.username
                     password = config.controlLogin.password
+                    port = config.controlLogin.port
 
                     if (config.trustAllXmppCerts) {
                         logger.info("The trustAllXmppCerts config is enabled for this domain, " +

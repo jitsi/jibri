@@ -65,7 +65,7 @@ data class JibriSeleniumOptions(
      * is currently only used in the sipgateway gateway scenario; when doing
      * recording the jibri is 'invisible' in the call
      */
-    val displayName: String = "",
+    val displayName: String = "Recorder",
     /**
      * The email that should be used for jibri.  Note that this
      * is currently only used in the sipgateway gateway scenario; when doing
@@ -148,6 +148,7 @@ class JibriSelenium(
         )
         chromeOptions.setExperimentalOption("w3c", false)
         chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
+        chromeOptions.addArguments("--user-agent=\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Ahtapot/1.0.2 Chrome/76.0.3809.88 Electron/6.0.0 Safari/537.36\"")
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
             mapOf("DISPLAY" to jibriSeleniumOptions.display)
         ).build()

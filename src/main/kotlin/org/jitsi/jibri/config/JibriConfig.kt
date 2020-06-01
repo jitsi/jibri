@@ -22,7 +22,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class XmppCredentials(
     val domain: String = "",
     val username: String = "",
-    val password: String = ""
+    val password: String = "",
+    val port: String = ""
 )
 
 data class XmppMuc(
