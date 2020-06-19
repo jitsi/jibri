@@ -30,15 +30,6 @@ import org.jxmpp.jid.Jid
  */
 class JibriIqHelper {
     companion object {
-        fun createResult(jibriIq: JibriIq, status: JibriIq.Status): JibriIq {
-            val result = JibriIq()
-            result.type = IQ.Type.result
-            result.stanzaId = jibriIq.stanzaId
-            result.to = jibriIq.from
-            result.status = status
-            return result
-        }
-
         fun create(from: Jid, type: IQ.Type = IQ.Type.set, status: JibriIq.Status = JibriIq.Status.UNDEFINED): JibriIq {
             val jibriIq = JibriIq()
             jibriIq.to = from
@@ -58,6 +49,7 @@ fun JibriIq.createResult(block: JibriIq.() -> Unit): JibriIq {
     return JibriIq().apply {
         type = IQ.Type.result
         to = this@createResult.from
+        from = this@createResult.to
         stanzaId = this@createResult.stanzaId
         sipAddress = this@createResult.sipAddress
         block()

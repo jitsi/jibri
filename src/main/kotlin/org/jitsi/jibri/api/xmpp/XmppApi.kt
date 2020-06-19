@@ -255,7 +255,9 @@ class XmppApi(
     private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
         jibriManager.stopService()
         // By this point the service has been fully stopped
-        return JibriIqHelper.createResult(stopJibriIq, JibriIq.Status.OFF)
+        return stopJibriIq.createResult {
+            status = JibriIq.Status.OFF
+        }
     }
 
     /**
