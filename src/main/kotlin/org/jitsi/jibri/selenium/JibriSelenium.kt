@@ -70,7 +70,7 @@ data class JibriSeleniumOptions(
      * The email that should be used for jibri.  Note that this
      * is currently only used in the sipgateway gateway scenario; when doing
      * recording the jibri is 'invisible' in the call
-     */XmppCredentials
+     */
     val email: String = "",
     /**
      * Chrome command line flags to add (in addition to the common
