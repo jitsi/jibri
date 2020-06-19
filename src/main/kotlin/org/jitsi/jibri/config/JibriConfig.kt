@@ -23,7 +23,7 @@ data class XmppCredentials(
     val domain: String = "",
     val username: String = "",
     val password: String = "",
-    val port: String = ""
+    val port: String = "5222"
 )
 
 data class XmppMuc(
