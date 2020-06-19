@@ -65,7 +65,7 @@ data class JibriSeleniumOptions(
      * is currently only used in the sipgateway gateway scenario; when doing
      * recording the jibri is 'invisible' in the call
      */
-    val displayName: String = "Recorder",
+    val displayName: String = "",
     /**
      * The email that should be used for jibri.  Note that this
      * is currently only used in the sipgateway gateway scenario; when doing
