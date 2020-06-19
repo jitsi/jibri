@@ -37,7 +37,6 @@ import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
-import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
 import org.jitsi.xmpp.mucclient.IQListener
@@ -179,44 +178,40 @@ class XmppApi(
         xmppEnvironment: XmppEnvironmentConfig,
         mucClient: MucClient
     ): IQ {
-        logger.info("Received start request")
-        // We don't want to block the response to wait for the service to actually start, so submit a job to
-        // start the service asynchronously and send an IQ with the status after its done.
-        TaskPools.ioPool.submit {
-            val resultIq = JibriIqHelper.create(startJibriIq.from)
-            resultIq.sipAddress = startJibriIq.sipAddress
-            logger.info("Starting service")
-            // If there is an issue with the service while it's running, we need to send an IQ
-            // to notify the caller who invoked the service of its status, so we'll listen
-            // for the service's status while it's running and this method will be invoked
-            // if it changes
-            val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
-            try {
-                handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
-            } catch (busy: JibriBusyException) {
-                logger.error("Jibri is currently busy, cannot service this request")
-                resultIq.status = JibriIq.Status.OFF
-                resultIq.failureReason = JibriIq.FailureReason.BUSY
-                resultIq.shouldRetry = true
-                mucClient.sendStanza(resultIq)
-            } catch (iq: UnsupportedIqMode) {
-                logger.error("Unsupported IQ mode: ${iq.iqMode}")
-                resultIq.status = JibriIq.Status.OFF
-                resultIq.failureReason = JibriIq.FailureReason.ERROR
-                resultIq.shouldRetry = false
-                mucClient.sendStanza(resultIq)
-            } catch (t: Throwable) {
-                logger.error("Error starting Jibri service ", t)
-                resultIq.status = JibriIq.Status.OFF
-                resultIq.failureReason = JibriIq.FailureReason.ERROR
-                resultIq.shouldRetry = true
-                mucClient.sendStanza(resultIq)
+        logger.info("Received start request, starting service")
+        // If there is an issue with the service while it's running, we need to send an IQ
+        // to notify the caller who invoked the service of its status, so we'll listen
+        // for the service's status while it's running and this method will be invoked
+        // if it changes
+        val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
+        return try {
+            handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
+            logger.info("Sending 'pending' response to start IQ")
+            startJibriIq.createResult {
+                status = JibriIq.Status.PENDING
+            }
+        } catch (busy: JibriBusyException) {
+            logger.error("Jibri is currently busy, cannot service this request")
+            startJibriIq.createResult {
+                status = JibriIq.Status.OFF
+                failureReason = JibriIq.FailureReason.BUSY
+                shouldRetry = true
+            }
+        } catch (iq: UnsupportedIqMode) {
+            logger.error("Unsupported IQ mode: ${iq.iqMode}")
+            startJibriIq.createResult {
+                status = JibriIq.Status.OFF
+                failureReason = JibriIq.FailureReason.ERROR
+                shouldRetry = false
+            }
+        } catch (t: Throwable) {
+            logger.error("Error starting Jibri service ", t)
+            startJibriIq.createResult {
+                status = JibriIq.Status.OFF
+                failureReason = JibriIq.FailureReason.ERROR
+                shouldRetry = true
             }
         }
-        // Immediately respond that the request is pending
-        val initialResponse = JibriIqHelper.createResult(startJibriIq, JibriIq.Status.PENDING)
-        logger.info("Sending 'pending' response to start IQ")
-        return initialResponse
     }
 
     private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): JibriServiceStatusHandler {
@@ -260,7 +255,9 @@ class XmppApi(
     private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
         jibriManager.stopService()
         // By this point the service has been fully stopped
-        return JibriIqHelper.createResult(stopJibriIq, JibriIq.Status.OFF)
+        return stopJibriIq.createResult {
+            status = JibriIq.Status.OFF
+        }
     }
 
     /**

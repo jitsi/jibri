@@ -31,6 +31,7 @@ import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
+import org.jitsi.jibri.JibriBusyException
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
@@ -48,6 +49,7 @@ import org.jitsi.jibri.status.OverallHealth
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
+import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.Stanza
 import org.jivesoftware.smack.packet.XMPPError
 import org.jxmpp.jid.impl.JidCreate
@@ -57,12 +59,15 @@ import java.util.concurrent.ExecutorService
 class XmppApiTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private fun createJibriIq(iqAction: JibriIq.Action, iqMode: JibriIq.RecordingMode): JibriIq {
+    private fun createJibriIq(iqAction: JibriIq.Action, iqMode: JibriIq.RecordingMode? = null): JibriIq {
         return JibriIq().apply {
-            recordingMode = iqMode
+            iqMode?.let {
+                recordingMode = it
+            }
             action = iqAction
             // Note that the domain used below must match the ones in the xmpp env config
             from = JidCreate.from("from_jid@xmppDomain")
+            to = JidCreate.from("to_jid@xmppDomain")
             room = JidCreate.entityBareFrom("room_jid@xmppDomain")
             sessionId = "session_id"
         }
@@ -148,6 +153,31 @@ class XmppApiTest : ShouldSpec() {
                             sentStanzas.allValues.size shouldBe 1
                             (sentStanzas.firstValue as JibriIq).status shouldBe JibriIq.Status.ON
                         }
+                        "and it is stopped" {
+//                            whenever(jibriManager.stopService()) doAnswer {}
+                            val stopIq = createJibriIq(JibriIq.Action.STOP)
+                            val stopResponse = xmppApi.handleIq(stopIq, mucClient)
+                            should("respond correctly") {
+                                verify(jibriManager).stopService()
+                                stopResponse shouldBeResponseTo stopIq
+                                stopResponse should beInstanceOf<JibriIq>()
+                                stopResponse as JibriIq
+                                stopResponse.status shouldBe JibriIq.Status.OFF
+                            }
+                        }
+                    }
+                }
+                "and jibri is busy" {
+                    whenever(jibriManager.startFileRecording(any(), any(), any(), any())).thenAnswer {
+                        throw JibriBusyException()
+                    }
+                    should("send an error IQ") {
+                        val response = xmppApi.handleIq(jibriIq, mucClient)
+                        response should beInstanceOf<JibriIq>()
+                        response as JibriIq
+                        response.status shouldBe JibriIq.Status.OFF
+                        response.failureReason shouldBe JibriIq.FailureReason.BUSY
+                        response.shouldRetry shouldBe true
                     }
                 }
                 "with application data" {
@@ -181,4 +211,9 @@ class XmppApiTest : ShouldSpec() {
             }
         }
     }
+}
+
+private infix fun IQ.shouldBeResponseTo(req: IQ) {
+    from.toString() shouldBe req.to.toString()
+    to.toString() shouldBe req.from.toString()
 }
