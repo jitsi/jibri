@@ -31,6 +31,7 @@ import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
+import org.jitsi.jibri.JibriBusyException
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
@@ -148,6 +149,19 @@ class XmppApiTest : ShouldSpec() {
                             sentStanzas.allValues.size shouldBe 1
                             (sentStanzas.firstValue as JibriIq).status shouldBe JibriIq.Status.ON
                         }
+                    }
+                }
+                "and jibri is busy" {
+                    whenever(jibriManager.startFileRecording(any(), any(), any(), any())).thenAnswer {
+                        throw JibriBusyException()
+                    }
+                    should("send an error IQ") {
+                        val response = xmppApi.handleIq(jibriIq, mucClient)
+                        response should beInstanceOf<JibriIq>()
+                        response as JibriIq
+                        response.status shouldBe JibriIq.Status.OFF
+                        response.failureReason shouldBe JibriIq.FailureReason.BUSY
+                        response.shouldRetry shouldBe true
                     }
                 }
                 "with application data" {
