@@ -50,6 +50,20 @@ class JibriIqHelper {
     }
 }
 
+/**
+ * Return a result IQ for this [JibriIq], setting a few fields and then
+ * applying [block]
+ */
+fun JibriIq.createResult(block: JibriIq.() -> Unit): JibriIq {
+    return JibriIq().apply {
+        type = IQ.Type.result
+        to = this@createResult.from
+        stanzaId = this@createResult.stanzaId
+        sipAddress = this@createResult.sipAddress
+        block()
+    }
+}
+
 enum class JibriMode(val mode: String) {
     FILE(JibriIq.RecordingMode.FILE.toString()),
     STREAM(JibriIq.RecordingMode.STREAM.toString()),

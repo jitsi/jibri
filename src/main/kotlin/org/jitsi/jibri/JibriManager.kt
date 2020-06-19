@@ -229,7 +229,9 @@ class JibriManager(
                 }
             }
         }
-        jibriService.start()
+        TaskPools.ioPool.submit {
+            jibriService.start()
+        }
     }
 
     /**
