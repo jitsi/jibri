@@ -46,25 +46,21 @@ internal class JibriSubprocessTest : ShouldSpec() {
     // after this test is done
     private val oldLogOutput = LoggingUtils.logOutput
 
-    override fun beforeSpec(spec: Spec) {
-        super.beforeSpec(spec)
-
-        LoggingUtils.logOutput = { _, _ -> mock() }
-
-        whenever(processFactory.createProcess(any(), any(), any())).thenReturn(processWrapper)
-        whenever(processStatePublisher.addStatusHandler(processStateHandler.capture())).thenAnswer { }
-
-        subprocess.addStatusHandler { status ->
-            executorStateUpdates.add(status)
-        }
-    }
-
-    override fun afterSpec(spec: Spec) {
-        super.afterSpec(spec)
-        LoggingUtils.logOutput = oldLogOutput
-    }
-
     init {
+        beforeSpec {
+            LoggingUtils.logOutput = { _, _ -> mock() }
+
+            whenever(processFactory.createProcess(any(), any(), any())).thenReturn(processWrapper)
+            whenever(processStatePublisher.addStatusHandler(processStateHandler.capture())).thenAnswer { }
+
+            subprocess.addStatusHandler { status ->
+                executorStateUpdates.add(status)
+            }
+        }
+
+        afterSpec {
+            LoggingUtils.logOutput = oldLogOutput
+        }
         context("launching the subprocess") {
             context("without any error launching the process") {
                 subprocess.launch(listOf())

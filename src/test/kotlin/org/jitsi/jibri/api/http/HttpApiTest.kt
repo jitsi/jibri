@@ -27,7 +27,6 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import io.kotest.core.spec.IsolationMode
-import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
@@ -59,30 +58,26 @@ class HttpApiTest : ShouldSpec() {
     private val jibriStatusManager: JibriStatusManager = mock()
     private lateinit var jerseyTest: JerseyTest
 
-    override fun beforeSpec(spec: Spec) {
-        super.beforeSpec(spec)
-        jerseyTest = object : JerseyTest() {
-            override fun configure(): Application {
-                return ResourceConfig(object : ResourceConfig() {
-                    init {
-                        // Uncommenting the following line can help with debugging any errors
-                        // property(LoggingFeature.LOGGING_FEATURE_LOGGER_LEVEL_SERVER, "WARNING")
-                        register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
-                        register(JacksonFeature::class.java)
-                        registerInstances(HttpApi(jibriManager, jibriStatusManager))
-                    }
-                })
-            }
-        }
-        jerseyTest.setUp()
-    }
-
-    override fun afterSpec(spec: Spec) {
-        super.afterSpec(spec)
-        jerseyTest.tearDown()
-    }
-
     init {
+        beforeSpec {
+            jerseyTest = object : JerseyTest() {
+                override fun configure(): Application {
+                    return ResourceConfig(object : ResourceConfig() {
+                        init {
+                            // Uncommenting the following line can help with debugging any errors
+                            // property(LoggingFeature.LOGGING_FEATURE_LOGGER_LEVEL_SERVER, "WARNING")
+                            register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
+                            register(JacksonFeature::class.java)
+                            registerInstances(HttpApi(jibriManager, jibriStatusManager))
+                        }
+                    })
+                }
+            }
+            jerseyTest.setUp()
+        }
+        afterSpec {
+            jerseyTest.tearDown()
+        }
         context("health") {
             context("when jibri isn't busy") {
                 val expectedStatus =

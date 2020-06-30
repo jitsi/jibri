@@ -32,14 +32,13 @@ internal class SeleniumStateMachineTest : ShouldSpec() {
     private val stateUpdates = mutableListOf<Pair<ComponentState, ComponentState>>()
     private val seleniumStateMachine = SeleniumStateMachine()
 
-    override fun beforeSpec(spec: Spec) {
-        super.beforeSpec(spec)
-        seleniumStateMachine.onStateTransition { fromState, toState ->
-            stateUpdates.add((fromState to toState))
-        }
-    }
-
     init {
+        beforeSpec {
+            seleniumStateMachine.onStateTransition { fromState, toState ->
+                stateUpdates.add((fromState to toState))
+            }
+        }
+
         context("When starting up") {
             context("and the call is joined") {
                 seleniumStateMachine.transition(SeleniumEvent.CallJoined)
