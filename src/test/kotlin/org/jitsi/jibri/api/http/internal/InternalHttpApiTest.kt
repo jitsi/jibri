@@ -21,9 +21,8 @@ import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.TestCase
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.util.TaskPools
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -32,15 +31,14 @@ class InternalHttpApiTest : ShouldSpec() {
     private val executor: ScheduledExecutorService = mock()
     private val future: ScheduledFuture<*> = mock()
 
-    override fun beforeTest(testCase: TestCase) {
-        super.beforeTest(testCase)
-        reset(executor, future)
-        whenever(executor.schedule(any(), any(), any())).thenReturn(future)
-        TaskPools.recurringTasksPool = executor
-    }
-
     init {
-        "gracefulShutdown" {
+        beforeTest {
+            reset(executor, future)
+            whenever(executor.schedule(any(), any(), any())).thenReturn(future)
+            TaskPools.recurringTasksPool = executor
+        }
+
+        context("gracefulShutdown") {
             should("return a 200 and not invoke the shutdown handler directly") {
                 var gracefulShutdownHandlerCalled = false
                 val gracefulShutdownHandler = {
@@ -53,7 +51,7 @@ class InternalHttpApiTest : ShouldSpec() {
             }
         }
 
-        "notifyConfigChanged" {
+        context("notifyConfigChanged") {
             should("return a 200 and not invoke the config changed handler directly") {
                 var configChangedHandlerCalled = false
                 val configChangedHandler = {
@@ -66,7 +64,7 @@ class InternalHttpApiTest : ShouldSpec() {
             }
         }
 
-        "shutdown" {
+        context("shutdown") {
             should("return a 200 and not invoke the shutdown handler directly") {
                 var shutdownHandlerCalled = false
                 val shutdownHandler = {

@@ -17,15 +17,16 @@
 
 package org.jitsi.jibri.util
 
-import io.kotlintest.IsolationMode
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.ShouldSpec
-import org.jitsi.jibri.helpers.seconds
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 internal class TeeLogicTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -46,8 +47,8 @@ internal class TeeLogicTest : ShouldSpec() {
     }
 
     init {
-        "data written" {
-            "after the creation of a branch" {
+        context("data written") {
+            context("after the creation of a branch") {
                 should("be received by that branch") {
                     val branch = tee.addBranch()
                     pushIncomingData("hello, world\n")
@@ -55,7 +56,7 @@ internal class TeeLogicTest : ShouldSpec() {
                     reader.readLine() shouldBe "hello, world"
                 }
             }
-            "before the creation of a branch" {
+            context("before the creation of a branch") {
                 should("not be received by that branch") {
                     pushIncomingData("hello, world\n")
                     val branch = tee.addBranch()
@@ -65,7 +66,7 @@ internal class TeeLogicTest : ShouldSpec() {
                 }
             }
         }
-        "end of stream" {
+        context("end of stream") {
             should("throw EndOfStreamException") {
                 outputStream.close()
                 shouldThrow<EndOfStreamException> {
@@ -89,8 +90,9 @@ internal class TeeLogicTest : ShouldSpec() {
     }
 }
 
+@ExperimentalTime
 internal class TeeTest : ShouldSpec() {
-    override fun isInstancePerTest(): Boolean = true
+    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val outputStream = PipedOutputStream()
     private val inputStream = PipedInputStream(outputStream)
@@ -98,8 +100,8 @@ internal class TeeTest : ShouldSpec() {
 
     init {
         val branch = tee.addBranch()
-        "stop" {
-            should("close downstream readers").config(timeout = 5.seconds()) {
+        context("stop") {
+            should("close downstream readers").config(timeout = 5.seconds) {
                 tee.stop()
                 // This is testing that it returns the proper value (to signal
                 // the stream was closed).  But the timeout in the config tests

@@ -17,9 +17,8 @@
 
 package org.jitsi.jibri.util
 
-import io.kotlintest.TestCase
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 
@@ -35,28 +34,26 @@ class TailLogicTest : ShouldSpec() {
         }
     }
 
-    override fun beforeTest(testCase: TestCase) {
-        super.beforeTest(testCase)
-        outputStream = PipedOutputStream()
-        inputStream = PipedInputStream(outputStream)
-        tail = TailLogic(inputStream)
-    }
-
     init {
-        "mostRecentLine" {
-            "initially" {
+        beforeTest {
+            outputStream = PipedOutputStream()
+            inputStream = PipedInputStream(outputStream)
+            tail = TailLogic(inputStream)
+        }
+        context("mostRecentLine") {
+            context("initially") {
                 should("equal an empty string") {
                     tail.mostRecentLine shouldBe ""
                 }
             }
-            "after writing once" {
+            context("after writing once") {
                 should("equal that line") {
                     writeLine("hello, world")
                     tail.readLine()
                     tail.mostRecentLine shouldBe "hello, world"
                 }
             }
-            "after writing multiple times" {
+            context("after writing multiple times") {
                 should("equal the most recent line") {
                     writeLine("hello, world")
                     tail.readLine()

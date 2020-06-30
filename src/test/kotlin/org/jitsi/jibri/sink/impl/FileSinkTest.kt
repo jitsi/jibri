@@ -18,11 +18,11 @@
 package org.jitsi.jibri.sink.impl
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import io.kotlintest.IsolationMode
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.matchers.string.shouldStartWith
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldStartWith
 import kotlin.random.Random
 
 internal class FileSinkTest : ShouldSpec() {
@@ -31,7 +31,7 @@ internal class FileSinkTest : ShouldSpec() {
     private val fs = MemoryFileSystemBuilder.newLinux().build()
 
     init {
-        "when created" {
+        context("when created") {
             val sink = FileSink(fs.getPath("/tmp/xxx"), "callname", "ext")
             should("have the correct path") {
                 sink.path.shouldStartWith("/tmp/xxx")
@@ -42,7 +42,7 @@ internal class FileSinkTest : ShouldSpec() {
                 sink.format shouldBe "ext"
             }
         }
-        "when created with a really long call name" {
+        context("when created with a really long call name") {
             val reallyLongCallName = String.randomAlphas(200)
             val sink = FileSink(fs.getPath("/tmp/xxx"), reallyLongCallName, "ext")
             should("not generate a filename longer than the max file length") {

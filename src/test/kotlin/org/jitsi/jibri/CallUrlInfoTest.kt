@@ -17,21 +17,21 @@
 
 package org.jitsi.jibri
 
-import io.kotlintest.IsolationMode
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldNotBe
-import io.kotlintest.specs.ShouldSpec
-import io.kotlintest.tables.forAll
-import io.kotlintest.tables.headers
-import io.kotlintest.tables.row
-import io.kotlintest.tables.table
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.data.forAll
+import io.kotest.data.headers
+import io.kotest.data.row
+import io.kotest.data.table
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 
 class CallUrlInfoTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
-        "creating a CallUrlInfo" {
-            "without url params" {
+        context("creating a CallUrlInfo") {
+            context("without url params") {
                 val info = CallUrlInfo("baseUrl", "callName")
                 should("assign the fields correctly") {
                     info.baseUrl shouldBe "baseUrl"
@@ -39,7 +39,7 @@ class CallUrlInfoTest : ShouldSpec() {
                     info.callUrl shouldBe "baseUrl/callName"
                 }
             }
-            "with url params" {
+            context("with url params") {
                 val info = CallUrlInfo("baseUrl", "callName", listOf("one", "two", "three"))
                 should("assign the fields correctly") {
                     info.baseUrl shouldBe "baseUrl"
@@ -48,19 +48,20 @@ class CallUrlInfoTest : ShouldSpec() {
                 }
             }
         }
-        "a nullable CallUrlInfo instance" {
+        context("a nullable CallUrlInfo instance") {
             should("not equal null") {
                 val nullableInfo: CallUrlInfo? = CallUrlInfo("baseUrl", "callName")
                 nullableInfo shouldNotBe null
             }
         }
-        "equality and hashcode" {
+        context("equality and hashcode") {
             val info = CallUrlInfo("baseUrl", "callName")
-            "a CallUrlInfo instance" {
+            context("a CallUrlInfo instance") {
                 should("not equal another type") {
+                    @Suppress("ReplaceCallWithBinaryOperator")
                     info.equals("string") shouldBe false
                 }
-                "when compared to other variations" {
+                context("when compared to other variations") {
                     should("be equal/not equal where appropriate") {
                         val duplicateInfo = CallUrlInfo("baseUrl", "callName")
                         val differentBaseUrl = CallUrlInfo("differentBaseUrl", "callName")

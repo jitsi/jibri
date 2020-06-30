@@ -23,10 +23,9 @@ import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.IsolationMode
-import io.kotlintest.TestCase
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.FunSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.within
 import java.io.PipedInputStream
@@ -42,15 +41,14 @@ internal class LoggingUtilsKtTest : FunSpec() {
     private lateinit var inputStream: PipedInputStream
     private val logger: Logger = mock()
 
-    override fun beforeTest(testCase: TestCase) {
-        super.beforeTest(testCase)
-        pipedOutputStream = PipedOutputStream()
-        inputStream = PipedInputStream(pipedOutputStream)
-        reset(logger)
-        whenever(process.getOutput()).thenReturn(inputStream)
-    }
-
     init {
+        beforeTest {
+            pipedOutputStream = PipedOutputStream()
+            inputStream = PipedInputStream(pipedOutputStream)
+            reset(logger)
+            whenever(process.getOutput()).thenReturn(inputStream)
+        }
+
         test("logStream should write log lines to the given logger") {
             LoggingUtils.logOutput(process, logger)
             thread {

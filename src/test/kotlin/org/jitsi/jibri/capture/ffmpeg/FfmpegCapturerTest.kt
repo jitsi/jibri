@@ -22,15 +22,15 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.IsolationMode
-import io.kotlintest.Spec
-import io.kotlintest.matchers.collections.contain
-import io.kotlintest.matchers.collections.shouldNotBeEmpty
-import io.kotlintest.matchers.types.shouldBeInstanceOf
-import io.kotlintest.should
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.contain
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
@@ -75,41 +75,41 @@ internal class FfmpegCapturerTest : ShouldSpec() {
     }
 
     init {
-        "on any supported platform" {
+        context("on any supported platform") {
             // We arbitrarily use linux
             whenever(osDetector.getOsType()).thenReturn(OsType.LINUX)
             val ffmpegCapturer = createCapturer()
-            "when launching ffmpeg succeeds" {
+            context("when launching ffmpeg succeeds") {
                 whenever(ffmpeg.launch(any(), any())).thenAnswer {
                     ffmpegStateHandler.firstValue(FFMPEG_ENCODING_STATE)
                 }
                 ffmpegCapturer.start(sink)
-                "capturer" {
+                context("capturer") {
                     should("report its status as running") {
                         capturerStateUpdates.shouldNotBeEmpty()
                         capturerStateUpdates.last().shouldBeInstanceOf<ComponentState.Running>()
                     }
                 }
-                "and then finishes cleanly" {
+                context("and then finishes cleanly") {
                     ffmpegStateHandler.firstValue(ProcessState(ProcessRunning(), "Exiting with signal 2"))
-                    "capturer" {
+                    context("capturer") {
                         should("report its status as finished") {
                             capturerStateUpdates.last().shouldBeInstanceOf<ComponentState.Finished>()
                         }
                     }
                 }
-                "and then encounters an error" {
+                context("and then encounters an error") {
                     ffmpegStateHandler.firstValue(FFMPEG_ERROR_STATE)
-                    "capturer" {
+                    context("capturer") {
                         should("report its status as error") {
                             capturerStateUpdates.last().shouldBeInstanceOf<ComponentState.Error>()
                         }
                     }
                 }
-                "and quits abruptly" {
-                    "with a normal last output line" {
+                context("and quits abruptly") {
+                    context("with a normal last output line") {
                         ffmpegStateHandler.firstValue(ProcessState(ProcessExited(139), "frame=42"))
-                        "capture" {
+                        context("capture") {
                             should("report its stats as error") {
                                 val error = capturerStateUpdates.last()
                                 error.shouldBeInstanceOf<ComponentState.Error>()
@@ -118,9 +118,9 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                             }
                         }
                     }
-                    "with an unknown output line" {
+                    context("with an unknown output line") {
                         ffmpegStateHandler.firstValue(ProcessState(ProcessExited(139), "something!"))
-                        "capture" {
+                        context("capture") {
                             should("report its stats as error") {
                                 val error = capturerStateUpdates.last()
                                 error.shouldBeInstanceOf<ComponentState.Error>()
@@ -131,12 +131,12 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     }
                 }
             }
-            "when ffmpeg fails to start" {
+            context("when ffmpeg fails to start") {
                 whenever(ffmpeg.launch(any(), any())).thenAnswer {
                     ffmpegStateHandler.firstValue(FFMPEG_FAILED_TO_START)
                 }
                 ffmpegCapturer.start(sink)
-                "capturer" {
+                context("capturer") {
                     should("report its status as a system error") {
                         capturerStateUpdates.shouldNotBeEmpty()
                         val status = capturerStateUpdates.last()
@@ -146,17 +146,17 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     }
                 }
             }
-            "stop" {
+            context("stop") {
                 should("call stop on the executor") {
                     ffmpegCapturer.stop()
                     verify(ffmpeg).stop()
                 }
             }
         }
-        "on linux" {
+        context("on linux") {
             whenever(osDetector.getOsType()).thenReturn(OsType.LINUX)
             val ffmpegCapturer = createCapturer()
-            "the command" {
+            context("the command") {
                 should("be correct for linux") {
                     ffmpegCapturer.start(sink)
                     val commandCaptor = argumentCaptor<List<String>>()
@@ -168,10 +168,10 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                 }
             }
         }
-        "on mac" {
+        context("on mac") {
             whenever(osDetector.getOsType()).thenReturn(OsType.MAC)
             val ffmpegCapturer = createCapturer()
-            "the command" {
+            context("the command") {
                 should("be correct for mac") {
                     ffmpegCapturer.start(sink)
                     val commandCaptor = argumentCaptor<List<String>>()
@@ -180,7 +180,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                 }
             }
         }
-        "on an unsupported platform" {
+        context("on an unsupported platform") {
             whenever(osDetector.getOsType()).thenReturn(OsType.UNSUPPORTED)
             shouldThrow<UnsupportedOsException> {
                 FfmpegCapturer(osDetector, ffmpeg)

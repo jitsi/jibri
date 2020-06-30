@@ -21,13 +21,13 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.IsolationMode
-import io.kotlintest.Spec
-import io.kotlintest.matchers.collections.shouldBeEmpty
-import io.kotlintest.matchers.collections.shouldNotBeEmpty
-import io.kotlintest.matchers.types.shouldBeInstanceOf
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 internal class JibriSubprocessTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -65,13 +65,13 @@ internal class JibriSubprocessTest : ShouldSpec() {
     }
 
     init {
-        "launching the subprocess" {
-            "without any error launching the process" {
+        context("launching the subprocess") {
+            context("without any error launching the process") {
                 subprocess.launch(listOf())
                 should("not publish any state until the proc does") {
                     executorStateUpdates.shouldBeEmpty()
                 }
-                "when the process publishes a state" {
+                context("when the process publishes a state") {
                     val procState = ProcessState(ProcessRunning(), "most recent output")
                     processStateHandler.firstValue(procState)
                     should("bubble up the state update") {
@@ -80,7 +80,7 @@ internal class JibriSubprocessTest : ShouldSpec() {
                     }
                 }
             }
-            "and the start process throwing" {
+            context("and the start process throwing") {
                 whenever(processWrapper.start()).thenAnswer { throw Exception() }
                 subprocess.launch(listOf())
                 should("publish a state update with the error") {
@@ -89,15 +89,15 @@ internal class JibriSubprocessTest : ShouldSpec() {
                 }
             }
         }
-        "stopping the subprocess" {
-            "before launch" {
+        context("stopping the subprocess") {
+            context("before launch") {
                 should("not cause any errors") {
                     subprocess.stop()
                 }
             }
-            "after it launches" {
+            context("after it launches") {
                 subprocess.launch(emptyList())
-                "when it refuses to stop gracefully" {
+                context("when it refuses to stop gracefully") {
                     whenever(processWrapper.stopAndWaitFor(any())).thenReturn(false)
                     should("try and destroy it forcibly") {
                         subprocess.stop()
