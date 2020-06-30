@@ -20,6 +20,7 @@
         <jackson.version>2.9.5</jackson.version>
         <junit.version>5.2.0</junit.version>
         <jetty.version>9.4.15.v20190215</jetty.version>
+        <kotest.version>4.1.1</kotest.version>
     </properties>
 
     <dependencies>
@@ -166,9 +167,21 @@
 
         <!-- testing -->
         <dependency>
-            <groupId>io.kotlintest</groupId>
-            <artifactId>kotlintest-runner-junit5</artifactId>
-            <version>3.4.2</version>
+            <groupId>io.kotest</groupId>
+            <artifactId>kotest-runner-junit5-jvm</artifactId>
+            <version>${kotest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kotest</groupId>
+            <artifactId>kotest-assertions-core-jvm</artifactId>
+            <version>${kotest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kotest</groupId>
+            <artifactId>kotest-runner-console-jvm</artifactId>
+            <version>${kotest.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -182,12 +195,6 @@
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
             <version>1.10.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -265,9 +272,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.1</version>
+                <version>2.22.2</version>
                 <configuration>
-                    <!-- Since we now have some things that are accesed globally but overwritten by tests
+                    <!-- Since we now have some things that are accessed globally but overwritten by tests
                      (task pools, for example), we don't want the tests interfering with one another as they
                      mock things out, so make sure we run each in isolation -->
                     <reuseForks>false</reuseForks>
