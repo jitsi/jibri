@@ -303,12 +303,31 @@
                 <version>1.8</version>
                 <executions>
                     <execution>
-                        <id>ktlint-and-autoformat</id>
-                        <phase>compile</phase>
+                        <id>ktlint</id>
+                        <phase>verify</phase>
+                        <configuration>
+                            <skip>${ktlint.skip}</skip>
+                            <target name="ktlint">
+                                <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
+                                    classpathref="maven.plugin.classpath" classname="com.pinterest.ktlint.Main">
+                                    <arg value="src/**/*.kt"/>
+                                    <!-- to generate report in checkstyle format prepend following args: -->
+                                    <!-- 
+                                    <arg value="[dash][dash]reporter=plain"/>
+                                    <arg value="[dash][dash]reporter=checkstyle,output=${project.build.directory}/ktlint.xml"/>
+                                    -->
+                                    <!-- see https://github.com/shyiko/ktlint#usage for more -->                    
+                                </java>
+                            </target>
+                        </configuration>
+                        <goals><goal>run</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>ktlint-format</id>
                         <configuration>
                             <target name="ktlint">
                                 <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
-                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                    classpathref="maven.plugin.classpath" classname="com.pinterest.ktlint.Main">
                                     <arg value="-F"/>
                                     <arg value="src/**/*.kt"/>
                                 </java>
@@ -319,9 +338,9 @@
                 </executions>
                 <dependencies>
                     <dependency>
-                        <groupId>com.github.shyiko</groupId>
+                        <groupId>com.pinterest</groupId>
                         <artifactId>ktlint</artifactId>
-                        <version>0.20.0</version>
+                        <version>0.36.0</version>
                     </dependency>
                     <!-- additional 3rd party ruleset(s) can be specified here -->
                 </dependencies>
