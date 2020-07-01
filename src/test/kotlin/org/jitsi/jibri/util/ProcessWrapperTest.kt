@@ -80,14 +80,14 @@ internal class ProcessWrapperTest : ShouldSpec() {
             }
             should("be equal to the process stdout") {
                 outputStream.write("hello\n".toByteArray())
-                within(5.seconds()) {
+                within(5.seconds) {
                     processWrapper.getMostRecentLine() shouldBe "hello"
                 }
             }
             should("update to the most recent line") {
                 outputStream.write("hello\n".toByteArray())
                 outputStream.write("goodbye\n".toByteArray())
-                within(5.seconds()) {
+                within(5.seconds) {
                     processWrapper.getMostRecentLine() shouldBe "goodbye"
                 }
             }

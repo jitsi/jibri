@@ -42,7 +42,6 @@ fun <T> within(duration: Duration, func: () -> T): T {
     throw AssertionError("Test failed after ${duration.seconds} seconds; attempted $times times")
 }
 
-fun Int.seconds(): Duration = Duration.ofSeconds(this.toLong())
 val Int.seconds: Duration
     get() = Duration.ofSeconds(this.toLong())
 val Int.minutes: Duration

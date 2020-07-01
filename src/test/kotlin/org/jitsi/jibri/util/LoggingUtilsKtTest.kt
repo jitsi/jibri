@@ -58,7 +58,7 @@ internal class LoggingUtilsKtTest : FunSpec() {
             }
 
             val logLine = argumentCaptor<String>()
-            within(5.seconds()) {
+            within(5.seconds) {
                 verify(logger, times(5)).info(logLine.capture())
             }
             logLine.allValues.forEachIndexed { index, value ->
@@ -75,13 +75,13 @@ internal class LoggingUtilsKtTest : FunSpec() {
                 pipedOutputStream.close()
             }
             val logLine = argumentCaptor<String>()
-            within(5.seconds()) {
+            within(5.seconds) {
                 verify(logger, times(5)).info(logLine.capture())
             }
             logLine.allValues.forEachIndexed { index, value ->
                 index.toString() shouldBe value
             }
-            within(5.seconds()) {
+            within(5.seconds) {
                 streamClosed.isDone shouldBe true
             }
             streamClosed.get() shouldBe true
