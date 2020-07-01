@@ -19,17 +19,17 @@ package org.jitsi.jibri.service
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.kotlintest.IsolationMode
-import io.kotlintest.matchers.maps.shouldContainExactly
-import io.kotlintest.matchers.maps.shouldContainKey
-import io.kotlintest.shouldNotBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.maps.shouldContainExactly
+import io.kotest.matchers.maps.shouldContainKey
+import io.kotest.matchers.shouldNotBe
 
 internal class AppDataTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
-        "a json-encoded app data structure" {
+        context("a json-encoded app data structure") {
             val appDataJsonStr = """
             {
                 "file_recording_metadata":
@@ -50,12 +50,12 @@ internal class AppDataTest : ShouldSpec() {
                 @Suppress("UNCHECKED_CAST")
                 (appData.fileRecordingMetadata?.get("upload_credentials") as Map<Any, Any>)
                     .shouldContainExactly(mapOf<Any, Any>(
-                    "service_name" to "dropbox",
-                    "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
-                ))
+                        "service_name" to "dropbox",
+                        "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
+                    ))
             }
         }
-        "a json-encoded app data structure with an extra top-level field" {
+        context("a json-encoded app data structure with an extra top-level field") {
             val appDataJsonStr = """
             {
                 "file_recording_metadata":

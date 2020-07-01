@@ -18,9 +18,9 @@
 package org.jitsi.jibri.util
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
-import io.kotlintest.IsolationMode
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
@@ -50,8 +50,8 @@ internal class FileUtilsKtTest : ShouldSpec() {
     }
 
     init {
-        "createIfDoesNotExist" {
-            "with the proper permissions" {
+        context("createIfDoesNotExist") {
+            context("with the proper permissions") {
                 should("create a directory") {
                     val dir = fs.getPath("/xxx/dir")
                     createIfDoesNotExist(dir) shouldBe true
@@ -69,7 +69,7 @@ internal class FileUtilsKtTest : ShouldSpec() {
                     Files.exists(dir) shouldBe true
                 }
             }
-            "without permissions to create in a directory" {
+            context("without permissions to create in a directory") {
                 val baseDir = fs.getPath("/noperms")
                 Files.createDirectory(baseDir).withPerms("r--r--r--")
                 should("fail to create a single dir") {

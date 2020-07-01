@@ -17,11 +17,11 @@
 
 package org.jitsi.jibri.capture.ffmpeg.executor
 
-import io.kotlintest.IsolationMode
-import io.kotlintest.matchers.beInstanceOf
-import io.kotlintest.should
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.beInstanceOf
+import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.capture.ffmpeg.FfmpegErrorStatus
 import org.jitsi.jibri.capture.ffmpeg.OutputLineClassification
@@ -31,7 +31,7 @@ internal class OutputParserTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
-        "An encoding output line" {
+        context("An encoding output line") {
             val outputLine = "frame=   95 fps= 31 q=27.0 size=     584kB time=00:00:03.60 bitrate=1329.4kbits/s speed=1.19x"
 //            val expectedValues = mapOf(
 //                    "frame" to "95",
@@ -49,7 +49,7 @@ internal class OutputParserTest : ShouldSpec() {
                 status.detail shouldBe outputLine
             }
         }
-        "A warning output line" {
+        context("A warning output line") {
             val outputLine = "Past duration 0.622368 too large"
             should("be parsed correctly") {
                 val status = OutputParser.parse(outputLine)
@@ -57,8 +57,8 @@ internal class OutputParserTest : ShouldSpec() {
                 status.detail.shouldBe(outputLine)
             }
         }
-        "An error output line" {
-            "with an error on the session scope" {
+        context("An error output line") {
+            context("with an error on the session scope") {
                 val outputLine = "rtmp://a.rtmp.youtube.com/live2/dkafkjlafkjhsadf: Input/output error"
                 should("be parsed correctly") {
                     val status = OutputParser.parse(outputLine)
@@ -69,7 +69,7 @@ internal class OutputParserTest : ShouldSpec() {
                 }
             }
         }
-        "A broken pipe output line" {
+        context("A broken pipe output line") {
             val outputLine = "av_interleaved_write_frame(): Broken pipe"
             should("be parsed correctly") {
                 val status = OutputParser.parse(outputLine)
@@ -79,7 +79,7 @@ internal class OutputParserTest : ShouldSpec() {
                 status.error.scope shouldBe ErrorScope.SESSION
             }
         }
-        "An unexpected exit output line" {
+        context("An unexpected exit output line") {
             val outputLine = "Exiting normally, received signal 15."
             should("be parsed correctly") {
                 val status = OutputParser.parse(outputLine)
@@ -89,7 +89,7 @@ internal class OutputParserTest : ShouldSpec() {
                 status.error.scope shouldBe ErrorScope.SESSION
             }
         }
-        "An expected exit output line" {
+        context("An expected exit output line") {
             val outputLine = "Exiting normally, received signal 2."
             should("be parsed correctly") {
                 val status = OutputParser.parse(outputLine)
@@ -97,7 +97,7 @@ internal class OutputParserTest : ShouldSpec() {
                 status.detail.shouldBe(outputLine)
             }
         }
-        "An unknonwn output line" {
+        context("An unknonwn output line") {
             val outputLine = "some unknown ffmpeg status"
             should("be parsed correctly") {
                 val status = OutputParser.parse(outputLine)

@@ -3,9 +3,9 @@ package org.jitsi.jibri.selenium.status_checks
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.IsolationMode
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.helpers.FakeClock
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
@@ -23,7 +23,7 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
 
     init {
         whenever(callPage.getNumParticipants()).thenReturn(4)
-        "when media is flowing" {
+        context("when media is flowing") {
             whenever(callPage.getBitrates()).thenReturn(mapOf(
                 "download" to 1024L
             ))
@@ -35,34 +35,34 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                 }
             }
         }
-        "no media is flowing" {
+        context("no media is flowing") {
             whenever(callPage.getBitrates()).thenReturn(mapOf(
                 "download" to 0L
             ))
-            "but all participants are muted" {
+            context("but all participants are muted") {
                 whenever(callPage.numRemoteParticipantsMuted()).thenReturn(3)
                 check.run(callPage) shouldBe null
-                "before the clients-muted timeout" {
+                context("before the clients-muted timeout") {
                     clock.elapse(Duration.ofSeconds(45))
                     should("not report any event") {
                         check.run(callPage) shouldBe null
                     }
                 }
-                "after the clients-muted timeout" {
+                context("after the clients-muted timeout") {
                     clock.elapse(Duration.ofMinutes(15))
                     should("report an empty call") {
                         check.run(callPage) shouldBe SeleniumEvent.CallEmpty
                     }
                 }
             }
-            "and not all participants are muted" {
+            context("and not all participants are muted") {
                 whenever(callPage.numRemoteParticipantsMuted()).thenReturn(0)
-                "before the no-media timeout" {
+                context("before the no-media timeout") {
                     clock.elapse(Duration.ofSeconds(15))
                     should("not report any event") {
                         check.run(callPage) shouldBe null
                     }
-                    "and media starts back up before the no-media timeout" {
+                    context("and media starts back up before the no-media timeout") {
                         whenever(callPage.getBitrates()).thenReturn(mapOf(
                                 "download" to 1024L
                         ))
@@ -72,7 +72,7 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                         }
                     }
                 }
-                "after the no-media timeout" {
+                context("after the no-media timeout") {
                     clock.elapse(Duration.ofSeconds(45))
                     should("report a no media error") {
                         check.run(callPage) shouldBe SeleniumEvent.NoMediaReceived

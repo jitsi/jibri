@@ -23,12 +23,11 @@ import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.IsolationMode
-import io.kotlintest.TestCase
-import io.kotlintest.matchers.string.shouldContain
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.within
 import org.mockito.ArgumentMatchers.anyString
@@ -50,22 +49,19 @@ internal class ProcessWrapperTest : ShouldSpec() {
     private lateinit var inputStream: PipedInputStream
     private lateinit var processWrapper: ProcessWrapper
 
-    override fun beforeTest(testCase: TestCase) {
-        super.beforeTest(testCase)
-
-        outputStream = PipedOutputStream()
-        inputStream = PipedInputStream(outputStream)
-
-        whenever(process.inputStream).thenReturn(inputStream)
-        whenever(process.destroyForcibly()).thenReturn(process)
-        whenever(processBuilder.start()).thenReturn(process)
-
-        processWrapper = ProcessWrapper(listOf(), processBuilder = processBuilder, runtime = runtime)
-        processWrapper.start()
-    }
-
     init {
-        "getOutput" {
+        beforeTest {
+            outputStream = PipedOutputStream()
+            inputStream = PipedInputStream(outputStream)
+
+            whenever(process.inputStream).thenReturn(inputStream)
+            whenever(process.destroyForcibly()).thenReturn(process)
+            whenever(processBuilder.start()).thenReturn(process)
+
+            processWrapper = ProcessWrapper(listOf(), processBuilder = processBuilder, runtime = runtime)
+            processWrapper.start()
+        }
+        context("getOutput") {
             should("return independent streams") {
                 val op1 = processWrapper.getOutput()
                 val reader1 = BufferedReader(InputStreamReader(op1))
@@ -78,25 +74,25 @@ internal class ProcessWrapperTest : ShouldSpec() {
                 reader2.readLine() shouldBe "hello"
             }
         }
-        "getMostRecentLine" {
+        context("getMostRecentLine") {
             should("return empty string at first") {
                 processWrapper.getMostRecentLine() shouldBe ""
             }
             should("be equal to the process stdout") {
                 outputStream.write("hello\n".toByteArray())
-                within(5.seconds()) {
+                within(5.seconds) {
                     processWrapper.getMostRecentLine() shouldBe "hello"
                 }
             }
             should("update to the most recent line") {
                 outputStream.write("hello\n".toByteArray())
                 outputStream.write("goodbye\n".toByteArray())
-                within(5.seconds()) {
+                within(5.seconds) {
                     processWrapper.getMostRecentLine() shouldBe "goodbye"
                 }
             }
         }
-        "isAlive" {
+        context("isAlive") {
             should("return false if the process is dead") {
                 whenever(process.isAlive).thenReturn(false)
                 processWrapper.isAlive shouldBe false
@@ -106,14 +102,14 @@ internal class ProcessWrapperTest : ShouldSpec() {
                 processWrapper.isAlive shouldBe true
             }
         }
-        "exitValue" {
-            "when the process has exited" {
+        context("exitValue") {
+            context("when the process has exited") {
                 should("return its exit code") {
                     whenever(process.exitValue()).thenReturn(42)
                     processWrapper.exitValue shouldBe 42
                 }
             }
-            "when the process has not exited" {
+            context("when the process has not exited") {
                 should("throw IllegalThreadStateException") {
                     whenever(process.exitValue()).doThrow(IllegalThreadStateException())
                     shouldThrow<IllegalThreadStateException> {
@@ -122,25 +118,25 @@ internal class ProcessWrapperTest : ShouldSpec() {
                 }
             }
         }
-        "waitFor" {
+        context("waitFor") {
             should("call the process' waitFor") {
                 processWrapper.waitFor()
                 verify(process).waitFor()
             }
         }
-        "waitFor(timeout)" {
+        context("waitFor(timeout)") {
             should("call the process' waitFor(timeout')") {
                 processWrapper.waitFor(10, TimeUnit.SECONDS)
                 verify(process).waitFor(10, TimeUnit.SECONDS)
             }
         }
-        "destroyForcibly" {
+        context("destroyForcibly") {
             should("call the process' destroyForcibly") {
                 processWrapper.destroyForcibly()
                 verify(process).destroyForcibly()
             }
         }
-        "stop" {
+        context("stop") {
             should("invoke the correct command") {
                 val execCaptor = argumentCaptor<String>()
                 whenever(runtime.exec(execCaptor.capture())).thenReturn(process)
@@ -149,20 +145,20 @@ internal class ProcessWrapperTest : ShouldSpec() {
                     it shouldContain "kill -s SIGINT"
                 }
             }
-            "when the runtime throws IOException" {
+            context("when the runtime throws IOException") {
                 whenever(runtime.exec(anyString())).thenAnswer { throw IOException() }
                 should("let the exception bubble up") {
                     shouldThrow<IOException> { processWrapper.stop() }
                 }
             }
-            "when the runtime throws RuntimeException" {
+            context("when the runtime throws RuntimeException") {
                 whenever(runtime.exec(anyString())).thenAnswer { throw RuntimeException() }
                 should("let the exception bubble up") {
                     shouldThrow<java.lang.RuntimeException> { processWrapper.stop() }
                 }
             }
         }
-        "stopAndWaitFor" {
+        context("stopAndWaitFor") {
             should("invoke the correct command") {
                 val execCaptor = argumentCaptor<String>()
                 whenever(runtime.exec(execCaptor.capture())).thenReturn(process)
@@ -172,30 +168,30 @@ internal class ProcessWrapperTest : ShouldSpec() {
                     it shouldContain "kill -s SIGINT"
                 }
             }
-            "when the runtime throws IOException" {
+            context("when the runtime throws IOException") {
                 whenever(runtime.exec(anyString())).thenAnswer { throw IOException() }
                 should("handle it correctly") {
                     processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
                 }
             }
-            "when the runtime throws RuntimeException" {
+            context("when the runtime throws RuntimeException") {
                 whenever(runtime.exec(anyString())).thenAnswer { throw RuntimeException() }
                 should("handle it correctly") {
                     processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
                 }
             }
         }
-        "destroyForciblyAndWaitFor" {
+        context("destroyForciblyAndWaitFor") {
             should("invoke the correct command") {
                 whenever(process.waitFor(any(), any())).thenReturn(true)
                 processWrapper.destroyForciblyAndWaitFor(Duration.ofSeconds(10)) shouldBe true
                 verify(process).destroyForcibly()
             }
-            "when waitFor returns false" {
+            context("when waitFor returns false") {
                 whenever(process.waitFor(any(), any())).thenReturn(false)
                 processWrapper.destroyForciblyAndWaitFor(Duration.ofSeconds(10)) shouldBe false
             }
-            "when waitFor throws" {
+            context("when waitFor throws") {
                 whenever(process.waitFor(any(), any())).thenAnswer { throw InterruptedException() }
                 processWrapper.destroyForciblyAndWaitFor(Duration.ofSeconds(10)) shouldBe false
             }

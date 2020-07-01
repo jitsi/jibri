@@ -26,12 +26,11 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.IsolationMode
-import io.kotlintest.Spec
-import io.kotlintest.matchers.string.contain
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldNot
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNot
+import io.kotest.matchers.string.contain
 import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.test.JerseyTest
@@ -59,32 +58,28 @@ class HttpApiTest : ShouldSpec() {
     private val jibriStatusManager: JibriStatusManager = mock()
     private lateinit var jerseyTest: JerseyTest
 
-    override fun beforeSpec(spec: Spec) {
-        super.beforeSpec(spec)
-        jerseyTest = object : JerseyTest() {
-            override fun configure(): Application {
-                return ResourceConfig(object : ResourceConfig() {
-                    init {
-                        // Uncommenting the following line can help with debugging any errors
-                        // property(LoggingFeature.LOGGING_FEATURE_LOGGER_LEVEL_SERVER, "WARNING")
-                        register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
-                        register(JacksonFeature::class.java)
-                        registerInstances(HttpApi(jibriManager, jibriStatusManager))
-                    }
-                })
-            }
-        }
-        jerseyTest.setUp()
-    }
-
-    override fun afterSpec(spec: Spec) {
-        super.afterSpec(spec)
-        jerseyTest.tearDown()
-    }
-
     init {
-        "health" {
-            "when jibri isn't busy" {
+        beforeSpec {
+            jerseyTest = object : JerseyTest() {
+                override fun configure(): Application {
+                    return ResourceConfig(object : ResourceConfig() {
+                        init {
+                            // Uncommenting the following line can help with debugging any errors
+                            // property(LoggingFeature.LOGGING_FEATURE_LOGGER_LEVEL_SERVER, "WARNING")
+                            register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
+                            register(JacksonFeature::class.java)
+                            registerInstances(HttpApi(jibriManager, jibriStatusManager))
+                        }
+                    })
+                }
+            }
+            jerseyTest.setUp()
+        }
+        afterSpec {
+            jerseyTest.tearDown()
+        }
+        context("health") {
+            context("when jibri isn't busy") {
                 val expectedStatus =
                         JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
                 val expectedHealth = JibriHealth(expectedStatus)
@@ -113,7 +108,7 @@ class HttpApiTest : ShouldSpec() {
                     health shouldBe expectedHealth
                 }
             }
-            "when jibri is busy and has an environmentContext" {
+            context("when jibri is busy and has an environmentContext") {
                 val expectedStatus =
                         JibriStatus(ComponentBusyStatus.BUSY, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
                 val expectedEnvironmentContext = EnvironmentContext("meet.jit.si")
@@ -136,8 +131,8 @@ class HttpApiTest : ShouldSpec() {
                 }
             }
         }
-        "startService" {
-            "start file recording" {
+        context("startService") {
+            context("start file recording") {
                 val capturedServiceParams = argumentCaptor<ServiceParams>()
                 whenever(jibriManager.startFileRecording(
                     capturedServiceParams.capture(),

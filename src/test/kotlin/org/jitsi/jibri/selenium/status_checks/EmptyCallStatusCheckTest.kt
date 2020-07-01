@@ -19,12 +19,12 @@ package org.jitsi.jibri.selenium.status_checks
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.spy
 import com.nhaarman.mockitokotlin2.whenever
-import io.kotlintest.IsolationMode
-import io.kotlintest.minutes
-import io.kotlintest.seconds
-import io.kotlintest.shouldBe
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.helpers.FakeClock
+import org.jitsi.jibri.helpers.minutes
+import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import java.time.Duration
@@ -40,9 +40,9 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
     private val check = EmptyCallStatusCheck(logger, clock = clock)
 
     init {
-        "when the call was always empty" {
+        context("when the call was always empty") {
             whenever(callPage.getNumParticipants()).thenReturn(1)
-            "the check" {
+            context("the check") {
                 should("return empty after the timeout") {
                     check.run(callPage) shouldBe null
                     clock.elapse(15.seconds)
@@ -52,31 +52,31 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
                 }
             }
         }
-        "when the call has participants" {
+        context("when the call has participants") {
             whenever(callPage.getNumParticipants()).thenReturn(3)
             clock.elapse(5.minutes)
-            "the check" {
+            context("the check") {
                 should("never return empty") {
                     check.run(callPage) shouldBe null
                     clock.elapse(10.minutes)
                     check.run(callPage) shouldBe null
                 }
             }
-            "and then goes empty" {
+            context("and then goes empty") {
                 whenever(callPage.getNumParticipants()).thenReturn(1)
                 clock.elapse(20.seconds)
-                "the check" {
+                context("the check") {
                     should("return empty after the timeout") {
                         check.run(callPage) shouldBe null
                         clock.elapse(31.seconds)
                         check.run(callPage) shouldBe SeleniumEvent.CallEmpty
                     }
                 }
-                "and then has participants again" {
+                context("and then has participants again") {
                     whenever(callPage.getNumParticipants()).thenReturn(3)
                     // Some time passed and the check ran once with no participants
                     clock.elapse(30.seconds)
-                    "the check" {
+                    context("the check") {
                         should("never return empty") {
                             check.run(callPage) shouldBe null
                             clock.elapse(10.minutes)
@@ -86,9 +86,9 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
                 }
             }
         }
-        "when a custom timeout is passed" {
+        context("when a custom timeout is passed") {
             val customTimeoutCheck = EmptyCallStatusCheck(logger, Duration.ofMinutes(10), clock)
-            "the check" {
+            context("the check") {
                 should("return empty after the timeout") {
                     customTimeoutCheck.run(callPage) shouldBe null
                     clock.elapse(15.seconds)

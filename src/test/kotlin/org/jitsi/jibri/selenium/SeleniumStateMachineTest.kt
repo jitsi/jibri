@@ -16,14 +16,14 @@
 
 package org.jitsi.jibri.selenium
 
-import io.kotlintest.IsolationMode
-import io.kotlintest.Spec
-import io.kotlintest.matchers.beInstanceOf
-import io.kotlintest.matchers.haveSize
-import io.kotlintest.should
-import io.kotlintest.shouldBe
-import io.kotlintest.shouldThrow
-import io.kotlintest.specs.ShouldSpec
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.Spec
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.beInstanceOf
+import io.kotest.matchers.collections.haveSize
+import io.kotest.matchers.should
+import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.status.ComponentState
 
 internal class SeleniumStateMachineTest : ShouldSpec() {
@@ -32,36 +32,35 @@ internal class SeleniumStateMachineTest : ShouldSpec() {
     private val stateUpdates = mutableListOf<Pair<ComponentState, ComponentState>>()
     private val seleniumStateMachine = SeleniumStateMachine()
 
-    override fun beforeSpec(spec: Spec) {
-        super.beforeSpec(spec)
-        seleniumStateMachine.onStateTransition { fromState, toState ->
-            stateUpdates.add((fromState to toState))
-        }
-    }
-
     init {
-        "When starting up" {
-            "and the call is joined" {
+        beforeSpec {
+            seleniumStateMachine.onStateTransition { fromState, toState ->
+                stateUpdates.add((fromState to toState))
+            }
+        }
+
+        context("When starting up") {
+            context("and the call is joined") {
                 seleniumStateMachine.transition(SeleniumEvent.CallJoined)
                 should("transition to running") {
                     stateUpdates should haveSize(1)
                     stateUpdates.first() shouldBe (ComponentState.StartingUp to ComponentState.Running)
                 }
             }
-            "and an error occurs" {
+            context("and an error occurs") {
                 seleniumStateMachine.transition(SeleniumEvent.FailedToJoinCall)
                 should("transition to error") {
                     stateUpdates should haveSize(1)
                     stateUpdates.first().second should beInstanceOf<ComponentState.Error>()
                 }
-                "and then another event occurs" {
+                context("and then another event occurs") {
                     seleniumStateMachine.transition(SeleniumEvent.CallEmpty)
                     should("not fire another update") {
                         stateUpdates should haveSize(1)
                     }
                 }
             }
-            "and an invalid event occurs" {
+            context("and an invalid event occurs") {
                 should("throw an exception") {
                     shouldThrow<Exception> {
                         seleniumStateMachine.transition(SeleniumEvent.NoMediaReceived)
