@@ -109,9 +109,12 @@ class XmppApi(
                         disableCertificateVerification = config.trustAllXmppCerts
                     }
 
-                    val recordingMucJid = JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}").toString()
+                    val recordingMucJid =
+                        JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}").toString()
                     val sipMucJid: String? = config.sipControlMuc?.let {
-                        JidCreate.entityBareFrom("${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}").toString()
+                        JidCreate.entityBareFrom(
+                            "${config.sipControlMuc.roomName}@${config.sipControlMuc.domain}"
+                        ).toString()
                     }
                     mucJids = listOfNotNull(recordingMucJid, sipMucJid)
                     mucNickname = config.controlMuc.nickname
@@ -156,7 +159,10 @@ class XmppApi(
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
         logger.info("Received JibriIq ${jibriIq.toXML()} from environment $mucClient")
         val xmppEnvironment = xmppConfigs.find { it.xmppServerHosts.contains(mucClient.id) }
-                ?: return IQ.createErrorResponse(jibriIq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
+                ?: return IQ.createErrorResponse(
+                    jibriIq,
+                    XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request)
+                )
         return when (jibriIq.action) {
             JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
             JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)

@@ -39,9 +39,8 @@ sealed class AliveState(val runningStatus: RunningStatus) {
 class ProcessRunning : AliveState(RunningStatus.RUNNING)
 
 class ProcessExited(val exitCode: Int) : AliveState(RunningStatus.EXITED) {
-    override fun toString(): String = with (StringBuffer()) {
+    override fun toString(): String = buildString {
         append("${super.toString()} exit code: $exitCode")
-        toString()
     }
 }
 

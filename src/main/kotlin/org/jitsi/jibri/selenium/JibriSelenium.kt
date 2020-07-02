@@ -252,7 +252,8 @@ class JibriSelenium(
                         "callStatsUserName" to "jibri"
                 )
                 xmppCredentials?.let {
-                    localStorageValues["xmpp_username_override"] = "${xmppCredentials.username}@${xmppCredentials.domain}"
+                    localStorageValues["xmpp_username_override"] =
+                        "${xmppCredentials.username}@${xmppCredentials.domain}"
                     localStorageValues["xmpp_password_override"] = xmppCredentials.password
                 }
                 setLocalStorageValues(localStorageValues)

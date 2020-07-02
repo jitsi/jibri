@@ -44,14 +44,16 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
             when {
                 processState.runningState is ProcessExited -> {
                     when (processState.runningState.exitCode) {
-                        //TODO: add detail?
+                        // TODO: add detail?
                         // Remote side hung up
                         0 -> publishStatus(ComponentState.Finished)
                         2 -> publishStatus(ComponentState.Error(RemoteSipClientBusy))
-                        else -> publishStatus(ComponentState.Error(PjsuaExitedPrematurely(processState.runningState.exitCode)))
+                        else -> publishStatus(ComponentState.Error(
+                            PjsuaExitedPrematurely(processState.runningState.exitCode))
+                        )
                     }
                 }
-                //TODO: i think everything else just counts as running?
+                // TODO: i think everything else just counts as running?
                 else -> publishStatus(ComponentState.Running)
             }
         }
@@ -64,7 +66,8 @@ class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient(
 
         if (pjsuaClientParams.sipClientParams.userName != null &&
             pjsuaClientParams.sipClientParams.password != null) {
-            command.add("--id=${pjsuaClientParams.sipClientParams.displayName} <sip:${pjsuaClientParams.sipClientParams.userName}>")
+            command.add("--id=${pjsuaClientParams.sipClientParams.displayName} " +
+                "<sip:${pjsuaClientParams.sipClientParams.userName}>")
             command.add("--registrar=sip:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')}")
             command.add("--realm=*")
             command.add("--username=${pjsuaClientParams.sipClientParams.userName.substringBefore('@')}")
