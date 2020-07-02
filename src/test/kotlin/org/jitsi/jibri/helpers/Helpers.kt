@@ -16,7 +16,11 @@
  */
 package org.jitsi.jibri.helpers
 
+import org.jitsi.jibri.util.LoggingUtils
+import org.jitsi.jibri.util.ProcessWrapper
 import java.time.Duration
+import java.util.concurrent.Future
+import java.util.logging.Logger
 
 /**
  * Custom version of kotlin.test's [io.kotlintest.eventually] which uses milliseconds
@@ -66,4 +70,12 @@ fun <T> forAllOf(duration: Duration, func: () -> T) {
         times++
         Thread.sleep(500)
     }
+}
+
+fun LoggingUtils.Companion.setTestOutputLogger(outputLogger: (ProcessWrapper, Logger) -> Future<Boolean>) {
+    logOutput = outputLogger
+}
+
+fun LoggingUtils.Companion.resetOutputLogger() {
+    logOutput = OutputLogger
 }

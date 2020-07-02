@@ -44,7 +44,7 @@ class JibriSubprocess(
                 processStatePublisher = processStatePublisherProvider(it)
                 processStatePublisher!!.addStatusHandler(this::publishStatus)
                 if (processOutputLogger != null) {
-                    processLoggerTask = LoggingUtils.logOutput(it, processOutputLogger)
+                    processLoggerTask = LoggingUtils.logOutputOfProcess(it, processOutputLogger)
                 }
             } ?: run {
                 throw Exception("Process was null")

@@ -28,6 +28,8 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import org.jitsi.jibri.helpers.resetOutputLogger
+import org.jitsi.jibri.helpers.setTestOutputLogger
 
 internal class JibriSubprocessTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -40,16 +42,9 @@ internal class JibriSubprocessTest : ShouldSpec() {
     private val processStateHandler = slot<(ProcessState) -> Unit>()
     private val executorStateUpdates = mutableListOf<ProcessState>()
 
-    //NOTE(brian): because we set useForks=false in the maven-surefire-plugin configuration, we should get
-    // an isolated VM for each test, meaning we don't have to worry about overriding globals (like we do with
-    // LoggingUtils.logOutput below), but, although it works fine from the command line, it's not working correctly
-    // here in Intellij and is affecting other tests.  To work around this, save the current value and restore it
-    // after this test is done
-    private val oldLogOutput = LoggingUtils.logOutput
-
     init {
         beforeSpec {
-            LoggingUtils.logOutput = { _, _ -> mockk(relaxed = true) }
+            LoggingUtils.setTestOutputLogger { _, _ -> mockk(relaxed = true) }
 
             every { processFactory.createProcess(any(), any(), any()) } returns processWrapper
             every { processStatePublisher.addStatusHandler(capture(processStateHandler)) } just Runs
@@ -60,7 +55,7 @@ internal class JibriSubprocessTest : ShouldSpec() {
         }
 
         afterSpec {
-            LoggingUtils.logOutput = oldLogOutput
+            LoggingUtils.resetOutputLogger()
         }
         context("launching the subprocess") {
             context("without any error launching the process") {

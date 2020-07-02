@@ -48,7 +48,7 @@ internal class LoggingUtilsKtTest : FunSpec() {
         }
 
         test("logStream should write log lines to the given logger") {
-            LoggingUtils.logOutput(process, logger)
+            LoggingUtils.logOutputOfProcess(process, logger)
             thread {
                 for (i in 0..4) {
                     pipedOutputStream.write("$i\n".toByteArray())
@@ -65,7 +65,7 @@ internal class LoggingUtilsKtTest : FunSpec() {
         }
 
         test("logStream should complete the task when EOF is reached") {
-            val streamClosed = LoggingUtils.logOutput(process, logger)
+            val streamClosed = LoggingUtils.logOutputOfProcess(process, logger)
             thread {
                 for (i in 0..4) {
                     pipedOutputStream.write("$i\n".toByteArray())
