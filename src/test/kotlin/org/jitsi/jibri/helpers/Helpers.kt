@@ -18,8 +18,11 @@ package org.jitsi.jibri.helpers
 
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessWrapper
+import org.jitsi.jibri.util.TaskPools
 import java.time.Duration
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
+import java.util.concurrent.ScheduledExecutorService
 import java.util.logging.Logger
 
 /**
@@ -78,4 +81,20 @@ fun LoggingUtils.Companion.setTestOutputLogger(outputLogger: (ProcessWrapper, Lo
 
 fun LoggingUtils.Companion.resetOutputLogger() {
     logOutput = OutputLogger
+}
+
+fun TaskPools.Companion.setIoPool(pool: ExecutorService) {
+    ioPool = pool
+}
+
+fun TaskPools.Companion.resetIoPool() {
+    ioPool = DefaultIoPool
+}
+
+fun TaskPools.Companion.setScheduledPool(pool: ScheduledExecutorService) {
+    recurringTasksPool = pool
+}
+
+fun TaskPools.Companion.resetScheduledPool() {
+    recurringTasksPool = DefaultRecurringTaskPool
 }

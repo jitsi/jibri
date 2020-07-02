@@ -37,6 +37,8 @@ import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.config.XmppMuc
+import org.jitsi.jibri.helpers.resetIoPool
+import org.jitsi.jibri.helpers.setIoPool
 import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
@@ -109,13 +111,17 @@ class XmppApiTest : ShouldSpec() {
                 JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
         every { jibriStatusManager.overallStatus } returns expectedStatus
 
-        beforeTest {
+        beforeSpec {
             val executorService: ExecutorService = mockk()
             every { executorService.submit(any<Runnable>()) } answers {
                 firstArg<Runnable>().run()
                 CompletableFuture<Unit>()
             }
-            TaskPools.ioPool = executorService
+            TaskPools.setIoPool(executorService)
+        }
+
+        afterSpec {
+            TaskPools.resetIoPool()
         }
 
         context("xmppApi") {

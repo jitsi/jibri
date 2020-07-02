@@ -22,6 +22,8 @@ import io.kotest.matchers.shouldBe
 import io.mockk.clearMocks
 import io.mockk.every
 import io.mockk.mockk
+import org.jitsi.jibri.helpers.resetScheduledPool
+import org.jitsi.jibri.helpers.setScheduledPool
 import org.jitsi.jibri.util.TaskPools
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
@@ -31,10 +33,17 @@ class InternalHttpApiTest : ShouldSpec() {
     private val future: ScheduledFuture<*> = mockk()
 
     init {
+        beforeSpec {
+            TaskPools.setScheduledPool(executor)
+        }
+
         beforeTest {
             clearMocks(executor, future)
             every { executor.schedule(any(), any(), any()) } returns future
-            TaskPools.recurringTasksPool = executor
+        }
+
+        afterSpec {
+            TaskPools.resetScheduledPool()
         }
 
         context("gracefulShutdown") {
