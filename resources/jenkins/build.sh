@@ -1,6 +1,5 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
-cd $WORKSPACE/
-mvn clean verify package
+./resources/build.sh
