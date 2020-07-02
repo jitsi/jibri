@@ -105,7 +105,7 @@ class JibriServiceStateMachine : NotifyingStateMachine() {
     private val subComponentStates = mutableMapOf<String, ComponentState>()
 
     fun registerSubComponent(componentKey: String) {
-        //TODO: we'll assume everything starts in 'starting up' ?
+        // TODO: we'll assume everything starts in 'starting up' ?
         subComponentStates[componentKey] = ComponentState.StartingUp
     }
 

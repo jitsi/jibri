@@ -97,16 +97,16 @@ class ProcessStatePublisher(
 
     fun stop() {
         recurringProcessAliveTask?.cancel(true)
-        //TODO: not calling 'tail.stop()' results in us processing ffmpeg's--for example--successful
-        // exit, which causes a 'finished' state update to propagate up and results in a duplicate 'stopService'
-        // call in JibriManager, since we have to call stopService after we receive finish (to handle the case
-        // of the service detecting an empty call, for example) and we can't distinguish a 'finished' state
-        // from an actual jibri service finishing on its own and the one that results from any call to
-        // 'stop' when ffmpeg exits.  Calling 'tail.stop()' here fixes that behavior, but, i don't
-        // think that's what we want to do: instead we should be processing every log message a process
-        // writes to ensure that it exits correctly.  In addition to that, we should technically be modeling
-        // the 'stop' flow differently to be something more like: tell everything to stop and then *ensure*
-        // it all stopped cleanly and correctly and, if anything didn't, log an error (and perhaps update
-        // the health state)
+        // TODO: not calling 'tail.stop()' results in us processing ffmpeg's--for example--successful
+        //  exit, which causes a 'finished' state update to propagate up and results in a duplicate 'stopService'
+        //  call in JibriManager, since we have to call stopService after we receive finish (to handle the case
+        //  of the service detecting an empty call, for example) and we can't distinguish a 'finished' state
+        //  from an actual jibri service finishing on its own and the one that results from any call to
+        //  'stop' when ffmpeg exits.  Calling 'tail.stop()' here fixes that behavior, but, i don't
+        //  think that's what we want to do: instead we should be processing every log message a process
+        //  writes to ensure that it exits correctly.  In addition to that, we should technically be modeling
+        //  the 'stop' flow differently to be something more like: tell everything to stop and then *ensure*
+        //  it all stopped cleanly and correctly and, if anything didn't, log an error (and perhaps update
+        //  the health state)
     }
 }

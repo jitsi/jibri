@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri.service.impl
 
-//internal class FileRecordingJibriServiceTest : ShouldSpec() {
+// internal class FileRecordingJibriServiceTest : ShouldSpec() {
 //    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 //
 //    private fun setPerms(permsStr: String, p: Path) {
@@ -179,4 +179,4 @@ package org.jitsi.jibri.service.impl
 //            }
 //        }
 //    }
-//}
+// }

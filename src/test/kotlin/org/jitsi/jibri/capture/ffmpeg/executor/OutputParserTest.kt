@@ -32,7 +32,8 @@ internal class OutputParserTest : ShouldSpec() {
 
     init {
         context("An encoding output line") {
-            val outputLine = "frame=   95 fps= 31 q=27.0 size=     584kB time=00:00:03.60 bitrate=1329.4kbits/s speed=1.19x"
+            val outputLine =
+                "frame=   95 fps= 31 q=27.0 size=     584kB time=00:00:03.60 bitrate=1329.4kbits/s speed=1.19x"
 //            val expectedValues = mapOf(
 //                    "frame" to "95",
 //                    "fps" to "31",

@@ -27,7 +27,8 @@ class JibriSubprocess(
     private val name: String,
     private val processOutputLogger: Logger? = null,
     private val processFactory: ProcessFactory = ProcessFactory(),
-    private val processStatePublisherProvider: (ProcessWrapper) -> ProcessStatePublisher = { process -> ProcessStatePublisher(name, process) }
+    private val processStatePublisherProvider: (ProcessWrapper) -> ProcessStatePublisher =
+        { process -> ProcessStatePublisher(name, process) }
 ) : StatusPublisher<ProcessState>() {
     private val logger = Logger.getLogger("${this::class.qualifiedName}.$name")
     private var processLoggerTask: Future<Boolean>? = null
