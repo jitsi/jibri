@@ -16,41 +16,38 @@
 
 package org.jitsi.jibri.util
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
+import org.jitsi.jibri.helpers.resetOutputLogger
+import org.jitsi.jibri.helpers.setTestOutputLogger
 
 internal class JibriSubprocessTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val processFactory: ProcessFactory = mock()
-    private val processWrapper: ProcessWrapper = mock()
-    private val processStatePublisher: ProcessStatePublisher = mock()
-    private val subprocess = JibriSubprocess("name", mock(), processFactory, { _ -> processStatePublisher })
-    private val processStateHandler = argumentCaptor<(ProcessState) -> Unit>()
+    private val processFactory: ProcessFactory = mockk()
+    private val processWrapper: ProcessWrapper = mockk(relaxed = true)
+    private val processStatePublisher: ProcessStatePublisher = mockk(relaxed = true)
+    @Suppress("MoveLambdaOutsideParentheses")
+    private val subprocess = JibriSubprocess("name", mockk(), processFactory, { processStatePublisher })
+    private val processStateHandler = slot<(ProcessState) -> Unit>()
     private val executorStateUpdates = mutableListOf<ProcessState>()
-
-    //NOTE(brian): because we set useForks=false in the maven-surefire-plugin configuration, we should get
-    // an isolated VM for each test, meaning we don't have to worry about overriding globals (like we do with
-    // LoggingUtils.logOutput below), but, although it works fine from the command line, it's not working correctly
-    // here in Intellij and is affecting other tests.  To work around this, save the current value and restore it
-    // after this test is done
-    private val oldLogOutput = LoggingUtils.logOutput
 
     init {
         beforeSpec {
-            LoggingUtils.logOutput = { _, _ -> mock() }
+            LoggingUtils.setTestOutputLogger { _, _ -> mockk(relaxed = true) }
 
-            whenever(processFactory.createProcess(any(), any(), any())).thenReturn(processWrapper)
-            whenever(processStatePublisher.addStatusHandler(processStateHandler.capture())).thenAnswer { }
+            every { processFactory.createProcess(any(), any(), any()) } returns processWrapper
+            every { processStatePublisher.addStatusHandler(capture(processStateHandler)) } just Runs
 
             subprocess.addStatusHandler { status ->
                 executorStateUpdates.add(status)
@@ -58,7 +55,7 @@ internal class JibriSubprocessTest : ShouldSpec() {
         }
 
         afterSpec {
-            LoggingUtils.logOutput = oldLogOutput
+            LoggingUtils.resetOutputLogger()
         }
         context("launching the subprocess") {
             context("without any error launching the process") {
@@ -68,7 +65,7 @@ internal class JibriSubprocessTest : ShouldSpec() {
                 }
                 context("when the process publishes a state") {
                     val procState = ProcessState(ProcessRunning(), "most recent output")
-                    processStateHandler.firstValue(procState)
+                    processStateHandler.captured(procState)
                     should("bubble up the state update") {
                         executorStateUpdates.shouldNotBeEmpty()
                         executorStateUpdates[0] shouldBe procState
@@ -76,7 +73,7 @@ internal class JibriSubprocessTest : ShouldSpec() {
                 }
             }
             context("and the start process throwing") {
-                whenever(processWrapper.start()).thenAnswer { throw Exception() }
+                every { processWrapper.start() } throws Exception()
                 subprocess.launch(listOf())
                 should("publish a state update with the error") {
                     executorStateUpdates.shouldNotBeEmpty()
@@ -93,10 +90,10 @@ internal class JibriSubprocessTest : ShouldSpec() {
             context("after it launches") {
                 subprocess.launch(emptyList())
                 context("when it refuses to stop gracefully") {
-                    whenever(processWrapper.stopAndWaitFor(any())).thenReturn(false)
+                    every { processWrapper.stopAndWaitFor(any()) } returns false
                     should("try and destroy it forcibly") {
                         subprocess.stop()
-                        verify(processWrapper).destroyForciblyAndWaitFor(any())
+                        verify { processWrapper.destroyForciblyAndWaitFor(any()) }
                     }
                 }
             }

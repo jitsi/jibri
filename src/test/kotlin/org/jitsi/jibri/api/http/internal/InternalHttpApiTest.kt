@@ -17,25 +17,33 @@
 
 package org.jitsi.jibri.api.http.internal
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.whenever
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
+import org.jitsi.jibri.helpers.resetScheduledPool
+import org.jitsi.jibri.helpers.setScheduledPool
 import org.jitsi.jibri.util.TaskPools
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 
 class InternalHttpApiTest : ShouldSpec() {
-    private val executor: ScheduledExecutorService = mock()
-    private val future: ScheduledFuture<*> = mock()
+    private val executor: ScheduledExecutorService = mockk()
+    private val future: ScheduledFuture<*> = mockk()
 
     init {
+        beforeSpec {
+            TaskPools.setScheduledPool(executor)
+        }
+
         beforeTest {
-            reset(executor, future)
-            whenever(executor.schedule(any(), any(), any())).thenReturn(future)
-            TaskPools.recurringTasksPool = executor
+            clearMocks(executor, future)
+            every { executor.schedule(any(), any(), any()) } returns future
+        }
+
+        afterSpec {
+            TaskPools.resetScheduledPool()
         }
 
         context("gracefulShutdown") {

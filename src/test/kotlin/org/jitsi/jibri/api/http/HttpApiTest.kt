@@ -20,17 +20,17 @@ package org.jitsi.jibri.api.http
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.anyOrNull
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.string.contain
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
 import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.test.JerseyTest
@@ -54,8 +54,8 @@ import javax.ws.rs.ext.ContextResolver
 class HttpApiTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val jibriManager: JibriManager = mock()
-    private val jibriStatusManager: JibriStatusManager = mock()
+    private val jibriManager: JibriManager = mockk()
+    private val jibriStatusManager: JibriStatusManager = mockk()
     private lateinit var jerseyTest: JerseyTest
 
     init {
@@ -84,17 +84,16 @@ class HttpApiTest : ShouldSpec() {
                         JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
                 val expectedHealth = JibriHealth(expectedStatus)
 
-                whenever(jibriManager.currentEnvironmentContext)
-                    .thenReturn(null)
-                whenever(jibriStatusManager.overallStatus).thenReturn(expectedStatus)
+                every { jibriManager.currentEnvironmentContext } returns null
+                every { jibriStatusManager.overallStatus } returns expectedStatus
 
                 val res = jerseyTest.target("/jibri/api/v1.0/health").request()
                     .get()
                 should("call JibriStatusManager#overallStatus") {
-                    verify(jibriStatusManager).overallStatus
+                    verify { jibriStatusManager.overallStatus }
                 }
                 should("call JibriManager#currentEnvironmentContext") {
-                    verify(jibriManager).currentEnvironmentContext
+                    verify { jibriManager.currentEnvironmentContext }
                 }
                 should("return a status of 200") {
                     res.status shouldBe 200
@@ -114,8 +113,8 @@ class HttpApiTest : ShouldSpec() {
                 val expectedEnvironmentContext = EnvironmentContext("meet.jit.si")
                 val expectedHealth = JibriHealth(expectedStatus, expectedEnvironmentContext)
 
-                whenever(jibriManager.currentEnvironmentContext).thenReturn(expectedEnvironmentContext)
-                whenever(jibriStatusManager.overallStatus).thenReturn(expectedStatus)
+                every { jibriManager.currentEnvironmentContext } returns expectedEnvironmentContext
+                every { jibriStatusManager.overallStatus } returns expectedStatus
 
                 val res = jerseyTest.target("/jibri/api/v1.0/health").request()
                     .get()
@@ -133,13 +132,15 @@ class HttpApiTest : ShouldSpec() {
         }
         context("startService") {
             context("start file recording") {
-                val capturedServiceParams = argumentCaptor<ServiceParams>()
-                whenever(jibriManager.startFileRecording(
-                    capturedServiceParams.capture(),
-                    any(),
-                    anyOrNull(),
-                    anyOrNull())
-                ).thenAnswer { }
+                val capturedServiceParams = slot<ServiceParams>()
+                every {
+                    jibriManager.startFileRecording(
+                        capture(capturedServiceParams),
+                        any(),
+                        any(),
+                        any()
+                    )
+                } just Runs
                 val startServiceRequest = StartServiceParams(
                     sessionId = "session_id",
                     callParams = CallParams(
@@ -161,7 +162,7 @@ class HttpApiTest : ShouldSpec() {
                     res.status shouldBe 200
                 }
                 should("call JibriManager#startFileRecording with the right params") {
-                    capturedServiceParams.firstValue.usageTimeoutMinutes shouldBe 0
+                    capturedServiceParams.captured.usageTimeoutMinutes shouldBe 0
                 }
             }
         }

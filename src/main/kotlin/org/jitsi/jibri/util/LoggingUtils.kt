@@ -27,12 +27,11 @@ import java.util.logging.Logger
 class LoggingUtils {
     companion object {
         var createPublishingTail: (InputStream, (String) -> Unit) -> PublishingTail = ::PublishingTail
+
         /**
-         * A helper function to log a given [ProcessWrapper]'s output to the given [Logger].
-         * A future is returned which will be completed when the end of the given
-         * stream is reached.
+         * The default implementation of the process output logger
          */
-        var logOutput: (ProcessWrapper, Logger) -> Future<Boolean> = { process, logger ->
+        val OutputLogger: (ProcessWrapper, Logger) -> Future<Boolean> = { process, logger ->
             TaskPools.ioPool.submit(Callable<Boolean> {
                 val reader = BufferedReader(InputStreamReader(process.getOutput()))
 
@@ -43,6 +42,21 @@ class LoggingUtils {
 
                 return@Callable true
             })
+        }
+
+        /**
+         * A variable pointing to the current impl of the process output logger function.
+         * Overridable so tests can change it.
+         */
+        var logOutput = OutputLogger
+
+        /**
+         * A helper function to log a given [ProcessWrapper]'s output to the given [Logger].
+         * A future is returned which will be completed when the end of the given
+         * stream is reached.
+         */
+        fun logOutputOfProcess(process: ProcessWrapper, logger: Logger): Future<Boolean> {
+            return logOutput(process, logger)
         }
     }
 }

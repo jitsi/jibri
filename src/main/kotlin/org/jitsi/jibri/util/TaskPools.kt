@@ -28,9 +28,12 @@ import java.util.concurrent.ScheduledExecutorService
  */
 class TaskPools {
     companion object {
-        var ioPool: ExecutorService =
-                Executors.newCachedThreadPool(NameableThreadFactory("IO Pool"))
-        var recurringTasksPool: ScheduledExecutorService =
-                Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("Recurring Tasks Pool"))
+        val DefaultIoPool: ExecutorService =
+            Executors.newCachedThreadPool(NameableThreadFactory("IO Pool"))
+        val DefaultRecurringTaskPool: ScheduledExecutorService =
+            Executors.newSingleThreadScheduledExecutor(NameableThreadFactory("Recurring Tasks Pool"))
+
+        var ioPool: ExecutorService = DefaultIoPool
+        var recurringTasksPool: ScheduledExecutorService = DefaultRecurringTaskPool
     }
 }

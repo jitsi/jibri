@@ -21,6 +21,7 @@
         <junit.version>5.2.0</junit.version>
         <jetty.version>9.4.15.v20190215</jetty.version>
         <kotest.version>4.1.1</kotest.version>
+        <mockk.version>1.10.0</mockk.version>
     </properties>
 
     <dependencies>
@@ -185,9 +186,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.nhaarman.mockitokotlin2</groupId>
-            <artifactId>mockito-kotlin</artifactId>
-            <version>2.1.0</version>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk</artifactId>
+            <version>${mockk.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
@@ -273,12 +274,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.2</version>
-                <configuration>
-                    <!-- Since we now have some things that are accessed globally but overwritten by tests
-                     (task pools, for example), we don't want the tests interfering with one another as they
-                     mock things out, so make sure we run each in isolation -->
-                    <reuseForks>false</reuseForks>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

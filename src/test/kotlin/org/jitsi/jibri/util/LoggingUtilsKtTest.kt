@@ -17,15 +17,13 @@
 
 package org.jitsi.jibri.util
 
-import com.nhaarman.mockitokotlin2.argumentCaptor
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.reset
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.clearMocks
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.within
 import java.io.PipedInputStream
@@ -36,49 +34,49 @@ import kotlin.concurrent.thread
 internal class LoggingUtilsKtTest : FunSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val process: ProcessWrapper = mock()
+    private val process: ProcessWrapper = mockk()
     private lateinit var pipedOutputStream: PipedOutputStream
     private lateinit var inputStream: PipedInputStream
-    private val logger: Logger = mock()
+    private val logger: Logger = mockk(relaxed = true)
 
     init {
         beforeTest {
             pipedOutputStream = PipedOutputStream()
             inputStream = PipedInputStream(pipedOutputStream)
-            reset(logger)
-            whenever(process.getOutput()).thenReturn(inputStream)
+            clearMocks(logger)
+            every { process.getOutput() } returns inputStream
         }
 
         test("logStream should write log lines to the given logger") {
-            LoggingUtils.logOutput(process, logger)
+            LoggingUtils.logOutputOfProcess(process, logger)
             thread {
                 for (i in 0..4) {
                     pipedOutputStream.write("$i\n".toByteArray())
                 }
             }
 
-            val logLine = argumentCaptor<String>()
+            val logLines = mutableListOf<String>()
             within(5.seconds) {
-                verify(logger, times(5)).info(logLine.capture())
+                verify(exactly = 5) { logger.info(capture(logLines)) }
             }
-            logLine.allValues.forEachIndexed { index, value ->
+            logLines.forEachIndexed { index, value ->
                 index.toString() shouldBe value
             }
         }
 
         test("logStream should complete the task when EOF is reached") {
-            val streamClosed = LoggingUtils.logOutput(process, logger)
+            val streamClosed = LoggingUtils.logOutputOfProcess(process, logger)
             thread {
                 for (i in 0..4) {
                     pipedOutputStream.write("$i\n".toByteArray())
                 }
                 pipedOutputStream.close()
             }
-            val logLine = argumentCaptor<String>()
+            val logLines = mutableListOf<String>()
             within(5.seconds) {
-                verify(logger, times(5)).info(logLine.capture())
+                verify(exactly = 5) { logger.info(capture(logLines)) }
             }
-            logLine.allValues.forEachIndexed { index, value ->
+            logLines.forEachIndexed { index, value ->
                 index.toString() shouldBe value
             }
             within(5.seconds) {

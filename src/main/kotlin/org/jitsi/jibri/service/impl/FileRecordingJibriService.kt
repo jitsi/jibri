@@ -205,7 +205,7 @@ class FileRecordingJibriService(
             )
             with(processFactory.createProcess(finalizeCommand)) {
                 start()
-                val streamDone = LoggingUtils.logOutput(this, logger)
+                val streamDone = LoggingUtils.logOutputOfProcess(this, logger)
                 waitFor()
                 // Make sure we get all the logs
                 try {
