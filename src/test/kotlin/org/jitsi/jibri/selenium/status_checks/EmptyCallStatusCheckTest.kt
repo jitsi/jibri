@@ -16,12 +16,12 @@
 
 package org.jitsi.jibri.selenium.status_checks
 
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.spy
-import com.nhaarman.mockitokotlin2.whenever
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.spyk
 import org.jitsi.jibri.helpers.FakeClock
 import org.jitsi.jibri.helpers.minutes
 import org.jitsi.jibri.helpers.seconds
@@ -33,15 +33,15 @@ import java.util.logging.Logger
 internal class EmptyCallStatusCheckTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val clock: FakeClock = spy()
-    private val callPage: CallPage = mock()
-    private val logger: Logger = mock()
+    private val clock: FakeClock = spyk()
+    private val callPage: CallPage = mockk()
+    private val logger: Logger = mockk(relaxed = true)
 
     private val check = EmptyCallStatusCheck(logger, clock = clock)
 
     init {
         context("when the call was always empty") {
-            whenever(callPage.getNumParticipants()).thenReturn(1)
+            every { callPage.getNumParticipants() } returns 1
             context("the check") {
                 should("return empty after the timeout") {
                     check.run(callPage) shouldBe null
@@ -53,7 +53,7 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
             }
         }
         context("when the call has participants") {
-            whenever(callPage.getNumParticipants()).thenReturn(3)
+            every { callPage.getNumParticipants() } returns 3
             clock.elapse(5.minutes)
             context("the check") {
                 should("never return empty") {
@@ -63,7 +63,7 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
                 }
             }
             context("and then goes empty") {
-                whenever(callPage.getNumParticipants()).thenReturn(1)
+                every { callPage.getNumParticipants() } returns 1
                 clock.elapse(20.seconds)
                 context("the check") {
                     should("return empty after the timeout") {
@@ -73,7 +73,7 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
                     }
                 }
                 context("and then has participants again") {
-                    whenever(callPage.getNumParticipants()).thenReturn(3)
+                    every { callPage.getNumParticipants() } returns 3
                     // Some time passed and the check ran once with no participants
                     clock.elapse(30.seconds)
                     context("the check") {
@@ -87,6 +87,7 @@ internal class EmptyCallStatusCheckTest : ShouldSpec() {
             }
         }
         context("when a custom timeout is passed") {
+            every { callPage.getNumParticipants() } returns 1
             val customTimeoutCheck = EmptyCallStatusCheck(logger, Duration.ofMinutes(10), clock)
             context("the check") {
                 should("return empty after the timeout") {
