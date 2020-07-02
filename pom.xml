@@ -21,6 +21,7 @@
         <junit.version>5.2.0</junit.version>
         <jetty.version>9.4.15.v20190215</jetty.version>
         <kotest.version>4.1.1</kotest.version>
+        <mockk.version>1.10.0</mockk.version>
     </properties>
 
     <dependencies>
@@ -182,6 +183,12 @@
             <groupId>io.kotest</groupId>
             <artifactId>kotest-runner-console-jvm</artifactId>
             <version>${kotest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk</artifactId>
+            <version>1.10.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
