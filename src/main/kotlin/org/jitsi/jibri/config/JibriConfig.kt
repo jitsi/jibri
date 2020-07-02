@@ -114,5 +114,7 @@ data class JibriConfig(
     @JsonProperty("finalize_recording_script_path")
     val finalizeRecordingScriptPath: String,
     @JsonProperty("xmpp_environments")
-    val xmppEnvironments: List<XmppEnvironmentConfig>
+    val xmppEnvironments: List<XmppEnvironmentConfig>,
+    @JsonProperty("chrome_extra_opts")
+    val chromeExtraOpts: List<String>
 )

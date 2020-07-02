@@ -44,7 +44,11 @@ data class SipGatewayServiceParams(
      * The params needed for bringing a SIP client into
      * the call
      */
-    val sipClientParams: SipClientParams
+    val sipClientParams: SipClientParams,
+    /**
+     * Extra options for Chrome Driver
+     */
+    val chromeExtraOpts: List<String> = listOf()
 )
 
 /**
@@ -58,13 +62,7 @@ class SipGatewayJibriService(
     /**
      * Used for the selenium interaction
      */
-    private val jibriSelenium = JibriSelenium(
-        JibriSeleniumOptions(
-            displayName = sipGatewayServiceParams.sipClientParams.displayName,
-            // by default we wait 30 minutes alone in the call before deciding to hangup
-            emptyCallTimeout = Duration.ofMinutes(30),
-            extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
-    )
+    private val jibriSelenium: JibriSelenium
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
@@ -78,6 +76,14 @@ class SipGatewayJibriService(
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
+        jibriSelenium = JibriSelenium(
+            JibriSeleniumOptions(
+                displayName = sipGatewayServiceParams.sipClientParams.displayName,
+                // by default we wait 30 minutes alone in the call before deciding to hangup
+                emptyCallTimeout = Duration.ofMinutes(30),
+                extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1") + sipGatewayServiceParams.chromeExtraOpts)
+        )
+
         registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
         registerSubComponent(PjsuaClient.COMPONENT_ID, pjsuaClient)
     }

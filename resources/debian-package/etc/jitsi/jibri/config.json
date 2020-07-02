@@ -6,6 +6,8 @@
     "recording_directory":"/tmp/recordings",
     // The path to the script which will be run on completed recordings
     "finalize_recording_script_path": "/path/to/finalize_recording.sh",
+    // extra options for chrome driver
+    "chrome_extra_opts": [],
     "xmpp_environments": [
         {
             // A friendly name for this environment which can be used

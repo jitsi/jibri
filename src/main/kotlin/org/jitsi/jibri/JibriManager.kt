@@ -21,6 +21,8 @@ import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
+import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
@@ -139,7 +141,9 @@ class JibriManager(
                 fileSystem.getPath(config.finalizeRecordingScriptPath),
                 fileSystem.getPath(config.recordingDirectory),
                 serviceParams.appData?.fileRecordingMetadata
-            )
+            ),
+            JibriSelenium(JibriSeleniumOptions().copy(
+                extraChromeCommandLineFlags = config.chromeExtraOpts))
         )
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_RECORDING)
         startService(service, serviceParams, environmentContext, serviceStatusHandler)
@@ -158,7 +162,13 @@ class JibriManager(
     ) {
         logger.info("Starting a stream with params: $serviceParams $streamingParams")
         throwIfBusy()
-        val service = StreamingJibriService(streamingParams)
+        var service: StreamingJibriService
+        if (config.chromeExtraOpts.count() > 0) {
+            service = StreamingJibriService(streamingParams.copy(
+                chromeExtraOpts = config.chromeExtraOpts))
+        } else {
+            service = StreamingJibriService(streamingParams)
+        }
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_LIVE_STREAM)
         startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
@@ -175,7 +185,8 @@ class JibriManager(
         val service = SipGatewayJibriService(SipGatewayServiceParams(
             sipGatewayServiceParams.callParams,
             sipGatewayServiceParams.callLoginParams,
-            sipGatewayServiceParams.sipClientParams
+            sipGatewayServiceParams.sipClientParams,
+            config.chromeExtraOpts
         ))
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_SIP_GATEWAY)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)

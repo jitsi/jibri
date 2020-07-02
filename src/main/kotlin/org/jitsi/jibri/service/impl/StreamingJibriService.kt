@@ -22,6 +22,7 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
@@ -58,7 +59,11 @@ data class StreamingParams(
     /**
      * The YouTube broadcast ID for this stream, if we have it
      */
-    val youTubeBroadcastId: String? = null
+    val youTubeBroadcastId: String? = null,
+    /**
+     * Extra options for Chrome Driver
+     */
+    val chromeExtraOpts: List<String> = listOf()
 )
 
 /**
@@ -71,7 +76,7 @@ class StreamingJibriService(
 ) : StatefulJibriService("Streaming") {
     private val capturer = FfmpegCapturer()
     private val sink: Sink
-    private val jibriSelenium = JibriSelenium()
+    private val jibriSelenium: JibriSelenium
 
     init {
         sink = StreamSink(
@@ -79,6 +84,9 @@ class StreamingJibriService(
             streamingMaxBitrate = STREAMING_MAX_BITRATE,
             streamingBufSize = 2 * STREAMING_MAX_BITRATE
         )
+
+        jibriSelenium = JibriSelenium(JibriSeleniumOptions().copy(
+            extraChromeCommandLineFlags = streamingParams.chromeExtraOpts))
 
         registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
