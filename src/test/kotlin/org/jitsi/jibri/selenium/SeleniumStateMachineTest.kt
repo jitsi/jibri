@@ -18,7 +18,6 @@ package org.jitsi.jibri.selenium
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
-import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.beInstanceOf
 import io.kotest.matchers.collections.haveSize

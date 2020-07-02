@@ -21,7 +21,7 @@ import java.lang.reflect.Field
 /**
  * Mimic the "pid" member of Java 9's [Process].
  */
-val Process.pid: Long
+val Process.pidValue: Long
     get() {
         var pid: Long = -1
         try {
