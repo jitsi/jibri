@@ -94,6 +94,12 @@ data class XmppEnvironmentConfig(
 )
 
 data class JibriConfig(
+    // NOTE(brian): this field should be considered required, but has a default
+    // for now to not break upgrades
+    @JsonProperty("jibri_id")
+    val jibriId: String = "",
+    @JsonProperty("webhook_subscribers")
+    val webhookSubscribers: List<String> = listOf(),
     @JsonProperty("recording_directory")
     val recordingDirectory: String,
     /**
