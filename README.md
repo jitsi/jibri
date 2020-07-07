@@ -35,13 +35,15 @@ The new Jibri now has configurable logging, which can be set via the [logging.pr
 ### Ffmpeg with X11 capture support
 * Jibri requires a relatively modern ffmpeg install with x11 capture compiled in. This comes by default in Ubuntu 16.04, by installing the ffmpeg package.
 * If building Jibri for Ubuntu 14.04 (trusty), the mc3man repo provides packages. They can be used by the following in Ubuntu 14.04:
-  * `sudo add-apt-repository ppa:mc3man/trusty-media`
-  * `sudo apt-get update`
-  * `sudo apt-get install ffmpeg`
+```bash
+sudo add-apt-repository ppa:mc3man/trusty-media
+sudo apt-get update
+sudo apt-get install ffmpeg
+```
 
 ### Google Chrome stable & Chromedriver
 The latest Google Chrome stable build should be used. It may be able to be installed direclty via apt, but the manual instructions for installing it are as follows:
-```
+```bash
 curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add
 echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
 apt-get -y update
@@ -49,12 +51,12 @@ apt-get -y install google-chrome-stable
 ```
 Add chrome managed policies file and set `CommandLineFlagSecurityWarningsEnabled` to `false`. It will hide warnings in Chrome.
 You can set it like so:
-```
+```bash
 mkdir -p /etc/opt/chrome/policies/managed
 echo '{ "CommandLineFlagSecurityWarningsEnabled": false }' >>/etc/opt/chrome/policies/managed/managed_policies.json
 ```
 Chromedriver is also required and can be installed like so:
-```
+```bash
 CHROME_DRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`
 wget -N http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip -P ~/
 unzip ~/chromedriver_linux64.zip -d ~/
@@ -72,19 +74,19 @@ These can be installed using the following:
 ### Jitsi Debian Repository
 The Jibri packages can be found in the stable repository on downloads.jitsi.org.
 First install the Jitsi repository key onto your system:
-```
+```bash
 wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
 ```
 Create a sources.list.d file with the repository:
-```
+```bash
 sudo sh -c "echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list"
 ```
 Update your package list:
-```
+```bash
 sudo apt-get update
 ```
 Install the latest jibri
-```
+```bash
 sudo apt-get install jibri
 ```
 
@@ -92,7 +94,9 @@ sudo apt-get install jibri
 ### User, group
 * Jibri is currently meant to be run as a regular system user. This example creatively uses username 'jibri' and group name 'jibri', but any user will do. This has not been tested with the root user.
 * Ensure that the jibri user is in the correct groups to make full access of the audio and video devices. The example jibri account in Ubuntu 16.04 are: "adm","audio","video","plugdev".
-`sudo usermod -aG adm,audio,video,plugdev jibri`
+```bash
+sudo usermod -aG adm,audio,video,plugdev jibri
+```
 
 ### Config files
 * Edit the `config.json` file (installed to `/etc/jitsi/jibri/config.json` by default) appropriately.
@@ -108,7 +112,7 @@ Jibri requires some settings to be enabled within a Jitsi Meet configuration. Th
 ## Prosody
 
 Create the internal MUC component entry.  This is required so that the jibri clients can be discovered by Jicofo in a MUC that's not externally accessible by jitsi meet users.  Add the following in `/etc/prosody/prosody.cfg.lua`:
-```
+```lua
 -- internal muc component, meant to enable pools of jibri and jigasi clients
 Component "internal.auth.yourdomain.com" "muc"
     modules_enabled = {
@@ -119,7 +123,7 @@ Component "internal.auth.yourdomain.com" "muc"
 ```
 
 Create the recorder virtual host entry, to hold the user account for the jibri chrome session.  This is used to restrict only authenticated jibri chrome sessions to be hidden participants in the conference being recordered.  Add the following in `/etc/prosody/prosody.cfg.lua`:
-```
+```lua
 VirtualHost "recorder.yourdomain.com"
   modules_enabled = {
     "ping";
@@ -128,8 +132,8 @@ VirtualHost "recorder.yourdomain.com"
 ```
 
 Setup the two accounts jibri will use.
-```
-prosodyctl register jibri auth.yourdomain.com jibriauthpass
+```bash
+prosodyctl register jibri internal.auth.yourdomain.com jibriauthpass
 prosodyctl register recorder recorder.yourdomain.com jibrirecorderpass
 ```
 The first account is the one Jibri will use to log into the control MUC (where Jibri will send its status and await commands).  The second account is the one Jibri will use as a client in selenium when it joins the call so that it can be treated in a special way by the Jitsi Meet web UI.
@@ -143,17 +147,19 @@ org.jitsi.jicofo.jibri.PENDING_TIMEOUT=90
 
 ## Jitsi Meet
 Edit the `/etc/jitsi/meet/yourdomain-config.js` file, add/set the following properties:
-```
+```javascript
 fileRecordingsEnabled: true, // If you want to enable file recording
 liveStreamingEnabled: true, // If you want to enable live streaming
 hiddenDomain: 'recorder.yourdomain.com',
 ```
 Also make sure that in your interface config (`/usr/share/jitsi-meet/interface_config.js` by default), the `TOOLBAR_BUTTONS` array contains the `recording` value if you want to show the file recording button and the `livestreaming` value if you want to show the live streaming button.
 
-Once recording is enabled in config.js, the recording button will become available in the user interface. However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed. Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
+Once recording is enabled in `yourdomain-config.js`, the recording button will become available in the user interface. However, until a valid jibri is seen by Jicofo, the mesage "Recording currently unavailable" will be displayed when it is pressed. Once a jibri connects successfully, the user will instead be prompted to enter a stream key.
 
-Make sure to update Jibri's config.json appropriately to match any config done above.
+**Note**: Make sure to update Jibri's `config.json` appropriately to match any config done above.
 
 ## Start Jibri
 Once you have configured `config.json`, start the jibri service:
-`sudo systemctl restart jibri`
+```bash
+sudo systemctl restart jibri
+```
