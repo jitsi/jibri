@@ -20,6 +20,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngineConfig
 import io.ktor.client.engine.HttpClientEngineFactory
+import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.json.JacksonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.HttpRequestBuilder
@@ -55,6 +56,7 @@ class WebhookClient private constructor(
     }
 
     fun updateStatus(status: JibriStatus) = runBlocking {
+        logger.debug("Updating subscribers of status")
         webhookSubscribers.forEach { subscriberBaseUrl ->
             launch {
                 logger.debug("Sending request to $subscriberBaseUrl")
@@ -83,6 +85,15 @@ class WebhookClient private constructor(
         ): WebhookClient {
             val client = HttpClient(engineFactory) {
                 block()
+                install(JsonFeature) {
+                    serializer = JacksonSerializer()
+                }
+            }
+            return WebhookClient(jibriId, client)
+        }
+
+        operator fun invoke(jibriId: String): WebhookClient {
+            val client = HttpClient(Apache) {
                 install(JsonFeature) {
                     serializer = JacksonSerializer()
                 }
