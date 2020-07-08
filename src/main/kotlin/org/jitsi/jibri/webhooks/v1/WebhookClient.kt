@@ -21,6 +21,8 @@ import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngineConfig
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.engine.apache.Apache
+import io.ktor.client.features.HttpRequestTimeoutException
+import io.ktor.client.features.HttpTimeout
 import io.ktor.client.features.json.JacksonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.HttpRequestBuilder
@@ -29,9 +31,12 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
 import java.util.concurrent.CopyOnWriteArraySet
@@ -56,16 +61,20 @@ class WebhookClient private constructor(
     }
 
     fun updateStatus(status: JibriStatus) = runBlocking {
-        logger.debug("Updating subscribers of status")
+        logger.debug("Updating ${webhookSubscribers.size} subscribers of status")
         webhookSubscribers.forEach { subscriberBaseUrl ->
-            launch {
+            launch(TaskPools.ioPool.asCoroutineDispatcher()) {
                 logger.debug("Sending request to $subscriberBaseUrl")
-                val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/health") {
-                    body = JibriEvent.HealthEvent(jibriId, status)
-                }
-                logger.debug("Got response from $subscriberBaseUrl: $resp")
-                if (resp.status != HttpStatusCode.OK) {
-                    logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
+                try {
+                    val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/status") {
+                        body = JibriEvent.HealthEvent(jibriId, status)
+                    }
+                    logger.debug("Got response from $subscriberBaseUrl: $resp")
+                    if (resp.status != HttpStatusCode.OK) {
+                        logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
+                    }
+                } catch (e: HttpRequestTimeoutException) {
+                    logger.error("Request to $subscriberBaseUrl timed out")
                 }
             }
         }
@@ -81,24 +90,28 @@ class WebhookClient private constructor(
         operator fun <T : HttpClientEngineConfig> invoke(
             jibriId: String,
             engineFactory: HttpClientEngineFactory<T>,
-            block: HttpClientConfig<T>.() -> Unit = {}
+            additionalConfig: HttpClientConfig<T>.() -> Unit = {}
         ): WebhookClient {
             val client = HttpClient(engineFactory) {
-                block()
-                install(JsonFeature) {
-                    serializer = JacksonSerializer()
-                }
+                applyWebhookClientConfig()
+                additionalConfig()
             }
             return WebhookClient(jibriId, client)
         }
 
         operator fun invoke(jibriId: String): WebhookClient {
             val client = HttpClient(Apache) {
-                install(JsonFeature) {
-                    serializer = JacksonSerializer()
-                }
+                applyWebhookClientConfig()
             }
             return WebhookClient(jibriId, client)
+        }
+        private fun <T : HttpClientEngineConfig> HttpClientConfig<T>.applyWebhookClientConfig() {
+            install(JsonFeature) {
+                serializer = JacksonSerializer()
+            }
+            install(HttpTimeout) {
+                requestTimeoutMillis = 2000
+            }
         }
     }
 }

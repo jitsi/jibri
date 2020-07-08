@@ -87,7 +87,7 @@ class WebhookClientTest : ShouldSpec({
                 should("send a POST to the subscriber at the proper url") {
                     requests shouldHaveSize  1
                     with (requests[0]) {
-                        url.toString() shouldContain "/v1/health"
+                        url.toString() shouldContain "/v1/status"
                         method shouldBe HttpMethod.Post
                     }
                 }

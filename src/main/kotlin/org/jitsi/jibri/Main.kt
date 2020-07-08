@@ -125,6 +125,7 @@ fun main(args: Array<String>) {
     jibriStatusManager.addStatusHandler {
         webhookClient.updateStatus(it)
     }
+    jibriConfig.webhookSubscribers.forEach { webhookClient.addSubscriber(it) }
     val statusUpdaterTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(
         30,
         TimeUnit.SECONDS
@@ -139,7 +140,7 @@ fun main(args: Array<String>) {
         } catch (t: Throwable) {
             logger.error("Error cleaning up status updater task")
         }
-        exitProcess(0)
+        exitProcess(exitCode)
     }
 
     val configChangedHandler = {
