@@ -17,7 +17,9 @@
 package org.jitsi.jibri.webhooks.v1
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
+import io.ktor.client.HttpClientConfig
+import io.ktor.client.engine.HttpClientEngineConfig
+import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.features.json.JacksonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.HttpRequestBuilder
@@ -29,24 +31,63 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.util.extensions.debug
+import org.jitsi.jibri.util.extensions.error
+import java.util.concurrent.CopyOnWriteArraySet
+import java.util.logging.Logger
 
-class WebhookClient() {
-    private val client = HttpClient(Apache) {
-        install(JsonFeature) {
-            serializer = JacksonSerializer()
-        }
+/**
+ * A client for notifying subscribers of Jibri events
+ */
+class WebhookClient private constructor(
+    private val jibriId: String,
+    private val client: HttpClient
+) {
+    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
+
+    fun addSubscriber(subscriberBaseUrl: String) {
+        webhookSubscribers.add(subscriberBaseUrl)
     }
 
-    private val webhookSubscribers = mutableListOf<String>()
+    fun removeSubscriber(subscriberBaseUrl: String) {
+        webhookSubscribers.remove(subscriberBaseUrl)
+    }
 
     fun updateStatus(status: JibriStatus) = runBlocking {
         webhookSubscribers.forEach { subscriberBaseUrl ->
             launch {
-                val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/health")
+                logger.debug("Sending request to $subscriberBaseUrl")
+                val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/health") {
+                    body = JibriEvent.HealthEvent(jibriId, status)
+                }
+                logger.debug("Got response from $subscriberBaseUrl: $resp")
                 if (resp.status != HttpStatusCode.OK) {
-                    println("Error updating webhook subscriber $subscriberBaseUrl: $resp")
+                    logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
                 }
             }
+        }
+    }
+
+    /**
+     * To make the client testable, we use this helper function to enable both
+     * the client being able to always add the config it needs (installing
+     * [JsonFeature]), but also letting the caller add its own config (which is
+     * necessary when using a mock client engine).
+     */
+    companion object {
+        operator fun <T : HttpClientEngineConfig> invoke(
+            jibriId: String,
+            engineFactory: HttpClientEngineFactory<T>,
+            block: HttpClientConfig<T>.() -> Unit = {}
+        ): WebhookClient {
+            val client = HttpClient(engineFactory) {
+                block()
+                install(JsonFeature) {
+                    serializer = JacksonSerializer()
+                }
+            }
+            return WebhookClient(jibriId, client)
         }
     }
 }
@@ -58,9 +99,7 @@ class WebhookClient() {
 private suspend inline fun <reified T> HttpClient.postJson(
     urlString: String,
     block: HttpRequestBuilder.() -> Unit = {}
-): T = post {
-    post<T>(urlString) {
-        block()
-        contentType(ContentType.Application.Json)
-    }
+): T = post(urlString) {
+    block()
+    contentType(ContentType.Application.Json)
 }
