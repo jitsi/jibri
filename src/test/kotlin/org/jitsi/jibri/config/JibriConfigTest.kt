@@ -36,7 +36,6 @@ class JibriConfigTest : ShouldSpec({
     }
 })
 
-
 private val requiredOnly: String = """
     {
         "recording_directory": "some/recording/dir",

@@ -30,11 +30,11 @@ import io.ktor.client.engine.mock.MockRequestHandler
 import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.respondOk
 import io.ktor.client.request.HttpRequestData
-import kotlinx.coroutines.delay
 import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.delay
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
@@ -61,7 +61,7 @@ class WebhookClientTest : ShouldSpec({
         engine {
             addHandler { request ->
                 requests += request
-                with (request.url.toString()) {
+                with(request.url.toString()) {
                     when {
                         contains("success") -> {
                             respondOk()
@@ -85,8 +85,8 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateStatus") {
                 client.updateStatus(goodStatus)
                 should("send a POST to the subscriber at the proper url") {
-                    requests shouldHaveSize  1
-                    with (requests[0]) {
+                    requests shouldHaveSize 1
+                    with(requests[0]) {
                         url.toString() shouldContain "/v1/status"
                         method shouldBe HttpMethod.Post
                     }
