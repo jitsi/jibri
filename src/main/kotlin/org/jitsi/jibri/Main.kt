@@ -36,7 +36,7 @@ import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
-import org.jitsi.jibri.api.http.internal.internalApiModule
+import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.statsd.JibriStatsDClient
@@ -172,10 +172,11 @@ fun main(args: Array<String>) {
         cleanupAndExit(255)
     }
 
-    // InternalHttpApi
-    embeddedServer(Jetty, port = internalHttpPort) {
-        internalApiModule(configChangedHandler, gracefulShutdownHandler, shutdownHandler)
-    }.start()
+    with (InternalHttpApi(configChangedHandler, gracefulShutdownHandler, shutdownHandler)) {
+        embeddedServer(Jetty, port = internalHttpPort) {
+            internalApiModule()
+        }.start()
+    }
 
     // XmppApi
     val xmppApi = XmppApi(

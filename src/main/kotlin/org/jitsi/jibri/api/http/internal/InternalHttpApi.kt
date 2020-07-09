@@ -33,44 +33,46 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.logging.Logger
 
-fun Application.internalApiModule(
-    configChangedHandler: () -> Unit,
-    gracefulShutdownHandler: () -> Unit,
-    shutdownHandler: () -> Unit
+class InternalHttpApi(
+    private val configChangedHandler: () -> Unit,
+    private val gracefulShutdownHandler: () -> Unit,
+    private val shutdownHandler: () -> Unit
 ) {
-    install(ContentNegotiation) {
-        jackson {}
-    }
+    private val logger = Logger.getLogger(this::class.qualifiedName)
 
-    val logger = Logger.getLogger("org.jitsi.jibri.api.http.internal.InternalHttpApi")
+    fun Application.internalApiModule() {
+        install(ContentNegotiation) {
+            jackson {}
+        }
 
-    routing {
-        route("/jibri/api/internal/v1.0") {
-            /**
-             * Signal this Jibri to shutdown gracefully, meaning shut down when
-             * it is idle (i.e. finish any currently running service). Returns a 200
-             * and schedules a shutdown for when it becomes idle.
-             */
-            post("gracefulShutdown") {
-                logger.info("Jibri gracefully shutting down")
-                respondOkAndRun(gracefulShutdownHandler)
-            }
-            /**
-             * Signal this Jibri to reload its config file at the soonest opportunity
-             * (when it does not have a currently running service). Returns a 200
-             */
-            post("notifyConfigChanged") {
-                logger.info("Config file changed")
-                respondOkAndRun(configChangedHandler)
-            }
-            /**
-             * Signal this Jibri to (cleanly) stop any services that are
-             * running and shutdown.  Returns a 200 and schedules a shutdown with a 1
-             * second delay.
-             */
-            post("shutdown") {
-                logger.info("Jibri is forcefully shutting down")
-                respondOkAndRun(shutdownHandler)
+        routing {
+            route("/jibri/api/internal/v1.0") {
+                /**
+                 * Signal this Jibri to shutdown gracefully, meaning shut down when
+                 * it is idle (i.e. finish any currently running service). Returns a 200
+                 * and schedules a shutdown for when it becomes idle.
+                 */
+                post("gracefulShutdown") {
+                    logger.info("Jibri gracefully shutting down")
+                    respondOkAndRun(gracefulShutdownHandler)
+                }
+                /**
+                 * Signal this Jibri to reload its config file at the soonest opportunity
+                 * (when it does not have a currently running service). Returns a 200
+                 */
+                post("notifyConfigChanged") {
+                    logger.info("Config file changed")
+                    respondOkAndRun(configChangedHandler)
+                }
+                /**
+                 * Signal this Jibri to (cleanly) stop any services that are
+                 * running and shutdown.  Returns a 200 and schedules a shutdown with a 1
+                 * second delay.
+                 */
+                post("shutdown") {
+                    logger.info("Jibri is forcefully shutting down")
+                    respondOkAndRun(shutdownHandler)
+                }
             }
         }
     }
