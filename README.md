@@ -133,7 +133,7 @@ VirtualHost "recorder.yourdomain.com"
 
 Setup the two accounts jibri will use.
 ```bash
-prosodyctl register jibri internal.auth.yourdomain.com jibriauthpass
+prosodyctl register jibri auth.yourdomain.com jibriauthpass
 prosodyctl register recorder recorder.yourdomain.com jibrirecorderpass
 ```
 The first account is the one Jibri will use to log into the control MUC (where Jibri will send its status and await commands).  The second account is the one Jibri will use as a client in selenium when it joins the call so that it can be treated in a special way by the Jitsi Meet web UI.
