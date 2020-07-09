@@ -25,6 +25,9 @@ import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import io.ktor.server.engine.embeddedServer
+import io.ktor.server.jetty.Jetty
+import kotlinx.coroutines.CancellationException
 import net.sourceforge.argparse4j.ArgumentParsers
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -33,7 +36,7 @@ import org.glassfish.jersey.jackson.JacksonFeature
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
-import org.jitsi.jibri.api.http.internal.InternalHttpApi
+import org.jitsi.jibri.api.http.internal.internalApiModule
 import org.jitsi.jibri.api.xmpp.XmppApi
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.statsd.JibriStatsDClient
@@ -138,7 +141,10 @@ fun main(args: Array<String>) {
         try {
             statusUpdaterTask.get(5, TimeUnit.SECONDS)
         } catch (t: Throwable) {
-            logger.error("Error cleaning up status updater task")
+            when (t) {
+                is CancellationException -> {}
+                else -> logger.error("Error cleaning up status updater task: $t")
+            }
         }
         exitProcess(exitCode)
     }
@@ -167,12 +173,9 @@ fun main(args: Array<String>) {
     }
 
     // InternalHttpApi
-    val internalHttpApi = InternalHttpApi(
-        configChangedHandler = configChangedHandler,
-        gracefulShutdownHandler = gracefulShutdownHandler,
-        shutdownHandler = shutdownHandler
-    )
-    launchHttpServer(internalHttpPort, internalHttpApi)
+    embeddedServer(Jetty, port = internalHttpPort) {
+        internalApiModule(configChangedHandler, gracefulShutdownHandler, shutdownHandler)
+    }.start()
 
     // XmppApi
     val xmppApi = XmppApi(

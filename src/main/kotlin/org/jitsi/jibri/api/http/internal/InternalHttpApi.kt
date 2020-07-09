@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,67 +12,84 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package org.jitsi.jibri.api.http.internal
 
-import org.jitsi.jibri.util.TaskPools
-import org.jitsi.jibri.util.extensions.schedule
+import io.ktor.application.Application
+import io.ktor.application.ApplicationCall
+import io.ktor.application.call
+import io.ktor.application.install
+import io.ktor.features.ContentNegotiation
+import io.ktor.http.HttpStatusCode
+import io.ktor.jackson.jackson
+import io.ktor.response.respond
+import io.ktor.routing.post
+import io.ktor.routing.route
+import io.ktor.routing.routing
+import io.ktor.util.pipeline.PipelineContext
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.util.logging.Logger
-import javax.ws.rs.POST
-import javax.ws.rs.Path
-import javax.ws.rs.core.Response
 
-@Path("/jibri/api/internal/v1.0")
-class InternalHttpApi(
-    private val configChangedHandler: () -> Unit,
-    private val gracefulShutdownHandler: () -> Unit,
-    private val shutdownHandler: () -> Unit
+fun Application.internalApiModule(
+    configChangedHandler: () -> Unit,
+    gracefulShutdownHandler: () -> Unit,
+    shutdownHandler: () -> Unit
 ) {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
-
-    /**
-     * Signal this Jibri to shutdown gracefully, meaning shut down when
-     * it is idle (i.e. finish any currently running service). Returns a 200
-     * and schedules a shutdown for when it becomes idle.
-     */
-    @POST
-    @Path("gracefulShutdown")
-    fun gracefulShutdown(): Response {
-        logger.info("Jibri gracefully shutting down")
-        // Schedule firing the handler so we have a chance to send the successful
-        // response.
-        TaskPools.recurringTasksPool.schedule(1, action = gracefulShutdownHandler)
-        return Response.ok().build()
+    install(ContentNegotiation) {
+        jackson {}
     }
 
-    /**
-     * Signal this Jibri to reload its config file at the soonest opportunity
-     * (when it does not have a currently running service). Returns a 200
-     */
-    @POST
-    @Path("notifyConfigChanged")
-    fun reloadConfig(): Response {
-        logger.info("Config file changed")
-        // Schedule firing the handler so we have a chance to send the successful
-        // response.
-        TaskPools.recurringTasksPool.schedule(1, action = configChangedHandler)
-        return Response.ok().build()
-    }
+    val logger = Logger.getLogger("org.jitsi.jibri.api.http.internal.InternalHttpApi")
 
-    /**
-     * Signal this Jibri to (cleanly) stop any services that are
-     * running and shutdown.  Returns a 200 and schedules a shutdown with a 1
-     * second delay.
-     */
-    @POST
-    @Path("shutdown")
-    fun shutdown(): Response {
-        logger.info("Jibri is forcefully shutting down")
-        // Schedule firing the handler so we have a chance to send the successful
-        // response.
-        TaskPools.recurringTasksPool.schedule(1, action = shutdownHandler)
-        return Response.ok().build()
+    routing {
+        route("/jibri/api/internal/v1.0") {
+            /**
+             * Signal this Jibri to shutdown gracefully, meaning shut down when
+             * it is idle (i.e. finish any currently running service). Returns a 200
+             * and schedules a shutdown for when it becomes idle.
+             */
+            post("gracefulShutdown") {
+                logger.info("Jibri gracefully shutting down")
+                respondOkAndRun(gracefulShutdownHandler)
+            }
+            /**
+             * Signal this Jibri to reload its config file at the soonest opportunity
+             * (when it does not have a currently running service). Returns a 200
+             */
+            post("notifyConfigChanged") {
+                logger.info("Config file changed")
+                respondOkAndRun(configChangedHandler)
+            }
+            /**
+             * Signal this Jibri to (cleanly) stop any services that are
+             * running and shutdown.  Returns a 200 and schedules a shutdown with a 1
+             * second delay.
+             */
+            post("shutdown") {
+                logger.info("Jibri is forcefully shutting down")
+                respondOkAndRun(shutdownHandler)
+            }
+        }
+    }
+}
+
+/**
+ * Responds with [HttpStatusCode.OK] and then runs the given block
+ */
+private suspend fun PipelineContext<*, ApplicationCall>.respondOkAndRun(block: () -> Unit) {
+    val latch = CompletableDeferred<Nothing>()
+    coroutineScope {
+        launch {
+            latch.join()
+            block()
+        }
+        try {
+            call.respond(HttpStatusCode.OK)
+        } finally {
+            latch.cancel()
+        }
     }
 }
