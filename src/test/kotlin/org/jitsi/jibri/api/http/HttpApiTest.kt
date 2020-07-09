@@ -112,7 +112,6 @@ class HttpApiTest : ShouldSpec() {
                             val health = jacksonObjectMapper().readValue(response.content, JibriHealth::class.java)
                             health shouldBe expectedHealth
                         }
-
                     }
                 }
             }
@@ -154,8 +153,8 @@ class HttpApiTest : ShouldSpec() {
             }
         }
     }
-    private fun<R> apiTest(block: TestApplicationEngine.() -> R) {
-        with (api) {
+    private fun <R> apiTest(block: TestApplicationEngine.() -> R) {
+        with(api) {
             io.ktor.server.testing.withTestApplication({
                 apiModule()
             }) {

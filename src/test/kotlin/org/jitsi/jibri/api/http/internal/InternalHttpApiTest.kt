@@ -74,8 +74,8 @@ class InternalHttpApiTest : FunSpec() {
             }
         }
     }
-    private fun<R> apiTest(block: TestApplicationEngine.() -> R) {
-        with (internalApi) {
+    private fun <R> apiTest(block: TestApplicationEngine.() -> R) {
+        with(internalApi) {
             withTestApplication({
                 internalApiModule()
             }) {
@@ -84,5 +84,3 @@ class InternalHttpApiTest : FunSpec() {
         }
     }
 }
-
-

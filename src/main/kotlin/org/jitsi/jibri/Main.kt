@@ -18,23 +18,15 @@
 package org.jitsi.jibri
 
 import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.jetty.Jetty
 import kotlinx.coroutines.CancellationException
 import net.sourceforge.argparse4j.ArgumentParsers
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.servlet.ServletHolder
-import org.glassfish.jersey.jackson.JacksonFeature
-import org.glassfish.jersey.server.ResourceConfig
-import org.glassfish.jersey.servlet.ServletContainer
 import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
@@ -50,7 +42,6 @@ import org.jitsi.jibri.webhooks.v1.WebhookClient
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
-import javax.ws.rs.ext.ContextResolver
 import kotlin.system.exitProcess
 
 val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
@@ -172,7 +163,7 @@ fun main(args: Array<String>) {
         cleanupAndExit(255)
     }
 
-    with (InternalHttpApi(configChangedHandler, gracefulShutdownHandler, shutdownHandler)) {
+    with(InternalHttpApi(configChangedHandler, gracefulShutdownHandler, shutdownHandler)) {
         embeddedServer(Jetty, port = internalHttpPort) {
             internalApiModule()
         }.start()
