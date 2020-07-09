@@ -17,23 +17,29 @@
 
 package org.jitsi.jibri.api.http
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.core.spec.style.scopes.ShouldSpecContextScope
+import io.kotest.core.test.TestContext
+import io.kotest.core.test.TestName
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNot
-import io.kotest.matchers.string.contain
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.testing.TestApplicationEngine
+import io.ktor.server.testing.handleRequest
+import io.ktor.server.testing.setBody
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import org.glassfish.jersey.jackson.JacksonFeature
-import org.glassfish.jersey.server.ResourceConfig
-import org.glassfish.jersey.test.JerseyTest
+import kotlinx.coroutines.runBlocking
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
@@ -47,37 +53,16 @@ import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.status.OverallHealth
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.Application
-import javax.ws.rs.ext.ContextResolver
 
 class HttpApiTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val jibriManager: JibriManager = mockk()
     private val jibriStatusManager: JibriStatusManager = mockk()
-    private lateinit var jerseyTest: JerseyTest
+
+    private val api = HttpApi(jibriManager, jibriStatusManager)
 
     init {
-        beforeSpec {
-            jerseyTest = object : JerseyTest() {
-                override fun configure(): Application {
-                    return ResourceConfig(object : ResourceConfig() {
-                        init {
-                            // Uncommenting the following line can help with debugging any errors
-                            // property(LoggingFeature.LOGGING_FEATURE_LOGGER_LEVEL_SERVER, "WARNING")
-                            register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
-                            register(JacksonFeature::class.java)
-                            registerInstances(HttpApi(jibriManager, jibriStatusManager))
-                        }
-                    })
-                }
-            }
-            jerseyTest.setUp()
-        }
-        afterSpec {
-            jerseyTest.tearDown()
-        }
         context("health") {
             context("when jibri isn't busy") {
                 val expectedStatus =
@@ -87,46 +72,48 @@ class HttpApiTest : ShouldSpec() {
                 every { jibriManager.currentEnvironmentContext } returns null
                 every { jibriStatusManager.overallStatus } returns expectedStatus
 
-                val res = jerseyTest.target("/jibri/api/v1.0/health").request()
-                    .get()
-                should("call JibriStatusManager#overallStatus") {
-                    verify { jibriStatusManager.overallStatus }
-                }
-                should("call JibriManager#currentEnvironmentContext") {
-                    verify { jibriManager.currentEnvironmentContext }
-                }
-                should("return a status of 200") {
-                    res.status shouldBe 200
-                }
-                should("return the right json body") {
-                    val json = res.readEntity(String::class.java)
-                    // The json should not include the 'environmentContext' field at all, since it
-                    // will be null
-                    json shouldNot contain("environmentContext")
-                    val health = jacksonObjectMapper().readValue(json, JibriHealth::class.java)
-                    health shouldBe expectedHealth
+                apiTest {
+                    with(handleRequest(HttpMethod.Get, "/jibri/api/v1.0/health")) {
+                        shouldb("call JibriStatusManager#overallStatus") {
+                            verify { jibriStatusManager.overallStatus }
+                        }
+                        shouldb("call JibriManager#currentEnvironmentContext") {
+                            verify { jibriManager.currentEnvironmentContext }
+                        }
+                        shouldb("return a status of 200") {
+                            response.status() shouldBe HttpStatusCode.OK
+                        }
+                        shouldb("return the right json body") {
+                            // The json should not include the 'environmentContext' field at all, since it
+                            // will be null
+                            response.content shouldNotContain "environmentContext"
+                            val health = jacksonObjectMapper().readValue(response.content, JibriHealth::class.java)
+                            health shouldBe expectedHealth
+                        }
+                    }
                 }
             }
             context("when jibri is busy and has an environmentContext") {
                 val expectedStatus =
-                        JibriStatus(ComponentBusyStatus.BUSY, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
+                    JibriStatus(ComponentBusyStatus.BUSY, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
                 val expectedEnvironmentContext = EnvironmentContext("meet.jit.si")
                 val expectedHealth = JibriHealth(expectedStatus, expectedEnvironmentContext)
 
                 every { jibriManager.currentEnvironmentContext } returns expectedEnvironmentContext
                 every { jibriStatusManager.overallStatus } returns expectedStatus
 
-                val res = jerseyTest.target("/jibri/api/v1.0/health").request()
-                    .get()
-                should("return a status of 200") {
-                    res.status shouldBe 200
-                }
-                should("return the right json body") {
-                    val json = res.readEntity(String::class.java)
-                    // The json should not include the 'environmentContext' field at all, since it
-                    // will be null
-                    val health = jacksonObjectMapper().readValue(json, JibriHealth::class.java)
-                    health shouldBe expectedHealth
+                apiTest {
+                    with(handleRequest(HttpMethod.Get, "/jibri/api/v1.0/health")) {
+                        shouldb("return a status of 200") {
+                            response.status() shouldBe HttpStatusCode.OK
+                        }
+                        shouldb("return the right json body") {
+                            response.content shouldContain "environmentContext"
+                            val health = jacksonObjectMapper().readValue(response.content, JibriHealth::class.java)
+                            health shouldBe expectedHealth
+                        }
+
+                    }
                 }
             }
         }
@@ -154,17 +141,33 @@ class HttpApiTest : ShouldSpec() {
                     sinkType = RecordingSinkType.FILE
                 )
                 val json = jacksonObjectMapper().writeValueAsString(startServiceRequest)
-                val res = jerseyTest
-                    .target("/jibri/api/v1.0/startService")
-                    .request()
-                    .post(Entity.json(json))
-                should("return a 200") {
-                    res.status shouldBe 200
-                }
-                should("call JibriManager#startFileRecording with the right params") {
-                    capturedServiceParams.captured.usageTimeoutMinutes shouldBe 0
+                apiTest {
+                    handleRequest(HttpMethod.Post, "/jibri/api/v1.0/startService") {
+                        addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        setBody(json)
+                    }.apply {
+                        shouldb("call JibriManager#startFileRecording with the right params") {
+                            capturedServiceParams.captured.usageTimeoutMinutes shouldBe 0
+                        }
+                    }
                 }
             }
         }
     }
+    private fun<R> apiTest(block: TestApplicationEngine.() -> R) {
+        with (api) {
+            io.ktor.server.testing.withTestApplication({
+                apiModule()
+            }) {
+                block()
+            }
+        }
+    }
 }
+
+/**
+ * A non-suspend version of `should` so that it can be called from within the KTOR test harness
+ * scope
+ */
+fun ShouldSpecContextScope.shouldb(name: String, test: suspend TestContext.() -> Unit) =
+    runBlocking { addTest(TestName("should ", name), xdisabled = false, test = test) }

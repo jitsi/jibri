@@ -187,20 +187,9 @@ fun main(args: Array<String>) {
     xmppApi.start()
 
     // HttpApi
-    launchHttpServer(httpApiPort, HttpApi(jibriManager, jibriStatusManager))
-}
-
-fun launchHttpServer(port: Int, component: Any) {
-    val jerseyConfig = ResourceConfig(object : ResourceConfig() {
-        init {
-            register(ContextResolver<ObjectMapper> { ObjectMapper().registerKotlinModule() })
-            register(JacksonFeature::class.java)
-            registerInstances(component)
+    with(HttpApi(jibriManager, jibriStatusManager)) {
+        embeddedServer(Jetty, port = httpApiPort) {
+            apiModule()
         }
-    })
-    val servlet = ServletHolder(ServletContainer(jerseyConfig))
-    val server = Server(port)
-    val context = ServletContextHandler(server, "/*")
-    context.addServlet(servlet, "/*")
-    server.start()
+    }.start()
 }
