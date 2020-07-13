@@ -40,8 +40,12 @@ import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
+import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
+import org.jitsi.jibri.webhooks.v1.WebhookClient
 import java.io.File
+import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 import javax.ws.rs.ext.ContextResolver
 import kotlin.system.exitProcess
@@ -116,13 +120,35 @@ fun main(args: Array<String>) {
         }
     }
 
-    // InternalHttpApi
+    val webhookClient = WebhookClient(jibriConfig.jibriId)
+
+    jibriStatusManager.addStatusHandler {
+        webhookClient.updateStatus(it)
+    }
+    jibriConfig.webhookSubscribers.forEach { webhookClient.addSubscriber(it) }
+    val statusUpdaterTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(
+        1,
+        TimeUnit.MINUTES
+    ) {
+        webhookClient.updateStatus(jibriStatusManager.overallStatus)
+    }
+
+    val cleanupAndExit = { exitCode: Int ->
+        statusUpdaterTask.cancel(true)
+        try {
+            statusUpdaterTask.get(5, TimeUnit.SECONDS)
+        } catch (t: Throwable) {
+            logger.error("Error cleaning up status updater task")
+        }
+        exitProcess(exitCode)
+    }
+
     val configChangedHandler = {
         logger.info("The config file has changed, waiting for Jibri to be idle before exiting")
         jibriManager.executeWhenIdle {
             logger.info("Jibri is idle and there are config file changes, exiting")
             // Exit so we can be restarted and load the new config
-            exitProcess(0)
+            cleanupAndExit(0)
         }
     }
     val gracefulShutdownHandler = {
@@ -130,15 +156,17 @@ fun main(args: Array<String>) {
         jibriManager.executeWhenIdle {
             logger.info("Jibri is idle and has been told to gracefully shutdown, exiting")
             // Exit with code 255 to indicate we do not want process restart
-            exitProcess(255)
+            cleanupAndExit(255)
         }
     }
     val shutdownHandler = {
         logger.info("Jibri has been told to shutdown, stopping any active service")
         jibriManager.stopService()
         logger.info("Service stopped")
-        exitProcess(255)
+        cleanupAndExit(255)
     }
+
+    // InternalHttpApi
     val internalHttpApi = InternalHttpApi(
         configChangedHandler = configChangedHandler,
         gracefulShutdownHandler = gracefulShutdownHandler,
