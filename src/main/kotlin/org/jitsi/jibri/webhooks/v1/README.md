@@ -5,7 +5,8 @@ not "true" webhooks as the endpoints are hard-coded, instead Jibri defines a "co
 to implement at the given base URL.  Information about this contract is below.
 
 ### Status updates
-Jibri pushes status updates consisting of its "busy status" (whether it is busy or idle) and its health.
+Jibri pushes status updates consisting of its "busy status" (whether it is busy or idle) and its health.  These updates
+are sent periodically every minute and every time the status changes.
 
 URL: `/v1/status`
 
