@@ -58,7 +58,7 @@ class InternalHttpApi(
                 }
                 /**
                  * Signal this Jibri to reload its config file at the soonest opportunity
-                 * (when it does not have a currently running service). Returns a 200
+                 * (when it does not have a currently running service). Returns a 200.
                  */
                 post("notifyConfigChanged") {
                     logger.info("Config file changed")
@@ -66,8 +66,7 @@ class InternalHttpApi(
                 }
                 /**
                  * Signal this Jibri to (cleanly) stop any services that are
-                 * running and shutdown.  Returns a 200 and schedules a shutdown with a 1
-                 * second delay.
+                 * running and shutdown.  Returns a 200.
                  */
                 post("shutdown") {
                     logger.info("Jibri is forcefully shutting down")
