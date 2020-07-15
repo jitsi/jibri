@@ -137,7 +137,6 @@ class JibriManager(
                 fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
                 fileSystem.getPath(config.finalizeRecordingScriptPath),
-                fileSystem.getPath(config.recordingDirectory),
                 serviceParams.appData?.fileRecordingMetadata
             )
         )
