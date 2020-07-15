@@ -116,7 +116,7 @@ class FileRecordingJibriService(
         fileSystem.getPath(recordingsDirectory).resolve(fileRecordingParams.sessionId)
 
     init {
-        logger.info("Writing recording to $sessionRecordingDirectory")
+        logger.info("Writing recording to $sessionRecordingDirectory, finalize script path $finalizeScriptPath")
         sink = FileSink(
             sessionRecordingDirectory,
             fileRecordingParams.callParams.callUrlInfo.callName

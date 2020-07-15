@@ -80,12 +80,11 @@ data class FileRecordingRequestParams(
  * provides, as well as providing an API to query the health of this Jibri
  * instance.  NOTE: currently Jibri only runs a single service at a time, so
  * if one is running, the Jibri will describe itself as busy
+ *
+ * TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
+ * ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
  */
-class JibriManager(
-    private val config: JibriConfig
-// TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
-// ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
-) : StatusPublisher<Any>() {
+class JibriManager : StatusPublisher<Any>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
     /**
@@ -127,10 +126,8 @@ class JibriManager(
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
-        logger.info("Starting a file recording with params: $fileRecordingRequestParams " +
-                "finalize script path: ${config.finalizeRecordingScriptPath} and " +
-                "recordings directory: ${config.recordingDirectory}")
         throwIfBusy()
+        logger.info("Starting a file recording with params: $fileRecordingRequestParams")
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,

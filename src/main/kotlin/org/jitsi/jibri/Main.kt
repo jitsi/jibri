@@ -121,7 +121,7 @@ fun main(args: Array<String>) {
     val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
     Config.legacyConfigSource = jibriConfig
 
-    val jibriManager = JibriManager(jibriConfig)
+    val jibriManager = JibriManager()
     jibriManager.addStatusHandler { jibriStatus ->
         when (jibriStatus) {
             is ComponentBusyStatus -> {
