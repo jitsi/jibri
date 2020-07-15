@@ -79,8 +79,9 @@ class InternalHttpApi(
     }
     companion object {
         val port: Int by config {
-            retrieve("internal_http_port".from(Config.commandLineArgs))
-            retrieve("jibri.api.http.internal_api_port".from(Config.configSource))
+            retrieve("internal_http_port"
+                .from(Config.commandLineArgs).softDeprecated("use jibri.api.http.internal-api-port"))
+            retrieve("jibri.api.http.internal-api-port".from(Config.configSource))
         }
     }
 }
