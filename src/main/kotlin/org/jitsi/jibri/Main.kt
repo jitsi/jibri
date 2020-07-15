@@ -32,7 +32,6 @@ import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.JibriConfig
-import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatusManager
@@ -121,8 +120,8 @@ fun main(args: Array<String>) {
     val jibriStatusManager = JibriStatusManager()
     val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
     Config.legacyConfigSource = jibriConfig
-    val statsDClient: JibriStatsDClient? = if (jibriConfig.enabledStatsD) JibriStatsDClient() else null
-    val jibriManager = JibriManager(jibriConfig, statsDClient = statsDClient)
+
+    val jibriManager = JibriManager(jibriConfig)
     jibriManager.addStatusHandler { jibriStatus ->
         when (jibriStatus) {
             is ComponentBusyStatus -> {
@@ -211,3 +210,4 @@ fun main(args: Array<String>) {
         }
     }.start()
 }
+

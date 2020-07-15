@@ -82,8 +82,7 @@ data class FileRecordingRequestParams(
  * if one is running, the Jibri will describe itself as busy
  */
 class JibriManager(
-    private val config: JibriConfig,
-    private val statsDClient: JibriStatsDClient? = null
+    private val config: JibriConfig
 // TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
 // ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
 ) : StatusPublisher<Any>() {
@@ -100,6 +99,8 @@ class JibriManager(
      */
     private var pendingIdleFunc: () -> Unit = {}
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
+
+    private val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
 
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from
@@ -291,6 +292,10 @@ class JibriManager(
         val singleUseMode: Boolean by config {
             retrieve("JibriConfig::singleUseMode") { Config.legacyConfigSource.singleUseMode }
             retrieve("jibri.single-use-mode".from(Config.configSource))
+        }
+        val enableStatsD: Boolean by config {
+            retrieve("JibriConfig::enableStatsD") { Config.legacyConfigSource.enabledStatsD }
+            retrieve("jibri.stats.enable-stats-d".from(Config.configSource))
         }
     }
 }
