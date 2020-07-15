@@ -46,8 +46,6 @@ import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
-import java.nio.file.FileSystem
-import java.nio.file.FileSystems
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -83,7 +81,6 @@ data class FileRecordingRequestParams(
  */
 class JibriManager(
     private val config: JibriConfig,
-    private val fileSystem: FileSystem = FileSystems.getDefault(),
     private val statsDClient: JibriStatsDClient? = null
 // TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
 // ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
@@ -136,7 +133,6 @@ class JibriManager(
                 fileRecordingRequestParams.callParams,
                 fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
-                fileSystem.getPath(config.finalizeRecordingScriptPath),
                 serviceParams.appData?.fileRecordingMetadata
             )
         )

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
@@ -41,6 +40,7 @@ import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -66,11 +66,6 @@ data class FileRecordingParams(
      * the call
      */
     val callLoginParams: XmppCredentials,
-    /**
-     * The filesystem path to the script which should be executed when
-     *  the recording is finished.
-     */
-    val finalizeScriptPath: Path,
     /**
      * A map of arbitrary key, value metadata that will be written
      * to the metadata file.
@@ -115,7 +110,7 @@ class FileRecordingJibriService(
     private var sink: Sink
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
-     * be nested within [FileRecordingParams.recordingDirectory].
+     * be nested within [recordingsDirectory].
      */
     private val sessionRecordingDirectory =
         fileSystem.getPath(recordingsDirectory).resolve(fileRecordingParams.sessionId)
@@ -201,7 +196,7 @@ class FileRecordingJibriService(
     private fun finalize() {
         try {
             val finalizeCommand = listOf(
-                fileRecordingParams.finalizeScriptPath.toString(),
+                finalizeScriptPath,
                 sessionRecordingDirectory.toString()
             )
             with(processFactory.createProcess(finalizeCommand)) {
@@ -229,6 +224,12 @@ class FileRecordingJibriService(
         val recordingsDirectory: String by config {
             retrieve("JibriConfig::recordingDirectory") { Config.legacyConfigSource.recordingDirectory }
             retrieve("jibri.recording.recordings-directory".from(Config.configSource))
+        }
+        val finalizeScriptPath: String by config {
+            retrieve("JibriConfig::finalizeRecordingScriptPath") {
+                Config.legacyConfigSource.finalizeRecordingScriptPath
+            }
+            retrieve("jibri.recording.finalize-script".from(Config.configSource))
         }
     }
 }
