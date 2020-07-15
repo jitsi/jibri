@@ -145,6 +145,16 @@
             <artifactId>ktor-jackson</artifactId>
             <version>${ktor.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.jitsi</groupId>
+            <artifactId>jitsi-meta-config</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+            <version>1.4.0</version>
+        </dependency>
 
         <!-- testing -->
         <dependency>
@@ -214,6 +224,7 @@
                             </sourceDirs>
                             <args>
                                 <arg>-Werror</arg>
+                                <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
                             </args>
                         </configuration>
                     </execution>
