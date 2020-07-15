@@ -30,6 +30,7 @@ import net.sourceforge.argparse4j.ArgumentParsers
 import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.status.ComponentBusyStatus
@@ -39,6 +40,7 @@ import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.webhooks.v1.WebhookClient
+import org.jitsi.metaconfig.MapConfigSource
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -75,21 +77,27 @@ fun main(args: Array<String>) {
         .help("Path to the jibri config file")
     argParser.addArgument("--internal-http-port")
         .type(Int::class.java)
-        .setDefault(3333)
         .help("Port to start the internal HTTP server on")
     argParser.addArgument("--http-api-port")
         .type(Int::class.java)
-        .setDefault(2222)
         .help("Port to start the HTTP API server on")
 
     logger.info("Jibri run with args ${args.asList()}")
     val ns = argParser.parseArgs(args)
     val configFilePath = ns.getString("config")
     logger.info("Using config file $configFilePath")
-    val internalHttpPort = ns.getInt("internal_http_port")
-    logger.info("Using port $internalHttpPort for internal HTTP API")
-    val httpApiPort = ns.getInt("http_api_port")
-    logger.info("Using port $httpApiPort for the HTTP API")
+    val internalHttpPort: Int? = ns.getInt("internal_http_port")
+    val httpApiPort: Int? = ns.getInt("http_api_port")
+
+    // Map the command line arguments into a ConfigSource
+    Config.commandLineArgs = MapConfigSource("command line args") {
+        internalHttpPort?.let {
+            put("internal_http_port", it)
+        }
+        httpApiPort?.let {
+            put("http_api_port", it)
+        }
+    }
 
     val jibriConfigFile = File(configFilePath)
     if (!jibriConfigFile.exists()) {
@@ -98,6 +106,7 @@ fun main(args: Array<String>) {
     }
     val jibriStatusManager = JibriStatusManager()
     val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
+    Config.legacyConfigSource = jibriConfig
     val statsDClient: JibriStatsDClient? = if (jibriConfig.enabledStatsD) JibriStatsDClient() else null
     val jibriManager = JibriManager(jibriConfig, statsDClient = statsDClient)
     jibriManager.addStatusHandler { jibriStatus ->
@@ -163,8 +172,10 @@ fun main(args: Array<String>) {
         cleanupAndExit(255)
     }
 
+    logger.info("Using port ${InternalHttpApi.port} for internal HTTP API")
+
     with(InternalHttpApi(configChangedHandler, gracefulShutdownHandler, shutdownHandler)) {
-        embeddedServer(Jetty, port = internalHttpPort) {
+        embeddedServer(Jetty, port = InternalHttpApi.port) {
             internalApiModule()
         }.start()
     }
@@ -177,9 +188,11 @@ fun main(args: Array<String>) {
     )
     xmppApi.start()
 
+    logger.info("Using port ${HttpApi.port} for HTTP API")
+
     // HttpApi
     with(HttpApi(jibriManager, jibriStatusManager)) {
-        embeddedServer(Jetty, port = httpApiPort) {
+        embeddedServer(Jetty, port = HttpApi.port) {
             apiModule()
         }
     }.start()

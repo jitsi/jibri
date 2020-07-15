@@ -40,6 +40,6 @@ class Config {
          * We also accepted config parameters via the command line, so this config source
          * is set to a [ConfigSource] containing those values.
          */
-        lateinit var commandLineArgs: ConfigSource
+        var commandLineArgs: ConfigSource = MapConfigSource("command line args")
     }
 }
