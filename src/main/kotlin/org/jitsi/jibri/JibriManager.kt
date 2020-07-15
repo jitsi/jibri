@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri
 
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
@@ -46,6 +47,7 @@ import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
+import org.jitsi.metaconfig.config
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -257,11 +259,11 @@ class JibriManager(
         // and reset it
         pendingIdleFunc()
         pendingIdleFunc = {}
-        if (!config.singleUseMode) {
-            publishStatus(ComponentBusyStatus.IDLE)
-        } else {
+        if (singleUseMode) {
             logger.info("Jibri is in single-use mode, not returning to IDLE")
             publishStatus(ComponentBusyStatus.EXPIRED)
+        } else {
+            publishStatus(ComponentBusyStatus.IDLE)
         }
     }
 
@@ -282,6 +284,13 @@ class JibriManager(
             func()
         } else {
             pendingIdleFunc = func
+        }
+    }
+
+    companion object {
+        val singleUseMode: Boolean by config {
+            retrieve("JibriConfig::singleUseMode") { Config.legacyConfigSource.singleUseMode }
+            retrieve("jibri.single-use-mode".from(Config.configSource))
         }
     }
 }
