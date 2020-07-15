@@ -41,6 +41,8 @@ import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.webhooks.v1.WebhookClient
 import org.jitsi.metaconfig.MapConfigSource
+import org.jitsi.metaconfig.MetaconfigLogger
+import org.jitsi.metaconfig.MetaconfigSettings
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -68,6 +70,18 @@ fun loadConfig(configFile: File): JibriConfig? {
 }
 
 fun main(args: Array<String>) {
+    val configLogger = Logger.getLogger("config")
+    MetaconfigSettings.logger = object : MetaconfigLogger {
+        override fun debug(block: () -> String) {
+            configLogger.fine(block)
+        }
+        override fun error(block: () -> String) {
+            configLogger.error(block())
+        }
+        override fun warn(block: () -> String) {
+            configLogger.warning(block)
+        }
+    }
     val argParser = ArgumentParsers.newFor("Jibri").build()
         .defaultHelp(true)
         .description("Start Jibri")
