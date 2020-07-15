@@ -18,6 +18,15 @@
 package org.jitsi.jibri.config
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.exc.InvalidFormatException
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
+import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import org.jitsi.jibri.logger
+import org.jitsi.jibri.util.extensions.error
+import java.io.File
 
 data class XmppCredentials(
     val domain: String = "",
@@ -122,3 +131,22 @@ data class JibriConfig(
     @JsonProperty("xmpp_environments")
     val xmppEnvironments: List<XmppEnvironmentConfig>
 )
+
+fun loadConfigFromFile(configFile: File): JibriConfig? {
+    return try {
+        val config: JibriConfig = jacksonObjectMapper()
+            .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
+            .readValue(configFile)
+        logger.info("Parsed config:\n$config")
+        config
+    } catch (e: MissingKotlinParameterException) {
+        logger.error("A required config parameter was missing: ${e.originalMessage}")
+        null
+    } catch (e: UnrecognizedPropertyException) {
+        logger.error("An unrecognized config parameter was found: ${e.originalMessage}")
+        null
+    } catch (e: InvalidFormatException) {
+        logger.error("A config parameter was incorrectly formatted: ${e.localizedMessage}")
+        null
+    }
+}

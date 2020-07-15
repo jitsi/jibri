@@ -17,12 +17,6 @@
 
 package org.jitsi.jibri
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.exc.InvalidFormatException
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
-import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.jetty.Jetty
 import kotlinx.coroutines.CancellationException
@@ -31,7 +25,7 @@ import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
 import org.jitsi.jibri.config.Config
-import org.jitsi.jibri.config.JibriConfig
+import org.jitsi.jibri.config.loadConfigFromFile
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatusManager
@@ -48,25 +42,6 @@ import java.util.logging.Logger
 import kotlin.system.exitProcess
 
 val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
-
-fun loadConfig(configFile: File): JibriConfig? {
-    return try {
-        val config: JibriConfig = jacksonObjectMapper()
-            .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
-            .readValue(configFile)
-        logger.info("Parsed config:\n$config")
-        config
-    } catch (e: MissingKotlinParameterException) {
-        logger.error("A required config parameter was missing: ${e.originalMessage}")
-        null
-    } catch (e: UnrecognizedPropertyException) {
-        logger.error("An unrecognized config parameter was found: ${e.originalMessage}")
-        null
-    } catch (e: InvalidFormatException) {
-        logger.error("A config parameter was incorrectly formatted: ${e.localizedMessage}")
-        null
-    }
-}
 
 fun main(args: Array<String>) {
     val configLogger = Logger.getLogger("config")
@@ -118,7 +93,7 @@ fun main(args: Array<String>) {
         exitProcess(1)
     }
     val jibriStatusManager = JibriStatusManager()
-    val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
+    val jibriConfig = loadConfigFromFile(jibriConfigFile) ?: exitProcess(1)
     Config.legacyConfigSource = jibriConfig
 
     val jibriManager = JibriManager()
