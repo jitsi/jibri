@@ -98,6 +98,16 @@ class JibriManager : StatusPublisher<Any>() {
     private var pendingIdleFunc: () -> Unit = {}
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
 
+    private val enableStatsD: Boolean by config {
+        retrieve("JibriConfig::enableStatsD") { Config.legacyConfigSource.enabledStatsD }
+        retrieve("jibri.stats.enable-stats-d".from(Config.configSource))
+    }
+
+    private val singleUseMode: Boolean by config {
+        retrieve("JibriConfig::singleUseMode") { Config.legacyConfigSource.singleUseMode }
+        retrieve("jibri.single-use-mode".from(Config.configSource))
+    }
+
     private val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
 
     /**
@@ -281,17 +291,6 @@ class JibriManager : StatusPublisher<Any>() {
             func()
         } else {
             pendingIdleFunc = func
-        }
-    }
-
-    companion object {
-        val singleUseMode: Boolean by config {
-            retrieve("JibriConfig::singleUseMode") { Config.legacyConfigSource.singleUseMode }
-            retrieve("jibri.single-use-mode".from(Config.configSource))
-        }
-        val enableStatsD: Boolean by config {
-            retrieve("JibriConfig::enableStatsD") { Config.legacyConfigSource.enabledStatsD }
-            retrieve("jibri.stats.enable-stats-d".from(Config.configSource))
         }
     }
 }
