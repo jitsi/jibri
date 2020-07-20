@@ -31,7 +31,9 @@ class MediaReceivedStatusCheck(
         logger.info("Jibri client receive bitrates: $bitrates, all clients muted? $allClientsMuted")
         clientsAllMutedTransitionTime.maybeUpdate(allClientsMuted)
         val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
-        if (downloadBitrate != 0L) {
+        // If all clients are muted, register it as 'receiving media': that way when clients unmute
+        // we'll get the full NO_MEDIA_TIMEOUT duration before timing out due to lack of media
+        if (downloadBitrate != 0L || allClientsMuted) {
             timeOfLastMedia = now
         }
         val timeSinceLastMedia = Duration.between(timeOfLastMedia, now)

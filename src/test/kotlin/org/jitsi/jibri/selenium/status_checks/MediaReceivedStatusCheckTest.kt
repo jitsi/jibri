@@ -7,6 +7,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import org.jitsi.jibri.helpers.FakeClock
+import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import java.time.Duration
@@ -41,6 +42,18 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                 context("before the clients-muted timeout") {
                     clock.elapse(Duration.ofSeconds(45))
                     should("not report any event") {
+                        check.run(callPage) shouldBe null
+                    }
+                }
+                context("and then when clients unmute after the no-media timeout has elapsed") {
+                    // Go past NO_MEDIA_TIMEOUT, but everyone still muted
+                    clock.elapse(35.seconds)
+                    every { callPage.numRemoteParticipantsMuted() } returns 3
+                    check.run(callPage)
+                    // Now go another second, but none are muted
+                    clock.elapse(1.seconds)
+                    every { callPage.numRemoteParticipantsMuted() } returns 0
+                    should("wait for the full no-media timeout duration before dropping") {
                         check.run(callPage) shouldBe null
                     }
                 }
