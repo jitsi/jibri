@@ -127,7 +127,7 @@
             <version>2.5</version>
         </dependency>
         <dependency>
-            <groupId>com.github.tinder</groupId>
+            <groupId>com.tinder.statemachine</groupId>
             <artifactId>statemachine</artifactId>
             <version>0.2.0</version>
         </dependency>
