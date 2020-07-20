@@ -43,7 +43,6 @@ import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.metaconfig.config
-import org.jitsi.metaconfig.from
 import java.util.logging.Logger
 import javax.ws.rs.core.Response
 

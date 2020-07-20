@@ -44,7 +44,6 @@ import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException

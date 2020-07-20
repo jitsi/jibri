@@ -34,12 +34,26 @@ data class XmppCredentials(
     val password: String = ""
 )
 
+fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials =
+    XmppCredentials(
+        domain = getString("domain"),
+        username = getString("username"),
+        password = getString("password")
+    )
+
 data class XmppMuc(
     val domain: String,
     @JsonProperty("room_name")
     val roomName: String,
     val nickname: String
 )
+
+fun com.typesafe.config.Config.toXmppMuc(): XmppMuc =
+    XmppMuc(
+        domain = getString("domain"),
+        roomName = getString("room-name"),
+        nickname = getString("nickname")
+    )
 
 data class XmppEnvironmentConfig(
     /**
@@ -102,6 +116,22 @@ data class XmppEnvironmentConfig(
     val trustAllXmppCerts: Boolean = true
 )
 
+public fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
+    XmppEnvironmentConfig(
+        name = getString("name"),
+        xmppServerHosts = getStringList("xmpp-server-hosts"),
+        xmppDomain = getString("xmpp-domain"),
+        controlLogin = getConfig("control-login").toXmppCredentials(),
+        controlMuc = getConfig("control-muc").toXmppMuc(),
+        sipControlMuc = if (hasPath("sip-control-muc")) {
+            getConfig("sip-control-muc").toXmppMuc()
+        } else null,
+        callLogin = getConfig("call-login").toXmppCredentials(),
+        stripFromRoomDomain = getString("strip-from-room-domain"),
+        usageTimeoutMins = getDuration("usage-timeout").toMinutes().toInt(),
+        trustAllXmppCerts = getBoolean("trust-all-xmpp-certs")
+    )
+
 data class JibriConfig(
     // NOTE(brian): this field should be considered required, but has a default
     // for now to not break upgrades
@@ -129,7 +159,7 @@ data class JibriConfig(
     @JsonProperty("finalize_recording_script_path")
     val finalizeRecordingScriptPath: String,
     @JsonProperty("xmpp_environments")
-    val xmppEnvironments: List<XmppEnvironmentConfig>
+    val xmppEnvironments: List<XmppEnvironmentConfig> = listOf()
 )
 
 fun loadConfigFromFile(configFile: File): JibriConfig? {

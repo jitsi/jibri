@@ -25,6 +25,7 @@ import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
@@ -39,6 +40,7 @@ import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
+import org.jitsi.metaconfig.config
 import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientConfiguration
@@ -324,6 +326,12 @@ class XmppApi(
             else -> {
                 throw UnsupportedIqMode(startIq.mode().toString())
             }
+        }
+    }
+
+    companion object {
+        val xmppConfigs: List<XmppEnvironmentConfig> by config {
+            retrieve("JibriConfig::xmppEnvironments") { Config.legacyConfigSource.xmppEnvironments }
         }
     }
 }

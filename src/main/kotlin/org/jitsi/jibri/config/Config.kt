@@ -17,12 +17,13 @@
 package org.jitsi.jibri.config
 
 import com.typesafe.config.ConfigFactory
+import org.jitsi.config.NewTypesafeConfigSource
 import org.jitsi.metaconfig.ConfigSource
 import org.jitsi.metaconfig.MapConfigSource
 
 class Config {
     companion object {
-        val ConfigFromFile: ConfigSource = TypesafeConfigSource("config", ConfigFactory.load())
+        val ConfigFromFile = NewTypesafeConfigSource("config", ConfigFactory.load())
 
         /**
          * The 'new' config source

@@ -18,7 +18,6 @@
 package org.jitsi.jibri
 
 import org.jitsi.jibri.config.Config
-import org.jitsi.jibri.config.JibriConfig
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
