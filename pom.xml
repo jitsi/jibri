@@ -152,9 +152,9 @@
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.jitsi</groupId>
+            <groupId>com.github.jitsi</groupId>
             <artifactId>jitsi-metaconfig</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0-RC2</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
