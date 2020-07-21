@@ -18,14 +18,16 @@ The new Jibri has a reorganized config file format.  A sample of the config can 
 
 The new Jibri now has configurable logging, which can be set via the [logging.properties](lib/logging.properties) file.
 
+
 # Installing Jibri
 
 ### Installation notes
-* Jibri was built on ubuntu 16.04 (Xenial), and has been tested with the pre-built kernel and extra kernel modules (`linux-image-extra-virtual` package). Any other distribution or kernel configuration MAY work but has not been tested.
+* Jibri was built on ubuntu 16.04 (Xenial) or 18.04 (Xenial), and has been tested with the pre-built kernel and extra kernel modules (`linux-image-extra-virtual` package). Any other distribution or kernel configuration MAY work but has not been tested.
 
 ## Pre-requisites
 ### ALSA and Loopback Device
-* First make sure the ALSA loopback module is available. The extra modules (including ALSA loopback) can be installed on Ubuntu 16.04 using package name `linux-image-extra-virtual`
+* First make sure the ALSA loopback module is available. The extra modules (including ALSA loopback) can be installed on Ubuntu 16.04 or Ubuntu 18.04 using package name `linux-image-extra-virtual`
+* You need to `reboot` to perform the following steps
 * Perform the following tasks as the root user
   * Set up the module to be loaded on boot: `echo "snd-aloop" >> /etc/modules`
   * Load the module into the running kernel: `modprobe snd-aloop`
@@ -99,7 +101,51 @@ sudo usermod -aG adm,audio,video,plugdev jibri
 ```
 
 ### Config files
-* Edit the `config.json` file (installed to `/etc/jitsi/jibri/config.json` by default) appropriately.
+* You need to edit `/etc/jitsi/jibri/config.json` The following.
+
+
+```
+"recording_directory": "/you_recording_directory"
+
+    // The path to the script which will be run on completed recordings
+    finalize_recording_script_path: "/path/to/finalize_recording.sh"
+
+    // Where recording files should be temporarily stored
+    "recording_directory":"/tmp/recordings"
+
+    // The path to the script which will be run on completed recordings,If not, it can be used "" .
+    //"finalize_recording_script_path": "/path/to/finalize_recording.sh"
+
+    "xmpp_server_hosts": [
+                "yourdomain.com
+            ],
+            "xmpp_domain": "yourdomain.com"
+
+    "control_login": {
+                "domain": "auth.yourdomain.com",
+                "username": "jibri",
+                "password": "jibriauthpass"
+            }
+            
+    // To use more than one jibri, the nickname of each jibri needs to be different.      
+     "control_muc": {
+                "domain": "internal.auth.yourdomain.com",
+                "room_name": "JibriBrewery",
+                "nickname": "jibri-nickname"
+            },
+
+     "call_login": {
+                "domain": "recorder.yourdomain.com",
+                "username": "recorder",
+                "password": "jibrirecorderpass"
+            },                 
+```
+
+* set its permissions appropriately
+```
+chown jibri:jibri /you_recording_directory
+```
+
 
 ### Logging
 By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the debian package, you'll need to make sure this directory exists (or change the location to which Jibri logs by editing the [log config](lib/logging.properties)
