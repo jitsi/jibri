@@ -18,6 +18,22 @@ The new Jibri has a reorganized config file format.  A sample of the config can 
 
 The new Jibri now has configurable logging, which can be set via the [logging.properties](lib/logging.properties) file.
 
+# Installing Java
+* Jibri needs a `Java8` running environment.
+* If you don't have a `Java8` environment, you need to execute the following commands.
+
+```
+wget -O - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | sudo apt-key add -
+add-apt-repository https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/
+apt update
+apt install adoptopenjdk-8-hotspot
+```
+
+If you have multiple `Java` environments, you need to use `Java8` to start jibri, edit `/opt/jitsi/jibri/launch.sh`
+
+```sh
+exec /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/java -Djava.util.logging.config.file=/etc/jitsi/jibri/logging.properties -jar /opt/jitsi/jibri/jibri.jar --config "/etc/jitsi/jibri/config.json"
+```
 
 # Installing Jibri
 
