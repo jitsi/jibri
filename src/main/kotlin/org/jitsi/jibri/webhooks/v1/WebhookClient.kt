@@ -17,9 +17,6 @@
 package org.jitsi.jibri.webhooks.v1
 
 import io.ktor.client.HttpClient
-import io.ktor.client.HttpClientConfig
-import io.ktor.client.engine.HttpClientEngineConfig
-import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.HttpRequestTimeoutException
 import io.ktor.client.features.HttpTimeout
@@ -44,12 +41,21 @@ import java.util.logging.Logger
 /**
  * A client for notifying subscribers of Jibri events
  */
-class WebhookClient private constructor(
+class WebhookClient(
     private val jibriId: String,
-    private val client: HttpClient
+    client: HttpClient = HttpClient(Apache)
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
+
+    private val client = client.config {
+        install(JsonFeature) {
+            serializer = JacksonSerializer()
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 2000
+        }
+    }
 
     fun addSubscriber(subscriberBaseUrl: String) {
         webhookSubscribers.add(subscriberBaseUrl)
@@ -75,41 +81,6 @@ class WebhookClient private constructor(
                 } catch (e: HttpRequestTimeoutException) {
                     logger.error("Request to $subscriberBaseUrl timed out")
                 }
-            }
-        }
-    }
-
-    /**
-     * To make the client testable, we use this helper function to enable both
-     * the client being able to always add the config it needs (installing
-     * [JsonFeature]), but also letting the caller add its own config (which is
-     * necessary when using a mock client engine).
-     */
-    companion object {
-        operator fun <T : HttpClientEngineConfig> invoke(
-            jibriId: String,
-            engineFactory: HttpClientEngineFactory<T>,
-            additionalConfig: HttpClientConfig<T>.() -> Unit = {}
-        ): WebhookClient {
-            val client = HttpClient(engineFactory) {
-                applyWebhookClientConfig()
-                additionalConfig()
-            }
-            return WebhookClient(jibriId, client)
-        }
-
-        operator fun invoke(jibriId: String): WebhookClient {
-            val client = HttpClient(Apache) {
-                applyWebhookClientConfig()
-            }
-            return WebhookClient(jibriId, client)
-        }
-        private fun <T : HttpClientEngineConfig> HttpClientConfig<T>.applyWebhookClientConfig() {
-            install(JsonFeature) {
-                serializer = JacksonSerializer()
-            }
-            install(HttpTimeout) {
-                requestTimeoutMillis = 2000
             }
         }
     }
