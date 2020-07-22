@@ -58,7 +58,7 @@ class WebhookClientTest : ShouldSpec({
             mapOf()
         )
     )
-    val client = WebhookClient("test", HttpClient(MockEngine) {
+    val client = WebhookClient("test", client = HttpClient(MockEngine) {
         engine {
             addHandler { request ->
                 requests += request

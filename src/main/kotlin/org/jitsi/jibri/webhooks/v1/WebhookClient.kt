@@ -16,13 +16,17 @@
 
 package org.jitsi.jibri.webhooks.v1
 
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.HttpRequestTimeoutException
 import io.ktor.client.features.HttpTimeout
+import io.ktor.client.features.defaultRequest
 import io.ktor.client.features.json.JacksonSerializer
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
@@ -31,10 +35,20 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import org.bouncycastle.openssl.PEMKeyPair
+import org.bouncycastle.openssl.PEMParser
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.util.RefreshingProperty
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
+import java.io.FileReader
+import java.security.Security
+import java.time.Clock
+import java.time.Duration
+import java.util.Date
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.logging.Logger
 
@@ -43,10 +57,36 @@ import java.util.logging.Logger
  */
 class WebhookClient(
     private val jibriId: String,
+    private val clock: Clock = Clock.systemUTC(),
     client: HttpClient = HttpClient(Apache)
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
+
+    private val key = run {
+        Security.addProvider(BouncyCastleProvider())
+        try {
+            val parser = PEMParser(FileReader("/Users/bbaldino/work/jibri/test_key.pem"))
+            (parser.readObject() as? PEMKeyPair)?.let { pemKeyPair ->
+                JcaPEMKeyConverter().getKeyPair(pemKeyPair).private
+            }
+        } catch (t: Throwable) {
+            logger.error("Error parsing key: $t")
+            null
+        }
+    }
+
+    private val jwt: String? by RefreshingProperty(Duration.ofMinutes(55)) {
+        key?.let {
+            Jwts.builder()
+                .setHeaderParam("kid", "jitsi/dev-2019-02-19")
+                .setIssuer("jibri")
+                .setAudience("jibri-queue")
+                .setExpiration(Date.from(clock.instant().plus(Duration.ofHours(1))))
+                .signWith(SignatureAlgorithm.RS256, key)
+                .compact()
+        }
+    }
 
     private val client = client.config {
         install(JsonFeature) {
@@ -54,6 +94,11 @@ class WebhookClient(
         }
         install(HttpTimeout) {
             requestTimeoutMillis = 2000
+        }
+        jwt?.let {
+            defaultRequest {
+                header("Authorization", "Bearer $jwt")
+            }
         }
     }
 
@@ -97,3 +142,4 @@ private suspend inline fun <reified T> HttpClient.postJson(
     block()
     contentType(ContentType.Application.Json)
 }
+
