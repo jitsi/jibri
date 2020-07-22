@@ -134,9 +134,8 @@ fun main(args: Array<String>) {
 
     val xmppEnvironments = configSupplier<List<XmppEnvironmentConfig>> {
         retrieve("JibriConfig::xmppEnvironments") {
-            if (Config.legacyConfigSource.xmppEnvironments.isEmpty()) {
-                throw ConfigException.UnableToRetrieve.NotFound("Considering empty XMPP envs list as not found")
-            } else Config.legacyConfigSource.xmppEnvironments
+            Config.legacyConfigSource.xmppEnvironments.takeIf { it.isNotEmpty() }
+                ?: throw ConfigException.UnableToRetrieve.NotFound("Considering empty XMPP envs list as not found")
         }
         retrieve("jibri.api.xmpp.environments"
             .from(Config.configSource)
