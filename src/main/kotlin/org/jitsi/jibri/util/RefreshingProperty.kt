@@ -25,24 +25,28 @@ import kotlin.reflect.KProperty
  * A property delegate which recreates a value when its accessed after having been
  * 'alive' for more than [timeout] via the given [creationFunc]
  */
-class RefreshingProperty<T : Any?>(
+class RefreshingProperty<T>(
     private val timeout: Duration,
     private val clock: Clock,
-    private val creationFunc: () -> T
+    private val creationFunc: () -> T?
 ) {
-    constructor(timeout: Duration, creationFunc: () -> T) : this(timeout, Clock.systemUTC(), creationFunc)
+    constructor(timeout: Duration, creationFunc: () -> T?) : this(timeout, Clock.systemUTC(), creationFunc)
 
     private var value: T? = null
     private var valueCreationTimestamp: Instant? = null
 
     @Synchronized
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T? {
         val now = clock.instant()
         if (valueExpired(now)) {
-            value = creationFunc()
+            value = try {
+                creationFunc()
+            } catch (t: Throwable) {
+                null
+            }
             valueCreationTimestamp = now
         }
-        return value!!
+        return value
     }
 
     private fun valueExpired(now: Instant): Boolean {

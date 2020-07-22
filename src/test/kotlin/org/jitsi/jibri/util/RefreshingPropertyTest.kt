@@ -31,7 +31,7 @@ class RefreshingPropertyTest : ShouldSpec({
     context("A refreshing property") {
         val obj = object {
             private var generation = 0
-            val prop: Int by RefreshingProperty(Duration.ofSeconds(1), clock) {
+            val prop: Int? by RefreshingProperty(Duration.ofSeconds(1), clock) {
                 println("Refreshing, generation was $generation")
                 generation++
             }
@@ -52,6 +52,16 @@ class RefreshingPropertyTest : ShouldSpec({
                 should("refresh again") {
                     obj.prop shouldBe 2
                 }
+            }
+        }
+        context("whose creator function throws an exception") {
+            val exObj = object {
+                val prop: Int? by RefreshingProperty(Duration.ofSeconds(1), clock) {
+                    throw Exception("boom")
+                }
+            }
+            should("return null") {
+                exObj.prop shouldBe null
             }
         }
     }
