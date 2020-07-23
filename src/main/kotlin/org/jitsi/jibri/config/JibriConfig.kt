@@ -133,14 +133,12 @@ public fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig
     )
 
 data class JibriConfig(
-    // NOTE(brian): this field should be considered required, but has a default
-    // for now to not break upgrades
     @JsonProperty("jibri_id")
-    val jibriId: String = "",
+    val jibriId: String? = null,
     @JsonProperty("webhook_subscribers")
-    val webhookSubscribers: List<String> = listOf(),
+    val webhookSubscribers: List<String>? = null,
     @JsonProperty("recording_directory")
-    val recordingDirectory: String,
+    val recordingDirectory: String? = null,
     /**
      * Whether or not Jibri should return to idle state
      * after handling (successfully or unsuccessfully)
@@ -149,17 +147,17 @@ data class JibriConfig(
      * to be restarted in order to be used again.
      */
     @JsonProperty("single_use_mode")
-    val singleUseMode: Boolean = false,
+    val singleUseMode: Boolean? = null,
     /**
      * Whether or not pushing stats to statsd
      * should be enabled.  See [org.jitsi.jibri.statsd.JibriStatsDClient].
      */
     @JsonProperty("enable_stats_d")
-    val enabledStatsD: Boolean = true,
+    val enabledStatsD: Boolean? = null,
     @JsonProperty("finalize_recording_script_path")
-    val finalizeRecordingScriptPath: String,
+    val finalizeRecordingScriptPath: String? = null,
     @JsonProperty("xmpp_environments")
-    val xmppEnvironments: List<XmppEnvironmentConfig> = listOf()
+    val xmppEnvironments: List<XmppEnvironmentConfig>? = null
 )
 
 fun loadConfigFromFile(configFile: File): JibriConfig? {
@@ -167,7 +165,7 @@ fun loadConfigFromFile(configFile: File): JibriConfig? {
         val config: JibriConfig = jacksonObjectMapper()
             .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
             .readValue(configFile)
-        logger.info("Parsed config:\n$config")
+        logger.info("Parsed legacy config:\n$config")
         config
     } catch (e: MissingKotlinParameterException) {
         logger.error("A required config parameter was missing: ${e.originalMessage}")

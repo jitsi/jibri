@@ -221,12 +221,12 @@ class FileRecordingJibriService(
 
     companion object {
         val recordingsDirectory: String by config {
-            retrieve("JibriConfig::recordingDirectory") { Config.legacyConfigSource.recordingDirectory }
+            retrieve("JibriConfig::recordingDirectory") { Config.legacyConfigSource.recordingDirectory!! }
             retrieve("jibri.recording.recordings-directory".from(Config.configSource))
         }
         val finalizeScriptPath: String by config {
             retrieve("JibriConfig::finalizeRecordingScriptPath") {
-                Config.legacyConfigSource.finalizeRecordingScriptPath
+                Config.legacyConfigSource.finalizeRecordingScriptPath!!
             }
             retrieve("jibri.recording.finalize-script".from(Config.configSource))
         }

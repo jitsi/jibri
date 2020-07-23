@@ -67,11 +67,11 @@ fun main(args: Array<String>) {
         }
     }
     val jibriId = configSupplier<String> {
-        retrieve("JibriConfig::jibriId") { Config.legacyConfigSource.jibriId }
+        retrieve("JibriConfig::jibriId") { Config.legacyConfigSource.jibriId!! }
         retrieve("jibri.id".from(Config.configSource))
     }.get()
     val webhookSubscribers = configSupplier<List<String>> {
-        retrieve("JibriConfig::webhookSubscribers") { Config.legacyConfigSource.webhookSubscribers }
+        retrieve("JibriConfig::webhookSubscribers") { Config.legacyConfigSource.webhookSubscribers!! }
         retrieve("jibri.webhook-subscribers".from(Config.configSource))
     }.get()
 
@@ -134,7 +134,7 @@ fun main(args: Array<String>) {
 
     val xmppEnvironments = configSupplier<List<XmppEnvironmentConfig>> {
         retrieve("JibriConfig::xmppEnvironments") {
-            Config.legacyConfigSource.xmppEnvironments.takeIf { it.isNotEmpty() }
+            Config.legacyConfigSource.xmppEnvironments.takeIf { it?.isNotEmpty() == true }
                 ?: throw ConfigException.UnableToRetrieve.NotFound("Considering empty XMPP envs list as not found")
         }
         retrieve("jibri.api.xmpp.environments"
@@ -200,14 +200,17 @@ private fun handleCommandLineArgs(args: Array<String>) {
  * Parse the legacy config file and set it in [Config] as the legacy config source
  */
 private fun setupLegacyConfig(configFilePath: String) {
-    logger.info("Using legacy config file $configFilePath")
+    logger.info("Checking legacy config file $configFilePath")
     val jibriConfigFile = File(configFilePath)
     if (!jibriConfigFile.exists()) {
-        logger.error("Error: Config file $configFilePath doesn't exist")
-        exitProcess(1)
+        logger.info("Legacy config file $configFilePath doesn't exist")
+        return
     }
 
-    val jibriConfig = loadConfigFromFile(jibriConfigFile) ?: exitProcess(1)
+    val jibriConfig = loadConfigFromFile(jibriConfigFile) ?: run {
+        logger.info("Parsing legacy config file failed")
+        return
+    }
     Config.legacyConfigSource = jibriConfig
 }
 

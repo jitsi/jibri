@@ -99,12 +99,12 @@ class JibriManager : StatusPublisher<Any>() {
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
 
     private val enableStatsD: Boolean by config {
-        retrieve("JibriConfig::enableStatsD") { Config.legacyConfigSource.enabledStatsD }
+        retrieve("JibriConfig::enableStatsD") { Config.legacyConfigSource.enabledStatsD!! }
         retrieve("jibri.stats.enable-stats-d".from(Config.configSource))
     }
 
     private val singleUseMode: Boolean by config {
-        retrieve("JibriConfig::singleUseMode") { Config.legacyConfigSource.singleUseMode }
+        retrieve("JibriConfig::singleUseMode") { Config.legacyConfigSource.singleUseMode!! }
         retrieve("jibri.single-use-mode".from(Config.configSource))
     }
 

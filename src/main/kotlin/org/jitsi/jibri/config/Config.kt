@@ -35,7 +35,7 @@ class Config {
          * Unfortunately we can't parse the JSON file via the new config library because it
          * contains comments (which the new library doesn't support).
          */
-        lateinit var legacyConfigSource: JibriConfig
+        var legacyConfigSource = JibriConfig()
 
         /**
          * We also accepted config parameters via the command line, so this config source
