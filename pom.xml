@@ -81,25 +81,12 @@
             <artifactId>argparse4j</artifactId>
             <version>0.8.1</version>
         </dependency>
+        <!-- Explicitly add this dep to match what ktor-server-jetty needs (otherwise
+        jicoco will bring in an older version -->
         <dependency>
-            <groupId>org.igniterealtime.smack</groupId>
-            <artifactId>smack-core</artifactId>
-            <version>${smack.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.igniterealtime.smack</groupId>
-            <artifactId>smack-tcp</artifactId>
-            <version>${smack.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.igniterealtime.smack</groupId>
-            <artifactId>smack-java7</artifactId>
-            <version>${smack.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.igniterealtime.smack</groupId>
-            <artifactId>smack-extensions</artifactId>
-            <version>${smack.version}</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-util</artifactId>
+            <version>9.4.24.v20191120</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
