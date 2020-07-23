@@ -107,6 +107,16 @@ class FileRecordingJibriService(
      * The [Sink] this class will use to model the file on the filesystem
      */
     private var sink: Sink
+    private val recordingsDirectory: String by config {
+        retrieve("JibriConfig::recordingDirectory") { Config.legacyConfigSource.recordingDirectory!! }
+        retrieve("jibri.recording.recordings-directory".from(Config.configSource))
+    }
+    private val finalizeScriptPath: String by config {
+        retrieve("JibriConfig::finalizeRecordingScriptPath") {
+            Config.legacyConfigSource.finalizeRecordingScriptPath!!
+        }
+        retrieve("jibri.recording.finalize-script".from(Config.configSource))
+    }
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
      * be nested within [recordingsDirectory].
@@ -216,19 +226,6 @@ class FileRecordingJibriService(
             }
         } catch (e: Exception) {
             logger.error("Failed to run finalize script", e)
-        }
-    }
-
-    companion object {
-        val recordingsDirectory: String by config {
-            retrieve("JibriConfig::recordingDirectory") { Config.legacyConfigSource.recordingDirectory!! }
-            retrieve("jibri.recording.recordings-directory".from(Config.configSource))
-        }
-        val finalizeScriptPath: String by config {
-            retrieve("JibriConfig::finalizeRecordingScriptPath") {
-                Config.legacyConfigSource.finalizeRecordingScriptPath!!
-            }
-            retrieve("jibri.recording.finalize-script".from(Config.configSource))
         }
     }
 }
