@@ -67,12 +67,12 @@ fun main(args: Array<String>) {
         }
     }
     val jibriId = configSupplier<String> {
-        retrieve("JibriConfig::jibriId") { Config.legacyConfigSource.jibriId!! }
-        retrieve("jibri.id".from(Config.configSource))
+        "JibriConfig::jibriId" { Config.legacyConfigSource.jibriId!! }
+        "jibri.id".from(Config.configSource)
     }.get()
     val webhookSubscribers = configSupplier<List<String>> {
-        retrieve("JibriConfig::webhookSubscribers") { Config.legacyConfigSource.webhookSubscribers!! }
-        retrieve("jibri.webhook-subscribers".from(Config.configSource))
+        "JibriConfig::webhookSubscribers" { Config.legacyConfigSource.webhookSubscribers!! }
+        "jibri.webhook-subscribers".from(Config.configSource)
     }.get()
 
     val webhookClient = WebhookClient(jibriId)
@@ -133,15 +133,13 @@ fun main(args: Array<String>) {
     }
 
     val xmppEnvironments = configSupplier<List<XmppEnvironmentConfig>> {
-        retrieve("JibriConfig::xmppEnvironments") {
+        "JibriConfig::xmppEnvironments" {
             Config.legacyConfigSource.xmppEnvironments.takeIf { it?.isNotEmpty() == true }
                 ?: throw ConfigException.UnableToRetrieve.NotFound("Considering empty XMPP envs list as not found")
         }
-        retrieve("jibri.api.xmpp.environments"
+        "jibri.api.xmpp.environments"
             .from(Config.configSource)
-            .asType<List<com.typesafe.config.Config>>()
-            .andConvertBy { envConfigs -> envConfigs.map { it.toXmppEnvironment() } }
-        )
+            .convertFrom<List<com.typesafe.config.Config>> { envConfigs -> envConfigs.map { it.toXmppEnvironment() } }
     }.get()
 
     // XmppApi

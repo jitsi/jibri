@@ -175,9 +175,8 @@ class HttpApi(
 
     companion object {
         val port: Int by config {
-            retrieve("http_api_port"
-                .from(Config.commandLineArgs).softDeprecated("use jibri.api.http.external-api-port"))
-            retrieve("jibri.api.http.external-api-port".from(Config.configSource))
+            "http_api_port".from(Config.commandLineArgs).softDeprecated("use jibri.api.http.external-api-port")
+            "jibri.api.http.external-api-port".from(Config.configSource)
         }
     }
 }

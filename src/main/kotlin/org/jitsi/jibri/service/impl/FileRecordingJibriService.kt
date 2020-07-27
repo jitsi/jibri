@@ -108,14 +108,14 @@ class FileRecordingJibriService(
      */
     private var sink: Sink
     private val recordingsDirectory: String by config {
-        retrieve("JibriConfig::recordingDirectory") { Config.legacyConfigSource.recordingDirectory!! }
-        retrieve("jibri.recording.recordings-directory".from(Config.configSource))
+        "JibriConfig::recordingDirectory" { Config.legacyConfigSource.recordingDirectory!! }
+        "jibri.recording.recordings-directory".from(Config.configSource)
     }
     private val finalizeScriptPath: String by config {
-        retrieve("JibriConfig::finalizeRecordingScriptPath") {
+        "JibriConfig::finalizeRecordingScriptPath" {
             Config.legacyConfigSource.finalizeRecordingScriptPath!!
         }
-        retrieve("jibri.recording.finalize-script".from(Config.configSource))
+        "jibri.recording.finalize-script".from(Config.configSource)
     }
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
