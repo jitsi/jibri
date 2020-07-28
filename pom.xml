@@ -27,7 +27,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.jitsi</groupId>
+            <groupId>${project.groupId}</groupId>
             <artifactId>jicoco-kotlin</artifactId>
             <version>${jicoco.version}</version>
         </dependency>
