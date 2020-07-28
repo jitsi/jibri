@@ -17,6 +17,7 @@
 package org.jitsi.jibri.selenium
 
 import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
@@ -30,6 +31,8 @@ import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
+import org.jitsi.metaconfig.config
+import org.jitsi.metaconfig.from
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
@@ -121,6 +124,7 @@ class JibriSelenium(
     private var currCallUrl: String? = null
     private val stateMachine = SeleniumStateMachine()
     private var shuttingDown = AtomicBoolean(false)
+    private val chromeOpts: List<String> by config("jibri.chrome.flags".from(Config.configSource))
 
     /**
      * A task which executes at an interval and checks various aspects of the call to make sure things are
@@ -135,14 +139,7 @@ class JibriSelenium(
     init {
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
-        chromeOptions.addArguments(
-                "--use-fake-ui-for-media-stream",
-                "--start-maximized",
-                "--kiosk",
-                "--enabled",
-                "--disable-infobars",
-                "--autoplay-policy=no-user-gesture-required"
-        )
+        chromeOptions.addArguments(chromeOpts)
         chromeOptions.setExperimentalOption("w3c", false)
         chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
         val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
@@ -301,7 +298,7 @@ class JibriSelenium(
         chromeDriver.quit()
         logger.info("Chrome driver quit")
     }
-    
+
     companion object {
         private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
         const val COMPONENT_ID = "Selenium"
