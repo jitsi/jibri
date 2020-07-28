@@ -129,11 +129,6 @@ class JibriSelenium(
     private var recurringCallStatusCheckTask: ScheduledFuture<*>? = null
     private val callStatusChecks: List<CallStatusCheck>
 
-    companion object {
-        private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
-        const val COMPONENT_ID = "Selenium"
-    }
-
     /**
      * Set up default chrome driver options (using fake device, etc.)
       */
@@ -306,4 +301,10 @@ class JibriSelenium(
         chromeDriver.quit()
         logger.info("Chrome driver quit")
     }
+    
+    companion object {
+        private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
+        const val COMPONENT_ID = "Selenium"
+    }
+
 }
