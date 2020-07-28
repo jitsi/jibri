@@ -22,20 +22,15 @@
         <kotest.version>4.1.1</kotest.version>
         <mockk.version>1.10.0</mockk.version>
         <ktor.version>1.3.1</ktor.version>
-        <jicoco.version>metaconfig-SNAPSHOT</jicoco.version>
+        <jicoco.version>1.1-37-g95fd201</jicoco.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.github.bbaldino</groupId>
-            <artifactId>jicoco</artifactId>
-            <version>${jicoco.version}</version>
-        </dependency>
-        <!--dependency>
-            <groupId>com.github.bbaldino</groupId>
+            <groupId>org.jitsi</groupId>
             <artifactId>jicoco-kotlin</artifactId>
             <version>${jicoco.version}</version>
-        </dependency-->
+        </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
