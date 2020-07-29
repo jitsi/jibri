@@ -31,6 +31,8 @@ import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import org.jitsi.jibri.config.Config
+import org.jitsi.metaconfig.config
 import java.util.logging.Logger
 
 class InternalHttpApi(
@@ -73,6 +75,13 @@ class InternalHttpApi(
                     respondOkAndRun(shutdownHandler)
                 }
             }
+        }
+    }
+    companion object {
+        val port: Int by config {
+            "internal_http_port"
+                .from(Config.commandLineArgs).softDeprecated("use jibri.api.http.internal-api-port")
+            "jibri.api.http.internal-api-port".from(Config.configSource)
         }
     }
 }

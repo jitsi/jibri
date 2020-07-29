@@ -17,7 +17,7 @@
 
 package org.jitsi.jibri
 
-import org.jitsi.jibri.config.JibriConfig
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
@@ -46,8 +46,7 @@ import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
-import java.nio.file.FileSystem
-import java.nio.file.FileSystems
+import org.jitsi.metaconfig.config
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -80,14 +79,11 @@ data class FileRecordingRequestParams(
  * provides, as well as providing an API to query the health of this Jibri
  * instance.  NOTE: currently Jibri only runs a single service at a time, so
  * if one is running, the Jibri will describe itself as busy
+ *
+ * TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
+ * ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
  */
-class JibriManager(
-    private val config: JibriConfig,
-    private val fileSystem: FileSystem = FileSystems.getDefault(),
-    private val statsDClient: JibriStatsDClient? = null
-// TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
-// ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
-) : StatusPublisher<Any>() {
+class JibriManager : StatusPublisher<Any>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private var currentActiveService: JibriService? = null
     /**
@@ -101,6 +97,18 @@ class JibriManager(
      */
     private var pendingIdleFunc: () -> Unit = {}
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
+
+    private val enableStatsD: Boolean by config {
+        "JibriConfig::enableStatsD" { Config.legacyConfigSource.enabledStatsD!! }
+        "jibri.stats.enable-stats-d".from(Config.configSource)
+    }
+
+    private val singleUseMode: Boolean by config {
+        "JibriConfig::singleUseMode" { Config.legacyConfigSource.singleUseMode!! }
+        "jibri.single-use-mode".from(Config.configSource)
+    }
+
+    private val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
 
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from
@@ -127,17 +135,13 @@ class JibriManager(
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
-        logger.info("Starting a file recording with params: $fileRecordingRequestParams " +
-                "finalize script path: ${config.finalizeRecordingScriptPath} and " +
-                "recordings directory: ${config.recordingDirectory}")
         throwIfBusy()
+        logger.info("Starting a file recording with params: $fileRecordingRequestParams")
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
                 fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
-                fileSystem.getPath(config.finalizeRecordingScriptPath),
-                fileSystem.getPath(config.recordingDirectory),
                 serviceParams.appData?.fileRecordingMetadata
             )
         )
@@ -262,11 +266,11 @@ class JibriManager(
         // and reset it
         pendingIdleFunc()
         pendingIdleFunc = {}
-        if (!config.singleUseMode) {
-            publishStatus(ComponentBusyStatus.IDLE)
-        } else {
+        if (singleUseMode) {
             logger.info("Jibri is in single-use mode, not returning to IDLE")
             publishStatus(ComponentBusyStatus.EXPIRED)
+        } else {
+            publishStatus(ComponentBusyStatus.IDLE)
         }
     }
 

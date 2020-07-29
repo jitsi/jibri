@@ -32,6 +32,7 @@ import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.CallParams
@@ -41,6 +42,7 @@ import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.extensions.debug
+import org.jitsi.metaconfig.config
 import java.util.logging.Logger
 import javax.ws.rs.core.Response
 
@@ -168,6 +170,13 @@ class HttpApi(
                         sipClientParams)
                 )
             }
+        }
+    }
+
+    companion object {
+        val port: Int by config {
+            "http_api_port".from(Config.commandLineArgs).softDeprecated("use jibri.api.http.external-api-port")
+            "jibri.api.http.external-api-port".from(Config.configSource)
         }
     }
 }

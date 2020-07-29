@@ -17,12 +17,6 @@
 
 package org.jitsi.jibri
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.exc.InvalidFormatException
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
-import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.jetty.Jetty
 import kotlinx.coroutines.CancellationException
@@ -30,8 +24,10 @@ import net.sourceforge.argparse4j.ArgumentParsers
 import org.jitsi.jibri.api.http.HttpApi
 import org.jitsi.jibri.api.http.internal.InternalHttpApi
 import org.jitsi.jibri.api.xmpp.XmppApi
-import org.jitsi.jibri.config.JibriConfig
-import org.jitsi.jibri.statsd.JibriStatsDClient
+import org.jitsi.jibri.config.Config
+import org.jitsi.jibri.config.XmppEnvironmentConfig
+import org.jitsi.jibri.config.loadConfigFromFile
+import org.jitsi.jibri.config.toXmppEnvironment
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatusManager
@@ -39,6 +35,11 @@ import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.webhooks.v1.WebhookClient
+import org.jitsi.metaconfig.ConfigException
+import org.jitsi.metaconfig.MapConfigSource
+import org.jitsi.metaconfig.MetaconfigLogger
+import org.jitsi.metaconfig.MetaconfigSettings
+import org.jitsi.metaconfig.configSupplier
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -46,60 +47,12 @@ import kotlin.system.exitProcess
 
 val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
 
-fun loadConfig(configFile: File): JibriConfig? {
-    return try {
-        val config: JibriConfig = jacksonObjectMapper()
-            .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
-            .readValue(configFile)
-        logger.info("Parsed config:\n$config")
-        config
-    } catch (e: MissingKotlinParameterException) {
-        logger.error("A required config parameter was missing: ${e.originalMessage}")
-        null
-    } catch (e: UnrecognizedPropertyException) {
-        logger.error("An unrecognized config parameter was found: ${e.originalMessage}")
-        null
-    } catch (e: InvalidFormatException) {
-        logger.error("A config parameter was incorrectly formatted: ${e.localizedMessage}")
-        null
-    }
-}
-
 fun main(args: Array<String>) {
-    val argParser = ArgumentParsers.newFor("Jibri").build()
-        .defaultHelp(true)
-        .description("Start Jibri")
-    argParser.addArgument("-c", "--config")
-        .required(true)
-        .type(String::class.java)
-        .help("Path to the jibri config file")
-    argParser.addArgument("--internal-http-port")
-        .type(Int::class.java)
-        .setDefault(3333)
-        .help("Port to start the internal HTTP server on")
-    argParser.addArgument("--http-api-port")
-        .type(Int::class.java)
-        .setDefault(2222)
-        .help("Port to start the HTTP API server on")
+    setupMetaconfigLogger()
+    handleCommandLineArgs(args)
 
-    logger.info("Jibri run with args ${args.asList()}")
-    val ns = argParser.parseArgs(args)
-    val configFilePath = ns.getString("config")
-    logger.info("Using config file $configFilePath")
-    val internalHttpPort = ns.getInt("internal_http_port")
-    logger.info("Using port $internalHttpPort for internal HTTP API")
-    val httpApiPort = ns.getInt("http_api_port")
-    logger.info("Using port $httpApiPort for the HTTP API")
-
-    val jibriConfigFile = File(configFilePath)
-    if (!jibriConfigFile.exists()) {
-        logger.error("Error: Config file $configFilePath doesn't exist")
-        exitProcess(1)
-    }
     val jibriStatusManager = JibriStatusManager()
-    val jibriConfig = loadConfig(jibriConfigFile) ?: exitProcess(1)
-    val statsDClient: JibriStatsDClient? = if (jibriConfig.enabledStatsD) JibriStatsDClient() else null
-    val jibriManager = JibriManager(jibriConfig, statsDClient = statsDClient)
+    val jibriManager = JibriManager()
     jibriManager.addStatusHandler { jibriStatus ->
         when (jibriStatus) {
             is ComponentBusyStatus -> {
@@ -113,13 +66,21 @@ fun main(args: Array<String>) {
             }
         }
     }
+    val jibriId = configSupplier<String> {
+        "JibriConfig::jibriId" { Config.legacyConfigSource.jibriId!! }
+        "jibri.id".from(Config.configSource)
+    }.get()
+    val webhookSubscribers = configSupplier<List<String>> {
+        "JibriConfig::webhookSubscribers" { Config.legacyConfigSource.webhookSubscribers!! }
+        "jibri.webhook-subscribers".from(Config.configSource)
+    }.get()
 
-    val webhookClient = WebhookClient(jibriConfig.jibriId)
+    val webhookClient = WebhookClient(jibriId)
 
     jibriStatusManager.addStatusHandler {
         webhookClient.updateStatus(it)
     }
-    jibriConfig.webhookSubscribers.forEach { webhookClient.addSubscriber(it) }
+    webhookSubscribers.forEach(webhookClient::addSubscriber)
     val statusUpdaterTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(
         1,
         TimeUnit.MINUTES
@@ -163,24 +124,108 @@ fun main(args: Array<String>) {
         cleanupAndExit(255)
     }
 
+    logger.info("Using port ${InternalHttpApi.port} for internal HTTP API")
+
     with(InternalHttpApi(configChangedHandler, gracefulShutdownHandler, shutdownHandler)) {
-        embeddedServer(Jetty, port = internalHttpPort) {
+        embeddedServer(Jetty, port = InternalHttpApi.port) {
             internalApiModule()
         }.start()
     }
 
+    val xmppEnvironments = configSupplier<List<XmppEnvironmentConfig>> {
+        "JibriConfig::xmppEnvironments" {
+            Config.legacyConfigSource.xmppEnvironments.takeIf { it?.isNotEmpty() == true }
+                ?: throw ConfigException.UnableToRetrieve.NotFound("Considering empty XMPP envs list as not found")
+        }
+        "jibri.api.xmpp.environments"
+            .from(Config.configSource)
+            .convertFrom<List<com.typesafe.config.Config>> { envConfigs -> envConfigs.map { it.toXmppEnvironment() } }
+    }.get()
+
     // XmppApi
     val xmppApi = XmppApi(
         jibriManager = jibriManager,
-        xmppConfigs = jibriConfig.xmppEnvironments,
+        xmppConfigs = xmppEnvironments,
         jibriStatusManager = jibriStatusManager
     )
     xmppApi.start()
 
+    logger.info("Using port ${HttpApi.port} for HTTP API")
+
     // HttpApi
     with(HttpApi(jibriManager, jibriStatusManager)) {
-        embeddedServer(Jetty, port = httpApiPort) {
+        embeddedServer(Jetty, port = HttpApi.port) {
             apiModule()
         }
     }.start()
+}
+
+private fun handleCommandLineArgs(args: Array<String>) {
+    val argParser = ArgumentParsers.newFor("Jibri").build()
+        .defaultHelp(true)
+        .description("Start Jibri")
+    argParser.addArgument("-c", "--config")
+        .required(true)
+        .type(String::class.java)
+        .help("Path to the jibri config file")
+    argParser.addArgument("--internal-http-port")
+        .type(Int::class.java)
+        .help("Port to start the internal HTTP server on")
+    argParser.addArgument("--http-api-port")
+        .type(Int::class.java)
+        .help("Port to start the HTTP API server on")
+
+    logger.info("Jibri run with args ${args.asList()}")
+    val ns = argParser.parseArgs(args)
+    val configFilePath = ns.getString("config")
+    val internalHttpPort: Int? = ns.getInt("internal_http_port")
+    val httpApiPort: Int? = ns.getInt("http_api_port")
+
+    // Map the command line arguments into a ConfigSource
+    Config.commandLineArgs = MapConfigSource("command line args") {
+        internalHttpPort?.let {
+            put("internal_http_port", it)
+        }
+        httpApiPort?.let {
+            put("http_api_port", it)
+        }
+    }
+
+    setupLegacyConfig(configFilePath)
+}
+
+/**
+ * Parse the legacy config file and set it in [Config] as the legacy config source
+ */
+private fun setupLegacyConfig(configFilePath: String) {
+    logger.info("Checking legacy config file $configFilePath")
+    val jibriConfigFile = File(configFilePath)
+    if (!jibriConfigFile.exists()) {
+        logger.info("Legacy config file $configFilePath doesn't exist")
+        return
+    }
+
+    val jibriConfig = loadConfigFromFile(jibriConfigFile) ?: run {
+        logger.info("Parsing legacy config file failed")
+        return
+    }
+    Config.legacyConfigSource = jibriConfig
+}
+
+/**
+ * Wire the jitsi-metaconfig logger into ours
+ */
+private fun setupMetaconfigLogger() {
+    val configLogger = Logger.getLogger("config")
+    MetaconfigSettings.logger = object : MetaconfigLogger {
+        override fun debug(block: () -> String) {
+            configLogger.fine(block)
+        }
+        override fun error(block: () -> String) {
+            configLogger.error(block())
+        }
+        override fun warn(block: () -> String) {
+            configLogger.warning(block)
+        }
+    }
 }
