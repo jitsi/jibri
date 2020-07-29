@@ -121,8 +121,9 @@ Old method: in `config.json`:
             "room_jid_domain_string_to_strip_from_start": <String>,
             "usage_timeout": <number>
         },
-        { <more> }
-    }
+        { <more> },
+    ]
+}
 ```
 New method: in `application.conf`:
 ```hocon
