@@ -10,7 +10,7 @@ The new configuration leverages the [Typesafe config](https://github.com/lightbe
 #### Notes
 * No default values have been changed, so if you weren't specifying a property before you can continue to leave it unspecified and the value will not change.
 * The new configuration library supports different formats and many different features in configuration (substitutions, includes, overrides via environment variables, etc.).  The text here describes the 'plainest' way to define a new config file, but other methods are possible.  Read about the Typesafe config to learn more.
-* The example below assume that you will define a new configuration file called `application.conf`
+* The example below assume that you will define a new configuration file called `jibri.conf`
 
 ---
 ##### Configuration file
@@ -20,7 +20,7 @@ New method: path to a HOCON .conf file passed via JVM arg: `-Dconfig.file=/path/
 ---
 ##### Internal and external HTTP API ports
 Old method: command line arguments `--http-api-port` and `--internal-http-port`
-New method: in `application.conf`:
+New method: in `jibri.conf`:
 ```hocon
 jibri {
     http {
@@ -38,7 +38,7 @@ Old method: in `config.json`:
     "single_use_mode": <Boolean>
 }
 ```
-New method: in `application.conf`:
+New method: in `jibri.conf`:
 ```hocon
 jibri {
     single-use-mode = <boolean>
@@ -53,7 +53,7 @@ Old method: in `config.json`:
     "recording_directory": <path>
 }
 ```
-New method: in `application.conf`:
+New method: in `jibri.conf`:
 ```hocon
 jibri {
     recording {
@@ -69,7 +69,7 @@ Old method: in `config.json`:
     "finalize_recording_script_path": <path>
 }
 ```
-New method: in `application.conf`:
+New method: in `jibri.conf`:
 ```hocon
 jibri {
     recording {
@@ -85,7 +85,7 @@ Old method: in `config.json`:
     "enable_stats_d": <boolean>
 }
 ```
-New method: in `application.conf`:
+New method: in `jibri.conf`:
 ```hocon
 jibri {
     stats {
@@ -125,7 +125,7 @@ Old method: in `config.json`:
     ]
 }
 ```
-New method: in `application.conf`:
+New method: in `jibri.conf`:
 ```hocon
 jibri {
     environments = [

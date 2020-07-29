@@ -89,9 +89,9 @@ sudo usermod -aG adm,audio,video,plugdev jibri
 ```
 
 ### Config files
-* Edit the `application.conf` file (installed to `/etc/jitsi/jibri/application.conf` by default) appropriately.  You can look at
-[reference.conf](src/main/resources/reference.conf) for the default values and an example of how to set up application.conf.  Only
-override the values you want to change from their defaults in `application.conf`.
+* Edit the `jibri.conf` file (installed to `/etc/jitsi/jibri/jibri.conf` by default) appropriately.  You can look at
+[reference.conf](src/main/resources/reference.conf) for the default values and an example of how to set up jibri.conf.  Only
+override the values you want to change from their defaults in `jibri.conf`.
 
 ### Logging
 By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the debian package, you'll need to make sure this directory exists (or change the location to which Jibri logs by editing the [log config](lib/logging.properties)
