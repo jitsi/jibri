@@ -303,5 +303,4 @@ class JibriSelenium(
         private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
         const val COMPONENT_ID = "Selenium"
     }
-
 }
