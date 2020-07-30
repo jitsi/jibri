@@ -16,6 +16,7 @@
 
 package org.jitsi.jibri.webhooks.v1
 
+import com.typesafe.config.ConfigObject
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.ktor.client.HttpClient
@@ -35,17 +36,18 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.bouncycastle.openssl.PEMKeyPair
 import org.bouncycastle.openssl.PEMParser
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.util.RefreshingProperty
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.error
+import org.jitsi.metaconfig.optionalconfig
 import java.io.FileReader
-import java.security.Security
+import java.security.PrivateKey
 import java.time.Clock
 import java.time.Duration
 import java.util.Date
@@ -62,28 +64,19 @@ class WebhookClient(
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
-
-    private val key = run {
-        Security.addProvider(BouncyCastleProvider())
-        try {
-            val parser = PEMParser(FileReader("/Users/bbaldino/work/jibri/test_key.pem"))
-            (parser.readObject() as? PEMKeyPair)?.let { pemKeyPair ->
-                JcaPEMKeyConverter().getKeyPair(pemKeyPair).private
-            }
-        } catch (t: Throwable) {
-            logger.error("Error parsing key: $t")
-            null
-        }
+    private val jwtInfo: JwtInfo? by optionalconfig {
+        "jibri.jwt-info".from(Config.configSource)
+            .convertFrom<ConfigObject>(JwtInfo.Companion::fromConfig)
     }
 
-    private val jwt: String? by RefreshingProperty(Duration.ofMinutes(55)) {
-        key?.let {
+    private val jwt: String? by RefreshingProperty(jwtInfo?.ttl?.minus(Duration.ofMinutes(5)) ?: INFINITE) {
+        jwtInfo?.let {
             Jwts.builder()
-                .setHeaderParam("kid", "jitsi/dev-2019-02-19")
-                .setIssuer("jibri")
-                .setAudience("jibri-queue")
-                .setExpiration(Date.from(clock.instant().plus(Duration.ofHours(1))))
-                .signWith(SignatureAlgorithm.RS256, key)
+                .setHeaderParam("kid", it.kid)
+                .setIssuer(it.issuer)
+                .setAudience(it.audience)
+                .setExpiration(Date.from(clock.instant().plus(it.ttl)))
+                .signWith(SignatureAlgorithm.RS256, it.privateKey)
                 .compact()
         }
     }
@@ -131,6 +124,8 @@ class WebhookClient(
     }
 }
 
+private val INFINITE = Duration.ofSeconds(Long.MAX_VALUE)
+
 /**
  * Just like [HttpClient.post], but automatically sets the content type to
  * [ContentType.Application.Json].
@@ -143,3 +138,42 @@ private suspend inline fun <reified T> HttpClient.postJson(
     contentType(ContentType.Application.Json)
 }
 
+private data class JwtInfo(
+    val privateKey: PrivateKey,
+    val kid: String,
+    val issuer: String,
+    val audience: String,
+    val ttl: Duration
+) {
+    companion object {
+        private val logger = Logger.getLogger(this::class.qualifiedName)
+        fun fromConfig(jwtConfigObj: ConfigObject): JwtInfo {
+            // Any missing or incorrect value here will throw, which is what we want:
+            // If anything is wrong, we should fail to create the JwtInfo
+            val jwtConfig = jwtConfigObj.toConfig()
+            return JwtInfo(
+                privateKey = parseKeyFile(jwtConfig.getString("signing-key-path")),
+                kid = jwtConfig.getString("kid"),
+                issuer = jwtConfig.getString("issuer"),
+                audience = jwtConfig.getString("audience"),
+                ttl = jwtConfig.getDuration("ttl").withMinimum(Duration.ofMinutes(10))
+            )
+        }
+        private fun parseKeyFile(keyFilePath: String): PrivateKey {
+            return try {
+                val parser = PEMParser(FileReader(keyFilePath))
+                (parser.readObject() as PEMKeyPair).let { pemKeyPair ->
+                    JcaPEMKeyConverter().getKeyPair(pemKeyPair).private
+                }
+            } catch (t: Throwable) {
+                logger.error("Error parsing key: $t")
+                throw t
+            }
+        }
+    }
+}
+
+/**
+ * Returns [min] if this Duration is less than that minimum, otherwise this
+ */
+private fun Duration.withMinimum(min: Duration): Duration = if (this < min) min else this
