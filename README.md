@@ -8,14 +8,33 @@ Jibri provides services for recording or streaming a Jitsi Meet conference.
 
 It works by launching a Chrome instance rendered in a virtual framebuffer and capturing and encoding the output with ffmpeg. It is intended to be run on a separate machine (or a VM), with no other applications using the display or audio devices. Only one recording at a time is supported on a single jibri.
 
+# Installing Java
+* Jibri needs a `Java8` running environment.
+* We are working hard to support Java11
+* If you don't have a `Java8` environment, you need to execute the following commands.
+
+```
+wget -O - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | sudo apt-key add -
+add-apt-repository https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/
+apt update
+apt install adoptopenjdk-8-hotspot
+```
+
+If you have multiple `Java` environments, you need to use `Java8` to start jibri, edit `/opt/jitsi/jibri/launch.sh`
+
+```sh
+exec /usr/lib/jvm/adoptopenjdk-8-hotspot-amd64/bin/java -Djava.util.logging.config.file=/etc/jitsi/jibri/logging.properties -jar /opt/jitsi/jibri/jibri.jar --config "/etc/jitsi/jibri/config.json"
+```
+
 # Installing Jibri
 
 ### Installation notes
-* Jibri was built on ubuntu 16.04 (Xenial), and has been tested with the pre-built kernel and extra kernel modules (`linux-image-extra-virtual` package). Any other distribution or kernel configuration MAY work but has not been tested.
+* Jibri was built on ubuntu 16.04 (Xenial) or 18.04 (Xenial), and has been tested with the pre-built kernel and extra kernel modules (`linux-image-extra-virtual` package). Any other distribution or kernel configuration MAY work but has not been tested.
 
 ## Pre-requisites
 ### ALSA and Loopback Device
-* First make sure the ALSA loopback module is available. The extra modules (including ALSA loopback) can be installed on Ubuntu 16.04 using package name `linux-image-extra-virtual`
+* First make sure the ALSA loopback module is available. The extra modules (including ALSA loopback) can be installed on Ubuntu 16.04 or Ubuntu 18.04 using package name `linux-image-extra-virtual`
+* You need to `reboot` to perform the following steps
 * Perform the following tasks as the root user
   * Set up the module to be loaded on boot: `echo "snd-aloop" >> /etc/modules`
   * Load the module into the running kernel: `modprobe snd-aloop`
@@ -92,6 +111,52 @@ sudo usermod -aG adm,audio,video,plugdev jibri
 * Edit the `jibri.conf` file (installed to `/etc/jitsi/jibri/jibri.conf` by default) appropriately.  You can look at
 [reference.conf](src/main/resources/reference.conf) for the default values and an example of how to set up jibri.conf.  Only
 override the values you want to change from their defaults in `jibri.conf`.
+
+* You need to edit `/etc/jitsi/jibri/config.json` The following.
+
+
+```
+"recording_directory": "/you_recording_directory"
+
+    // The path to the script which will be run on completed recordings
+    finalize_recording_script_path: "/path/to/finalize_recording.sh"
+
+    // Where recording files should be temporarily stored
+    "recording_directory":"/tmp/recordings"
+
+    // The path to the script which will be run on completed recordings,If not, it can be used "" .
+    //"finalize_recording_script_path": "/path/to/finalize_recording.sh"
+
+    "xmpp_server_hosts": [
+                "yourdomain.com
+            ],
+            "xmpp_domain": "yourdomain.com"
+
+    "control_login": {
+                "domain": "auth.yourdomain.com",
+                "username": "jibri",
+                "password": "jibriauthpass"
+            }
+            
+    // To use more than one jibri, the nickname of each jibri needs to be different.      
+     "control_muc": {
+                "domain": "internal.auth.yourdomain.com",
+                "room_name": "JibriBrewery",
+                "nickname": "jibri-nickname"
+            },
+
+     "call_login": {
+                "domain": "recorder.yourdomain.com",
+                "username": "recorder",
+                "password": "jibrirecorderpass"
+            },                 
+```
+
+* set its permissions appropriately
+```
+chown jibri:jibri /you_recording_directory
+```
+
 
 ### Logging
 By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the debian package, you'll need to make sure this directory exists (or change the location to which Jibri logs by editing the [log config](lib/logging.properties)
