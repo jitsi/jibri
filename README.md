@@ -8,16 +8,6 @@ Jibri provides services for recording or streaming a Jitsi Meet conference.
 
 It works by launching a Chrome instance rendered in a virtual framebuffer and capturing and encoding the output with ffmpeg. It is intended to be run on a separate machine (or a VM), with no other applications using the display or audio devices. Only one recording at a time is supported on a single jibri.
 
-### What happened to the old Jibri?
-
-Jibri was originally written in a combination of python and bash, but we were facing some stability issues so it was re-written.  The original code can still be found in a branch [here](https://github.com/jitsi/jibri/tree/python_jibri).
-##### Differences between the old and new Jibri
-From an API perspective, the new Jibri is the same as the old one with regards to backwards compatibility.  The XMPP API, which is the primary way we interact with Jibri, is exactly the same.  The new Jibri adds an HTTP API as well, though it does not have 100% parity with the XMPP API and, as of this point, was used mainly during testing to trigger things more easily.  The new Jibri code features another HTTP API for Jibri management (e.g. shutdown, graceful shutdown, health checks).
-
-The new Jibri has a reorganized config file format.  A sample of the config can be found [here](resources/debian-package/etc/jitsi/jibri/config.json).  Your old Jibri config will **not** work with the new Jibri without adapting it to the new format.
-
-The new Jibri now has configurable logging, which can be set via the [logging.properties](lib/logging.properties) file.
-
 # Installing Jibri
 
 ### Installation notes
@@ -99,7 +89,9 @@ sudo usermod -aG adm,audio,video,plugdev jibri
 ```
 
 ### Config files
-* Edit the `config.json` file (installed to `/etc/jitsi/jibri/config.json` by default) appropriately.
+* Edit the `jibri.conf` file (installed to `/etc/jitsi/jibri/jibri.conf` by default) appropriately.  You can look at
+[reference.conf](src/main/resources/reference.conf) for the default values and an example of how to set up jibri.conf.  Only
+override the values you want to change from their defaults in `jibri.conf`.
 
 ### Logging
 By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the debian package, you'll need to make sure this directory exists (or change the location to which Jibri logs by editing the [log config](lib/logging.properties)

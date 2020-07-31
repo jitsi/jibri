@@ -1,7 +1,7 @@
 #!/usr/bin/dh-exec
 
 resources/debian-package/etc/jitsi/jibri/asoundrc etc/jitsi/jibri
-resources/debian-package/etc/jitsi/jibri/config.json etc/jitsi/jibri
+resources/debian-package/etc/jitsi/jibri/jibri.conf etc/jitsi/jibri
 resources/debian-package/etc/jitsi/jibri/icewm.preferences etc/jitsi/jibri
 resources/debian-package/etc/jitsi/jibri/xorg-video-dummy.conf etc/jitsi/jibri
 resources/debian-package/etc/jitsi/jibri/pjsua.config etc/jitsi/jibri

@@ -18,6 +18,15 @@
 package org.jitsi.jibri.config
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.exc.InvalidFormatException
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
+import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import org.jitsi.jibri.logger
+import org.jitsi.jibri.util.extensions.error
+import java.io.File
 
 data class XmppCredentials(
     val domain: String = "",
@@ -25,12 +34,26 @@ data class XmppCredentials(
     val password: String = ""
 )
 
+fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials =
+    XmppCredentials(
+        domain = getString("domain"),
+        username = getString("username"),
+        password = getString("password")
+    )
+
 data class XmppMuc(
     val domain: String,
     @JsonProperty("room_name")
     val roomName: String,
     val nickname: String
 )
+
+fun com.typesafe.config.Config.toXmppMuc(): XmppMuc =
+    XmppMuc(
+        domain = getString("domain"),
+        roomName = getString("room-name"),
+        nickname = getString("nickname")
+    )
 
 data class XmppEnvironmentConfig(
     /**
@@ -93,15 +116,29 @@ data class XmppEnvironmentConfig(
     val trustAllXmppCerts: Boolean = true
 )
 
+public fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
+    XmppEnvironmentConfig(
+        name = getString("name"),
+        xmppServerHosts = getStringList("xmpp-server-hosts"),
+        xmppDomain = getString("xmpp-domain"),
+        controlLogin = getConfig("control-login").toXmppCredentials(),
+        controlMuc = getConfig("control-muc").toXmppMuc(),
+        sipControlMuc = if (hasPath("sip-control-muc")) {
+            getConfig("sip-control-muc").toXmppMuc()
+        } else null,
+        callLogin = getConfig("call-login").toXmppCredentials(),
+        stripFromRoomDomain = getString("strip-from-room-domain"),
+        usageTimeoutMins = getDuration("usage-timeout").toMinutes().toInt(),
+        trustAllXmppCerts = getBoolean("trust-all-xmpp-certs")
+    )
+
 data class JibriConfig(
-    // NOTE(brian): this field should be considered required, but has a default
-    // for now to not break upgrades
     @JsonProperty("jibri_id")
-    val jibriId: String = "",
+    val jibriId: String? = null,
     @JsonProperty("webhook_subscribers")
-    val webhookSubscribers: List<String> = listOf(),
+    val webhookSubscribers: List<String>? = null,
     @JsonProperty("recording_directory")
-    val recordingDirectory: String,
+    val recordingDirectory: String? = null,
     /**
      * Whether or not Jibri should return to idle state
      * after handling (successfully or unsuccessfully)
@@ -110,15 +147,34 @@ data class JibriConfig(
      * to be restarted in order to be used again.
      */
     @JsonProperty("single_use_mode")
-    val singleUseMode: Boolean = false,
+    val singleUseMode: Boolean? = null,
     /**
      * Whether or not pushing stats to statsd
      * should be enabled.  See [org.jitsi.jibri.statsd.JibriStatsDClient].
      */
     @JsonProperty("enable_stats_d")
-    val enabledStatsD: Boolean = true,
+    val enabledStatsD: Boolean? = null,
     @JsonProperty("finalize_recording_script_path")
-    val finalizeRecordingScriptPath: String,
+    val finalizeRecordingScriptPath: String? = null,
     @JsonProperty("xmpp_environments")
-    val xmppEnvironments: List<XmppEnvironmentConfig>
+    val xmppEnvironments: List<XmppEnvironmentConfig>? = null
 )
+
+fun loadConfigFromFile(configFile: File): JibriConfig? {
+    return try {
+        val config: JibriConfig = jacksonObjectMapper()
+            .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
+            .readValue(configFile)
+        logger.info("Parsed legacy config:\n$config")
+        config
+    } catch (e: MissingKotlinParameterException) {
+        logger.error("A required config parameter was missing: ${e.originalMessage}")
+        null
+    } catch (e: UnrecognizedPropertyException) {
+        logger.error("An unrecognized config parameter was found: ${e.originalMessage}")
+        null
+    } catch (e: InvalidFormatException) {
+        logger.error("A config parameter was incorrectly formatted: ${e.localizedMessage}")
+        null
+    }
+}

@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.selenium.CallParams
@@ -39,8 +39,11 @@ import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
+import org.jitsi.metaconfig.config
+import org.jitsi.xmpp.extensions.jibri.JibriIq
+import java.nio.file.FileSystem
+import java.nio.file.FileSystems
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -62,15 +65,6 @@ data class FileRecordingParams(
      * the call
      */
     val callLoginParams: XmppCredentials,
-    /**
-     * The filesystem path to the script which should be executed when
-     *  the recording is finished.
-     */
-    val finalizeScriptPath: Path,
-    /**
-     * The directory in which recordings should be created
-     */
-    val recordingDirectory: Path,
     /**
      * A map of arbitrary key, value metadata that will be written
      * to the metadata file.
@@ -106,21 +100,32 @@ class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
     private val jibriSelenium: JibriSelenium = JibriSelenium(),
     private val capturer: FfmpegCapturer = FfmpegCapturer(),
-    private val processFactory: ProcessFactory = ProcessFactory()
+    private val processFactory: ProcessFactory = ProcessFactory(),
+    fileSystem: FileSystem = FileSystems.getDefault()
 ) : StatefulJibriService("File recording") {
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
     private var sink: Sink
+    private val recordingsDirectory: String by config {
+        "JibriConfig::recordingDirectory" { Config.legacyConfigSource.recordingDirectory!! }
+        "jibri.recording.recordings-directory".from(Config.configSource)
+    }
+    private val finalizeScriptPath: String by config {
+        "JibriConfig::finalizeRecordingScriptPath" {
+            Config.legacyConfigSource.finalizeRecordingScriptPath!!
+        }
+        "jibri.recording.finalize-script".from(Config.configSource)
+    }
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
-     * be nested within [FileRecordingParams.recordingDirectory].
+     * be nested within [recordingsDirectory].
      */
     private val sessionRecordingDirectory =
-        fileRecordingParams.recordingDirectory.resolve(fileRecordingParams.sessionId)
+        fileSystem.getPath(recordingsDirectory).resolve(fileRecordingParams.sessionId)
 
     init {
-        logger.info("Writing recording to $sessionRecordingDirectory")
+        logger.info("Writing recording to $sessionRecordingDirectory, finalize script path $finalizeScriptPath")
         sink = FileSink(
             sessionRecordingDirectory,
             fileRecordingParams.callParams.callUrlInfo.callName
@@ -135,7 +140,7 @@ class FileRecordingJibriService(
             publishStatus(ComponentState.Error(ErrorCreatingRecordingsDirectory))
         }
         if (!Files.isWritable(sessionRecordingDirectory)) {
-            logger.error("Unable to write to ${fileRecordingParams.recordingDirectory}")
+            logger.error("Unable to write to $recordingsDirectory")
             publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable))
         }
         jibriSelenium.joinCall(
@@ -185,8 +190,7 @@ class FileRecordingJibriService(
                 publishStatus(ComponentState.Error(CouldntWriteMeetingMetadata))
             }
         } else {
-            logger.error("Unable to write metadata file to recording directory " +
-                "${fileRecordingParams.recordingDirectory}")
+            logger.error("Unable to write metadata file to recording directory $recordingsDirectory")
         }
         jibriSelenium.leaveCallAndQuitBrowser()
         logger.info("Finalizing the recording")
@@ -201,7 +205,7 @@ class FileRecordingJibriService(
     private fun finalize() {
         try {
             val finalizeCommand = listOf(
-                fileRecordingParams.finalizeScriptPath.toString(),
+                finalizeScriptPath,
                 sessionRecordingDirectory.toString()
             )
             with(processFactory.createProcess(finalizeCommand)) {
