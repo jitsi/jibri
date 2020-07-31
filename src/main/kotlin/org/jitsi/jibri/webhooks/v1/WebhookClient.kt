@@ -69,6 +69,7 @@ class WebhookClient(
             .convertFrom<ConfigObject>(JwtInfo.Companion::fromConfig)
     }
 
+    // We refresh 5 minutes before the expiration
     private val jwt: String? by RefreshingProperty(jwtInfo?.ttl?.minus(Duration.ofMinutes(5)) ?: INFINITE) {
         jwtInfo?.let {
             Jwts.builder()
@@ -151,25 +152,26 @@ private data class JwtInfo(
             // Any missing or incorrect value here will throw, which is what we want:
             // If anything is wrong, we should fail to create the JwtInfo
             val jwtConfig = jwtConfigObj.toConfig()
-            return JwtInfo(
-                privateKey = parseKeyFile(jwtConfig.getString("signing-key-path")),
-                kid = jwtConfig.getString("kid"),
-                issuer = jwtConfig.getString("issuer"),
-                audience = jwtConfig.getString("audience"),
-                ttl = jwtConfig.getDuration("ttl").withMinimum(Duration.ofMinutes(10))
-            )
-        }
-        private fun parseKeyFile(keyFilePath: String): PrivateKey {
-            return try {
-                val parser = PEMParser(FileReader(keyFilePath))
-                (parser.readObject() as PEMKeyPair).let { pemKeyPair ->
-                    JcaPEMKeyConverter().getKeyPair(pemKeyPair).private
-                }
+            try {
+                return JwtInfo(
+                    privateKey = parseKeyFile(jwtConfig.getString("signing-key-path")),
+                    kid = jwtConfig.getString("kid"),
+                    issuer = jwtConfig.getString("issuer"),
+                    audience = jwtConfig.getString("audience"),
+                    ttl = jwtConfig.getDuration("ttl").withMinimum(Duration.ofMinutes(10))
+                )
             } catch (t: Throwable) {
-                logger.error("Error parsing key: $t")
+                logger.info("Unable to create JwtInfo: $t")
                 throw t
             }
         }
+    }
+}
+
+private fun parseKeyFile(keyFilePath: String): PrivateKey {
+    val parser = PEMParser(FileReader(keyFilePath))
+    return (parser.readObject() as PEMKeyPair).let { pemKeyPair ->
+        JcaPEMKeyConverter().getKeyPair(pemKeyPair).private
     }
 }
 
