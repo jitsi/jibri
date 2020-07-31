@@ -216,7 +216,7 @@ private fun setupLegacyConfig(configFilePath: String) {
  * Wire the jitsi-metaconfig logger into ours
  */
 private fun setupMetaconfigLogger() {
-    val configLogger = Logger.getLogger("config")
+    val configLogger = Logger.getLogger("org.jitsi.jibri.config")
     MetaconfigSettings.logger = object : MetaconfigLogger {
         override fun debug(block: () -> String) {
             configLogger.fine(block)
