@@ -141,7 +141,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-metaconfig</artifactId>
-            <version>1.0</version>
+            <version>8fa8f1170a</version>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
