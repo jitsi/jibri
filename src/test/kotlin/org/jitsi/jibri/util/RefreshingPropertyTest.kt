@@ -23,7 +23,6 @@ import org.jitsi.jibri.helpers.FakeClock
 import org.jitsi.jibri.helpers.minutes
 import org.jitsi.jibri.helpers.seconds
 import java.time.Duration
-import kotlin.time.hours
 
 class RefreshingPropertyTest : ShouldSpec({
     val clock: FakeClock = spyk()
