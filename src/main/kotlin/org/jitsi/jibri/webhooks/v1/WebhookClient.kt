@@ -178,4 +178,4 @@ private fun parseKeyFile(keyFilePath: String): PrivateKey {
 /**
  * Returns [min] if this Duration is less than that minimum, otherwise this
  */
-private fun Duration.withMinimum(min: Duration): Duration = if (this < min) min else this
+private fun Duration.withMinimum(min: Duration): Duration = maxOf(this, min)
