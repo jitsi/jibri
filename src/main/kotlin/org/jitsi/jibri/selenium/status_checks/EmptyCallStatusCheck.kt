@@ -44,6 +44,6 @@ class EmptyCallStatusCheck(
     private fun CallPage.isCallEmpty() = getNumParticipants() <= 1
 
     companion object {
-        val DEFAULT_CALL_EMPTY_TIMEOUT: Duration = Duration.ofSeconds(300)
+        val DEFAULT_CALL_EMPTY_TIMEOUT: Duration = Duration.ofSeconds(30)
     }
 }
