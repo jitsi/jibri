@@ -40,9 +40,9 @@ import java.util.logging.Logger
 data class FfmpegExecutorParams(
     val resolution: String = "1920x1080",
     val framerate: Int = 30,
-    val videoEncodePreset: String = "veryfast",
-    val queueSize: Int = 4096,
-    val streamingMaxBitrate: Int = 2976,
+    val videoEncodePreset: String = "ultrafast",
+    val queueSize: Int = 8192,
+    val streamingMaxBitrate: Int = 9000,
     val streamingBufSize: Int = streamingMaxBitrate * 2,
         // The range of the CRF scale is 0–51, where 0 is lossless,
         // 23 is the default, and 51 is worst quality possible. A lower value
@@ -51,7 +51,7 @@ data class FfmpegExecutorParams(
         // it should look the same or nearly the same as the input but it
         // isn't technically lossless.
         // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
-    val h264ConstantRateFactor: Int = 25,
+    val h264ConstantRateFactor: Int = 20,
     val gopSize: Int = framerate * 2
 )
 
