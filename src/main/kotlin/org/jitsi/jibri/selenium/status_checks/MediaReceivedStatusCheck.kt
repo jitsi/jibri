@@ -54,11 +54,11 @@ class MediaReceivedStatusCheck(
          * How long we'll stay in the call if we're not receiving any incoming media (assuming all participants
          * are not muted)
          */
-        private val NO_MEDIA_TIMEOUT: Duration = Duration.ofSeconds(30)
+        private val NO_MEDIA_TIMEOUT: Duration = Duration.ofSeconds(300)
 
         /**
          * How long we'll stay in the call if all participants are muted
          */
-        private val ALL_MUTED_TIMEOUT: Duration = Duration.ofMinutes(10)
+        private val ALL_MUTED_TIMEOUT: Duration = Duration.ofMinutes(300)
     }
 }
