@@ -167,4 +167,4 @@ jibri {
     ]
 }
 ```
-An example of a new environments config can be found [here](doc/example_xmpp_envs.conf).
+An example of a new environments config can be found [here](example_xmpp_envs.conf).
