@@ -17,7 +17,6 @@
 
 package org.jitsi.jibri
 
-import com.typesafe.config.ConfigFactory
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.jetty.Jetty
 import kotlinx.coroutines.CancellationException
