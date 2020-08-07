@@ -152,6 +152,7 @@ private data class JwtInfo(
             // Any missing or incorrect value here will throw, which is what we want:
             // If anything is wrong, we should fail to create the JwtInfo
             val jwtConfig = jwtConfigObj.toConfig()
+            logger.info("got jwtConfig: ${jwtConfig.root().render()}")
             try {
                 return JwtInfo(
                     privateKey = parseKeyFile(jwtConfig.getString("signing-key-path")),

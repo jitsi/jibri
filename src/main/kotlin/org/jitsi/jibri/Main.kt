@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri
 
+import com.typesafe.config.ConfigFactory
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.jetty.Jetty
 import kotlinx.coroutines.CancellationException
@@ -71,8 +72,7 @@ fun main(args: Array<String>) {
         "jibri.id".from(Config.configSource)
     }.get()
     val webhookSubscribers = configSupplier<List<String>> {
-        "JibriConfig::webhookSubscribers" { Config.legacyConfigSource.webhookSubscribers!! }
-        "jibri.webhook-subscribers".from(Config.configSource)
+        "jibri.webhook.subscribers".from(Config.configSource)
     }.get()
 
     val webhookClient = WebhookClient(jibriId)
