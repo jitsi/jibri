@@ -22,7 +22,7 @@ import java.time.Instant
 import kotlin.reflect.KProperty
 
 /**
- * A property delegate which recreates a value when its accessed after having been
+ * A property delegate which recreates a value when it's accessed after having been
  * 'alive' for more than [timeout] via the given [creationFunc]
  */
 class RefreshingProperty<T>(
