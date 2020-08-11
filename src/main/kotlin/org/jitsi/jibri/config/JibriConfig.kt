@@ -135,8 +135,6 @@ public fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig
 data class JibriConfig(
     @JsonProperty("jibri_id")
     val jibriId: String? = null,
-    @JsonProperty("webhook_subscribers")
-    val webhookSubscribers: List<String>? = null,
     @JsonProperty("recording_directory")
     val recordingDirectory: String? = null,
     /**

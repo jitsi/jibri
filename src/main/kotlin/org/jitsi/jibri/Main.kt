@@ -71,8 +71,7 @@ fun main(args: Array<String>) {
         "jibri.id".from(Config.configSource)
     }.get()
     val webhookSubscribers = configSupplier<List<String>> {
-        "JibriConfig::webhookSubscribers" { Config.legacyConfigSource.webhookSubscribers!! }
-        "jibri.webhook-subscribers".from(Config.configSource)
+        "jibri.webhook.subscribers".from(Config.configSource)
     }.get()
 
     val webhookClient = WebhookClient(jibriId)
@@ -216,7 +215,7 @@ private fun setupLegacyConfig(configFilePath: String) {
  * Wire the jitsi-metaconfig logger into ours
  */
 private fun setupMetaconfigLogger() {
-    val configLogger = Logger.getLogger("config")
+    val configLogger = Logger.getLogger("org.jitsi.jibri.config")
     MetaconfigSettings.logger = object : MetaconfigLogger {
         override fun debug(block: () -> String) {
             configLogger.fine(block)

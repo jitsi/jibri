@@ -24,6 +24,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.MockRequestHandler
@@ -57,7 +58,7 @@ class WebhookClientTest : ShouldSpec({
             mapOf()
         )
     )
-    val client = WebhookClient("test", MockEngine) {
+    val client = WebhookClient("test", client = HttpClient(MockEngine) {
         engine {
             addHandler { request ->
                 requests += request
@@ -78,7 +79,7 @@ class WebhookClientTest : ShouldSpec({
                 }
             }
         }
-    }
+    })
     context("when the client") {
         context("has a valid subscriber") {
             client.addSubscriber("success")
