@@ -1,7 +1,9 @@
 package org.jitsi.jibri.selenium.status_checks
 
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
+import org.jitsi.metaconfig.config
 import java.time.Clock
 import java.time.Duration
 import java.util.logging.Logger
@@ -52,15 +54,25 @@ class MediaReceivedStatusCheck(
     }
 
     companion object {
+        private val noMediaTimeout: Duration by config {
+            "JibriConfig::noMediaTimeout" { Duration.ofSeconds(Config.legacyConfigSource.noMediaTimeout!!) }
+            "jibri.no-media-timeout".from(Config.configSource).convertFrom<Long>(Duration::ofSeconds)
+            "default" { Duration.ofSeconds(30) }
+        }
+        private val allMutedTimeout: Duration by config {
+            "JibriConfig::allMutedTimeout" { Duration.ofMinutes(Config.legacyConfigSource.allMutedTimeout!!) }
+            "jibri.all-muted-timeout".from(Config.configSource).convertFrom<Long>(Duration::ofMinutes)
+            "default" { Duration.ofMinutes(10) }
+        }
         /**
          * How long we'll stay in the call if we're not receiving any incoming media (assuming all participants
          * are not muted)
          */
-        private val NO_MEDIA_TIMEOUT: Duration = Duration.ofSeconds(30)
+        private val NO_MEDIA_TIMEOUT: Duration = noMediaTimeout
 
         /**
          * How long we'll stay in the call if all participants are muted
          */
-        private val ALL_MUTED_TIMEOUT: Duration = Duration.ofMinutes(10)
+        private val ALL_MUTED_TIMEOUT: Duration = allMutedTimeout
     }
 }
