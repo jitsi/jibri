@@ -55,14 +55,10 @@ class MediaReceivedStatusCheck(
 
     companion object {
         private val noMediaTimeout: Duration by config {
-            "JibriConfig::noMediaTimeout" { Duration.ofSeconds(Config.legacyConfigSource.noMediaTimeout!!) }
-            "jibri.no-media-timeout".from(Config.configSource).convertFrom<Long>(Duration::ofSeconds)
-            "default" { Duration.ofSeconds(30) }
+            "jibri.call-status-checks.no-media-timeout".from(Config.configSource)
         }
         private val allMutedTimeout: Duration by config {
-            "JibriConfig::allMutedTimeout" { Duration.ofMinutes(Config.legacyConfigSource.allMutedTimeout!!) }
-            "jibri.all-muted-timeout".from(Config.configSource).convertFrom<Long>(Duration::ofMinutes)
-            "default" { Duration.ofMinutes(10) }
+            "jibri.call-status-checks.all-muted-timeout".from(Config.configSource)
         }
         /**
          * How long we'll stay in the call if we're not receiving any incoming media (assuming all participants

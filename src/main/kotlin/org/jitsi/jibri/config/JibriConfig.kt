@@ -155,13 +155,7 @@ data class JibriConfig(
     @JsonProperty("finalize_recording_script_path")
     val finalizeRecordingScriptPath: String? = null,
     @JsonProperty("xmpp_environments")
-    val xmppEnvironments: List<XmppEnvironmentConfig>? = null,
-    @JsonProperty("no_media_timeout")
-    val noMediaTimeout: Long? = null,
-    @JsonProperty("all_muted_timeout")
-    val allMutedTimeout: Long? = null,
-    @JsonProperty("default_call_empty_timeout")
-    val defaultCallEmptyTimeout: Long? = null
+    val xmppEnvironments: List<XmppEnvironmentConfig>? = null
 )
 
 fun loadConfigFromFile(configFile: File): JibriConfig? {
