@@ -17,7 +17,7 @@ import java.util.logging.Logger
  */
 class EmptyCallStatusCheck(
     private val logger: Logger,
-    private val callEmptyTimeout: Duration = DEFAULT_CALL_EMPTY_TIMEOUT,
+    private val callEmptyTimeout: Duration = defaultCallEmptyTimeout,
     private val clock: Clock = Clock.systemUTC()
 ) : CallStatusCheck {
     init {
@@ -46,9 +46,8 @@ class EmptyCallStatusCheck(
     private fun CallPage.isCallEmpty() = getNumParticipants() <= 1
 
     companion object {
-        private val defaultCallEmptyTimeout: Duration by config {
+        val defaultCallEmptyTimeout: Duration by config {
             "jibri.call-status-checks.default-call-empty-timeout".from(Config.configSource)
         }
-        val DEFAULT_CALL_EMPTY_TIMEOUT: Duration = defaultCallEmptyTimeout
     }
 }

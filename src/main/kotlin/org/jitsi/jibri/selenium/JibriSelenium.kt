@@ -83,7 +83,7 @@ data class JibriSeleniumOptions(
     /**
      * How long we should stay in a call with no other participants before quitting
      */
-    val emptyCallTimeout: Duration = EmptyCallStatusCheck.DEFAULT_CALL_EMPTY_TIMEOUT
+    val emptyCallTimeout: Duration = EmptyCallStatusCheck.defaultCallEmptyTimeout
 )
 
 val SIP_GW_URL_OPTIONS = listOf(
