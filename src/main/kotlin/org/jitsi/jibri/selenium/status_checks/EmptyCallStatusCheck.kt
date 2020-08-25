@@ -47,11 +47,7 @@ class EmptyCallStatusCheck(
 
     companion object {
         private val defaultCallEmptyTimeout: Duration by config {
-            "JibriConfig::defaultCallEmptyTimeout" {
-                Duration.ofSeconds(Config.legacyConfigSource.defaultCallEmptyTimeout!!)
-            }
-            "jibri.default-call-empty-timeout".from(Config.configSource).convertFrom<Long>(Duration::ofSeconds)
-            "default" { Duration.ofSeconds(30) }
+            "jibri.call-status-checks.default-call-empty-timeout".from(Config.configSource)
         }
         val DEFAULT_CALL_EMPTY_TIMEOUT: Duration = defaultCallEmptyTimeout
     }
