@@ -1,7 +1,9 @@
 package org.jitsi.jibri.selenium.status_checks
 
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
+import org.jitsi.metaconfig.config
 import java.time.Clock
 import java.time.Duration
 import java.util.logging.Logger
@@ -15,7 +17,7 @@ import java.util.logging.Logger
  */
 class EmptyCallStatusCheck(
     private val logger: Logger,
-    private val callEmptyTimeout: Duration = DEFAULT_CALL_EMPTY_TIMEOUT,
+    private val callEmptyTimeout: Duration = defaultCallEmptyTimeout,
     private val clock: Clock = Clock.systemUTC()
 ) : CallStatusCheck {
     init {
@@ -44,6 +46,8 @@ class EmptyCallStatusCheck(
     private fun CallPage.isCallEmpty() = getNumParticipants() <= 1
 
     companion object {
-        val DEFAULT_CALL_EMPTY_TIMEOUT: Duration = Duration.ofSeconds(30)
+        val defaultCallEmptyTimeout: Duration by config {
+            "jibri.call-status-checks.default-call-empty-timeout".from(Config.configSource)
+        }
     }
 }
