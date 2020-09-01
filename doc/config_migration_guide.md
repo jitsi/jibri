@@ -23,9 +23,11 @@ Old method: command line arguments `--http-api-port` and `--internal-http-port`
 New method: in `jibri.conf`:
 ```hocon
 jibri {
-    http {
-        external-api-port = <number>
-        internal-api-port = <number>
+    api {
+        http {
+            external-api-port = <number>
+            internal-api-port = <number>
+        }
     }
 }
 ```
@@ -128,43 +130,47 @@ Old method: in `config.json`:
 New method: in `jibri.conf`:
 ```hocon
 jibri {
-    environments = [
-        {
-            name = <String>
-            xmpp-server-hosts = <List<String>>
-            xmpp-domain = <String>
+    api {
+        xmpp {
+            environments = [
+                {
+                    name = <String>
+                    xmpp-server-hosts = <List<String>>
+                    xmpp-domain = <String>
 
-            control-muc {
-                domain = <String>
-                room-name = <String>
-                nickname = <String>
-            }
+                    control-muc {
+                        domain = <String>
+                        room-name = <String>
+                        nickname = <String>
+                    }
 
-            control-login {
-                domain = <String>
-                username = <String>
-                password = <String>
-            }
+                    control-login {
+                        domain = <String>
+                        username = <String>
+                        password = <String>
+                    }
 
-            sip-control-muc {
-                domain = <String>
-                room-name = <String>
-                nickname = <String>
-            }
+                    sip-control-muc {
+                        domain = <String>
+                        room-name = <String>
+                        nickname = <String>
+                    }
 
-            call-login {
-                domain = <String>
-                username = <String>
-                password = <String>
-            }
+                    call-login {
+                        domain = <String>
+                        username = <String>
+                        password = <String>
+                    }
 
-            strip-from-room-domain = <String>
-            usage-timeout = <Duration String i.e. '5 minutes' or '1 hour'>
+                    strip-from-room-domain = <String>
+                    usage-timeout = <Duration String i.e. '5 minutes' or '1 hour'>
 
-            trust-all-xmpp-certs = <boolean>
-        },
-        { <more> }
-    ]
+                    trust-all-xmpp-certs = <boolean>
+                },
+                { <more> }
+            ]
+        }
+    }
 }
 ```
 An example of a new environments config can be found [here](example_xmpp_envs.conf).
