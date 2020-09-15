@@ -313,6 +313,7 @@ class XmppApi(
                 } else {
                     null
                 }
+                logger.info("Using RTMP URL $rtmpUrl and viewing URL $viewingUrl")
                 jibriManager.startStreaming(
                     serviceParams,
                     StreamingParams(
