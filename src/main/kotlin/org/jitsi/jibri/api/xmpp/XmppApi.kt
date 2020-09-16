@@ -299,13 +299,13 @@ class XmppApi(
                 )
             }
             JibriMode.STREAM -> {
-                val rtmpUrl = if (startIq.streamId.startsWith("rtmp://", ignoreCase = true)) {
+                val rtmpUrl = if (startIq.streamId.isRtmpUrl()) {
                     startIq.streamId
                 } else {
                     "$YOUTUBE_URL/${startIq.streamId}"
                 }
                 val viewingUrl = if (startIq.youtubeBroadcastId != null) {
-                    if (startIq.youtubeBroadcastId.startsWith("http", ignoreCase = true)) {
+                    if (startIq.youtubeBroadcastId.isViewingUrl()) {
                         startIq.youtubeBroadcastId
                     } else {
                         "http://youtu.be/${startIq.youtubeBroadcastId}"
@@ -344,3 +344,7 @@ class XmppApi(
         }
     }
 }
+
+private fun String.isRtmpUrl(): Boolean = startsWith("rtmp://", ignoreCase = true)
+private fun String.isViewingUrl(): Boolean =
+    startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
