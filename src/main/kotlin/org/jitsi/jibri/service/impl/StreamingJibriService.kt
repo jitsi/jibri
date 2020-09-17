@@ -19,7 +19,9 @@ package org.jitsi.jibri.service.impl
 
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
@@ -28,8 +30,11 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
+import org.jitsi.metaconfig.config
+import java.util.regex.Pattern
 
 const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
 private const val STREAMING_MAX_BITRATE = 2976
@@ -73,6 +78,11 @@ class StreamingJibriService(
     private val sink: Sink
     private val jibriSelenium = JibriSelenium()
 
+    private val rtmpAllowList: List<Pattern> by config {
+        "jibri.streaming.rtmp-allow-list".from(Config.configSource)
+            .convertFrom<List<String>> { it.map(Pattern::compile) }
+    }
+
     init {
         sink = StreamSink(
             url = streamingParams.rtmpUrl,
@@ -85,9 +95,22 @@ class StreamingJibriService(
     }
 
     override fun start() {
+        if (rtmpAllowList.none { it.matcher(streamingParams.rtmpUrl).matches() }) {
+            logger.error("RTMP url ${streamingParams.rtmpUrl} is not allowed")
+            publishStatus(
+                ComponentState.Error(
+                    JibriError(
+                        ErrorScope.SESSION,
+                        "RTMP URL ${streamingParams.rtmpUrl} is not allowed"
+                    )
+                )
+            )
+            return
+        }
         jibriSelenium.joinCall(
-                streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
-                streamingParams.callLoginParams)
+            streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+            streamingParams.callLoginParams
+        )
 
         whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
             logger.info("Selenium joined the call, starting capturer")
