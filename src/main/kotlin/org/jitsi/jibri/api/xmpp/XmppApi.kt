@@ -30,6 +30,7 @@ import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
+import org.jitsi.jibri.service.impl.YOUTUBE_URL
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
@@ -298,14 +299,30 @@ class XmppApi(
                 )
             }
             JibriMode.STREAM -> {
+                val rtmpUrl = if (startIq.streamId.isRtmpUrl()) {
+                    startIq.streamId
+                } else {
+                    "$YOUTUBE_URL/${startIq.streamId}"
+                }
+                val viewingUrl = if (startIq.youtubeBroadcastId != null) {
+                    if (startIq.youtubeBroadcastId.isViewingUrl()) {
+                        startIq.youtubeBroadcastId
+                    } else {
+                        "http://youtu.be/${startIq.youtubeBroadcastId}"
+                    }
+                } else {
+                    null
+                }
+                logger.info("Using RTMP URL $rtmpUrl and viewing URL $viewingUrl")
                 jibriManager.startStreaming(
                     serviceParams,
                     StreamingParams(
                         callParams,
                         startIq.sessionId,
                         xmppEnvironment.callLogin,
-                        youTubeStreamKey = startIq.streamId,
-                        youTubeBroadcastId = startIq.youtubeBroadcastId),
+                        rtmpUrl = rtmpUrl,
+                        viewingUrl = viewingUrl
+                    ),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )
@@ -327,3 +344,7 @@ class XmppApi(
         }
     }
 }
+
+private fun String.isRtmpUrl(): Boolean = startsWith("rtmp://", ignoreCase = true)
+private fun String.isViewingUrl(): Boolean =
+    startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
