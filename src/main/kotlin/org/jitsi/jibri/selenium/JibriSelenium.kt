@@ -21,7 +21,6 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
-import org.jitsi.jibri.selenium.status_checks.CallStatusCheck
 import org.jitsi.jibri.selenium.status_checks.EmptyCallStatusCheck
 import org.jitsi.jibri.selenium.status_checks.MediaReceivedStatusCheck
 import org.jitsi.jibri.selenium.util.BrowserFileHandler
@@ -131,7 +130,6 @@ class JibriSelenium(
      * working correctly
      */
     private var recurringCallStatusCheckTask: ScheduledFuture<*>? = null
-    private val callStatusChecks: List<CallStatusCheck>
 
     /**
      * Set up default chrome driver options (using fake device, etc.)
@@ -151,13 +149,6 @@ class JibriSelenium(
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
         chromeDriver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS)
 
-        // Note that the order here is important: we always want to check for no participants before we check
-        // for media being received, since the call being empty will also mean Jibri is not receiving media but should
-        // not cause Jibri to go unhealthy (like not receiving media when there are others in the call will).
-        callStatusChecks = listOf(
-            EmptyCallStatusCheck(logger, callEmptyTimeout = jibriSeleniumOptions.emptyCallTimeout),
-            MediaReceivedStatusCheck(logger)
-        )
         stateMachine.onStateTransition(this::onSeleniumStateChange)
     }
 
@@ -177,6 +168,13 @@ class JibriSelenium(
     }
 
     private fun startRecurringCallStatusChecks() {
+        // Note that the order here is important: we always want to check for no participants before we check
+        // for media being received, since the call being empty will also mean Jibri is not receiving media but should
+        // not cause Jibri to go unhealthy (like not receiving media when there are others in the call will).
+        val callStatusChecks = listOf(
+            EmptyCallStatusCheck(logger, callEmptyTimeout = jibriSeleniumOptions.emptyCallTimeout),
+            MediaReceivedStatusCheck(logger)
+        )
         // We fire all state transitions in the ioPool, otherwise we may try and cancel the
         // recurringCallStatusCheckTask from within the thread it was executing in.  Another solution would've been
         // to pass 'false' to recurringCallStatusCheckTask.cancel, but it felt cleaner to separate the threads
