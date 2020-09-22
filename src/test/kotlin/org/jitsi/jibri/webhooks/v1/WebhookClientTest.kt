@@ -89,7 +89,7 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateStatus") {
                 client.updateStatus(goodStatus)
                 should("send a POST to the subscriber at the proper url") {
-                    eventually(2.seconds, 500.milliseconds) {
+                    eventually(5.seconds, 500.milliseconds) {
                         requests shouldHaveSize 1
                         with(requests[0]) {
                             url.toString() shouldContain "/v1/status"
@@ -98,7 +98,7 @@ class WebhookClientTest : ShouldSpec({
                     }
                 }
                 should("send the correct data") {
-                    eventually(2.seconds, 500.milliseconds) {
+                    eventually(5.seconds, 500.milliseconds) {
                         requests[0].body.contentType shouldBe ContentType.Application.Json
                         requests[0].body.shouldBeInstanceOf<TextContent> {
                             it.text shouldBe jacksonObjectMapper().writeValueAsString(
@@ -113,7 +113,7 @@ class WebhookClientTest : ShouldSpec({
                 context("and calling updateStatus again") {
                     client.updateStatus(badStatus)
                     should("send another request with the new status") {
-                        eventually(2.seconds, 500.milliseconds) {
+                        eventually(5.seconds, 500.milliseconds) {
                             requests shouldHaveSize 2
                             requests[1].body.shouldBeInstanceOf<TextContent> {
                                 it.text shouldContain jacksonObjectMapper().writeValueAsString(
@@ -132,7 +132,7 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateStatus") {
                 client.updateStatus(goodStatus)
                 should("send a POST to the subscribers at the proper url") {
-                    eventually(2.seconds, 500.milliseconds) {
+                    eventually(5.seconds, 500.milliseconds) {
                         requests shouldHaveSize 3
                         requests.forOne { it.url.host shouldContain "success" }
                         requests.forOne { it.url.host shouldContain "delay" }
@@ -143,7 +143,7 @@ class WebhookClientTest : ShouldSpec({
                     requests.clear()
                     client.updateStatus(goodStatus)
                     should("send a POST to the subscribers at the proper url") {
-                        eventually(2.seconds, 500.milliseconds) {
+                        eventually(5.seconds, 500.milliseconds) {
                             requests shouldHaveSize 3
                             requests.forOne { it.url.host shouldContain "success" }
                             requests.forOne { it.url.host shouldContain "delay" }
