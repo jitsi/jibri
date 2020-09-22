@@ -17,17 +17,16 @@
 package org.jitsi.jibri.webhooks.v1
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.inspectors.forOne
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockEngineConfig
-import io.ktor.client.engine.mock.MockRequestHandler
 import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.respondOk
 import io.ktor.client.request.HttpRequestData
@@ -36,13 +35,15 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.delay
-import org.jitsi.jibri.helpers.within
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.OverallHealth
-import java.time.Duration
+import kotlin.time.ExperimentalTime
+import kotlin.time.milliseconds
+import kotlin.time.seconds
 
+@ExperimentalTime
 class WebhookClientTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
     val requests = mutableListOf<HttpRequestData>()
@@ -88,7 +89,7 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateStatus") {
                 client.updateStatus(goodStatus)
                 should("send a POST to the subscriber at the proper url") {
-                    within(Duration.ofMillis(2000)) {
+                    eventually(2.seconds, 500.milliseconds) {
                         requests shouldHaveSize 1
                         with(requests[0]) {
                             url.toString() shouldContain "/v1/status"
@@ -97,7 +98,7 @@ class WebhookClientTest : ShouldSpec({
                     }
                 }
                 should("send the correct data") {
-                    within(Duration.ofMillis(2000)) {
+                    eventually(2.seconds, 500.milliseconds) {
                         requests[0].body.contentType shouldBe ContentType.Application.Json
                         requests[0].body.shouldBeInstanceOf<TextContent> {
                             it.text shouldBe jacksonObjectMapper().writeValueAsString(
@@ -112,7 +113,7 @@ class WebhookClientTest : ShouldSpec({
                 context("and calling updateStatus again") {
                     client.updateStatus(badStatus)
                     should("send another request with the new status") {
-                        within(Duration.ofMillis(2000)) {
+                        eventually(2.seconds, 500.milliseconds) {
                             requests shouldHaveSize 2
                             requests[1].body.shouldBeInstanceOf<TextContent> {
                                 it.text shouldContain jacksonObjectMapper().writeValueAsString(
@@ -131,22 +132,22 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateStatus") {
                 client.updateStatus(goodStatus)
                 should("send a POST to the subscribers at the proper url") {
-                    within(Duration.ofMillis(2000)) {
+                    eventually(2.seconds, 500.milliseconds) {
                         requests shouldHaveSize 3
-                        requests shouldContainRequestTo "success"
-                        requests shouldContainRequestTo "delay"
-                        requests shouldContainRequestTo "error"
+                        requests.forOne { it.url.host shouldContain "success" }
+                        requests.forOne { it.url.host shouldContain "delay" }
+                        requests.forOne { it.url.host shouldContain "error" }
                     }
                 }
                 context("and calling updateStatus again") {
                     requests.clear()
                     client.updateStatus(goodStatus)
                     should("send a POST to the subscribers at the proper url") {
-                        within(Duration.ofMillis(2000)) {
+                        eventually(2.seconds, 500.milliseconds) {
                             requests shouldHaveSize 3
-                            requests shouldContainRequestTo "success"
-                            requests shouldContainRequestTo "delay"
-                            requests shouldContainRequestTo "error"
+                            requests.forOne { it.url.host shouldContain "success" }
+                            requests.forOne { it.url.host shouldContain "delay" }
+                            requests.forOne { it.url.host shouldContain "error" }
                         }
                     }
                 }
@@ -154,11 +155,3 @@ class WebhookClientTest : ShouldSpec({
         }
     }
 })
-
-infix fun List<HttpRequestData>.shouldContainRequestTo(host: String) {
-    this.find { it.url.host.contains(host) } shouldNotBe null
-}
-
-fun MockEngineConfig.addNotifyingHandler(handler: MockRequestHandler) {
-    requestHandlers += handler
-}
