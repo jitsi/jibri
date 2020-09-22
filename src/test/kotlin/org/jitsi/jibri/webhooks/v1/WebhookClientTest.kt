@@ -65,6 +65,7 @@ class WebhookClientTest : ShouldSpec({
         engine {
             addHandler { request ->
                 requests += request
+                println("got request ${request.url}, requests is now: $requests")
                 with(request.url.toString()) {
                     when {
                         contains("success") -> {
@@ -130,7 +131,9 @@ class WebhookClientTest : ShouldSpec({
             client.addSubscriber("https://delay")
             client.addSubscriber("https://error")
             context("calling updateStatus") {
+                println("calling updateStatus")
                 client.updateStatus(goodStatus)
+                println("updateStatus done")
                 should("send a POST to the subscribers at the proper url") {
                     eventually(5.seconds, 500.milliseconds) {
                         requests shouldHaveSize 3
