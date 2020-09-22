@@ -39,6 +39,7 @@ import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.OverallHealth
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
@@ -46,7 +47,7 @@ import kotlin.time.seconds
 @ExperimentalTime
 class WebhookClientTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
-    val requests = mutableListOf<HttpRequestData>()
+    val requests: MutableList<HttpRequestData> = CopyOnWriteArrayList()
     val goodStatus = JibriStatus(
         ComponentBusyStatus.IDLE,
         OverallHealth(
