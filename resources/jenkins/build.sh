@@ -2,4 +2,4 @@
 
 set -e
 
-./resources/build.sh
+mvn -B clean verify package
