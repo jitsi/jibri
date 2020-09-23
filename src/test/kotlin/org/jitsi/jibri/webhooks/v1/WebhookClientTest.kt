@@ -17,7 +17,6 @@
 package org.jitsi.jibri.webhooks.v1
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.inspectors.forOne
@@ -41,8 +40,6 @@ import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.OverallHealth
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.ExperimentalTime
-import kotlin.time.milliseconds
-import kotlin.time.seconds
 
 @ExperimentalTime
 class WebhookClientTest : ShouldSpec({
@@ -91,37 +88,29 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateStatus") {
                 client.updateStatus(goodStatus)
                 should("send a POST to the subscriber at the proper url") {
-                    eventually(5.seconds, 500.milliseconds) {
-                        requests shouldHaveSize 1
-                        with(requests[0]) {
-                            url.toString() shouldContain "/v1/status"
-                            method shouldBe HttpMethod.Post
-                        }
+                    requests shouldHaveSize 1
+                    with(requests[0]) {
+                        url.toString() shouldContain "/v1/status"
+                        method shouldBe HttpMethod.Post
                     }
                 }
                 should("send the correct data") {
-                    eventually(5.seconds, 500.milliseconds) {
-                        requests[0].body.contentType shouldBe ContentType.Application.Json
-                        requests[0].body.shouldBeInstanceOf<TextContent> {
-                            it.text shouldBe jacksonObjectMapper().writeValueAsString(
-                                JibriEvent.HealthEvent("test", goodStatus)
-                            )
-                            it.text shouldContain """
-                            "jibriId":"test"
-                        """.trimIndent()
-                        }
+                    requests[0].body.contentType shouldBe ContentType.Application.Json
+                    requests[0].body.shouldBeInstanceOf<TextContent> {
+                        it.text shouldBe jacksonObjectMapper().writeValueAsString(
+                            JibriEvent.HealthEvent("test", goodStatus)
+                        )
+                        it.text shouldContain """"jibriId":"test""""
                     }
                 }
                 context("and calling updateStatus again") {
                     client.updateStatus(badStatus)
                     should("send another request with the new status") {
-                        eventually(5.seconds, 500.milliseconds) {
-                            requests shouldHaveSize 2
-                            requests[1].body.shouldBeInstanceOf<TextContent> {
-                                it.text shouldContain jacksonObjectMapper().writeValueAsString(
-                                    JibriEvent.HealthEvent("test", badStatus)
-                                )
-                            }
+                        requests shouldHaveSize 2
+                        requests[1].body.shouldBeInstanceOf<TextContent> {
+                            it.text shouldContain jacksonObjectMapper().writeValueAsString(
+                                JibriEvent.HealthEvent("test", badStatus)
+                            )
                         }
                     }
                 }
@@ -136,23 +125,19 @@ class WebhookClientTest : ShouldSpec({
                 client.updateStatus(goodStatus)
                 println("updateStatus done")
                 should("send a POST to the subscribers at the proper url") {
-                    eventually(5.seconds, 500.milliseconds) {
-                        requests shouldHaveSize 3
-                        requests.forOne { it.url.host shouldContain "success" }
-                        requests.forOne { it.url.host shouldContain "delay" }
-                        requests.forOne { it.url.host shouldContain "error" }
-                    }
+                    requests shouldHaveSize 3
+                    requests.forOne { it.url.host shouldContain "success" }
+                    requests.forOne { it.url.host shouldContain "delay" }
+                    requests.forOne { it.url.host shouldContain "error" }
                 }
                 context("and calling updateStatus again") {
                     requests.clear()
                     client.updateStatus(goodStatus)
                     should("send a POST to the subscribers at the proper url") {
-                        eventually(5.seconds, 500.milliseconds) {
-                            requests shouldHaveSize 3
-                            requests.forOne { it.url.host shouldContain "success" }
-                            requests.forOne { it.url.host shouldContain "delay" }
-                            requests.forOne { it.url.host shouldContain "error" }
-                        }
+                        requests shouldHaveSize 3
+                        requests.forOne { it.url.host shouldContain "success" }
+                        requests.forOne { it.url.host shouldContain "delay" }
+                        requests.forOne { it.url.host shouldContain "error" }
                     }
                 }
             }
