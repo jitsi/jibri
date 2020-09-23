@@ -109,12 +109,12 @@ class WebhookClient(
         logger.debug("Updating ${webhookSubscribers.size} subscribers of status")
         webhookSubscribers.forEach { subscriberBaseUrl ->
             webhookRequestScope.launch {
-                logger.info("Sending request to $subscriberBaseUrl")
+                logger.debug("Sending request to $subscriberBaseUrl")
                 try {
                     val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/status") {
                         body = JibriEvent.HealthEvent(jibriId, status)
                     }
-                    logger.info("Got response from $subscriberBaseUrl: $resp")
+                    logger.debug("Got response from $subscriberBaseUrl: $resp")
                     if (resp.status != HttpStatusCode.OK) {
                         logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
                     }
