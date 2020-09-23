@@ -33,9 +33,9 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.bouncycastle.openssl.PEMKeyPair
 import org.bouncycastle.openssl.PEMParser
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
@@ -60,6 +60,7 @@ import java.util.logging.Logger
 class WebhookClient(
     private val jibriId: String,
     private val clock: Clock = Clock.systemUTC(),
+    private val webhookRequestScope: CoroutineScope = CoroutineScope(TaskPools.ioPool.asCoroutineDispatcher()),
     client: HttpClient = HttpClient(Apache)
 ) {
     private val logger = Logger.getLogger(this::class.qualifiedName)
@@ -104,10 +105,10 @@ class WebhookClient(
         webhookSubscribers.remove(subscriberBaseUrl)
     }
 
-    fun updateStatus(status: JibriStatus) = runBlocking {
+    fun updateStatus(status: JibriStatus) {
         logger.debug("Updating ${webhookSubscribers.size} subscribers of status")
         webhookSubscribers.forEach { subscriberBaseUrl ->
-            launch(TaskPools.ioPool.asCoroutineDispatcher()) {
+            webhookRequestScope.launch {
                 logger.info("Sending request to $subscriberBaseUrl")
                 try {
                     val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/status") {

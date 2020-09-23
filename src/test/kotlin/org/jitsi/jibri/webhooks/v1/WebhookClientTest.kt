@@ -33,18 +33,20 @@ import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.TestCoroutineScope
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.OverallHealth
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.time.ExperimentalTime
 
-@ExperimentalTime
+@ExperimentalCoroutinesApi
 class WebhookClientTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
     val requests: MutableList<HttpRequestData> = CopyOnWriteArrayList()
+    val testCoroutineScope = TestCoroutineScope()
     val goodStatus = JibriStatus(
         ComponentBusyStatus.IDLE,
         OverallHealth(
@@ -59,11 +61,10 @@ class WebhookClientTest : ShouldSpec({
             mapOf()
         )
     )
-    val client = WebhookClient("test", client = HttpClient(MockEngine) {
+    val client = WebhookClient("test", webhookRequestScope = testCoroutineScope, client = HttpClient(MockEngine) {
         engine {
             addHandler { request ->
                 requests += request
-                println("got request ${request.url}, requests is now: $requests")
                 with(request.url.toString()) {
                     when {
                         contains("success") -> {
@@ -87,6 +88,7 @@ class WebhookClientTest : ShouldSpec({
             client.addSubscriber("success")
             context("calling updateStatus") {
                 client.updateStatus(goodStatus)
+                testCoroutineScope.advanceUntilIdle()
                 should("send a POST to the subscriber at the proper url") {
                     requests shouldHaveSize 1
                     with(requests[0]) {
@@ -105,6 +107,7 @@ class WebhookClientTest : ShouldSpec({
                 }
                 context("and calling updateStatus again") {
                     client.updateStatus(badStatus)
+                    testCoroutineScope.advanceUntilIdle()
                     should("send another request with the new status") {
                         requests shouldHaveSize 2
                         requests[1].body.shouldBeInstanceOf<TextContent> {
@@ -121,9 +124,8 @@ class WebhookClientTest : ShouldSpec({
             client.addSubscriber("https://delay")
             client.addSubscriber("https://error")
             context("calling updateStatus") {
-                println("calling updateStatus")
                 client.updateStatus(goodStatus)
-                println("updateStatus done")
+                testCoroutineScope.advanceUntilIdle()
                 should("send a POST to the subscribers at the proper url") {
                     requests shouldHaveSize 3
                     requests.forOne { it.url.host shouldContain "success" }
@@ -133,6 +135,7 @@ class WebhookClientTest : ShouldSpec({
                 context("and calling updateStatus again") {
                     requests.clear()
                     client.updateStatus(goodStatus)
+                    testCoroutineScope.advanceUntilIdle()
                     should("send a POST to the subscribers at the proper url") {
                         requests shouldHaveSize 3
                         requests.forOne { it.url.host shouldContain "success" }
