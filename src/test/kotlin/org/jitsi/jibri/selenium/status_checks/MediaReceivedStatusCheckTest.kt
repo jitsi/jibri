@@ -97,6 +97,13 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                     check.run(callPage) shouldBe null
                 }
             }
+            context("and some of the participants are jigasi") {
+                every { callPage.numRemoteParticipantsMuted() } returns 1
+                every { callPage.numRemoteParticipantsJigasi() } returns 2
+                should("not fire any event") {
+                    check.run(callPage) shouldBe null
+                }
+            }
         }
     }
 }
