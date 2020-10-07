@@ -345,6 +345,7 @@ class XmppApi(
     }
 }
 
-private fun String.isRtmpUrl(): Boolean = startsWith("rtmp://", ignoreCase = true)
+private fun String.isRtmpUrl(): Boolean =
+    startsWith("rtmp://", ignoreCase = true) || startsWith("rtmps://", ignoreCase = true)
 private fun String.isViewingUrl(): Boolean =
     startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
