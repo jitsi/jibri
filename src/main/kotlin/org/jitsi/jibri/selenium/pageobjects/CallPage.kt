@@ -157,6 +157,29 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
+    // APP.conference._room.getParticipants()[0].getProperty("features_jigasi")
+    /**
+     * Return how many of the participants are Jigasi clients
+     */
+    fun numRemoteParticipantsJigasi(): Int {
+        val result = driver.executeScript("""
+            try {
+                return APP.conference._room.getParticipants()
+                    .filter(participant => participant.getProperty("features_jigasi") == true)
+                    .length;
+            } catch (e) {
+                return e.message;
+            }
+        """.trimMargin())
+        return when (result) {
+            is Number -> result.toInt()
+            else -> {
+                logger.error("error running numRemoteParticipantsJigasi script: $result ${result::class.java}")
+                0
+            }
+        }
+    }
+
     /**
      * Returns a count of how many remote participants are totally muted (audio
      * and video).

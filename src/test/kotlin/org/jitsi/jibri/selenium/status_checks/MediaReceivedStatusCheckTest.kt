@@ -27,6 +27,7 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
         context("when media is flowing") {
             every { callPage.getBitrates() } returns mapOf("download" to 1024L)
             every { callPage.numRemoteParticipantsMuted() } returns 0
+            every { callPage.numRemoteParticipantsJigasi() } returns 0
             should("not report any event") {
                 repeat(10) {
                     check.run(callPage) shouldBe null
@@ -38,6 +39,7 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
             every { callPage.getBitrates() } returns mapOf("download" to 0L)
             context("but all participants are muted") {
                 every { callPage.numRemoteParticipantsMuted() } returns 3
+                every { callPage.numRemoteParticipantsJigasi() } returns 0
                 check.run(callPage) shouldBe null
                 context("before the clients-muted timeout") {
                     clock.elapse(Duration.ofSeconds(45))
@@ -49,6 +51,7 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                     // Go past NO_MEDIA_TIMEOUT, but everyone still muted
                     clock.elapse(35.seconds)
                     every { callPage.numRemoteParticipantsMuted() } returns 3
+                    every { callPage.numRemoteParticipantsJigasi() } returns 0
                     check.run(callPage)
                     // Now go another second, but none are muted
                     clock.elapse(1.seconds)
@@ -66,6 +69,7 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
             }
             context("and not all participants are muted") {
                 every { callPage.numRemoteParticipantsMuted() } returns 0
+                every { callPage.numRemoteParticipantsJigasi() } returns 0
                 context("before the no-media timeout") {
                     clock.elapse(Duration.ofSeconds(15))
                     should("not report any event") {
@@ -84,6 +88,20 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                     should("report a no media error") {
                         check.run(callPage) shouldBe SeleniumEvent.NoMediaReceived
                     }
+                }
+            }
+            context("and all participants are jigasis") {
+                every { callPage.numRemoteParticipantsMuted() } returns 0
+                every { callPage.numRemoteParticipantsJigasi() } returns 3
+                should("not fire any event") {
+                    check.run(callPage) shouldBe null
+                }
+            }
+            context("and some of the participants are jigasi") {
+                every { callPage.numRemoteParticipantsMuted() } returns 1
+                every { callPage.numRemoteParticipantsJigasi() } returns 2
+                should("not fire any event") {
+                    check.run(callPage) shouldBe null
                 }
             }
         }

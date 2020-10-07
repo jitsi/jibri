@@ -29,12 +29,19 @@ class MediaReceivedStatusCheck(
         val now = clock.instant()
         val bitrates = callPage.getBitrates()
         // getNumParticipants includes Jibri, so subtract 1
-        val allClientsMuted = callPage.numRemoteParticipantsMuted() == (callPage.getNumParticipants() - 1)
-        logger.info("Jibri client receive bitrates: $bitrates, all clients muted? $allClientsMuted")
+        val numParticipants = callPage.getNumParticipants() - 1
+        val numMutedParticipants = callPage.numRemoteParticipantsMuted()
+        val numJigasiParticipants = callPage.numRemoteParticipantsJigasi()
+        // We don't get any mute state for Jigasi participants, so to prevent timing out when only Jigasi participants
+        // may be speaking, always count them as "muted"
+        val allClientsMuted = (numMutedParticipants + numJigasiParticipants) == numParticipants
+        logger.info("Jibri client receive bitrates: $bitrates, num participants: $numParticipants, " +
+            "numMutedParticipants: $numMutedParticipants, numJigasis: $numJigasiParticipants, " +
+            "all clients muted? $allClientsMuted")
         clientsAllMutedTransitionTime.maybeUpdate(allClientsMuted)
         val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
         // If all clients are muted, register it as 'receiving media': that way when clients unmute
-        // we'll get the full noMediaTimeout duration before timing out due to lack of media
+        // we'll get the full noMediaTimeout duration before timing out due to lack of media.
         if (downloadBitrate != 0L || allClientsMuted) {
             timeOfLastMedia = now
         }
