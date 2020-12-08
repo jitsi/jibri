@@ -19,6 +19,7 @@ package org.jitsi.jibri.util
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.pidValue
 import java.io.InputStream
+import java.io.OutputStream
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
@@ -98,7 +99,13 @@ class ProcessWrapper(
         // because we want them to read everything available from the
         // process' inputstream. Once it's done, they'll read
         // the EOF and close things up correctly
-        runtime.exec("kill -s SIGINT ${process.pidValue}")
+
+        var output: OutputStream = process.outputStream
+
+        output.write("q\n".toByteArray())
+        output.flush()
+
+        runtime.exec("bash -c \"kill -s SIGINT ${process.pidValue}\"")
     }
 
     /**
