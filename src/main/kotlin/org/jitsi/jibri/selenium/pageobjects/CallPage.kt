@@ -17,11 +17,11 @@
 package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.utils.logging2.createLogger
+import org.jitsi.utils.secs
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
-import java.time.Duration
 
 /**
  * Page object representing the in-call page on a jitsi-meet server.
@@ -42,7 +42,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
         val start = System.currentTimeMillis()
         return try {
-            WebDriverWait(driver, Duration.ofSeconds(30)).until {
+            WebDriverWait(driver, 30.secs).until {
                 val result = driver.executeScript(
                     """
                     try {
@@ -268,7 +268,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
 
         // Let's wait till we are alone in the room
         // (give time for the js Promise to finish before quiting selenium)
-        WebDriverWait(driver, Duration.ofSeconds(2)).until {
+        WebDriverWait(driver, 2.secs).until {
             getNumParticipants() == 1
         }
 
