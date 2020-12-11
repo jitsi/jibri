@@ -30,6 +30,7 @@ import java.io.File
 
 data class XmppCredentials(
     val domain: String = "",
+    val port: String = "",
     val username: String = "",
     val password: String = ""
 )
@@ -37,6 +38,7 @@ data class XmppCredentials(
 fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials =
     XmppCredentials(
         domain = getString("domain"),
+        port = getString("port"),
         username = getString("username"),
         password = getString("password")
     )
