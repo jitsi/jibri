@@ -20,6 +20,11 @@ import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.milliseconds
 
+/**
+ * Retry [block] up to [numAttempts] until it doesn't throw.  Delay between each retry, starting with
+ * [initialDelay] and then doubling each time.  If [block] never succeeds, the exception it throws
+ * on the last attempt will be thrown.
+ */
 suspend fun <T> retryWithBackoff(
     initialDelay: Duration = 500.milliseconds,
     numAttempts: Int = 5,

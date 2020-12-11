@@ -17,7 +17,7 @@
 package org.jitsi.jibri.sink
 
 /**
- * [Sink] describes an entity which data will be 'written to'.  It contains
+ * [Sink] describes an entity to which data will be written.  It contains
  * a destination (via [path]), a format (via [format]) and a set
  * of options which each [Sink] implementation may provide.
  *
