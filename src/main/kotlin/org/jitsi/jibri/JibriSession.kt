@@ -31,24 +31,31 @@ import org.jitsi.jibri.job.Running
  * 3) Take some action when it enters the 'Running' state.  'Running' implies that the session has
  *    successfully started.
  */
-class JibriSession(
-    private val deferred: Deferred<Unit>,
-    private val intermediaryStateUpdates: StateFlow<IntermediateJobState>
-) {
+interface JibriSession {
     /**
      * Await the completion of this session.  Should be surrounded by a try/catch, as all session completion is modeled
      * with exceptions
-     * TODO: should we wrap this in JibriSession and expose a Result?
      */
-    suspend fun await() = deferred.await()
+    suspend fun await()
 
     /**
      * Invoke the given [block] once the session moves to a [Running] state.
      */
-    suspend fun onRunning(block: () -> Unit) {
+    suspend fun onRunning(block: () -> Unit)
+
+    fun cancel(reason: String)
+}
+
+class JibriSessionImpl(
+    private val deferred: Deferred<Unit>,
+    private val intermediaryStateUpdates: StateFlow<IntermediateJobState>
+) : JibriSession {
+    override suspend fun await() = deferred.await()
+
+    override suspend fun onRunning(block: () -> Unit) {
         intermediaryStateUpdates.takeWhile { it != Running }.collect { }
         block()
     }
 
-    fun cancel(reason: String) = deferred.cancel(reason)
+    override fun cancel(reason: String) = deferred.cancel(reason)
 }

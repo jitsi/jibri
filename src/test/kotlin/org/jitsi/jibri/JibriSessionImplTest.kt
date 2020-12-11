@@ -27,11 +27,11 @@ import org.jitsi.jibri.job.IntermediateJobState
 import org.jitsi.jibri.job.Running
 import org.jitsi.jibri.job.StartingUp
 
-class JibriSessionTest : ShouldSpec({
+class JibriSessionImplTest : ShouldSpec({
     val deferred: Deferred<Unit> = mockk()
     val stateUpdates = MutableStateFlow<IntermediateJobState>(StartingUp)
 
-    val session = JibriSession(deferred, stateUpdates)
+    val session = JibriSessionImpl(deferred, stateUpdates)
 
     context("onRunning") {
         should("only invoke the block after the state has gone to running") {

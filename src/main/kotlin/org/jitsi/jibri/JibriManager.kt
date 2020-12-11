@@ -229,7 +229,7 @@ class JibriManager(
                 throw t
             }
         }
-        return JibriSession(deferred, job.state)
+        return JibriSessionImpl(deferred, job.state)
     }
 
     /**
