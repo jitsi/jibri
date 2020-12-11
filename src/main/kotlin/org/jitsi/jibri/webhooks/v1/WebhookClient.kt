@@ -131,7 +131,7 @@ private val INFINITE = Duration.ofSeconds(Long.MAX_VALUE)
  * Just like [HttpClient.post], but automatically sets the content type to
  * [ContentType.Application.Json].
  */
-suspend inline fun <reified T> HttpClient.postJson(
+private suspend inline fun <reified T> HttpClient.postJson(
     urlString: String,
     block: HttpRequestBuilder.() -> Unit = {}
 ): T = post(urlString) {
