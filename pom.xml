@@ -134,7 +134,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>1.0-69-g6e73ec2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jetbrains.kotlin</groupId>
