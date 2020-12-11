@@ -77,7 +77,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin()
+            """.trimMargin()
         )
         return when (result) {
             is Number -> result.toInt()
@@ -94,7 +94,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin()
+            """.trimMargin()
         )
         if (result is String) {
             return mapOf()
@@ -138,7 +138,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin()
+            """.trimMargin()
         )
         return when (result) {
             is Boolean -> result
@@ -154,7 +154,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin()
+            """.trimMargin()
         )
         if (result is List<*>) {
             @Suppress("UNCHECKED_CAST")
@@ -164,7 +164,6 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    // APP.conference._room.getParticipants()[0].getProperty("features_jigasi")
     /**
      * Return how many of the participants are Jigasi clients
      */
@@ -178,7 +177,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin()
+            """.trimMargin()
         )
         return when (result) {
             is Number -> result.toInt()
@@ -203,7 +202,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin()
+            """.trimMargin()
         )
         return when (result) {
             is Number -> result.toInt()
@@ -263,7 +262,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin()
+            """.trimMargin()
         )
 
         // Let's wait till we are alone in the room
