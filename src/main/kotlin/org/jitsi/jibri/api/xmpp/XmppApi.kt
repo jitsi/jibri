@@ -30,10 +30,8 @@ import org.jitsi.jibri.JibriBusy
 import org.jitsi.jibri.JibriError
 import org.jitsi.jibri.JibriException
 import org.jitsi.jibri.JibriManager
-import org.jitsi.jibri.JibriRequestError
 import org.jitsi.jibri.JibriSession
 import org.jitsi.jibri.JibriState
-import org.jitsi.jibri.JibriSystemError
 import org.jitsi.jibri.JobParams
 import org.jitsi.jibri.UnsupportedIqMode
 import org.jitsi.jibri.job.streaming.StreamingParams
@@ -166,15 +164,9 @@ class XmppApi(
         mucClient: MucClient
     ): IQ {
         logger.info("Received start request, starting service")
-        // Starting a job can fail, but should only result in either system or request errors,
-        // so explicitly catch only those to try and make sure nothing else is getting through
         val session = try {
             startSession(request, environment)
-        } catch (j: JibriSystemError) {
-            println("xmpp api: session got system error")
-            return createOffIqUpdateFrom(j, request)
-        } catch (j: JibriRequestError) {
-            println("xmpp api: session got request error")
+        } catch (j: JibriException) {
             return createOffIqUpdateFrom(j, request)
         } catch (t: Throwable) {
             logger.error("Should never get here, saw non JibriException", t)
@@ -343,7 +335,7 @@ private fun createIqUpdateFrom(j: JibriException?, status: JibriIq.Status, origi
         type = IQ.Type.set
         this.status = status
         if (j is JibriError) {
-            failureReason = JibriIq.FailureReason.ERROR
+            failureReason = if (j is JibriBusy) JibriIq.FailureReason.BUSY else JibriIq.FailureReason.ERROR
             shouldRetry = j.shouldRetry()
         }
     }
