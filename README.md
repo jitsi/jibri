@@ -110,7 +110,7 @@ Component "internal.auth.yourdomain.com" "muc"
     modules_enabled = {
       "ping";
     }
-    -- storage should be "null" for prosody 0.10 and "memory" for prosody 0.11
+    -- storage should be "none" for prosody 0.10 and "memory" for prosody 0.11
     storage = "memory"
     muc_room_cache_size = 1000
 ```
