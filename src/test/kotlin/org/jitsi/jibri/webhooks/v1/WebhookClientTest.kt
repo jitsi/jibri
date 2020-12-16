@@ -78,7 +78,7 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateState") {
                 client.updateState(JibriState.Idle)
                 should("send a POST to the subscriber at the proper url") {
-                    eventually(2.seconds) {
+                    eventually(5.seconds) {
                         requests shouldHaveSize 1
                         with(requests[0]) {
                             url.toString() shouldContain "/v1/status"
@@ -87,7 +87,7 @@ class WebhookClientTest : ShouldSpec({
                     }
                 }
                 should("send the correct data") {
-                    eventually(2.seconds) {
+                    eventually(5.seconds) {
                         requests[0].body.contentType shouldBe ContentType.Application.Json
                         with(requests[0].body) {
                             shouldBeInstanceOf<TextContent>()
@@ -98,7 +98,7 @@ class WebhookClientTest : ShouldSpec({
                 context("and calling updateStatus again") {
                     client.updateState(JibriState.Error(ProcessFailedToStart("ffmpeg")))
                     should("send another request with the new status") {
-                        eventually(2.seconds) {
+                        eventually(5.seconds) {
                             requests shouldHaveSize 2
                             with(requests[1].body) {
                                 shouldBeInstanceOf<TextContent>()
@@ -116,7 +116,7 @@ class WebhookClientTest : ShouldSpec({
             context("calling updateStatus") {
                 client.updateState(JibriState.Idle)
                 should("send a POST to the subscribers at the proper url") {
-                    eventually(2.seconds) {
+                    eventually(5.seconds) {
                         requests shouldHaveSize 3
                         requests shouldContainRequestTo "success"
                         requests shouldContainRequestTo "delay"
@@ -127,7 +127,7 @@ class WebhookClientTest : ShouldSpec({
                     requests.clear()
                     client.updateState(JibriState.Idle)
                     should("send a POST to the subscribers at the proper url") {
-                        eventually(2.seconds) {
+                        eventually(5.seconds) {
                             requests shouldHaveSize 3
                             requests shouldContainRequestTo "success"
                             requests shouldContainRequestTo "delay"
