@@ -19,7 +19,6 @@ package org.jitsi.jibri.job.recording
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.throwables.shouldThrowAny
-import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.ShouldSpec
@@ -32,6 +31,7 @@ import io.mockk.mockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.runBlockingTest
 import org.jitsi.jibri.BadRtmpUrl
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.EmptyCallException
@@ -55,7 +55,6 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
-import kotlin.time.seconds
 
 @Suppress("BlockingMethodInNonBlockingContext")
 class RecordingJobTest : ShouldSpec() {
@@ -140,15 +139,16 @@ class RecordingJobTest : ShouldSpec() {
                     "bitrate= 583.3kbits/s speed=1.46x")
 
                 should("change its state to running") {
-                    val session = launch {
-                        shouldThrowAny {
-                            job.run()
+                    runBlockingTest {
+                        val session = launch {
+                            shouldThrowAny {
+                                job.run()
+                            }
                         }
-                    }
-                    eventually(5.seconds) {
+                        advanceUntilIdle()
                         job.state.value shouldBe Running
+                        session.cancel()
                     }
-                    session.cancel()
                 }
             }
 
