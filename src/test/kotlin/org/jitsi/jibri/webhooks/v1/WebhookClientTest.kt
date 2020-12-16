@@ -16,6 +16,7 @@
 
 package org.jitsi.jibri.webhooks.v1
 
+import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -33,9 +34,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runBlockingTest
 import org.jitsi.jibri.JibriState
 import org.jitsi.jibri.ProcessFailedToStart
+import kotlin.time.seconds
 
 class WebhookClientTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
@@ -71,26 +72,29 @@ class WebhookClientTest : ShouldSpec({
         context("has a valid subscriber") {
             client.addSubscriber("success")
             context("calling updateState") {
-                runBlockingTest {
-                    client.updateState(JibriState.Idle)
-                    advanceUntilIdle()
-                    should("send a POST to the subscriber at the proper url") {
+                client.updateState(JibriState.Idle)
+                should("send a POST to the subscriber at the proper url") {
+                    eventually(2.seconds) {
                         requests shouldHaveSize 1
                         with(requests[0]) {
                             url.toString() shouldContain "/v1/status"
                             method shouldBe HttpMethod.Post
                         }
                     }
-                    should("send the correct data") {
+                }
+                should("send the correct data") {
+                    eventually(2.seconds) {
                         requests[0].body.contentType shouldBe ContentType.Application.Json
                         with(requests[0].body) {
                             shouldBeInstanceOf<TextContent>()
                             // TODO: compare text
                         }
                     }
-                    context("and calling updateStatus again") {
-                        client.updateState(JibriState.Error(ProcessFailedToStart("ffmpeg")))
-                        should("send another request with the new status") {
+                }
+                context("and calling updateStatus again") {
+                    client.updateState(JibriState.Error(ProcessFailedToStart("ffmpeg")))
+                    should("send another request with the new status") {
+                        eventually(2.seconds) {
                             requests shouldHaveSize 2
                             with(requests[1].body) {
                                 shouldBeInstanceOf<TextContent>()
@@ -106,19 +110,20 @@ class WebhookClientTest : ShouldSpec({
             client.addSubscriber("https://delay")
             client.addSubscriber("https://error")
             context("calling updateStatus") {
-                runBlockingTest {
-                    client.updateState(JibriState.Idle)
-                    advanceUntilIdle()
-                    should("send a POST to the subscribers at the proper url") {
+                client.updateState(JibriState.Idle)
+                should("send a POST to the subscribers at the proper url") {
+                    eventually(2.seconds) {
                         requests shouldHaveSize 3
                         requests shouldContainRequestTo "success"
                         requests shouldContainRequestTo "delay"
                         requests shouldContainRequestTo "error"
                     }
-                    context("and calling updateStatus again") {
-                        requests.clear()
-                        client.updateState(JibriState.Idle)
-                        should("send a POST to the subscribers at the proper url") {
+                }
+                context("and calling updateStatus again") {
+                    requests.clear()
+                    client.updateState(JibriState.Idle)
+                    should("send a POST to the subscribers at the proper url") {
+                        eventually(2.seconds) {
                             requests shouldHaveSize 3
                             requests shouldContainRequestTo "success"
                             requests shouldContainRequestTo "delay"
