@@ -68,6 +68,10 @@ class WebhookClientTest : ShouldSpec({
         }
     )
 
+    // Note: we should be able to use runBlockingTest in these tests and replace the 'eventually' calls with
+    // calls to 'advanceUntilIdle', but there is a bug where things don't work because updateState launches
+    // a coroutine on Dispatchers.IO.  See https://github.com/Kotlin/kotlinx.coroutines/pull/1206.
+
     context("when the client") {
         context("has a valid subscriber") {
             client.addSubscriber("success")
