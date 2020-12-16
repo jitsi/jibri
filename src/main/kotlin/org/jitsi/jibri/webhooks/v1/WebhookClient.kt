@@ -32,9 +32,8 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.supervisorScope
 import org.bouncycastle.openssl.PEMKeyPair
 import org.bouncycastle.openssl.PEMParser
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
@@ -103,22 +102,24 @@ class WebhookClient(
         webhookSubscribers.remove(subscriberBaseUrl)
     }
 
-    fun updateState(state: JibriState) = runBlocking {
+    suspend fun updateState(state: JibriState) {
         logger.debug("Updating ${webhookSubscribers.size} subscribers of status")
-        webhookSubscribers.forEach { subscriberBaseUrl ->
-            launch(Dispatchers.IO) {
-                logger.debug("Sending request to $subscriberBaseUrl")
-                try {
-                    val resp = retryWithBackoff {
-                        client.postJson<HttpResponse>("$subscriberBaseUrl/v1/status") {
-                            body = JibriWebhookEvent.Legacy.HealthEvent(jibriId, state.toLegacyJibriStatus())
+        supervisorScope {
+            webhookSubscribers.forEach { subscriberBaseUrl ->
+                launch {
+                    logger.debug("Sending request to $subscriberBaseUrl")
+                    try {
+                        val resp = retryWithBackoff {
+                            client.postJson<HttpResponse>("$subscriberBaseUrl/v1/status") {
+                                body = JibriWebhookEvent.Legacy.HealthEvent(jibriId, state.toLegacyJibriStatus())
+                            }
                         }
+                        if (resp.status != HttpStatusCode.OK) {
+                            logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
+                        }
+                    } catch (t: Throwable) {
+                        logger.error("Request to $subscriberBaseUrl had error: $t")
                     }
-                    if (resp.status != HttpStatusCode.OK) {
-                        logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
-                    }
-                } catch (t: Throwable) {
-                    logger.error("Request to $subscriberBaseUrl had error: $t")
                 }
             }
         }
