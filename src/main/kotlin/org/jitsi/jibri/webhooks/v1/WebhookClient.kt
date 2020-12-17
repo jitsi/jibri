@@ -32,8 +32,10 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import org.bouncycastle.openssl.PEMKeyPair
 import org.bouncycastle.openssl.PEMParser
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
@@ -102,11 +104,15 @@ class WebhookClient(
         webhookSubscribers.remove(subscriberBaseUrl)
     }
 
+    // TODO: I think there's a potential problem here with another update coming before the previous one
+    // had finished pushing, where a previous attempt (with state A) could fail and then delay, a new attempt
+    // (with state B) could succeed, and then the previous attempt could succeed (with state A)
     suspend fun updateState(state: JibriState) {
         logger.debug("Updating ${webhookSubscribers.size} subscribers of status")
         supervisorScope {
             webhookSubscribers.forEach { subscriberBaseUrl ->
-                launch {
+                launch(Dispatchers.IO) {
+                    logger.info("Webhook subscriber update running in thread ${Thread.currentThread().name}")
                     logger.debug("Sending request to $subscriberBaseUrl")
                     try {
                         val resp = retryWithBackoff {
