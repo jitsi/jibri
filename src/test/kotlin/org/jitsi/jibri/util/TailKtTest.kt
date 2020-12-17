@@ -23,6 +23,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.test.runBlockingTest
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.PipedInputStream
@@ -51,9 +52,15 @@ class TailKtTest : ShouldSpec({
                     appendLine("This is line $it")
                 }
             }.byteInputStream()
-            val tailedOutput = tail(str, replay = 1)
-            tailedOutput.collectUntilEof {
-                it shouldBe "This is line 9"
+            runBlockingTest {
+                // Here we want to simulate that all of the original lines were alread emitted, so use a
+                // TestCoroutineScope to advance until the tail is done reading the lines from the original
+                // stream
+                val tailedOutput = tail(str, replay = 1, scope = this)
+                advanceUntilIdle()
+                tailedOutput.collectUntilEof {
+                    it shouldBe "This is line 9"
+                }
             }
         }
 
