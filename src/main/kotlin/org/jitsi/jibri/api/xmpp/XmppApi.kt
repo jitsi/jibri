@@ -20,7 +20,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -63,7 +63,8 @@ import kotlin.time.minutes
 class XmppApi(
     private val jibriManager: JibriManager,
     private val xmppConfigs: List<XmppEnvironment>,
-    private val mucClientManager: MucClientManager = MucClientManager()
+    private val mucClientManager: MucClientManager = MucClientManager(),
+    private val scope: CoroutineScope = CoroutineScope(CoroutineName("XMPP API"))
 ) {
     private val logger = createLogger()
     private val iqListener = IqListener()
@@ -79,7 +80,7 @@ class XmppApi(
         mucClientManager.registerIQ(JibriIq())
         mucClientManager.setIQListener(iqListener)
 
-        GlobalScope.launch(CoroutineName("XMPP presence updater")) {
+        scope.launch(CoroutineName("XMPP presence updater")) {
             // Monitor the state and update our presence when it changes
             jibriManager.currentState.collect {
                 logger.info("Saw Jibri's state change to $it")
@@ -180,7 +181,7 @@ class XmppApi(
         // since we handle it separately (the handling code still needs to throw the exception to cancel the coroutine
         // properly)
         val handler = CoroutineExceptionHandler { _, _ -> }
-        GlobalScope.launch(CoroutineName("XMPP session ${request.sessionId} monitor") + handler) {
+        scope.launch(CoroutineName("XMPP session ${request.sessionId} monitor") + handler) {
             coroutineScope {
                 launch(CoroutineName("XMPP session ${request.sessionId} wait for running")) {
                     // When the session transitions to 'running', send an update

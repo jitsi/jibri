@@ -31,6 +31,7 @@ import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.TestCoroutineScope
 import kotlinx.coroutines.test.runBlockingTest
 import org.jitsi.jibri.CallUrlInfoFromJidException
 import org.jitsi.jibri.EmptyCallException
@@ -74,108 +75,161 @@ class XmppApiTest : ShouldSpec() {
         every { currentState } returns jibriState
     }
 
+    private val testCoroutineScope = TestCoroutineScope()
+
     init {
-        runBlockingTest {
-            context("XmppApi") {
-                val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), mucClientManager)
-                xmppApi.joinMucs()
+        context("XmppApi") {
+            val xmppApi = XmppApi(jibriManager, listOf(xmppConfig), mucClientManager, testCoroutineScope)
+            xmppApi.joinMucs()
 
-                should("create a muc client for each xmpp host") {
-                    verify(exactly = 2) { mucClientManager.addMucClient(any()) }
+            should("create a muc client for each xmpp host") {
+                verify(exactly = 2) { mucClientManager.addMucClient(any()) }
+            }
+
+            should("register an IQ listener") {
+                iqListener.isCaptured shouldBe true
+            }
+
+            should("send a presence with the initial sate") {
+                presenceUpdates shouldHaveSize 1
+                with(presenceUpdates.first()) {
+                    shouldBeInstanceOf<JibriStatusPacketExt>()
+                    busyStatus.status shouldBe JibriBusyStatusPacketExt.BusyStatus.IDLE
                 }
+            }
 
-                should("register an IQ listener") {
-                    iqListener.isCaptured shouldBe true
-                }
-
-                should("send a presence with the initial sate") {
-                    presenceUpdates shouldHaveSize 1
-                    with(presenceUpdates.first()) {
-                        shouldBeInstanceOf<JibriStatusPacketExt>()
-                        busyStatus.status shouldBe JibriBusyStatusPacketExt.BusyStatus.IDLE
-                    }
-                }
-
-                context("whenever jibrimanager's state is updated") {
-                    context("to busy") {
+            context("whenever jibrimanager's state is updated") {
+                context("to busy") {
+                    testCoroutineScope.runBlockingTest {
                         jibriState.value = JibriState.Busy(null)
                         advanceUntilIdle()
-                        should("send presence") {
-                            with(presenceUpdates.last()) {
-                                shouldBeInstanceOf<JibriStatusPacketExt>()
-                                busyStatus.status shouldBe JibriBusyStatusPacketExt.BusyStatus.BUSY
-                                healthStatus.status shouldBe HealthStatusPacketExt.Health.HEALTHY
-                            }
-                        }
-                        context("and then back to idle") {
-                            jibriState.value = JibriState.Idle
-                            advanceUntilIdle()
-                            should("send presence") {
-                                with(presenceUpdates.last()) {
-                                    shouldBeInstanceOf<JibriStatusPacketExt>()
-                                    busyStatus.status shouldBe JibriBusyStatusPacketExt.BusyStatus.IDLE
-                                    healthStatus.status shouldBe HealthStatusPacketExt.Health.HEALTHY
-                                }
-                            }
+                    }
+                    should("send presence") {
+                        with(presenceUpdates.last()) {
+                            shouldBeInstanceOf<JibriStatusPacketExt>()
+                            busyStatus.status shouldBe JibriBusyStatusPacketExt.BusyStatus.BUSY
+                            healthStatus.status shouldBe HealthStatusPacketExt.Health.HEALTHY
                         }
                     }
-
-                    context("to error") {
-                        jibriState.value = JibriState.Error(UnsupportedOsException("Win 3.1"))
-                        advanceUntilIdle()
+                    context("and then back to idle") {
+                        testCoroutineScope.runBlockingTest {
+                            jibriState.value = JibriState.Idle
+                            advanceUntilIdle()
+                        }
                         should("send presence") {
                             with(presenceUpdates.last()) {
                                 shouldBeInstanceOf<JibriStatusPacketExt>()
                                 busyStatus.status shouldBe JibriBusyStatusPacketExt.BusyStatus.IDLE
-                                healthStatus.status shouldBe HealthStatusPacketExt.Health.UNHEALTHY
+                                healthStatus.status shouldBe HealthStatusPacketExt.Health.HEALTHY
                             }
-                        }
-                    }
-
-                    context("to expired") {
-                        jibriState.value = JibriState.Expired
-                        advanceUntilIdle()
-                        should("not send a presence") {
-                            presenceUpdates shouldHaveSize 1
                         }
                     }
                 }
 
-                context("when receiving a start recording iq") {
-                    val startRecordingIq = createStartRecordingIq()
-                    context("and the session fails immediately") {
-                        context("because jibri is busy") {
-                            every { jibriManager.startFileRecordingSession(any(), any()) } throws JibriBusy
+                context("to error") {
+                    testCoroutineScope.runBlockingTest {
+                        jibriState.value = JibriState.Error(UnsupportedOsException("Win 3.1"))
+                        advanceUntilIdle()
+                    }
+                    should("send presence") {
+                        with(presenceUpdates.last()) {
+                            shouldBeInstanceOf<JibriStatusPacketExt>()
+                            busyStatus.status shouldBe JibriBusyStatusPacketExt.BusyStatus.IDLE
+                            healthStatus.status shouldBe HealthStatusPacketExt.Health.UNHEALTHY
+                        }
+                    }
+                }
+
+                context("to expired") {
+                    testCoroutineScope.runBlockingTest {
+                        jibriState.value = JibriState.Expired
+                        advanceUntilIdle()
+                    }
+                    should("not send a presence") {
+                        presenceUpdates shouldHaveSize 1
+                    }
+                }
+            }
+
+            context("when receiving a start recording iq") {
+                val startRecordingIq = createStartRecordingIq()
+                context("and the session fails immediately") {
+                    context("because jibri is busy") {
+                        every { jibriManager.startFileRecordingSession(any(), any()) } throws JibriBusy
+                        val response = iqListener.captured.handleIq(startRecordingIq, mucClient)
+
+                        should("send an error IQ") {
+                            response.shouldBeInstanceOf<JibriIq>()
+                            response.status shouldBe JibriIq.Status.OFF
+                            response.failureReason shouldBe JibriIq.FailureReason.BUSY
+                            response.shouldRetry shouldBe true
+                        }
+                    }
+                    context("with a request error") {
+                        every { jibriManager.startFileRecordingSession(any(), any()) } throws
+                            CallUrlInfoFromJidException("foo")
+
+                        should("send an error signaling not to retry the request") {
                             val response = iqListener.captured.handleIq(startRecordingIq, mucClient)
-
-                            should("send an error IQ") {
-                                response.shouldBeInstanceOf<JibriIq>()
-                                response.status shouldBe JibriIq.Status.OFF
-                                response.failureReason shouldBe JibriIq.FailureReason.BUSY
-                                response.shouldRetry shouldBe true
+                            response.apply {
+                                shouldBeInstanceOf<JibriIq>()
+                                status shouldBe JibriIq.Status.OFF
+                                failureReason shouldBe JibriIq.FailureReason.ERROR
+                                shouldRetry shouldBe false
                             }
                         }
-                        context("with a request error") {
-                            every { jibriManager.startFileRecordingSession(any(), any()) } throws
-                                CallUrlInfoFromJidException("foo")
+                    }
+                    context("with a system error") {
+                        every { jibriManager.startFileRecordingSession(any(), any()) } throws
+                            UnsupportedOsException("Win 3.1")
 
-                            should("send an error signaling not to retry the request") {
-                                val response = iqListener.captured.handleIq(startRecordingIq, mucClient)
-                                response.apply {
-                                    shouldBeInstanceOf<JibriIq>()
-                                    status shouldBe JibriIq.Status.OFF
-                                    failureReason shouldBe JibriIq.FailureReason.ERROR
-                                    shouldRetry shouldBe false
-                                }
+                        should("send an error IQ") {
+                            val response = iqListener.captured.handleIq(startRecordingIq, mucClient)
+                            response.apply {
+                                shouldBeInstanceOf<JibriIq>()
+                                status shouldBe JibriIq.Status.OFF
+                                failureReason shouldBe JibriIq.FailureReason.ERROR
+                                shouldRetry shouldBe true
                             }
                         }
-                        context("with a system error") {
-                            every { jibriManager.startFileRecordingSession(any(), any()) } throws
-                                UnsupportedOsException("Win 3.1")
+                    }
+                }
 
-                            should("send an error IQ") {
-                                val response = iqListener.captured.handleIq(startRecordingIq, mucClient)
-                                response.apply {
+                val recordingSession = FakeJibriSession()
+                every { jibriManager.startFileRecordingSession(any(), any()) } returns recordingSession
+
+                val response = iqListener.captured.handleIq(startRecordingIq, mucClient)
+                should("send a pending response to the original IQ request") {
+                    response shouldNotBe null
+                    response.shouldBeResponseTo(startRecordingIq)
+                    response.shouldBeInstanceOf<JibriIq>()
+                    response.status shouldBe JibriIq.Status.PENDING
+                }
+
+                should("wait on the job to finished") {
+                    recordingSession.numWaiters shouldBe 1
+                }
+
+                context("after the session starts up") {
+                    recordingSession.running()
+                    should("send an update") {
+                        val sentStanzas = mutableListOf<Stanza>()
+                        verify { mucClient.sendStanza(capture(sentStanzas)) }
+                        sentStanzas.size shouldBe 1
+                        with(sentStanzas.first()) {
+                            shouldBeInstanceOf<JibriIq>()
+                            status shouldBe JibriIq.Status.ON
+                        }
+                    }
+
+                    context("and then it completes") {
+                        context("with a session error") {
+                            recordingSession.complete(ProcessHung("ffmpeg hung"))
+
+                            should("send an appropriate update") {
+                                val sentStanzas = mutableListOf<Stanza>()
+                                verify { mucClient.sendStanza(capture(sentStanzas)) }
+                                with(sentStanzas.last()) {
                                     shouldBeInstanceOf<JibriIq>()
                                     status shouldBe JibriIq.Status.OFF
                                     failureReason shouldBe JibriIq.FailureReason.ERROR
@@ -183,101 +237,56 @@ class XmppApiTest : ShouldSpec() {
                                 }
                             }
                         }
-                    }
 
-                    val recordingSession = FakeJibriSession()
-                    every { jibriManager.startFileRecordingSession(any(), any()) } returns recordingSession
+                        context("cleanly") {
+                            recordingSession.complete(EmptyCallException)
 
-                    val response = iqListener.captured.handleIq(startRecordingIq, mucClient)
-                    should("send a pending response to the original IQ request") {
-                        response shouldNotBe null
-                        response.shouldBeResponseTo(startRecordingIq)
-                        response.shouldBeInstanceOf<JibriIq>()
-                        response.status shouldBe JibriIq.Status.PENDING
-                    }
-
-                    should("wait on the job to finished") {
-                        recordingSession.numWaiters shouldBe 1
-                    }
-
-                    context("after the session starts up") {
-                        recordingSession.running()
-                        should("send an update") {
-                            val sentStanzas = mutableListOf<Stanza>()
-                            verify { mucClient.sendStanza(capture(sentStanzas)) }
-                            sentStanzas.size shouldBe 1
-                            with(sentStanzas.first()) {
-                                shouldBeInstanceOf<JibriIq>()
-                                status shouldBe JibriIq.Status.ON
-                            }
-                        }
-
-                        context("and then it completes") {
-                            context("with a session error") {
-                                recordingSession.complete(ProcessHung("ffmpeg hung"))
-
-                                should("send an appropriate update") {
-                                    val sentStanzas = mutableListOf<Stanza>()
-                                    verify { mucClient.sendStanza(capture(sentStanzas)) }
-                                    with(sentStanzas.last()) {
-                                        shouldBeInstanceOf<JibriIq>()
-                                        status shouldBe JibriIq.Status.OFF
-                                        failureReason shouldBe JibriIq.FailureReason.ERROR
-                                        shouldRetry shouldBe true
-                                    }
-                                }
-                            }
-
-                            context("cleanly") {
-                                recordingSession.complete(EmptyCallException)
-
-                                should("send an appropriate update") {
-                                    val sentStanzas = mutableListOf<Stanza>()
-                                    verify { mucClient.sendStanza(capture(sentStanzas)) }
-                                    with(sentStanzas.last()) {
-                                        shouldBeInstanceOf<JibriIq>()
-                                        status shouldBe JibriIq.Status.OFF
-                                        failureReason shouldBe null
-                                        shouldRetry shouldBe null
-                                    }
-                                }
-                            }
-                        }
-
-                        context("and then a stop IQ is received") {
-                            val stopIq = createStopIq()
-                            val stopResponse = iqListener.captured.handleIq(stopIq, mucClient)
-
-                            should("stop the session") {
-                                recordingSession.isCancelled() shouldBe true
-                            }
-
-                            should("respond correctly") {
+                            should("send an appropriate update") {
                                 val sentStanzas = mutableListOf<Stanza>()
                                 verify { mucClient.sendStanza(capture(sentStanzas)) }
-                                stopResponse shouldBeResponseTo stopIq
-                                stopResponse.shouldBeInstanceOf<JibriIq>()
-                                stopResponse.status shouldBe JibriIq.Status.OFF
-                            }
-                        }
-
-                        context("and a stop IQ with the wrong session ID is received") {
-                            val stopIq = createStopIq("some_other_session")
-                            val stopResponse = iqListener.captured.handleIq(stopIq, mucClient)
-
-                            should("send an error response") {
-                                stopResponse shouldBeError XMPPError.Condition.bad_request
+                                with(sentStanzas.last()) {
+                                    shouldBeInstanceOf<JibriIq>()
+                                    status shouldBe JibriIq.Status.OFF
+                                    failureReason shouldBe null
+                                    shouldRetry shouldBe null
+                                }
                             }
                         }
                     }
-                    context("from a muc client it doesn't recognize") {
-                        val unknownMucClient: MucClient = mockk()
-                        every { unknownMucClient.id } returns "unknown name"
-                        val result = iqListener.captured.handleIq(startRecordingIq, unknownMucClient)
 
-                        should("respond with an error") {
-                            result shouldBeError XMPPError.Condition.bad_request
+                    context("and then a stop IQ is received") {
+                        val stopIq = createStopIq()
+                        val stopResponse = iqListener.captured.handleIq(stopIq, mucClient)
+
+                        should("stop the session") {
+                            recordingSession.isCancelled() shouldBe true
                         }
+
+                        should("respond correctly") {
+                            val sentStanzas = mutableListOf<Stanza>()
+                            verify { mucClient.sendStanza(capture(sentStanzas)) }
+                            stopResponse shouldBeResponseTo stopIq
+                            stopResponse.shouldBeInstanceOf<JibriIq>()
+                            stopResponse.status shouldBe JibriIq.Status.OFF
+                        }
+                    }
+
+                    context("and a stop IQ with the wrong session ID is received") {
+                        val stopIq = createStopIq("some_other_session")
+                        val stopResponse = iqListener.captured.handleIq(stopIq, mucClient)
+
+                        should("send an error response") {
+                            stopResponse shouldBeError XMPPError.Condition.bad_request
+                        }
+                    }
+                }
+                context("from a muc client it doesn't recognize") {
+                    val unknownMucClient: MucClient = mockk()
+                    every { unknownMucClient.id } returns "unknown name"
+                    val result = iqListener.captured.handleIq(startRecordingIq, unknownMucClient)
+
+                    should("respond with an error") {
+                        result shouldBeError XMPPError.Condition.bad_request
                     }
                 }
             }
