@@ -16,7 +16,6 @@
 
 package org.jitsi.jibri.webhooks.v1
 
-import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -37,11 +36,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jitsi.jibri.JibriState
 import org.jitsi.jibri.ProcessFailedToStart
-import kotlin.time.seconds
+import java.util.concurrent.CopyOnWriteArrayList
 
 class WebhookClientTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
-    val requests = mutableListOf<HttpRequestData>()
+    val requests: MutableList<HttpRequestData> = CopyOnWriteArrayList()
 
     val client = WebhookClient(
         "test",
