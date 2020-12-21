@@ -110,6 +110,9 @@ class JibriManager : StatusPublisher<Any>() {
 
     private val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
 
+    private val linodePersonalAccessToken: String = System.getenv("LINODE_PERSONAL_ACCESS_TOKEN") ?: "Not Found"
+    private val linodeApi: LinodeApi = LinodeApi()
+    private var newLinodeId: Int = -1
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from
      * one of the synchronized methods)
@@ -194,6 +197,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext?,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
+        newLinodeId = linodeApi.createNode(linodePersonalAccessToken)
         publishStatus(ComponentBusyStatus.BUSY)
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
@@ -272,6 +276,8 @@ class JibriManager : StatusPublisher<Any>() {
         } else {
             publishStatus(ComponentBusyStatus.IDLE)
         }
+        linodeApi.deleteNode(linodePersonalAccessToken, newLinodeId);
+        newLinodeId = -1
     }
 
     /**
