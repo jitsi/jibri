@@ -17,6 +17,9 @@
 
 package org.jitsi.jibri
 
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
@@ -47,9 +50,6 @@ import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
 import org.jitsi.metaconfig.config
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 class JibriBusyException : Exception()
 
@@ -110,6 +110,9 @@ class JibriManager : StatusPublisher<Any>() {
 
     private val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
 
+    private val linodePersonalAccessToken: String = System.getenv("LINODE_PERSONAL_ACCESS_TOKEN") ?: "Not Found"
+    // private val serverSSHKey: String = System.getenv("LINODE_SERVER_SSH_KEY") ?: "Not Found"
+    private val linodeApi: LinodeApi = LinodeApi()
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from
      * one of the synchronized methods)
@@ -194,6 +197,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext?,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
+        linodeApi.createNode(linodePersonalAccessToken)
         publishStatus(ComponentBusyStatus.BUSY)
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
