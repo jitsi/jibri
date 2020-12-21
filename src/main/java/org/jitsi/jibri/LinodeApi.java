@@ -7,14 +7,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.json.JSONObject;
 
-import java.io.IOException;
 import java.lang.StringBuilder;
 
 public class LinodeApi {
 
     private Logger logger = Logger.getLogger(LinodeApi.class.getName());
-    // private String instanceId;
 
     private String getRandPassword(int n) {
         String characterSet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -27,19 +26,41 @@ public class LinodeApi {
         return password.toString();
     }
 
-    public void createNode(String personalAccessToken) {
+    public int createNode(String personalAccessToken) {
+        logger.info("your Linode personal access token: " + personalAccessToken);
         String rootPass = getRandPassword(100);
         OkHttpClient client = new OkHttpClient();
         MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-        String payload = "{'type':'g6-standard-4','region':'us-east','backups_enabled':'false','root_pass':'" + rootPass
-                + "'}"; // TODO image
+        String payload = "{\"type\":\"g6-standard-4\",\"region\":\"us-east\",\"backups_enabled\":false,\"root_pass\":\"" + rootPass
+                + "\",\"booted\":true,\"image\":\"linode/debian9\"}"; // TODO image
         RequestBody body = RequestBody.create(JSON, payload);
         Request request = new Request.Builder().url("https://api.linode.com/v4/linode/instances")
                 .header("Authorization", "Bearer " + personalAccessToken).post(body).build();
         try {
             Response response = client.newCall(request).execute();
-            logger.info(response.body().string());
-        } catch (IOException e) {
+            JSONObject json = new JSONObject(response.body().string());
+            logger.info(json.toString());
+            return json.getInt("id");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    public void deleteNode(String personalAccessToken, int linodeId) {
+        if(linodeId == -1){
+            logger.info("linodeId is -1, no linode to delete.");
+            return;
+        }
+        logger.info("your Linode personal access token: " + personalAccessToken);
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url("https://api.linode.com/v4/linode/instances/" + linodeId)
+                .header("Authorization", "Bearer " + personalAccessToken).delete().build();
+        try {
+            Response response = client.newCall(request).execute();
+            JSONObject json = new JSONObject(response.body().string());
+            logger.info(json.toString());
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
