@@ -246,8 +246,10 @@ class JibriManager(
             _currentState.value = JibriState.Idle
             throw j
         } catch (t: Throwable) {
-            throw Exception("This should never hit!  All exceptions should be wrapped, but ${t.message} " +
-                "made it through")
+            throw Exception(
+                "This should never hit!  All exceptions should be wrapped, but ${t.message} " +
+                    "made it through"
+            )
         }
     }
 }

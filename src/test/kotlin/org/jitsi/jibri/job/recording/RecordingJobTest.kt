@@ -135,8 +135,9 @@ class RecordingJobTest : ShouldSpec() {
 
                 val job = createRecordingJob()
 
-                ffmpegOutput.emit("frame=   15 fps=0.0 q=32.0 size=      55kB time=00:00:00.76 " +
-                    "bitrate= 583.3kbits/s speed=1.46x")
+                ffmpegOutput.emit(
+                    "frame=   15 fps=0.0 q=32.0 size=      55kB time=00:00:00.76 bitrate= 583.3kbits/s speed=1.46x"
+                )
 
                 should("change its state to running") {
                     runBlockingTest {

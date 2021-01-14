@@ -71,8 +71,9 @@ class RecordingJob(
     override val state: StateFlow<IntermediateJobState> = _state.asStateFlow()
     override val name: String = "Recording job $sessionId"
     private val recordingsDirectory: String by config("jibri.recording.recordings-directory".from(Config.configSource))
-    private val finalizeScriptPath: String?
-        by optionalconfig("jibri.recording.finalize-script".from(Config.configSource))
+    private val finalizeScriptPath: String? by optionalconfig(
+        "jibri.recording.finalize-script".from(Config.configSource)
+    )
 
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
@@ -87,8 +88,10 @@ class RecordingJob(
     )
 
     init {
-        logger.info("Writing recording to $sessionRecordingDirectory, finalize script " +
-            "path ${finalizeScriptPath ?: "not set"}")
+        logger.info(
+            "Writing recording to $sessionRecordingDirectory, finalize script " +
+                "path ${finalizeScriptPath ?: "not set"}"
+        )
         try {
             createIfDoesNotExist(sessionRecordingDirectory)
         } catch (t: Throwable) {

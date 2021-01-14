@@ -103,8 +103,10 @@ class XmppApi(
                     password = env.controlLogin.password
 
                     if (env.trustAllXmppCerts) {
-                        logger.info("The trustAllXmppCerts config is enabled for this domain, " +
-                            "all XMPP server provided certificates will be accepted")
+                        logger.info(
+                            "The trustAllXmppCerts config is enabled for this domain, " +
+                                "all XMPP server provided certificates will be accepted"
+                        )
                         disableCertificateVerification = env.trustAllXmppCerts
                     }
 

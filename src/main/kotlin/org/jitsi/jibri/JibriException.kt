@@ -56,8 +56,9 @@ object ChromeHung : JibriSessionError("Chrome hung")
 object FailedToJoinCall : JibriSessionError("Failed to join the call")
 // I think this should be an error since there would still be participants in the call and we'd want to notify them
 // that this is what happened
-object ClientMuteLimitExceeded : JibriSessionError("No media received due to all clients muting for longer " +
-    "than the timeout")
+object ClientMuteLimitExceeded : JibriSessionError(
+    "No media received due to all clients muting for longer than the timeout"
+)
 // TODO: unclear how this should be treated (error? job completed? might need to
 // create different exceptions for different cases if need arises)
 // I'm _pretty_ sure in our current use cases that it should be an error, because
