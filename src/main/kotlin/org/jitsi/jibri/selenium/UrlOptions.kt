@@ -41,5 +41,6 @@ val ObserverUrlOptions = CommonJibriUrlOptions + listOf(
 val SipGatewayUrlOptions = CommonJibriUrlOptions + listOf(
     "config.iAmSipGateway=true",
     "config.ignoreStartMuted=true",
-    "config.requireDisplayName=false"
+    "config.requireDisplayName=false",
+    "devices.videoInput=\"PJSUA\""
 )
