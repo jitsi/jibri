@@ -92,7 +92,8 @@ val SIP_GW_URL_OPTIONS = listOf(
     "config.analytics.disabled=true",
     "config.p2p.enabled=false",
     "config.prejoinPageEnabled=false",
-    "config.requireDisplayName=false"
+    "config.requireDisplayName=false",
+    "devices.videoInput=\"PJSUA\""
 )
 
 val RECORDING_URL_OPTIONS = listOf(
