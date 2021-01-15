@@ -33,6 +33,7 @@ import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.ObserverUrlOptions
 import org.jitsi.jibri.selenium.Selenium
 import org.jitsi.jibri.sink.impl.StreamSink
+import org.jitsi.jibri.util.logOnException
 import org.jitsi.jibri.util.withFfmpeg
 import org.jitsi.jibri.util.withSelenium
 import org.jitsi.metaconfig.config
@@ -114,8 +115,16 @@ class StreamingJob(
                             _state.value = Running
                         }
                     }
-                    launch { FfmpegHelpers.watchForProcessError(ffmpeg) }
-                    launch { selenium.monitorCall() }
+                    launch {
+                        logOnException({ logger.error("Ffmpeg had error: ${it.message}") }) {
+                            FfmpegHelpers.watchForProcessError(ffmpeg)
+                        }
+                    }
+                    launch {
+                        logOnException({ logger.error("Selenium had error: ${it.message}") }) {
+                            selenium.monitorCall()
+                        }
+                    }
                 }
             }
         }

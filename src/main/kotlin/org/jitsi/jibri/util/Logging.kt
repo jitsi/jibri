@@ -44,3 +44,17 @@ fun logProcessOutput(process: ProcessWrapper, logger: Logger): Job {
         process.output.takeWhile { it != EOF }.collect(logger::info)
     }
 }
+
+/**
+ * Run [block] and, if it throws, invoke [logBlock] with the thrown exception, then re-throw
+ * the exception.
+ */
+inline fun logOnException(logBlock: (Throwable) -> Unit, block: () -> Unit) {
+    try {
+        block()
+    } catch (t: Throwable) {
+        logBlock(t)
+        throw t
+    }
+}
+

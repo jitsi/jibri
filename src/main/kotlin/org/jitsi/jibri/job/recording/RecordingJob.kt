@@ -39,6 +39,7 @@ import org.jitsi.jibri.selenium.SeleniumFactoryImpl
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.customResource
+import org.jitsi.jibri.util.logOnException
 import org.jitsi.jibri.util.withFfmpeg
 import org.jitsi.jibri.util.withResource
 import org.jitsi.jibri.util.withSelenium
@@ -133,8 +134,16 @@ class RecordingJob(
                                 _state.value = Running
                             }
                         }
-                        launch { FfmpegHelpers.watchForProcessError(ffmpeg) }
-                        launch { selenium.monitorCall() }
+                        launch {
+                            logOnException({ logger.error("Ffmpeg had error: ${it.message}") }) {
+                                FfmpegHelpers.watchForProcessError(ffmpeg)
+                            }
+                        }
+                        launch {
+                            logOnException({ logger.error("Selenium had error: ${it.message}") }) {
+                                selenium.monitorCall()
+                            }
+                        }
                     }
                 }
             }
