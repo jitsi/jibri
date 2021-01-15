@@ -40,6 +40,7 @@ import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 import java.util.logging.FileHandler
 import java.util.logging.Level
 
@@ -109,7 +110,7 @@ class Selenium(
         ).build()
 
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
-        chromeDriver.manage().timeouts().pageLoadTimeout(Duration.ofMinutes(1))
+        chromeDriver.manage().timeouts().pageLoadTimeout(1, TimeUnit.MINUTES)
     }
 
     fun joinCall(

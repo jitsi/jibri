@@ -42,7 +42,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
         val start = System.currentTimeMillis()
         return try {
-            WebDriverWait(driver, 30.secs).until {
+            WebDriverWait(driver, 30).until {
                 val result = driver.executeScript(
                     """
                     try {
@@ -267,7 +267,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
 
         // Let's wait till we are alone in the room
         // (give time for the js Promise to finish before quiting selenium)
-        WebDriverWait(driver, 2.secs).until {
+        WebDriverWait(driver, 2).until {
             getNumParticipants() == 1
         }
 
