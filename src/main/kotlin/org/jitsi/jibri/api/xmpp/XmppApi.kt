@@ -127,7 +127,7 @@ class XmppApi(
     }
 
     /**
-     * Handle a [JibriIq] message with the context of the [XmppEnvironmentConfig] and [MucClient]
+     * Handle a [JibriIq] message with the context of the [XmppEnvironment] and [MucClient]
      * that this [JibriIq] was received on.
      */
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
@@ -188,16 +188,18 @@ class XmppApi(
                 launch(CoroutineName("XMPP session ${request.sessionId} wait for running")) {
                     // When the session transitions to 'running', send an update
                     session.onRunning {
-                        logger.info("Session ${request.sessionId} has transitioned to running, sending update")
-                        mucClient.sendStanza(createOnIqUpdateFrom(request))
+                        val onIq = createOnIqUpdateFrom(request)
+                        logger.info("Session ${request.sessionId} has transitioned to running, sending update ${onIq.toXML()}")
+                        mucClient.sendStanza(onIq)
                     }
                 }
                 launch(CoroutineName("XMPP session ${request.sessionId} wait for finish")) {
                     try {
                         session.await()
                     } catch (j: JibriException) {
-                        logger.info("Session ${request.sessionId} finished (${j.message}), sending update")
-                        mucClient.sendStanza(createOffIqUpdateFrom(j, request))
+                        val offIq = createOffIqUpdateFrom(j, request)
+                        logger.info("Session ${request.sessionId} finished (${j.message}), sending update ${offIq.toXML()}")
+                        mucClient.sendStanza(offIq)
                         throw j
                     }
                 }
