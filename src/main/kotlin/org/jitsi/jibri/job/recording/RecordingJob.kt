@@ -135,12 +135,12 @@ class RecordingJob(
                             }
                         }
                         launch {
-                            logOnException({ logger.error("Ffmpeg had error: ${it.message}") }) {
+                            logOnException({ logger.error("Ffmpeg: ${it.message}") }) {
                                 FfmpegHelpers.watchForProcessError(ffmpeg)
                             }
                         }
                         launch {
-                            logOnException({ logger.error("Selenium had error: ${it.message}") }) {
+                            logOnException({ logger.error("Selenium: ${it.message}") }) {
                                 selenium.monitorCall()
                             }
                         }
