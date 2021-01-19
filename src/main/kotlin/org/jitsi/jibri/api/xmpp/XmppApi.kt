@@ -21,6 +21,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -64,7 +65,7 @@ class XmppApi(
     private val jibriManager: JibriManager,
     private val xmppConfigs: List<XmppEnvironment>,
     private val mucClientManager: MucClientManager = MucClientManager(),
-    private val scope: CoroutineScope = CoroutineScope(CoroutineName("XMPP API"))
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + CoroutineName("XMPP API"))
 ) {
     private val logger = createLogger()
     private val iqListener = IqListener()
