@@ -119,14 +119,14 @@ class RecordingJob(
             selenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
             selenium.sendPresence()
 
-            val ffmpegCommand = getFfmpegCommand(sink)
-            logger.info("Starting ffmpeg via ${ffmpegCommand.joinToString(separator = " ")} ($ffmpegCommand)")
-            withFfmpeg(ffmpegCommand) { ffmpeg ->
-                val recording = customResource(this) {
-                    it.writeMetadata(selenium)
-                    it.finalize()
-                }
-                withResource(recording) {
+            val recording = customResource(this) {
+                it.writeMetadata(selenium)
+                it.finalize()
+            }
+            withResource(recording) {
+                val ffmpegCommand = getFfmpegCommand(sink)
+                logger.info("Starting ffmpeg via ${ffmpegCommand.joinToString(separator = " ")} ($ffmpegCommand)")
+                withFfmpeg(ffmpegCommand) { ffmpeg ->
                     coroutineScope {
                         launch {
                             FfmpegHelpers.onEncodingStart(ffmpeg) {
