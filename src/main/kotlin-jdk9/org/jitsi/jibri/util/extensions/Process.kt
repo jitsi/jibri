@@ -16,24 +16,10 @@
 
 package org.jitsi.jibri.util.extensions
 
-import java.lang.reflect.Field
-
 /**
  * Mimic the "pid" member of Java 9's [Process].
  */
 val Process.pidValue: Long
     get() {
-        var pid: Long = -1
-        try {
-            if (javaClass.name == "java.lang.UNIXProcess" ||
-                javaClass.name == "java.lang.ProcessImpl") {
-                val field: Field = javaClass.getDeclaredField("pid")
-                field.isAccessible = true
-                pid = field.getLong(this)
-                field.isAccessible = false
-            }
-        } catch (e: Exception) {
-            pid = -1
-        }
-        return pid
+        return this.pid()
     }
