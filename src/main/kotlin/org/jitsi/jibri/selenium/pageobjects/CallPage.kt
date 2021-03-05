@@ -17,7 +17,6 @@
 package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.utils.logging2.createLogger
-import org.jitsi.utils.secs
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory

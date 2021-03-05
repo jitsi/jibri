@@ -57,4 +57,3 @@ inline fun logOnException(logBlock: (Throwable) -> Unit, block: () -> Unit) {
         throw t
     }
 }
-

@@ -190,7 +190,9 @@ class XmppApi(
                     // When the session transitions to 'running', send an update
                     session.onRunning {
                         val onIq = createOnIqUpdateFrom(request)
-                        logger.info("Session ${request.sessionId} has transitioned to running, sending update ${onIq.toXML()}")
+                        logger.info(
+                            "Session ${request.sessionId} has transitioned to running, sending update ${onIq.toXML()}"
+                        )
                         mucClient.sendStanza(onIq)
                     }
                 }
@@ -199,7 +201,9 @@ class XmppApi(
                         session.await()
                     } catch (j: JibriException) {
                         val offIq = createOffIqUpdateFrom(j, request)
-                        logger.info("Session ${request.sessionId} finished (${j.message}), sending update ${offIq.toXML()}")
+                        logger.info(
+                            "Session ${request.sessionId} finished (${j.message}), sending update ${offIq.toXML()}"
+                        )
                         mucClient.sendStanza(offIq)
                         throw j
                     }
