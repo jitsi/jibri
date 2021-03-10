@@ -20,6 +20,7 @@ package org.jitsi.jibri.capture.ffmpeg
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
@@ -32,13 +33,15 @@ import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.getLoggerWithHandler
+import org.jitsi.metaconfig.config
+import org.jitsi.metaconfig.from
 import java.util.logging.Logger
 
 /**
  * Parameters which will be passed to ffmpeg
  */
 data class FfmpegExecutorParams(
-    val resolution: String = "1280x720",
+    val resolution: String = FfmpegCapturer.resolution,
     val framerate: Int = 30,
     val videoEncodePreset: String = "veryfast",
     val queueSize: Int = 4096,
@@ -70,6 +73,7 @@ class FfmpegCapturer(
     companion object {
         const val COMPONENT_ID = "Ffmpeg Capturer"
         private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
+        val resolution: String by config("jibri.ffmpeg.resolution".from(Config.configSource))
     }
 
     init {
