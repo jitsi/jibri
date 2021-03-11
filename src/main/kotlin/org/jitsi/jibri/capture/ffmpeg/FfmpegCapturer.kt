@@ -20,6 +20,7 @@ package org.jitsi.jibri.capture.ffmpeg
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
@@ -32,25 +33,27 @@ import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.getLoggerWithHandler
+import org.jitsi.metaconfig.config
+import org.jitsi.metaconfig.from
 import java.util.logging.Logger
 
 /**
  * Parameters which will be passed to ffmpeg
  */
 data class FfmpegExecutorParams(
-    val resolution: String = "1280x720",
+    val resolution: String = FfmpegCapturer.resolution,
     val framerate: Int = 30,
     val videoEncodePreset: String = "veryfast",
     val queueSize: Int = 4096,
     val streamingMaxBitrate: Int = 2976,
     val streamingBufSize: Int = streamingMaxBitrate * 2,
-        // The range of the CRF scale is 0–51, where 0 is lossless,
-        // 23 is the default, and 51 is worst quality possible. A lower value
-        // generally leads to higher quality, and a subjectively sane range is
-        // 17–28. Consider 17 or 18 to be visually lossless or nearly so;
-        // it should look the same or nearly the same as the input but it
-        // isn't technically lossless.
-        // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
+    // The range of the CRF scale is 0–51, where 0 is lossless,
+    // 23 is the default, and 51 is worst quality possible. A lower value
+    // generally leads to higher quality, and a subjectively sane range is
+    // 17–28. Consider 17 or 18 to be visually lossless or nearly so;
+    // it should look the same or nearly the same as the input but it
+    // isn't technically lossless.
+    // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
     val h264ConstantRateFactor: Int = 25,
     val gopSize: Int = framerate * 2
 )
@@ -70,6 +73,7 @@ class FfmpegCapturer(
     companion object {
         const val COMPONENT_ID = "Ffmpeg Capturer"
         private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
+        val resolution: String by config("jibri.ffmpeg.resolution".from(Config.configSource))
     }
 
     init {
@@ -102,7 +106,8 @@ class FfmpegCapturer(
         when (ffmpegState.runningState) {
             is ProcessFailedToStart -> {
                 ffmpegStatusStateMachine.transition(
-                    FfmpegEvent.ErrorLine(FfmpegFailedToStart))
+                    FfmpegEvent.ErrorLine(FfmpegFailedToStart)
+                )
             }
             else -> {
                 if (ffmpegState.runningState is ProcessExited) {
