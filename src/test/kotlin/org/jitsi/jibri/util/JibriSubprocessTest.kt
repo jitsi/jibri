@@ -32,7 +32,7 @@ import org.jitsi.jibri.helpers.resetOutputLogger
 import org.jitsi.jibri.helpers.setTestOutputLogger
 
 internal class JibriSubprocessTest : ShouldSpec() {
-    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+    override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
     private val processFactory: ProcessFactory = mockk()
     private val processWrapper: ProcessWrapper = mockk(relaxed = true)
@@ -44,7 +44,12 @@ internal class JibriSubprocessTest : ShouldSpec() {
 
     init {
         beforeSpec {
-            LoggingUtils.setTestOutputLogger { _, _ -> mockk(relaxed = true) }
+            LoggingUtils.setTestOutputLogger { _, _ ->
+                mockk {
+                    every { get() } returns true
+                    every { get(any(), any()) } returns true
+                }
+            }
 
             every { processFactory.createProcess(any(), any(), any()) } returns processWrapper
             every { processStatePublisher.addStatusHandler(capture(processStateHandler)) } just Runs
