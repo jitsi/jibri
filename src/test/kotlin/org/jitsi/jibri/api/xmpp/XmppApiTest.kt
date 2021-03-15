@@ -20,7 +20,7 @@ package org.jitsi.jibri.api.xmpp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.beInstanceOf
+import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -146,7 +146,7 @@ class XmppApiTest : ShouldSpec() {
                     val response = xmppApi.handleIq(jibriIq, mucClient)
                     should("send a pending response to the original IQ request") {
                         response shouldNotBe null
-                        response should beInstanceOf<JibriIq>()
+                        response should beInstanceOf(JibriIq::class)
                         response as JibriIq
                         response.status shouldBe JibriIq.Status.PENDING
                     }
@@ -156,9 +156,10 @@ class XmppApiTest : ShouldSpec() {
                             val sentStanzas = mutableListOf<Stanza>()
                             verify { mucClient.sendStanza(capture(sentStanzas)) }
                             sentStanzas.size shouldBe 1
-                            sentStanzas.first().shouldBeInstanceOf<JibriIq> {
-                                it.status shouldBe JibriIq.Status.ON
-                            }
+                            val stanza = sentStanzas.first()
+                            stanza should beInstanceOf<JibriIq>()
+                            stanza as JibriIq
+                            stanza.status shouldBe JibriIq.Status.ON
                         }
                         context("and it is stopped") {
 //                            whenever(jibriManager.stopService()) doAnswer {}
@@ -167,9 +168,9 @@ class XmppApiTest : ShouldSpec() {
                             should("respond correctly") {
                                 verify { jibriManager.stopService() }
                                 stopResponse shouldBeResponseTo stopIq
-                                stopResponse.shouldBeInstanceOf<JibriIq> {
-                                    it.status shouldBe JibriIq.Status.OFF
-                                }
+                                stopResponse.shouldBeInstanceOf<JibriIq>()
+                                stopResponse as JibriIq
+                                stopResponse.status shouldBe JibriIq.Status.OFF
                             }
                         }
                     }
@@ -178,11 +179,11 @@ class XmppApiTest : ShouldSpec() {
                     every { jibriManager.startFileRecording(any(), any(), any(), any()) } throws JibriBusyException()
                     should("send an error IQ") {
                         val response = xmppApi.handleIq(jibriIq, mucClient)
-                        response.shouldBeInstanceOf<JibriIq> {
-                            it.status shouldBe JibriIq.Status.OFF
-                            it.failureReason shouldBe JibriIq.FailureReason.BUSY
-                            it.shouldRetry shouldBe true
-                        }
+                        response should beInstanceOf<JibriIq>()
+                        response as JibriIq
+                        response.status shouldBe JibriIq.Status.OFF
+                        response.failureReason shouldBe JibriIq.FailureReason.BUSY
+                        response.shouldRetry shouldBe true
                     }
                 }
                 context("with application data") {

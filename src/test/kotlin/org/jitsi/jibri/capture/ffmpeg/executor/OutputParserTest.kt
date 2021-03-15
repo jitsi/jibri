@@ -19,7 +19,7 @@ package org.jitsi.jibri.capture.ffmpeg.executor
 
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.beInstanceOf
+import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.status.ErrorScope

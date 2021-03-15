@@ -2,4 +2,4 @@
 
 set -e
 
-mvn clean verify package
+mvn -B clean verify package

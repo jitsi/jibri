@@ -20,10 +20,11 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.beInstanceOf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockEngineConfig
@@ -99,13 +100,15 @@ class WebhookClientTest : ShouldSpec({
                 should("send the correct data") {
                     within(Duration.ofMillis(2000)) {
                         requests[0].body.contentType shouldBe ContentType.Application.Json
-                        requests[0].body.shouldBeInstanceOf<TextContent> {
-                            it.text shouldBe jacksonObjectMapper().writeValueAsString(
+                        with(requests[0].body) {
+                            this should beInstanceOf<TextContent>()
+                            this as TextContent
+                            this.text shouldBe jacksonObjectMapper().writeValueAsString(
                                 JibriEvent.HealthEvent("test", goodStatus)
                             )
-                            it.text shouldContain """
-                            "jibriId":"test"
-                        """.trimIndent()
+                            text shouldContain """
+                                "jibriId":"test"
+                            """.trimIndent()
                         }
                     }
                 }
@@ -114,8 +117,10 @@ class WebhookClientTest : ShouldSpec({
                     should("send another request with the new status") {
                         within(Duration.ofMillis(2000)) {
                             requests shouldHaveSize 2
-                            requests[1].body.shouldBeInstanceOf<TextContent> {
-                                it.text shouldContain jacksonObjectMapper().writeValueAsString(
+                            with(requests[1].body) {
+                                this should beInstanceOf<TextContent>()
+                                this as TextContent
+                                this.text shouldContain jacksonObjectMapper().writeValueAsString(
                                     JibriEvent.HealthEvent("test", badStatus)
                                 )
                             }
