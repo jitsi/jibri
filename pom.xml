@@ -156,6 +156,11 @@
 
         <!-- testing -->
         <dependency>
+            <groupId>org.jitsi</groupId>
+            <artifactId>jicoco-test-kotlin</artifactId>
+            <version>1.1-79-g6099be5</version>
+        </dependency>
+        <dependency>
             <groupId>io.kotest</groupId>
             <artifactId>kotest-runner-junit5-jvm</artifactId>
             <version>${kotest.version}</version>
