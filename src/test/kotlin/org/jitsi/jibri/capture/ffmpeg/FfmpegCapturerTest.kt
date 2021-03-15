@@ -24,6 +24,7 @@ import io.kotest.matchers.collections.contain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.Runs
 import io.mockk.every
@@ -109,7 +110,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                         context("capture") {
                             should("report its stats as error") {
                                 val error = capturerStateUpdates.last()
-                                error.shouldBeInstanceOf<ComponentState.Error>()
+                                error should beInstanceOf<ComponentState.Error>()
                                 error as ComponentState.Error
                                 error.error.scope shouldBe ErrorScope.SESSION
                             }
@@ -120,7 +121,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                         context("capture") {
                             should("report its stats as error") {
                                 val error = capturerStateUpdates.last()
-                                error.shouldBeInstanceOf<ComponentState.Error>()
+                                error should beInstanceOf<ComponentState.Error>()
                                 error as ComponentState.Error
                                 error.error.scope shouldBe ErrorScope.SESSION
                             }
@@ -137,7 +138,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     should("report its status as a system error") {
                         capturerStateUpdates.shouldNotBeEmpty()
                         val status = capturerStateUpdates.last()
-                        status.shouldBeInstanceOf<ComponentState.Error>()
+                        status should beInstanceOf<ComponentState.Error>()
                         status as ComponentState.Error
                         status.error.scope shouldBe ErrorScope.SYSTEM
                     }

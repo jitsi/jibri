@@ -22,7 +22,7 @@ import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.core.spec.style.scopes.ShouldSpecContextScope
 import io.kotest.core.test.TestContext
-import io.kotest.core.test.TestName
+import io.kotest.core.test.createTestName
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -55,7 +55,7 @@ import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.status.OverallHealth
 
 class HttpApiTest : ShouldSpec() {
-    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+    override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
     private val jibriManager: JibriManager = mockk()
     private val jibriStatusManager: JibriStatusManager = mockk()
@@ -66,7 +66,7 @@ class HttpApiTest : ShouldSpec() {
         context("health") {
             context("when jibri isn't busy") {
                 val expectedStatus =
-                        JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
+                    JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
                 val expectedHealth = JibriHealth(expectedStatus)
 
                 every { jibriManager.currentEnvironmentContext } returns null
@@ -169,4 +169,4 @@ class HttpApiTest : ShouldSpec() {
  * scope
  */
 fun ShouldSpecContextScope.shouldb(name: String, test: suspend TestContext.() -> Unit) =
-    runBlocking { addTest(TestName("should ", name), xdisabled = false, test = test) }
+    runBlocking { addTest(createTestName("should ", name, true), xdisabled = false, test = test) }
