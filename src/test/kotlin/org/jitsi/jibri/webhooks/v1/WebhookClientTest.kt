@@ -61,28 +61,31 @@ class WebhookClientTest : ShouldSpec({
             mapOf()
         )
     )
-    val client = WebhookClient("test", client = HttpClient(MockEngine) {
-        engine {
-            addHandler { request ->
-                requests += request
-                with(request.url.toString()) {
-                    when {
-                        contains("success") -> {
-                            respondOk()
+    val client = WebhookClient(
+        "test",
+        client = HttpClient(MockEngine) {
+            engine {
+                addHandler { request ->
+                    requests += request
+                    with(request.url.toString()) {
+                        when {
+                            contains("success") -> {
+                                respondOk()
+                            }
+                            contains("delay") -> {
+                                delay(1000)
+                                respondOk()
+                            }
+                            contains("error") -> {
+                                respondError(HttpStatusCode.BadRequest)
+                            }
+                            else -> error("Unsupported URL")
                         }
-                        contains("delay") -> {
-                            delay(1000)
-                            respondOk()
-                        }
-                        contains("error") -> {
-                            respondError(HttpStatusCode.BadRequest)
-                        }
-                        else -> error("Unsupported URL")
                     }
                 }
             }
         }
-    })
+    )
     context("when the client") {
         context("has a valid subscriber") {
             client.addSubscriber("success")
