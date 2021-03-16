@@ -17,6 +17,7 @@
 package org.jitsi.jibri.selenium
 
 import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.MainConfig
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
@@ -238,9 +239,9 @@ class JibriSelenium(
                 HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
                 val localStorageValues = mutableMapOf(
-                        "displayname" to jibriSeleniumOptions.displayName,
-                        "email" to jibriSeleniumOptions.email,
-                        "callStatsUserName" to "jibri"
+                    "displayname" to jibriSeleniumOptions.displayName,
+                    "email" to jibriSeleniumOptions.email,
+                    "callStatsUserName" to if (MainConfig.jibriId.isNotEmpty()) MainConfig.jibriId else "jibri"
                 )
                 xmppCredentials?.let {
                     localStorageValues["xmpp_username_override"] =

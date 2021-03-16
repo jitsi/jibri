@@ -39,6 +39,7 @@ import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.MapConfigSource
 import org.jitsi.metaconfig.MetaconfigLogger
 import org.jitsi.metaconfig.MetaconfigSettings
+import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.configSupplier
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -50,6 +51,8 @@ val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
 fun main(args: Array<String>) {
     setupMetaconfigLogger()
     handleCommandLineArgs(args)
+
+    logger.info("Jibri starting up with id ${MainConfig.jibriId}")
 
     val jibriStatusManager = JibriStatusManager()
     val jibriManager = JibriManager()
@@ -66,15 +69,11 @@ fun main(args: Array<String>) {
             }
         }
     }
-    val jibriId = configSupplier<String> {
-        "JibriConfig::jibriId" { Config.legacyConfigSource.jibriId!! }
-        "jibri.id".from(Config.configSource)
-    }.get()
     val webhookSubscribers = configSupplier<List<String>> {
         "jibri.webhook.subscribers".from(Config.configSource)
     }.get()
 
-    val webhookClient = WebhookClient(jibriId)
+    val webhookClient = WebhookClient(MainConfig.jibriId)
 
     jibriStatusManager.addStatusHandler {
         webhookClient.updateStatus(it)
@@ -157,6 +156,15 @@ fun main(args: Array<String>) {
             apiModule()
         }
     }.start()
+}
+
+class MainConfig {
+    companion object {
+        val jibriId: String by config {
+            "JibriConfig::jibriId" { Config.legacyConfigSource.jibriId!! }
+            "jibri.id".from(Config.configSource)
+        }
+    }
 }
 
 private fun handleCommandLineArgs(args: Array<String>) {
