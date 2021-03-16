@@ -20,11 +20,10 @@ package org.jitsi.jibri.api.xmpp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.beInstanceOf
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -32,7 +31,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.jitsi.jibri.JibriBusyException
-import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig
@@ -42,13 +40,14 @@ import org.jitsi.jibri.helpers.setIoPool
 import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
-import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.ComponentBusyStatus
-import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.status.OverallHealth
 import org.jitsi.jibri.util.TaskPools
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.IQ
@@ -168,7 +167,7 @@ class XmppApiTest : ShouldSpec() {
                             should("respond correctly") {
                                 verify { jibriManager.stopService() }
                                 stopResponse shouldBeResponseTo stopIq
-                                stopResponse.shouldBeInstanceOf<JibriIq>()
+                                stopResponse should beInstanceOf<JibriIq>()
                                 stopResponse as JibriIq
                                 stopResponse.status shouldBe JibriIq.Status.OFF
                             }
