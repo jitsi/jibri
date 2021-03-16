@@ -52,6 +52,8 @@ fun main(args: Array<String>) {
     setupMetaconfigLogger()
     handleCommandLineArgs(args)
 
+    logger.info("Jibri starting up with id ${MainConfig.jibriId}")
+
     val jibriStatusManager = JibriStatusManager()
     val jibriManager = JibriManager()
     jibriManager.addStatusHandler { jibriStatus ->
@@ -164,7 +166,6 @@ class MainConfig {
         }
     }
 }
-
 
 private fun handleCommandLineArgs(args: Array<String>) {
     val argParser = ArgumentParsers.newFor("Jibri").build()
