@@ -60,7 +60,11 @@ class SipGatewayJibriService(
      */
     private val jibriSelenium = JibriSelenium(
         JibriSeleniumOptions(
-            displayName = sipGatewayServiceParams.sipClientParams.displayName,
+            displayName = if (sipGatewayServiceParams.sipClientParams.sipAddress.isNotBlank()) {
+                sipGatewayServiceParams.sipClientParams.sipAddress.substringBeforeLast("@")
+            } else {
+                sipGatewayServiceParams.sipClientParams.displayName
+            },
             // by default we wait 30 minutes alone in the call before deciding to hangup
             emptyCallTimeout = Duration.ofMinutes(30),
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
