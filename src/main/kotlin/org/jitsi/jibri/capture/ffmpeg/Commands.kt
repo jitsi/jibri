@@ -27,9 +27,9 @@ fun getFfmpegCommandLinux(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink
         "-s", ffmpegExecutorParams.resolution,
         "-thread_queue_size", ffmpegExecutorParams.queueSize.toString(),
         "-i", ":0.0+0,0",
-        "-f", "alsa",
+        "-f", ffmpegExecutorParams.audioSource,
         "-thread_queue_size", ffmpegExecutorParams.queueSize.toString(),
-        "-i", "plug:bsnoop",
+        "-i", ffmpegExecutorParams.audioDevice,
         "-acodec", "aac", "-strict", "-2", "-ar", "44100", "-b:a", "128k",
         "-af", "aresample=async=1",
         "-c:v", "libx264", "-preset", ffmpegExecutorParams.videoEncodePreset,
@@ -40,6 +40,11 @@ fun getFfmpegCommandLinux(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink
     )
 }
 
+/**
+ * Mac support is not officially supported, and only exists to make development of Jibri on Mac easier.
+ * Certain settings (for example [FfmpegExecutorParams.audioDevice] and [FfmpegExecutorParams.audioSource]
+ * may not be used here as they are designed around Linux)
+ */
 fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): List<String> {
     return listOf(
         "ffmpeg", "-y", "-v", "info",
@@ -47,6 +52,8 @@ fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink):
         "-f", "avfoundation",
         "-framerate", ffmpegExecutorParams.framerate.toString(),
         "-video_size", ffmpegExecutorParams.resolution,
+        // Note the values passed here will need to be changed based on the output of
+        // ffmpeg -f avfoundation -list_devices true -i ""
         "-i", "0:0",
         "-vsync", "2",
         "-acodec", "aac", "-strict", "-2", "-ar", "44100", "-b:a 128k",
