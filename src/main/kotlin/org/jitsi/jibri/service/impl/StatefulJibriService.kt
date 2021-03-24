@@ -21,6 +21,7 @@ import org.jitsi.jibri.service.JibriServiceStateMachine
 import org.jitsi.jibri.service.toJibriServiceEvent
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
+import org.jitsi.utils.logging2.createLogger
 import java.util.logging.Logger
 
 abstract class StatefulJibriService(private val name: String) : JibriService() {
@@ -29,7 +30,7 @@ abstract class StatefulJibriService(private val name: String) : JibriService() {
     /**
      * The [Logger] for this class
      */
-    protected val logger = Logger.getLogger(this::class.qualifiedName)
+    protected val logger = createLogger()
 
     init {
         stateMachine.onStateTransition { oldState, newState -> this.onServiceStateChange(oldState, newState) }

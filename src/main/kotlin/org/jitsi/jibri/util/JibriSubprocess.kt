@@ -17,11 +17,12 @@
 package org.jitsi.jibri.util
 
 import org.jitsi.jibri.util.extensions.error
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createLogger
 import java.time.Duration
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import java.util.logging.Logger
 
 class JibriSubprocess(
     private val name: String,
@@ -30,7 +31,7 @@ class JibriSubprocess(
     private val processStatePublisherProvider: (ProcessWrapper) -> ProcessStatePublisher =
         { process -> ProcessStatePublisher(name, process) }
 ) : StatusPublisher<ProcessState>() {
-    private val logger = Logger.getLogger("${this::class.qualifiedName}.$name")
+    private val logger = createLogger()
     private var processLoggerTask: Future<Boolean>? = null
 
     private var process: ProcessWrapper? = null

@@ -19,11 +19,11 @@ package org.jitsi.jibri.helpers
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.TaskPools
+import org.jitsi.utils.logging2.Logger
 import java.time.Duration
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
-import java.util.logging.Logger
 
 /**
  * Custom version of kotlin.test's [io.kotlintest.eventually] which uses milliseconds

@@ -74,7 +74,7 @@ data class StreamingParams(
 class StreamingJibriService(
     private val streamingParams: StreamingParams
 ) : StatefulJibriService("Streaming") {
-    private val capturer = FfmpegCapturer()
+    private val capturer = FfmpegCapturer(logger)
     private val sink: Sink
     private val jibriSelenium = JibriSelenium()
 

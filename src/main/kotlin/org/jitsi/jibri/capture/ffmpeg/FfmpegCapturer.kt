@@ -35,7 +35,8 @@ import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
-import java.util.logging.Logger
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 
 /**
  * Parameters which will be passed to ffmpeg
@@ -65,10 +66,11 @@ data class FfmpegExecutorParams(
  * configured audio and video devices, and writing to the given [Sink]
  */
 class FfmpegCapturer(
+    parentLogger: Logger,
     osDetector: OsDetector = OsDetector(),
     private val ffmpeg: JibriSubprocess = JibriSubprocess("ffmpeg", ffmpegOutputLogger)
 ) : Capturer, StatusPublisher<ComponentState>() {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createChildLogger(parentLogger)
     private val getCommand: (Sink) -> List<String>
     private val ffmpegStatusStateMachine = FfmpegStatusStateMachine()
 
@@ -83,7 +85,7 @@ class FfmpegCapturer(
 
     init {
         val osType = osDetector.getOsType()
-        logger.debug("Detected os as OS: $osType")
+        logger.debug { "Detected os as OS: $osType" }
         getCommand = when (osType) {
             OsType.MAC -> { sink: Sink -> getFfmpegCommandMac(FfmpegExecutorParams(), sink) }
             OsType.LINUX -> { sink: Sink -> getFfmpegCommandLinux(FfmpegExecutorParams(), sink) }

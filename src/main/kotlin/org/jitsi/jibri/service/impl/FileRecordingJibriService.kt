@@ -99,10 +99,11 @@ data class RecordingMetadata(
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
     private val jibriSelenium: JibriSelenium = JibriSelenium(),
-    private val capturer: FfmpegCapturer = FfmpegCapturer(),
+    capturer: FfmpegCapturer? = null,
     private val processFactory: ProcessFactory = ProcessFactory(),
     fileSystem: FileSystem = FileSystems.getDefault()
 ) : StatefulJibriService("File recording") {
+    private val capturer = capturer ?: FfmpegCapturer(logger)
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
@@ -132,7 +133,7 @@ class FileRecordingJibriService(
         )
 
         registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
+        registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
     }
 
     override fun start() {
