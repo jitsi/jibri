@@ -28,11 +28,11 @@ import org.jitsi.jibri.selenium.util.BrowserFileHandler
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
+import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
@@ -46,7 +46,6 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
-import java.util.logging.Logger
 
 /**
  * Parameters needed for joining the call in Selenium
@@ -120,7 +119,7 @@ val RECORDING_URL_OPTIONS = listOf(
 class JibriSelenium(
     private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions()
 ) : StatusPublisher<ComponentState>() {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createLogger()
     private var chromeDriver: ChromeDriver
     private var currCallUrl: String? = null
     private val stateMachine = SeleniumStateMachine()
