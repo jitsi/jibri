@@ -40,6 +40,7 @@ fun getFfmpegCommandLinux(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink
     )
 }
 
+// Mac support is not officially supported, and only exists to make development of Jibri on Mac easier.
 fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink): List<String> {
     return listOf(
         "ffmpeg", "-y", "-v", "info",
@@ -47,6 +48,8 @@ fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink):
         "-f", "avfoundation",
         "-framerate", ffmpegExecutorParams.framerate.toString(),
         "-video_size", ffmpegExecutorParams.resolution,
+        // Note the values passed here will need to be changed based on the output of
+        // ffmpeg -f avfoundation -list_devices true -i ""
         "-i", "0:0",
         "-vsync", "2",
         "-acodec", "aac", "-strict", "-2", "-ar", "44100", "-b:a 128k",
