@@ -30,6 +30,7 @@ import io.mockk.slot
 import io.mockk.verify
 import org.jitsi.jibri.helpers.resetOutputLogger
 import org.jitsi.jibri.helpers.setTestOutputLogger
+import org.jitsi.utils.logging2.Logger
 
 internal class JibriSubprocessTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
@@ -37,8 +38,9 @@ internal class JibriSubprocessTest : ShouldSpec() {
     private val processFactory: ProcessFactory = mockk()
     private val processWrapper: ProcessWrapper = mockk(relaxed = true)
     private val processStatePublisher: ProcessStatePublisher = mockk(relaxed = true)
+    private val parentLogger: Logger = mockk(relaxed = true)
     @Suppress("MoveLambdaOutsideParentheses")
-    private val subprocess = JibriSubprocess("name", mockk(), processFactory, { processStatePublisher })
+    private val subprocess = JibriSubprocess(parentLogger, "name", mockk(), processFactory, { processStatePublisher })
     private val processStateHandler = slot<(ProcessState) -> Unit>()
     private val executorStateUpdates = mutableListOf<ProcessState>()
 
@@ -51,7 +53,7 @@ internal class JibriSubprocessTest : ShouldSpec() {
                 }
             }
 
-            every { processFactory.createProcess(any(), any(), any()) } returns processWrapper
+            every { processFactory.createProcess(any(), any(), any(), any()) } returns processWrapper
             every { processStatePublisher.addStatusHandler(capture(processStateHandler)) } just Runs
 
             subprocess.addStatusHandler { status ->

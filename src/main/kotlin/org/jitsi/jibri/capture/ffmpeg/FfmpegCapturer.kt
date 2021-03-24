@@ -67,9 +67,10 @@ data class FfmpegExecutorParams(
 class FfmpegCapturer(
     parentLogger: Logger,
     osDetector: OsDetector = OsDetector(),
-    private val ffmpeg: JibriSubprocess = JibriSubprocess("ffmpeg", ffmpegOutputLogger)
+    ffmpeg: JibriSubprocess? = null
 ) : Capturer, StatusPublisher<ComponentState>() {
     private val logger = createChildLogger(parentLogger)
+    private val ffmpeg = ffmpeg ?: JibriSubprocess(logger, "ffmpeg", ffmpegOutputLogger)
     private val getCommand: (Sink) -> List<String>
     private val ffmpegStatusStateMachine = FfmpegStatusStateMachine()
 
@@ -91,7 +92,7 @@ class FfmpegCapturer(
             else -> throw UnsupportedOsException()
         }
 
-        ffmpeg.addStatusHandler(this::onFfmpegProcessUpdate)
+        this.ffmpeg.addStatusHandler(this::onFfmpegProcessUpdate)
         ffmpegStatusStateMachine.onStateTransition(this::onFfmpegStateMachineStateChange)
     }
 

@@ -32,7 +32,8 @@ import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
-import org.jitsi.utils.logging2.createLogger
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
@@ -117,9 +118,10 @@ val RECORDING_URL_OPTIONS = listOf(
  * It implements [StatusPublisher] to publish its status
  */
 class JibriSelenium(
+    parentLogger: Logger,
     private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions()
 ) : StatusPublisher<ComponentState>() {
-    private val logger = createLogger()
+    private val logger = createChildLogger(parentLogger)
     private var chromeDriver: ChromeDriver
     private var currCallUrl: String? = null
     private val stateMachine = SeleniumStateMachine()

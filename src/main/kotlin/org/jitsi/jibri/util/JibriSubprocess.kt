@@ -17,20 +17,22 @@
 package org.jitsi.jibri.util
 
 import org.jitsi.utils.logging2.Logger
-import org.jitsi.utils.logging2.createLogger
+import org.jitsi.utils.logging2.createChildLogger
 import java.time.Duration
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class JibriSubprocess(
+    parentLogger: Logger,
     private val name: String,
     private val processOutputLogger: Logger? = null,
     private val processFactory: ProcessFactory = ProcessFactory(),
-    private val processStatePublisherProvider: (ProcessWrapper) -> ProcessStatePublisher =
-        { process -> ProcessStatePublisher(name, process) }
+    processStatePublisherProvider: ((ProcessWrapper) -> ProcessStatePublisher)? = null
 ) : StatusPublisher<ProcessState>() {
-    private val logger = createLogger()
+    private val logger = createChildLogger(parentLogger)
+    private val processStatePublisherProvider =
+        processStatePublisherProvider ?: { process -> ProcessStatePublisher(logger, name, process) }
     private var processLoggerTask: Future<Boolean>? = null
 
     private var process: ProcessWrapper? = null
@@ -38,7 +40,7 @@ class JibriSubprocess(
 
     fun launch(command: List<String>, env: Map<String, String> = mapOf()) {
         logger.info("Starting $name with command ${command.joinToString(separator = " ")} ($command)")
-        process = processFactory.createProcess(command, env)
+        process = processFactory.createProcess(command, logger, env)
         try {
             process?.let {
                 it.start()

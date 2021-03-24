@@ -59,6 +59,7 @@ class SipGatewayJibriService(
      * Used for the selenium interaction
      */
     private val jibriSelenium = JibriSelenium(
+        logger,
         JibriSeleniumOptions(
             displayName = if (sipGatewayServiceParams.sipClientParams.sipAddress.isNotBlank()) {
                 sipGatewayServiceParams.sipClientParams.sipAddress.substringBeforeLast("@")
@@ -73,7 +74,10 @@ class SipGatewayJibriService(
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
      */
-    private val pjsuaClient = PjsuaClient(PjsuaClientParams(sipGatewayServiceParams.sipClientParams))
+    private val pjsuaClient = PjsuaClient(
+        logger,
+        PjsuaClientParams(sipGatewayServiceParams.sipClientParams)
+    )
 
     /**
      * The handle to the scheduled process monitor task, which we use to

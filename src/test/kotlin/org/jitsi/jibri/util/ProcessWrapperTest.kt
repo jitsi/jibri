@@ -28,6 +28,7 @@ import io.mockk.slot
 import io.mockk.verify
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.within
+import org.jitsi.utils.logging2.Logger
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
@@ -46,6 +47,7 @@ internal class ProcessWrapperTest : ShouldSpec() {
     private lateinit var outputStream: PipedOutputStream
     private lateinit var inputStream: PipedInputStream
     private lateinit var processWrapper: ProcessWrapper
+    private val logger: Logger = mockk(relaxed = true)
 
     init {
         beforeTest {
@@ -56,7 +58,12 @@ internal class ProcessWrapperTest : ShouldSpec() {
             every { process.destroyForcibly() } returns process
             every { processBuilder.start() } returns process
 
-            processWrapper = ProcessWrapper(listOf(), processBuilder = processBuilder, runtime = runtime)
+            processWrapper = ProcessWrapper(
+                listOf(),
+                parentLogger = logger,
+                processBuilder = processBuilder,
+                runtime = runtime
+            )
             processWrapper.start()
         }
         context("getOutput") {

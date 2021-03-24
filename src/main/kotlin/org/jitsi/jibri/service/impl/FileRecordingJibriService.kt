@@ -97,12 +97,16 @@ data class RecordingMetadata(
  */
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
-    private val jibriSelenium: JibriSelenium = JibriSelenium(),
+    jibriSelenium: JibriSelenium? = null,
     capturer: FfmpegCapturer? = null,
     private val processFactory: ProcessFactory = ProcessFactory(),
     fileSystem: FileSystem = FileSystems.getDefault()
 ) : StatefulJibriService("File recording") {
+    init {
+        logger.addContext("session_id", fileRecordingParams.sessionId)
+    }
     private val capturer = capturer ?: FfmpegCapturer(logger)
+    private val jibriSelenium = jibriSelenium ?: JibriSelenium(logger)
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
@@ -131,7 +135,7 @@ class FileRecordingJibriService(
             fileRecordingParams.callParams.callUrlInfo.callName
         )
 
-        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, this.jibriSelenium)
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
     }
 
@@ -208,7 +212,7 @@ class FileRecordingJibriService(
                 finalizeScriptPath,
                 sessionRecordingDirectory.toString()
             )
-            with(processFactory.createProcess(finalizeCommand)) {
+            with(processFactory.createProcess(finalizeCommand, logger)) {
                 start()
                 val streamDone = LoggingUtils.logOutputOfProcess(this, logger)
                 waitFor()

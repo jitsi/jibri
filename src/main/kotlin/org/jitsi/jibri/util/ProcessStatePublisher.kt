@@ -17,7 +17,8 @@
 package org.jitsi.jibri.util
 
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
-import org.jitsi.utils.logging2.createLogger
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -30,9 +31,11 @@ import java.util.concurrent.atomic.AtomicLong
  * and publish a [ProcessState] with its current alive state and its most recent line of output
  */
 class ProcessStatePublisher(
+    parentLogger: Logger,
     private val name: String,
     private val process: ProcessWrapper
 ) : StatusPublisher<ProcessState>() {
+    private val logger = createChildLogger(parentLogger)
     private val tail: PublishingTail
     private var recurringProcessAliveTask: ScheduledFuture<*>? = null
     private var lastStatusUpdateTimestamp = AtomicLong(0)
@@ -44,7 +47,6 @@ class ProcessStatePublisher(
                 ProcessExited(process.exitValue)
             }
         }
-    private val logger = createLogger()
 
     companion object {
         private val NO_OUTPUT_TIMEOUT = Duration.ofSeconds(2)
