@@ -16,13 +16,12 @@
 
 package org.jitsi.jibri.util
 
-import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
+import org.jitsi.utils.logging2.createLogger
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
-import java.util.logging.Logger
 
 /**
  * [ProcessStatePublisher] is responsible for publishing a [ProcessState] every time:
@@ -45,7 +44,7 @@ class ProcessStatePublisher(
                 ProcessExited(process.exitValue)
             }
         }
-    private val logger = Logger.getLogger("${this::class.qualifiedName}.$name")
+    private val logger = createLogger()
 
     companion object {
         private val NO_OUTPUT_TIMEOUT = Duration.ofSeconds(2)
@@ -82,7 +81,7 @@ class ProcessStatePublisher(
             val timeSinceLastStatusUpdate =
                     Duration.ofMillis(System.currentTimeMillis() - lastStatusUpdateTimestamp.get())
             if (timeSinceLastStatusUpdate > Duration.ofSeconds(2)) {
-                logger.debug("Process $name hasn't written in 2 seconds, publishing periodic update")
+                logger.debug { "Process $name hasn't written in 2 seconds, publishing periodic update" }
                 ProcessState(processRunningState, tail.mostRecentLine).also {
                     TaskPools.ioPool.submit {
                         // We fire all state transitions in the ioPool, otherwise we may try and cancel the

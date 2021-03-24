@@ -43,16 +43,14 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.util.RefreshingProperty
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.jibri.util.extensions.debug
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.metaconfig.optionalconfig
+import org.jitsi.utils.logging2.createLogger
 import java.io.FileReader
 import java.security.PrivateKey
 import java.time.Clock
 import java.time.Duration
 import java.util.Date
 import java.util.concurrent.CopyOnWriteArraySet
-import java.util.logging.Logger
 
 /**
  * A client for notifying subscribers of Jibri events
@@ -62,7 +60,7 @@ class WebhookClient(
     private val clock: Clock = Clock.systemUTC(),
     client: HttpClient = HttpClient(Apache)
 ) {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createLogger()
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
     private val jwtInfo: JwtInfo? by optionalconfig {
         "jibri.jwt-info".from(Config.configSource)
@@ -106,15 +104,15 @@ class WebhookClient(
     }
 
     fun updateStatus(status: JibriStatus) = runBlocking {
-        logger.debug("Updating ${webhookSubscribers.size} subscribers of status")
+        logger.debug { "Updating ${webhookSubscribers.size} subscribers of status" }
         webhookSubscribers.forEach { subscriberBaseUrl ->
             launch(TaskPools.ioPool.asCoroutineDispatcher()) {
-                logger.debug("Sending request to $subscriberBaseUrl")
+                logger.debug { "Sending request to $subscriberBaseUrl" }
                 try {
                     val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/status") {
                         body = JibriEvent.HealthEvent(jibriId, status)
                     }
-                    logger.debug("Got response from $subscriberBaseUrl: $resp")
+                    logger.debug { "Got response from $subscriberBaseUrl: $resp" }
                     if (resp.status != HttpStatusCode.OK) {
                         logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
                     }
@@ -148,7 +146,7 @@ private data class JwtInfo(
     val ttl: Duration
 ) {
     companion object {
-        private val logger = Logger.getLogger(this::class.qualifiedName)
+        private val logger = createLogger()
         fun fromConfig(jwtConfigObj: ConfigObject): JwtInfo {
             // Any missing or incorrect value here will throw, which is what we want:
             // If anything is wrong, we should fail to create the JwtInfo

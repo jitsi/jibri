@@ -16,7 +16,6 @@
 
 package org.jitsi.jibri.util
 
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createLogger
 import java.time.Duration

@@ -31,7 +31,6 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
 import java.util.regex.Pattern

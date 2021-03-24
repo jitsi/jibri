@@ -31,7 +31,6 @@ import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
-import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from

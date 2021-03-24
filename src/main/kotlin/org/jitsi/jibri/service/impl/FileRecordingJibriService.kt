@@ -37,7 +37,6 @@ import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
 import org.jitsi.xmpp.extensions.jibri.JibriIq
