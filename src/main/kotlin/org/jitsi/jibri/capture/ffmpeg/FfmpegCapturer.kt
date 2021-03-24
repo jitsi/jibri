@@ -55,7 +55,9 @@ data class FfmpegExecutorParams(
     // isn't technically lossless.
     // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
     val h264ConstantRateFactor: Int = 25,
-    val gopSize: Int = framerate * 2
+    val gopSize: Int = framerate * 2,
+    val audioSource: String = FfmpegCapturer.audioSource,
+    val audioDevice: String = FfmpegCapturer.audioDevice
 )
 
 /**
@@ -74,6 +76,9 @@ class FfmpegCapturer(
         const val COMPONENT_ID = "Ffmpeg Capturer"
         private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
         val resolution: String by config("jibri.ffmpeg.resolution".from(Config.configSource))
+
+        val audioSource: String by config("jibri.ffmpeg.audio-source".from(Config.configSource))
+        val audioDevice: String by config("jibri.ffmpeg.audio-device".from(Config.configSource))
     }
 
     init {
