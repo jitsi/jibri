@@ -83,6 +83,7 @@ class WebhookClient(
     }
 
     private val client = client.config {
+        expectSuccess = false
         install(JsonFeature) {
             serializer = JacksonSerializer()
         }
