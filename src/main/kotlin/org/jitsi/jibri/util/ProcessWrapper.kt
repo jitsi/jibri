@@ -16,12 +16,12 @@
  */
 package org.jitsi.jibri.util
 
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.pidValue
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import java.io.InputStream
 import java.time.Duration
 import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 /**
  * A wrapper around [Process] that implements
@@ -34,11 +34,12 @@ import java.util.logging.Logger
  */
 class ProcessWrapper(
     command: List<String>,
+    parentLogger: Logger,
     val environment: Map<String, String> = mapOf(),
     private val processBuilder: ProcessBuilder = ProcessBuilder(),
     private val runtime: Runtime = Runtime.getRuntime()
 ) {
-    private val logger = Logger.getLogger("${this::class.qualifiedName}")
+    private val logger = createChildLogger(parentLogger)
     /**
      * The actual underlying [Process] this wrapper
      * wraps

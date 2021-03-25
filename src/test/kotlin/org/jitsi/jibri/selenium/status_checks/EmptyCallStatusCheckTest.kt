@@ -27,8 +27,8 @@ import org.jitsi.jibri.helpers.minutes
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
+import org.jitsi.utils.logging2.Logger
 import java.time.Duration
-import java.util.logging.Logger
 
 internal class EmptyCallStatusCheckTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf

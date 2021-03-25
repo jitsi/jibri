@@ -24,6 +24,8 @@ import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 
 data class PjsuaClientParams(
     val sipClientParams: SipClientParams
@@ -32,8 +34,12 @@ data class PjsuaClientParams(
 private const val PJSUA_SCRIPT_FILE_LOCATION = "/opt/jitsi/jibri/pjsua.sh"
 private const val X_DISPLAY = ":1"
 
-class PjsuaClient(private val pjsuaClientParams: PjsuaClientParams) : SipClient() {
-    private val pjsua: JibriSubprocess = JibriSubprocess("pjsua")
+class PjsuaClient(
+    parentLogger: Logger,
+    private val pjsuaClientParams: PjsuaClientParams
+) : SipClient() {
+    private val logger = createChildLogger(parentLogger)
+    private val pjsua: JibriSubprocess = JibriSubprocess(logger, "pjsua")
 
     companion object {
         const val COMPONENT_ID = "Pjsua"

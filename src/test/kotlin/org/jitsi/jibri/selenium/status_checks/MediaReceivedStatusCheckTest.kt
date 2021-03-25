@@ -10,8 +10,8 @@ import org.jitsi.jibri.helpers.FakeClock
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
+import org.jitsi.utils.logging2.Logger
 import java.time.Duration
-import java.util.logging.Logger
 
 class MediaReceivedStatusCheckTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf

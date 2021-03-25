@@ -37,7 +37,6 @@ import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
 import org.jitsi.xmpp.extensions.jibri.JibriIq
@@ -98,11 +97,16 @@ data class RecordingMetadata(
  */
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
-    private val jibriSelenium: JibriSelenium = JibriSelenium(),
-    private val capturer: FfmpegCapturer = FfmpegCapturer(),
+    jibriSelenium: JibriSelenium? = null,
+    capturer: FfmpegCapturer? = null,
     private val processFactory: ProcessFactory = ProcessFactory(),
     fileSystem: FileSystem = FileSystems.getDefault()
 ) : StatefulJibriService("File recording") {
+    init {
+        logger.addContext("session_id", fileRecordingParams.sessionId)
+    }
+    private val capturer = capturer ?: FfmpegCapturer(logger)
+    private val jibriSelenium = jibriSelenium ?: JibriSelenium(logger)
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
@@ -131,8 +135,8 @@ class FileRecordingJibriService(
             fileRecordingParams.callParams.callUrlInfo.callName
         )
 
-        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, this.jibriSelenium)
+        registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
     }
 
     override fun start() {
@@ -208,7 +212,7 @@ class FileRecordingJibriService(
                 finalizeScriptPath,
                 sessionRecordingDirectory.toString()
             )
-            with(processFactory.createProcess(finalizeCommand)) {
+            with(processFactory.createProcess(finalizeCommand, logger)) {
                 start()
                 val streamDone = LoggingUtils.logOutputOfProcess(this, logger)
                 waitFor()

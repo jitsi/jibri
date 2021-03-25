@@ -35,8 +35,8 @@ import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
+import org.jitsi.utils.logging2.createLogger
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
 import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
@@ -49,7 +49,6 @@ import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
-import java.util.logging.Logger
 
 private class UnsupportedIqMode(val iqMode: String) : Exception()
 
@@ -69,7 +68,7 @@ class XmppApi(
     private val xmppConfigs: List<XmppEnvironmentConfig>,
     private val jibriStatusManager: JibriStatusManager
 ) : IQListener {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createLogger()
     private lateinit var mucClientManager: MucClientManager
 
     /**

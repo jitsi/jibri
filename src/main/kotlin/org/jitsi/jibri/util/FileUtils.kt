@@ -16,10 +16,9 @@
  */
 package org.jitsi.jibri.util
 
-import org.jitsi.jibri.util.extensions.error
+import org.jitsi.utils.logging2.Logger
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.logging.Logger
 
 fun createIfDoesNotExist(path: Path, logger: Logger? = null): Boolean {
     if (!Files.exists(path)) {

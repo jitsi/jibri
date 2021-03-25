@@ -4,9 +4,10 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.metaconfig.config
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import java.time.Clock
 import java.time.Duration
-import java.util.logging.Logger
 
 /**
  * Verify that the Jibri web client is receiving media from the other participants
@@ -16,9 +17,10 @@ import java.util.logging.Logger
  * timeout, but return [SeleniumEvent.CallEmpty].
  */
 class MediaReceivedStatusCheck(
-    private val logger: Logger,
+    parentLogger: Logger,
     private val clock: Clock = Clock.systemDefaultZone()
 ) : CallStatusCheck {
+    private val logger = createChildLogger(parentLogger)
     // The last timestamp where we saw non-zero media.  We default with the
     // assumption we're receiving media.
     private var timeOfLastMedia = clock.instant()
