@@ -56,7 +56,7 @@ fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink):
         // ffmpeg -f avfoundation -list_devices true -i ""
         "-i", "0:0",
         "-vsync", "2",
-        "-acodec", "aac", "-strict", "-2", "-ar", "44100", "-b:a 128k",
+        "-acodec", "aac", "-strict", "-2", "-ar", "44100", "-b:a", "128k",
         "-c:v", "libx264", "-preset", ffmpegExecutorParams.videoEncodePreset,
         *sink.options, "-pix_fmt", "yuv420p", "-crf", ffmpegExecutorParams.h264ConstantRateFactor.toString(),
         "-g", ffmpegExecutorParams.gopSize.toString(), "-tune", "zerolatency",
