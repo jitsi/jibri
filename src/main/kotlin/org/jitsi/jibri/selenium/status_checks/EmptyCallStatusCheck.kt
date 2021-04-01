@@ -34,10 +34,12 @@ class EmptyCallStatusCheck(
 
         return when (callWentEmptyTime.exceededTimeout(callEmptyTimeout)) {
             true -> {
-                logger.info("Call has been empty since " +
-                    "${callWentEmptyTime.timestampTransitionOccured} " +
-                    "(${Duration.between(callWentEmptyTime.timestampTransitionOccured, now)} ago). " +
-                    "Returning CallEmpty event")
+                logger.info(
+                    "Call has been empty since " +
+                        "${callWentEmptyTime.timestampTransitionOccured} " +
+                        "(${Duration.between(callWentEmptyTime.timestampTransitionOccured, now)} ago). " +
+                        "Returning CallEmpty event"
+                )
                 SeleniumEvent.CallEmpty
             }
             false -> null

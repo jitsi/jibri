@@ -33,16 +33,18 @@ class LoggingUtils {
          * The default implementation of the process output logger
          */
         val OutputLogger: (ProcessWrapper, Logger) -> Future<Boolean> = { process, logger ->
-            TaskPools.ioPool.submit(Callable<Boolean> {
-                val reader = BufferedReader(InputStreamReader(process.getOutput()))
+            TaskPools.ioPool.submit(
+                Callable<Boolean> {
+                    val reader = BufferedReader(InputStreamReader(process.getOutput()))
 
-                while (true) {
-                    val line = reader.readLine() ?: break
-                    logger.info(line)
+                    while (true) {
+                        val line = reader.readLine() ?: break
+                        logger.info(line)
+                    }
+
+                    return@Callable true
                 }
-
-                return@Callable true
-            })
+            )
         }
 
         /**

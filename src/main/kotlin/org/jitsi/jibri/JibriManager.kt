@@ -175,11 +175,13 @@ class JibriManager : StatusPublisher<Any>() {
     ) {
         logger.info("Starting a SIP gateway with params: $serviceParams $sipGatewayServiceParams")
         throwIfBusy()
-        val service = SipGatewayJibriService(SipGatewayServiceParams(
-            sipGatewayServiceParams.callParams,
-            sipGatewayServiceParams.callLoginParams,
-            sipGatewayServiceParams.sipClientParams
-        ))
+        val service = SipGatewayJibriService(
+            SipGatewayServiceParams(
+                sipGatewayServiceParams.callParams,
+                sipGatewayServiceParams.callLoginParams,
+                sipGatewayServiceParams.sipClientParams
+            )
+        )
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_SIP_GATEWAY)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
@@ -274,10 +276,10 @@ class JibriManager : StatusPublisher<Any>() {
     }
 
     /**
-    * Returns whether or not this Jibri is currently "busy".   "Busy" is
-    * is defined as "does not currently have the capacity to spin up another
-    * service"
-    */
+     * Returns whether or not this Jibri is currently "busy".   "Busy" is
+     * is defined as "does not currently have the capacity to spin up another
+     * service"
+     */
     @Synchronized
     fun busy(): Boolean = currentActiveService != null
 

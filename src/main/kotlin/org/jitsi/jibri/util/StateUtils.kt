@@ -57,4 +57,4 @@ class ComponentStateTransitioner(private val statusPublisher: StatusPublisher<Co
 }
 
 fun whenever(statusPublisher: StatusPublisher<ComponentState>): ComponentStateTransitioner =
-        ComponentStateTransitioner(statusPublisher)
+    ComponentStateTransitioner(statusPublisher)

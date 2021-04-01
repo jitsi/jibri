@@ -148,8 +148,9 @@ class FileRecordingJibriService(
             publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable))
         }
         jibriSelenium.joinCall(
-                fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
-                fileRecordingParams.callLoginParams)
+            fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+            fileRecordingParams.callLoginParams
+        )
 
         whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
             logger.info("Selenium joined the call, starting the capturer")
@@ -172,8 +173,11 @@ class FileRecordingJibriService(
         val participants = try {
             jibriSelenium.getParticipants()
         } catch (t: Throwable) {
-            logger.error("An error occurred while trying to get the participants list, proceeding with " +
-                    "an empty participants list", t)
+            logger.error(
+                "An error occurred while trying to get the participants list, proceeding with " +
+                    "an empty participants list",
+                t
+            )
             listOf<Map<String, Any>>()
         }
         logger.info("Participants in this recording: $participants")
