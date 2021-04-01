@@ -107,7 +107,7 @@ class XmppApiTest : ShouldSpec() {
         val jibriStatusManager: JibriStatusManager = mockk(relaxed = true)
         // the initial status is idle
         val expectedStatus =
-                JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
+            JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
         every { jibriStatusManager.overallStatus } returns expectedStatus
 
         beforeSpec {

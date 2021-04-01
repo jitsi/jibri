@@ -104,8 +104,10 @@ class XmppApi(
                     password = config.controlLogin.password
 
                     if (config.trustAllXmppCerts) {
-                        logger.info("The trustAllXmppCerts config is enabled for this domain, " +
-                                "all XMPP server provided certificates will be accepted")
+                        logger.info(
+                            "The trustAllXmppCerts config is enabled for this domain, " +
+                                "all XMPP server provided certificates will be accepted"
+                        )
                         disableCertificateVerification = config.trustAllXmppCerts
                     }
 
@@ -159,16 +161,17 @@ class XmppApi(
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
         logger.info("Received JibriIq ${jibriIq.toXML()} from environment $mucClient")
         val xmppEnvironment = xmppConfigs.find { it.xmppServerHosts.contains(mucClient.id) }
-                ?: return IQ.createErrorResponse(
-                    jibriIq,
-                    XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request)
-                )
+            ?: return IQ.createErrorResponse(
+                jibriIq,
+                XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request)
+            )
         return when (jibriIq.action) {
             JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
             JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)
             else -> IQ.createErrorResponse(
                 jibriIq,
-                XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
+                XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request)
+            )
         }
     }
 
@@ -228,8 +231,10 @@ class XmppApi(
                         failureReason = JibriIq.FailureReason.ERROR
                         sipAddress = request.sipAddress
                         shouldRetry = serviceState.error.shouldRetry()
-                        logger.info("Current service had an error ${serviceState.error}, " +
-                            "sending error iq ${toXML()}")
+                        logger.info(
+                            "Current service had an error ${serviceState.error}, " +
+                                "sending error iq ${toXML()}"
+                        )
                         mucClient.sendStanza(this)
                     }
                 }
@@ -332,7 +337,8 @@ class XmppApi(
                     SipGatewayServiceParams(
                         callParams,
                         xmppEnvironment.callLogin,
-                        SipClientParams(startIq.sipAddress, startIq.displayName)),
+                        SipClientParams(startIq.sipAddress, startIq.displayName)
+                    ),
                     EnvironmentContext(xmppEnvironment.name),
                     serviceStatusHandler
                 )

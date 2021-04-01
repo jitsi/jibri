@@ -81,7 +81,7 @@ class ProcessStatePublisher(
     private fun startProcessAliveChecks() {
         recurringProcessAliveTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(2, TimeUnit.SECONDS, 5) {
             val timeSinceLastStatusUpdate =
-                    Duration.ofMillis(System.currentTimeMillis() - lastStatusUpdateTimestamp.get())
+                Duration.ofMillis(System.currentTimeMillis() - lastStatusUpdateTimestamp.get())
             if (timeSinceLastStatusUpdate > Duration.ofSeconds(2)) {
                 logger.debug { "Process $name hasn't written in 2 seconds, publishing periodic update" }
                 ProcessState(processRunningState, tail.mostRecentLine).also {

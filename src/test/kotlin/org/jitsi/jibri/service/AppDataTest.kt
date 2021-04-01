@@ -49,10 +49,12 @@ internal class AppDataTest : ShouldSpec() {
                 appData.fileRecordingMetadata?.get("upload_credentials") shouldNotBe null
                 @Suppress("UNCHECKED_CAST")
                 (appData.fileRecordingMetadata?.get("upload_credentials") as Map<Any, Any>)
-                    .shouldContainExactly(mapOf<Any, Any>(
-                        "service_name" to "dropbox",
-                        "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
-                    ))
+                    .shouldContainExactly(
+                        mapOf<Any, Any>(
+                            "service_name" to "dropbox",
+                            "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
+                        )
+                    )
             }
         }
         context("a json-encoded app data structure with an extra top-level field") {
@@ -76,10 +78,12 @@ internal class AppDataTest : ShouldSpec() {
                 appData.fileRecordingMetadata?.get("upload_credentials") shouldNotBe null
                 @Suppress("UNCHECKED_CAST")
                 (appData.fileRecordingMetadata?.get("upload_credentials") as Map<Any, Any>)
-                    .shouldContainExactly(mapOf<Any, Any>(
-                        "service_name" to "dropbox",
-                        "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
-                    ))
+                    .shouldContainExactly(
+                        mapOf<Any, Any>(
+                            "service_name" to "dropbox",
+                            "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
+                        )
+                    )
             }
         }
     }

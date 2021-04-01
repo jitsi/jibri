@@ -54,8 +54,8 @@ class PjsuaClient(
                         // Remote side hung up
                         0 -> publishStatus(ComponentState.Finished)
                         2 -> publishStatus(ComponentState.Error(RemoteSipClientBusy))
-                        else -> publishStatus(ComponentState.Error(
-                            PjsuaExitedPrematurely(processState.runningState.exitCode))
+                        else -> publishStatus(
+                            ComponentState.Error(PjsuaExitedPrematurely(processState.runningState.exitCode))
                         )
                     }
                 }
@@ -71,9 +71,12 @@ class PjsuaClient(
         )
 
         if (pjsuaClientParams.sipClientParams.userName != null &&
-            pjsuaClientParams.sipClientParams.password != null) {
-            command.add("--id=${pjsuaClientParams.sipClientParams.displayName} " +
-                "<sip:${pjsuaClientParams.sipClientParams.userName}>")
+            pjsuaClientParams.sipClientParams.password != null
+        ) {
+            command.add(
+                "--id=${pjsuaClientParams.sipClientParams.displayName} " +
+                    "<sip:${pjsuaClientParams.sipClientParams.userName}>"
+            )
             command.add("--registrar=sip:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')}")
             command.add("--realm=*")
             command.add("--username=${pjsuaClientParams.sipClientParams.userName.substringBefore('@')}")

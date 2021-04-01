@@ -166,7 +166,8 @@ class HttpApi(
                     SipGatewayServiceParams(
                         startServiceParams.callParams,
                         startServiceParams.callLoginParams,
-                        sipClientParams)
+                        sipClientParams
+                    )
                 )
             }
         }

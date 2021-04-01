@@ -26,7 +26,8 @@ val Process.pidValue: Long
         var pid: Long = -1
         try {
             if (javaClass.name == "java.lang.UNIXProcess" ||
-                javaClass.name == "java.lang.ProcessImpl") {
+                javaClass.name == "java.lang.ProcessImpl"
+            ) {
                 val field: Field = javaClass.getDeclaredField("pid")
                 field.isAccessible = true
                 pid = field.getLong(this)

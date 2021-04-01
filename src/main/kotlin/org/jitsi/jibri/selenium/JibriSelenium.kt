@@ -136,7 +136,7 @@ class JibriSelenium(
 
     /**
      * Set up default chrome driver options (using fake device, etc.)
-      */
+     */
     init {
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
@@ -193,9 +193,9 @@ class JibriSelenium(
                 // state transition from that event. Note: it's intentional that we stop at the first check that fails
                 // and 'asSequence' is necessary to do that.
                 val event = callStatusChecks
-                        .asSequence()
-                        .map { check -> check.run(callPage) }
-                        .firstOrNull { result -> result != null }
+                    .asSequence()
+                    .map { check -> check.run(callPage) }
+                    .firstOrNull { result -> result != null }
                 if (event != null) {
                     logger.info("Recurring call status checks generated event $event")
                     transitionState(event)

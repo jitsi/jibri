@@ -98,8 +98,10 @@ class JibriStatusManager : StatusPublisher<JibriStatus>() {
      */
     @Synchronized
     fun updateHealth(componentName: String, healthStatus: ComponentHealthStatus, detail: String = "") {
-        logger.info("Received component health update: $componentName has status $healthStatus " +
-                "(detail: $detail)")
+        logger.info(
+            "Received component health update: $componentName has status $healthStatus " +
+                "(detail: $detail)"
+        )
         val oldHealthStatus = overallHealthStatus
         subComponentHealth[componentName] = ComponentHealthDetails(healthStatus, detail)
         val newHealthStatus = overallHealthStatus
