@@ -24,6 +24,7 @@ import io.kotest.matchers.collections.contain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.Runs
 import io.mockk.every
@@ -42,6 +43,7 @@ import org.jitsi.jibri.util.ProcessExited
 import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
+import org.jitsi.utils.logging2.Logger
 
 internal class FfmpegCapturerTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -51,13 +53,14 @@ internal class FfmpegCapturerTest : ShouldSpec() {
     private val ffmpegStateHandler = slot<(ProcessState) -> Unit>()
     private val capturerStateUpdates = mutableListOf<ComponentState>()
     private val sink: Sink = mockk()
+    private val logger: Logger = mockk(relaxed = true)
 
     private val FFMPEG_ENCODING_STATE = ProcessState(ProcessRunning(), "frame=42")
     private val FFMPEG_ERROR_STATE = ProcessState(ProcessExited(255), "rtmp://blah Input/output error")
     private val FFMPEG_FAILED_TO_START = ProcessState(ProcessFailedToStart(), "Failed to start")
 
     private fun createCapturer(): FfmpegCapturer {
-        val capturer = FfmpegCapturer(osDetector, ffmpeg)
+        val capturer = FfmpegCapturer(logger, osDetector, ffmpeg)
         capturer.addStatusHandler { status ->
             capturerStateUpdates.add(status)
         }
@@ -109,7 +112,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                         context("capture") {
                             should("report its stats as error") {
                                 val error = capturerStateUpdates.last()
-                                error.shouldBeInstanceOf<ComponentState.Error>()
+                                error should beInstanceOf<ComponentState.Error>()
                                 error as ComponentState.Error
                                 error.error.scope shouldBe ErrorScope.SESSION
                             }
@@ -120,7 +123,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                         context("capture") {
                             should("report its stats as error") {
                                 val error = capturerStateUpdates.last()
-                                error.shouldBeInstanceOf<ComponentState.Error>()
+                                error should beInstanceOf<ComponentState.Error>()
                                 error as ComponentState.Error
                                 error.error.scope shouldBe ErrorScope.SESSION
                             }
@@ -137,7 +140,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     should("report its status as a system error") {
                         capturerStateUpdates.shouldNotBeEmpty()
                         val status = capturerStateUpdates.last()
-                        status.shouldBeInstanceOf<ComponentState.Error>()
+                        status should beInstanceOf<ComponentState.Error>()
                         status as ComponentState.Error
                         status.error.scope shouldBe ErrorScope.SYSTEM
                     }
@@ -180,7 +183,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
         context("on an unsupported platform") {
             every { osDetector.getOsType() } returns OsType.UNSUPPORTED
             shouldThrow<UnsupportedOsException> {
-                FfmpegCapturer(osDetector, ffmpeg)
+                FfmpegCapturer(logger, osDetector, ffmpeg)
             }
         }
     }

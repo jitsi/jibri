@@ -37,7 +37,6 @@ import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
 import org.jitsi.xmpp.extensions.jibri.JibriIq
@@ -98,11 +97,16 @@ data class RecordingMetadata(
  */
 class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
-    private val jibriSelenium: JibriSelenium = JibriSelenium(),
-    private val capturer: FfmpegCapturer = FfmpegCapturer(),
+    jibriSelenium: JibriSelenium? = null,
+    capturer: FfmpegCapturer? = null,
     private val processFactory: ProcessFactory = ProcessFactory(),
     fileSystem: FileSystem = FileSystems.getDefault()
 ) : StatefulJibriService("File recording") {
+    init {
+        logger.addContext("session_id", fileRecordingParams.sessionId)
+    }
+    private val capturer = capturer ?: FfmpegCapturer(logger)
+    private val jibriSelenium = jibriSelenium ?: JibriSelenium(logger)
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
@@ -131,8 +135,8 @@ class FileRecordingJibriService(
             fileRecordingParams.callParams.callUrlInfo.callName
         )
 
-        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, this.jibriSelenium)
+        registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
     }
 
     override fun start() {
@@ -144,8 +148,9 @@ class FileRecordingJibriService(
             publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable))
         }
         jibriSelenium.joinCall(
-                fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
-                fileRecordingParams.callLoginParams)
+            fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+            fileRecordingParams.callLoginParams
+        )
 
         whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
             logger.info("Selenium joined the call, starting the capturer")
@@ -168,8 +173,11 @@ class FileRecordingJibriService(
         val participants = try {
             jibriSelenium.getParticipants()
         } catch (t: Throwable) {
-            logger.error("An error occurred while trying to get the participants list, proceeding with " +
-                    "an empty participants list", t)
+            logger.error(
+                "An error occurred while trying to get the participants list, proceeding with " +
+                    "an empty participants list",
+                t
+            )
             listOf<Map<String, Any>>()
         }
         logger.info("Participants in this recording: $participants")
@@ -208,7 +216,7 @@ class FileRecordingJibriService(
                 finalizeScriptPath,
                 sessionRecordingDirectory.toString()
             )
-            with(processFactory.createProcess(finalizeCommand)) {
+            with(processFactory.createProcess(finalizeCommand, logger)) {
                 start()
                 val streamDone = LoggingUtils.logOutputOfProcess(this, logger)
                 waitFor()

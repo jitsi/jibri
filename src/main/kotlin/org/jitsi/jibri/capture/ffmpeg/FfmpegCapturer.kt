@@ -20,6 +20,7 @@ package org.jitsi.jibri.capture.ffmpeg
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
@@ -30,29 +31,33 @@ import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
 import org.jitsi.jibri.util.StatusPublisher
-import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.getLoggerWithHandler
-import java.util.logging.Logger
+import org.jitsi.metaconfig.config
+import org.jitsi.metaconfig.from
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 
 /**
  * Parameters which will be passed to ffmpeg
  */
 data class FfmpegExecutorParams(
-    val resolution: String = "1280x720",
+    val resolution: String = FfmpegCapturer.resolution,
     val framerate: Int = 30,
     val videoEncodePreset: String = "veryfast",
     val queueSize: Int = 4096,
     val streamingMaxBitrate: Int = 2976,
     val streamingBufSize: Int = streamingMaxBitrate * 2,
-        // The range of the CRF scale is 0–51, where 0 is lossless,
-        // 23 is the default, and 51 is worst quality possible. A lower value
-        // generally leads to higher quality, and a subjectively sane range is
-        // 17–28. Consider 17 or 18 to be visually lossless or nearly so;
-        // it should look the same or nearly the same as the input but it
-        // isn't technically lossless.
-        // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
+    // The range of the CRF scale is 0–51, where 0 is lossless,
+    // 23 is the default, and 51 is worst quality possible. A lower value
+    // generally leads to higher quality, and a subjectively sane range is
+    // 17–28. Consider 17 or 18 to be visually lossless or nearly so;
+    // it should look the same or nearly the same as the input but it
+    // isn't technically lossless.
+    // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
     val h264ConstantRateFactor: Int = 25,
-    val gopSize: Int = framerate * 2
+    val gopSize: Int = framerate * 2,
+    val audioSource: String = FfmpegCapturer.audioSource,
+    val audioDevice: String = FfmpegCapturer.audioDevice
 )
 
 /**
@@ -60,28 +65,34 @@ data class FfmpegExecutorParams(
  * configured audio and video devices, and writing to the given [Sink]
  */
 class FfmpegCapturer(
+    parentLogger: Logger,
     osDetector: OsDetector = OsDetector(),
-    private val ffmpeg: JibriSubprocess = JibriSubprocess("ffmpeg", ffmpegOutputLogger)
+    ffmpeg: JibriSubprocess? = null
 ) : Capturer, StatusPublisher<ComponentState>() {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createChildLogger(parentLogger)
+    private val ffmpeg = ffmpeg ?: JibriSubprocess(logger, "ffmpeg", ffmpegOutputLogger)
     private val getCommand: (Sink) -> List<String>
     private val ffmpegStatusStateMachine = FfmpegStatusStateMachine()
 
     companion object {
         const val COMPONENT_ID = "Ffmpeg Capturer"
         private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
+        val resolution: String by config("jibri.ffmpeg.resolution".from(Config.configSource))
+
+        val audioSource: String by config("jibri.ffmpeg.audio-source".from(Config.configSource))
+        val audioDevice: String by config("jibri.ffmpeg.audio-device".from(Config.configSource))
     }
 
     init {
         val osType = osDetector.getOsType()
-        logger.debug("Detected os as OS: $osType")
+        logger.debug { "Detected os as OS: $osType" }
         getCommand = when (osType) {
             OsType.MAC -> { sink: Sink -> getFfmpegCommandMac(FfmpegExecutorParams(), sink) }
             OsType.LINUX -> { sink: Sink -> getFfmpegCommandLinux(FfmpegExecutorParams(), sink) }
             else -> throw UnsupportedOsException()
         }
 
-        ffmpeg.addStatusHandler(this::onFfmpegProcessUpdate)
+        this.ffmpeg.addStatusHandler(this::onFfmpegProcessUpdate)
         ffmpegStatusStateMachine.onStateTransition(this::onFfmpegStateMachineStateChange)
     }
 
@@ -102,7 +113,8 @@ class FfmpegCapturer(
         when (ffmpegState.runningState) {
             is ProcessFailedToStart -> {
                 ffmpegStatusStateMachine.transition(
-                    FfmpegEvent.ErrorLine(FfmpegFailedToStart))
+                    FfmpegEvent.ErrorLine(FfmpegFailedToStart)
+                )
             }
             else -> {
                 if (ffmpegState.runningState is ProcessExited) {

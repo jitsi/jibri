@@ -4,9 +4,10 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.metaconfig.config
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import java.time.Clock
 import java.time.Duration
-import java.util.logging.Logger
 
 /**
  * Verify that the Jibri web client is receiving media from the other participants
@@ -16,9 +17,10 @@ import java.util.logging.Logger
  * timeout, but return [SeleniumEvent.CallEmpty].
  */
 class MediaReceivedStatusCheck(
-    private val logger: Logger,
+    parentLogger: Logger,
     private val clock: Clock = Clock.systemDefaultZone()
 ) : CallStatusCheck {
+    private val logger = createChildLogger(parentLogger)
     // The last timestamp where we saw non-zero media.  We default with the
     // assumption we're receiving media.
     private var timeOfLastMedia = clock.instant()
@@ -35,9 +37,11 @@ class MediaReceivedStatusCheck(
         // We don't get any mute state for Jigasi participants, so to prevent timing out when only Jigasi participants
         // may be speaking, always count them as "muted"
         val allClientsMuted = (numMutedParticipants + numJigasiParticipants) == numParticipants
-        logger.info("Jibri client receive bitrates: $bitrates, num participants: $numParticipants, " +
-            "numMutedParticipants: $numMutedParticipants, numJigasis: $numJigasiParticipants, " +
-            "all clients muted? $allClientsMuted")
+        logger.info(
+            "Jibri client receive bitrates: $bitrates, num participants: $numParticipants, " +
+                "numMutedParticipants: $numMutedParticipants, numJigasis: $numJigasiParticipants, " +
+                "all clients muted? $allClientsMuted"
+        )
         clientsAllMutedTransitionTime.maybeUpdate(allClientsMuted)
         val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long
         // If all clients are muted, register it as 'receiving media': that way when clients unmute

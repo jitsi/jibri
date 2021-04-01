@@ -4,9 +4,10 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.metaconfig.config
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import java.time.Clock
 import java.time.Duration
-import java.util.logging.Logger
 
 /**
  * Verify that there are other participants in the call; if the call is
@@ -16,10 +17,11 @@ import java.util.logging.Logger
  * check for call empty state when [run] is called.
  */
 class EmptyCallStatusCheck(
-    private val logger: Logger,
+    parentLogger: Logger,
     private val callEmptyTimeout: Duration = defaultCallEmptyTimeout,
     private val clock: Clock = Clock.systemUTC()
 ) : CallStatusCheck {
+    private val logger = createChildLogger(parentLogger)
     init {
         logger.info("Starting empty call check with a timeout of $callEmptyTimeout")
     }
@@ -32,10 +34,12 @@ class EmptyCallStatusCheck(
 
         return when (callWentEmptyTime.exceededTimeout(callEmptyTimeout)) {
             true -> {
-                logger.info("Call has been empty since " +
-                    "${callWentEmptyTime.timestampTransitionOccured} " +
-                    "(${Duration.between(callWentEmptyTime.timestampTransitionOccured, now)} ago). " +
-                    "Returning CallEmpty event")
+                logger.info(
+                    "Call has been empty since " +
+                        "${callWentEmptyTime.timestampTransitionOccured} " +
+                        "(${Duration.between(callWentEmptyTime.timestampTransitionOccured, now)} ago). " +
+                        "Returning CallEmpty event"
+                )
                 SeleniumEvent.CallEmpty
             }
             false -> null

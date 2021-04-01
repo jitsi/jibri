@@ -32,24 +32,27 @@ import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.webhooks.v1.WebhookClient
 import org.jitsi.metaconfig.ConfigException
 import org.jitsi.metaconfig.MapConfigSource
 import org.jitsi.metaconfig.MetaconfigLogger
 import org.jitsi.metaconfig.MetaconfigSettings
+import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.configSupplier
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.LoggerImpl
 import java.io.File
 import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 import kotlin.system.exitProcess
 
-val logger: Logger = Logger.getLogger("org.jitsi.jibri.Main")
+val logger: Logger = LoggerImpl("org.jitsi.jibri.Main")
 
 fun main(args: Array<String>) {
     setupMetaconfigLogger()
     handleCommandLineArgs(args)
+
+    logger.info("Jibri starting up with id ${MainConfig.jibriId}")
 
     val jibriStatusManager = JibriStatusManager()
     val jibriManager = JibriManager()
@@ -66,15 +69,11 @@ fun main(args: Array<String>) {
             }
         }
     }
-    val jibriId = configSupplier<String> {
-        "JibriConfig::jibriId" { Config.legacyConfigSource.jibriId!! }
-        "jibri.id".from(Config.configSource)
-    }.get()
     val webhookSubscribers = configSupplier<List<String>> {
         "jibri.webhook.subscribers".from(Config.configSource)
     }.get()
 
-    val webhookClient = WebhookClient(jibriId)
+    val webhookClient = WebhookClient(MainConfig.jibriId)
 
     jibriStatusManager.addStatusHandler {
         webhookClient.updateStatus(it)
@@ -94,7 +93,7 @@ fun main(args: Array<String>) {
         } catch (t: Throwable) {
             when (t) {
                 is CancellationException -> {}
-                else -> logger.error("Error cleaning up status updater task: $t")
+                else -> logger.error("Error cleaning up status updater task", t)
             }
         }
         exitProcess(exitCode)
@@ -159,12 +158,21 @@ fun main(args: Array<String>) {
     }.start()
 }
 
+class MainConfig {
+    companion object {
+        val jibriId: String by config {
+            "JibriConfig::jibriId" { Config.legacyConfigSource.jibriId!! }
+            "jibri.id".from(Config.configSource)
+        }
+    }
+}
+
 private fun handleCommandLineArgs(args: Array<String>) {
     val argParser = ArgumentParsers.newFor("Jibri").build()
         .defaultHelp(true)
         .description("Start Jibri")
     argParser.addArgument("-c", "--config")
-        .required(true)
+        .required(false)
         .type(String::class.java)
         .help("Path to the jibri config file")
     argParser.addArgument("--internal-http-port")
@@ -190,7 +198,9 @@ private fun handleCommandLineArgs(args: Array<String>) {
         }
     }
 
-    setupLegacyConfig(configFilePath)
+    configFilePath?.let {
+        setupLegacyConfig(it)
+    } ?: logger.info("No legacy config file set")
 }
 
 /**
@@ -215,16 +225,16 @@ private fun setupLegacyConfig(configFilePath: String) {
  * Wire the jitsi-metaconfig logger into ours
  */
 private fun setupMetaconfigLogger() {
-    val configLogger = Logger.getLogger("org.jitsi.jibri.config")
+    val configLogger = LoggerImpl("org.jitsi.jibri.config")
     MetaconfigSettings.logger = object : MetaconfigLogger {
         override fun debug(block: () -> String) {
-            configLogger.fine(block)
+            configLogger.debug(block)
         }
         override fun error(block: () -> String) {
             configLogger.error(block())
         }
         override fun warn(block: () -> String) {
-            configLogger.warning(block)
+            configLogger.warn(block)
         }
     }
 }

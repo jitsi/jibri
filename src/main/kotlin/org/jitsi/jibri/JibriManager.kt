@@ -44,12 +44,11 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.schedule
 import org.jitsi.metaconfig.config
+import org.jitsi.utils.logging2.createLogger
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-import java.util.logging.Logger
 
 class JibriBusyException : Exception()
 
@@ -84,7 +83,7 @@ data class FileRecordingRequestParams(
  * ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
  */
 class JibriManager : StatusPublisher<Any>() {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createLogger()
     private var currentActiveService: JibriService? = null
     /**
      * Store some arbitrary context optionally sent in the start service request so that we can report it in our
@@ -176,11 +175,13 @@ class JibriManager : StatusPublisher<Any>() {
     ) {
         logger.info("Starting a SIP gateway with params: $serviceParams $sipGatewayServiceParams")
         throwIfBusy()
-        val service = SipGatewayJibriService(SipGatewayServiceParams(
-            sipGatewayServiceParams.callParams,
-            sipGatewayServiceParams.callLoginParams,
-            sipGatewayServiceParams.sipClientParams
-        ))
+        val service = SipGatewayJibriService(
+            SipGatewayServiceParams(
+                sipGatewayServiceParams.callParams,
+                sipGatewayServiceParams.callLoginParams,
+                sipGatewayServiceParams.sipClientParams
+            )
+        )
         statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_SIP_GATEWAY)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
@@ -230,7 +231,7 @@ class JibriManager : StatusPublisher<Any>() {
                     try {
                         stopService()
                     } catch (t: Throwable) {
-                        logger.error("Error while stopping service due to usage timeout: $t")
+                        logger.error("Error while stopping service due to usage timeout", t)
                     }
                 }
         }
@@ -275,10 +276,10 @@ class JibriManager : StatusPublisher<Any>() {
     }
 
     /**
-    * Returns whether or not this Jibri is currently "busy".   "Busy" is
-    * is defined as "does not currently have the capacity to spin up another
-    * service"
-    */
+     * Returns whether or not this Jibri is currently "busy".   "Busy" is
+     * is defined as "does not currently have the capacity to spin up another
+     * service"
+     */
     @Synchronized
     fun busy(): Boolean = currentActiveService != null
 

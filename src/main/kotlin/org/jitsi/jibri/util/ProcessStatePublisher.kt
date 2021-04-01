@@ -16,13 +16,13 @@
 
 package org.jitsi.jibri.util
 
-import org.jitsi.jibri.util.extensions.debug
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
-import java.util.logging.Logger
 
 /**
  * [ProcessStatePublisher] is responsible for publishing a [ProcessState] every time:
@@ -31,9 +31,11 @@ import java.util.logging.Logger
  * and publish a [ProcessState] with its current alive state and its most recent line of output
  */
 class ProcessStatePublisher(
+    parentLogger: Logger,
     private val name: String,
     private val process: ProcessWrapper
 ) : StatusPublisher<ProcessState>() {
+    private val logger = createChildLogger(parentLogger)
     private val tail: PublishingTail
     private var recurringProcessAliveTask: ScheduledFuture<*>? = null
     private var lastStatusUpdateTimestamp = AtomicLong(0)
@@ -45,7 +47,6 @@ class ProcessStatePublisher(
                 ProcessExited(process.exitValue)
             }
         }
-    private val logger = Logger.getLogger("${this::class.qualifiedName}.$name")
 
     companion object {
         private val NO_OUTPUT_TIMEOUT = Duration.ofSeconds(2)
@@ -80,9 +81,9 @@ class ProcessStatePublisher(
     private fun startProcessAliveChecks() {
         recurringProcessAliveTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(2, TimeUnit.SECONDS, 5) {
             val timeSinceLastStatusUpdate =
-                    Duration.ofMillis(System.currentTimeMillis() - lastStatusUpdateTimestamp.get())
+                Duration.ofMillis(System.currentTimeMillis() - lastStatusUpdateTimestamp.get())
             if (timeSinceLastStatusUpdate > Duration.ofSeconds(2)) {
-                logger.debug("Process $name hasn't written in 2 seconds, publishing periodic update")
+                logger.debug { "Process $name hasn't written in 2 seconds, publishing periodic update" }
                 ProcessState(processRunningState, tail.mostRecentLine).also {
                     TaskPools.ioPool.submit {
                         // We fire all state transitions in the ioPool, otherwise we may try and cancel the

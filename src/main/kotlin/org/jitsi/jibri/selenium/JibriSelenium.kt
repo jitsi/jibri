@@ -17,6 +17,7 @@
 package org.jitsi.jibri.selenium
 
 import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.MainConfig
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
@@ -27,11 +28,12 @@ import org.jitsi.jibri.selenium.util.BrowserFileHandler
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.createChildLogger
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
@@ -45,7 +47,6 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
-import java.util.logging.Logger
 
 /**
  * Parameters needed for joining the call in Selenium
@@ -92,7 +93,8 @@ val SIP_GW_URL_OPTIONS = listOf(
     "config.analytics.disabled=true",
     "config.p2p.enabled=false",
     "config.prejoinPageEnabled=false",
-    "config.requireDisplayName=false"
+    "config.requireDisplayName=false",
+    "devices.videoInput=\"PJSUA\""
 )
 
 val RECORDING_URL_OPTIONS = listOf(
@@ -116,9 +118,10 @@ val RECORDING_URL_OPTIONS = listOf(
  * It implements [StatusPublisher] to publish its status
  */
 class JibriSelenium(
+    parentLogger: Logger,
     private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions()
 ) : StatusPublisher<ComponentState>() {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createChildLogger(parentLogger)
     private var chromeDriver: ChromeDriver
     private var currCallUrl: String? = null
     private val stateMachine = SeleniumStateMachine()
@@ -133,7 +136,7 @@ class JibriSelenium(
 
     /**
      * Set up default chrome driver options (using fake device, etc.)
-      */
+     */
     init {
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
@@ -190,9 +193,9 @@ class JibriSelenium(
                 // state transition from that event. Note: it's intentional that we stop at the first check that fails
                 // and 'asSequence' is necessary to do that.
                 val event = callStatusChecks
-                        .asSequence()
-                        .map { check -> check.run(callPage) }
-                        .firstOrNull { result -> result != null }
+                    .asSequence()
+                    .map { check -> check.run(callPage) }
+                    .firstOrNull { result -> result != null }
                 if (event != null) {
                     logger.info("Recurring call status checks generated event $event")
                     transitionState(event)
@@ -237,9 +240,9 @@ class JibriSelenium(
                 HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
                 val localStorageValues = mutableMapOf(
-                        "displayname" to jibriSeleniumOptions.displayName,
-                        "email" to jibriSeleniumOptions.email,
-                        "callStatsUserName" to "jibri"
+                    "displayname" to jibriSeleniumOptions.displayName,
+                    "email" to jibriSeleniumOptions.email,
+                    "callStatsUserName" to if (MainConfig.jibriId.isNotEmpty()) MainConfig.jibriId else "jibri"
                 )
                 xmppCredentials?.let {
                     localStorageValues["xmpp_username_override"] =

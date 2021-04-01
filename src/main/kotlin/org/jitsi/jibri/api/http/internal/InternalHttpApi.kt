@@ -33,14 +33,14 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import org.jitsi.jibri.config.Config
 import org.jitsi.metaconfig.config
-import java.util.logging.Logger
+import org.jitsi.utils.logging2.createLogger
 
 class InternalHttpApi(
     private val configChangedHandler: () -> Unit,
     private val gracefulShutdownHandler: () -> Unit,
     private val shutdownHandler: () -> Unit
 ) {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createLogger()
 
     fun Application.internalApiModule() {
         install(ContentNegotiation) {

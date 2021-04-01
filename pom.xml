@@ -10,7 +10,7 @@
 
     <properties>
         <selenium.version>3.12.0</selenium.version>
-        <kotlin.version>1.3.71</kotlin.version>
+        <kotlin.version>1.4.31</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -19,9 +19,9 @@
         <jersey.version>2.30.1</jersey.version>
         <jackson.version>2.9.5</jackson.version>
         <junit.version>5.2.0</junit.version>
-        <kotest.version>4.1.3</kotest.version>
+        <kotest.version>4.4.3</kotest.version>
         <mockk.version>1.10.0</mockk.version>
-        <ktor.version>1.3.1</ktor.version>
+        <ktor.version>1.5.2</ktor.version>
         <jicoco.version>1.1-60-g3bc6ace</jicoco.version>
     </properties>
 
@@ -30,11 +30,27 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>jicoco</artifactId>
             <version>${jicoco.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-osgi-bundle</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jicoco-config</artifactId>
             <version>${jicoco.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -96,7 +112,13 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-utils</artifactId>
-            <version>1.0-47-gdb30505</version>
+            <version>1.0-82-gcab10f0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-osgi-bundle</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.datadoghq</groupId>
@@ -107,6 +129,12 @@
             <groupId>com.github.tinder</groupId>
             <artifactId>statemachine</artifactId>
             <version>0.2.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jitsi</groupId>
@@ -142,6 +170,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-metaconfig</artifactId>
             <version>8fa8f1170a</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
@@ -156,6 +190,17 @@
 
         <!-- testing -->
         <dependency>
+            <groupId>org.jitsi</groupId>
+            <artifactId>jicoco-test-kotlin</artifactId>
+            <version>1.1-79-g6099be5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                    <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>io.kotest</groupId>
             <artifactId>kotest-runner-junit5-jvm</artifactId>
             <version>${kotest.version}</version>
@@ -165,6 +210,18 @@
             <groupId>io.kotest</groupId>
             <artifactId>kotest-assertions-core-jvm</artifactId>
             <version>${kotest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.kotest</groupId>
+            <artifactId>kotest-extensions-junitxml-jvm</artifactId>
+            <version>${kotest.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+            <version>2.0.6</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -201,6 +258,26 @@
 
     <build>
         <plugins>
+	    <plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-enforcer-plugin</artifactId>
+		<version>3.0.0-M3</version>
+		<executions>
+		    <execution>
+			<id>enforce-maven</id>
+			<goals>
+			    <goal>enforce</goal>
+			</goals>
+			<configuration>
+			    <rules>
+				<requireMavenVersion>
+				    <version>3.5.0</version>
+				</requireMavenVersion>
+			    </rules>
+			</configuration>
+		    </execution>
+		</executions>
+	    </plugin>
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -234,7 +311,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.8.1</version>
                 <executions>
                     <!-- Replacing default-compile as it is treated specially by maven -->
                     <execution>
@@ -262,11 +339,18 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.2</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- gradle.build.dir is the property name that JunitXmlReporter expects to find, even though
+                        this is maven -->
+                        <gradle.build.dir>${project.build.directory}/surefire-reports</gradle.build.dir>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.1.1</version>
                 <executions>
                     <execution>
                         <id>make-assembly</id>

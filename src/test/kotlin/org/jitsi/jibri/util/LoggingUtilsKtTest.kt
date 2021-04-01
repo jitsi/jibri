@@ -26,9 +26,9 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.within
+import org.jitsi.utils.logging2.Logger
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
-import java.util.logging.Logger
 import kotlin.concurrent.thread
 
 internal class LoggingUtilsKtTest : FunSpec() {

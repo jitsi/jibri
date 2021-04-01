@@ -16,13 +16,14 @@
  */
 package org.jitsi.jibri.util
 
+import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.logging2.LoggerImpl
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.util.concurrent.Callable
 import java.util.concurrent.Future
 import java.util.logging.FileHandler
-import java.util.logging.Logger
 
 class LoggingUtils {
     companion object {
@@ -32,16 +33,18 @@ class LoggingUtils {
          * The default implementation of the process output logger
          */
         val OutputLogger: (ProcessWrapper, Logger) -> Future<Boolean> = { process, logger ->
-            TaskPools.ioPool.submit(Callable<Boolean> {
-                val reader = BufferedReader(InputStreamReader(process.getOutput()))
+            TaskPools.ioPool.submit(
+                Callable<Boolean> {
+                    val reader = BufferedReader(InputStreamReader(process.getOutput()))
 
-                while (true) {
-                    val line = reader.readLine() ?: break
-                    logger.info(line)
+                    while (true) {
+                        val line = reader.readLine() ?: break
+                        logger.info(line)
+                    }
+
+                    return@Callable true
                 }
-
-                return@Callable true
-            })
+            )
         }
 
         /**
@@ -66,8 +69,8 @@ class LoggingUtils {
  * handlers cleared, adding only the given handler
  */
 fun getLoggerWithHandler(name: String, handler: FileHandler): Logger {
-    val logger = Logger.getLogger(name)
-    logger.useParentHandlers = false
-    logger.addHandler(handler)
-    return logger
+    return LoggerImpl(name).apply {
+        setUseParentHandlers(false)
+        addHandler(handler)
+    }
 }

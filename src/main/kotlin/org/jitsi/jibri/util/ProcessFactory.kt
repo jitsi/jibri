@@ -16,12 +16,15 @@
  */
 package org.jitsi.jibri.util
 
+import org.jitsi.utils.logging2.Logger
+
 class ProcessFactory {
     fun createProcess(
         command: List<String>,
+        parentLogger: Logger,
         environment: Map<String, String> = mapOf(),
         processBuilder: ProcessBuilder = ProcessBuilder()
     ): ProcessWrapper {
-        return ProcessWrapper(command, environment, processBuilder)
+        return ProcessWrapper(command, parentLogger, environment, processBuilder)
     }
 }

@@ -20,11 +20,10 @@ package org.jitsi.jibri.api.xmpp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.beInstanceOf
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.beInstanceOf
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -32,7 +31,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.jitsi.jibri.JibriBusyException
-import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig
@@ -42,13 +40,14 @@ import org.jitsi.jibri.helpers.setIoPool
 import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
-import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.ComponentBusyStatus
-import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
+import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.status.OverallHealth
 import org.jitsi.jibri.util.TaskPools
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.IQ
@@ -108,7 +107,7 @@ class XmppApiTest : ShouldSpec() {
         val jibriStatusManager: JibriStatusManager = mockk(relaxed = true)
         // the initial status is idle
         val expectedStatus =
-                JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
+            JibriStatus(ComponentBusyStatus.IDLE, OverallHealth(ComponentHealthStatus.HEALTHY, mapOf()))
         every { jibriStatusManager.overallStatus } returns expectedStatus
 
         beforeSpec {
@@ -146,7 +145,7 @@ class XmppApiTest : ShouldSpec() {
                     val response = xmppApi.handleIq(jibriIq, mucClient)
                     should("send a pending response to the original IQ request") {
                         response shouldNotBe null
-                        response should beInstanceOf<JibriIq>()
+                        response should beInstanceOf(JibriIq::class)
                         response as JibriIq
                         response.status shouldBe JibriIq.Status.PENDING
                     }
@@ -156,9 +155,10 @@ class XmppApiTest : ShouldSpec() {
                             val sentStanzas = mutableListOf<Stanza>()
                             verify { mucClient.sendStanza(capture(sentStanzas)) }
                             sentStanzas.size shouldBe 1
-                            sentStanzas.first().shouldBeInstanceOf<JibriIq> {
-                                it.status shouldBe JibriIq.Status.ON
-                            }
+                            val stanza = sentStanzas.first()
+                            stanza should beInstanceOf<JibriIq>()
+                            stanza as JibriIq
+                            stanza.status shouldBe JibriIq.Status.ON
                         }
                         context("and it is stopped") {
 //                            whenever(jibriManager.stopService()) doAnswer {}
@@ -167,9 +167,9 @@ class XmppApiTest : ShouldSpec() {
                             should("respond correctly") {
                                 verify { jibriManager.stopService() }
                                 stopResponse shouldBeResponseTo stopIq
-                                stopResponse.shouldBeInstanceOf<JibriIq> {
-                                    it.status shouldBe JibriIq.Status.OFF
-                                }
+                                stopResponse should beInstanceOf<JibriIq>()
+                                stopResponse as JibriIq
+                                stopResponse.status shouldBe JibriIq.Status.OFF
                             }
                         }
                     }
@@ -178,11 +178,11 @@ class XmppApiTest : ShouldSpec() {
                     every { jibriManager.startFileRecording(any(), any(), any(), any()) } throws JibriBusyException()
                     should("send an error IQ") {
                         val response = xmppApi.handleIq(jibriIq, mucClient)
-                        response.shouldBeInstanceOf<JibriIq> {
-                            it.status shouldBe JibriIq.Status.OFF
-                            it.failureReason shouldBe JibriIq.FailureReason.BUSY
-                            it.shouldRetry shouldBe true
-                        }
+                        response should beInstanceOf<JibriIq>()
+                        response as JibriIq
+                        response.status shouldBe JibriIq.Status.OFF
+                        response.failureReason shouldBe JibriIq.FailureReason.BUSY
+                        response.shouldRetry shouldBe true
                     }
                 }
                 context("with application data") {

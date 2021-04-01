@@ -17,13 +17,11 @@
 
 package org.jitsi.jibri.selenium.pageobjects
 
-import org.jitsi.jibri.util.extensions.debug
-import org.jitsi.jibri.util.extensions.error
+import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
-import java.util.logging.Logger
 
 /**
  * Page object representing the in-call page on a jitsi-meet server.
@@ -31,21 +29,22 @@ import java.util.logging.Logger
  * intentional that this exceptions are propagated up: the caller should handle those cases.
  */
 class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createLogger()
 
     init {
         PageFactory.initElements(driver, this)
     }
 
     override fun visit(url: String): Boolean {
-        logger.debug("Visiting url $url")
+        logger.debug { "Visiting url $url" }
         if (!super.visit(url)) {
             return false
         }
         val start = System.currentTimeMillis()
         return try {
             WebDriverWait(driver, 30).until {
-                val result = driver.executeScript("""
+                val result = driver.executeScript(
+                    """
                     try {
                         return APP.conference._room.isJoined();
                     } catch (e) {
@@ -56,7 +55,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 when (result) {
                     is Boolean -> result
                     else -> {
-                        logger.debug("Not joined yet: $result")
+                        logger.debug { "Not joined yet: $result" }
                         false
                     }
                 }
@@ -71,13 +70,15 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     fun getNumParticipants(): Int {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 return APP.conference.membersCount;
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin())
+            """.trimMargin()
+        )
         return when (result) {
             is Number -> result.toInt()
             else -> 1
@@ -86,13 +87,15 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
 
     @Suppress("UNCHECKED_CAST")
     private fun getStats(): Map<String, Any?> {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 return APP.conference.getStats();
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin())
+            """.trimMargin()
+        )
         if (result is String) {
             return mapOf()
         }
@@ -106,7 +109,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     fun injectParticipantTrackerScript(): Boolean {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 window._jibriParticipants = [];
                 const existingMembers = APP.conference._room.room.members || {};
@@ -134,7 +138,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin())
+            """.trimMargin()
+        )
         return when (result) {
             is Boolean -> result
             else -> false
@@ -142,13 +147,15 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     fun getParticipants(): List<Map<String, Any>> {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 return window._jibriParticipants;
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin())
+            """.trimMargin()
+        )
         if (result is List<*>) {
             @Suppress("UNCHECKED_CAST")
             return result as List<Map<String, Any>>
@@ -157,12 +164,12 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
-    // APP.conference._room.getParticipants()[0].getProperty("features_jigasi")
     /**
      * Return how many of the participants are Jigasi clients
      */
     fun numRemoteParticipantsJigasi(): Int {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 return APP.conference._room.getParticipants()
                     .filter(participant => participant.getProperty("features_jigasi") == true)
@@ -170,7 +177,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin())
+            """.trimMargin()
+        )
         return when (result) {
             is Number -> result.toInt()
             else -> {
@@ -185,7 +193,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
      * and video).
      */
     fun numRemoteParticipantsMuted(): Int {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 return APP.conference._room.getParticipants()
                     .filter(participant => participant.isAudioMuted() && participant.isVideoMuted())
@@ -193,7 +202,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin())
+            """.trimMargin()
+        )
         return when (result) {
             is Number -> result.toInt()
             else -> {
@@ -208,7 +218,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
      * message
      */
     fun addToPresence(key: String, value: String): Boolean {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 APP.conference._room.room.addToPresence(
                     '$key',
@@ -219,7 +230,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             } catch (e) {
                 return e.message;
             }
-            """.trimMargin())
+            """.trimMargin()
+        )
         return when (result) {
             is String -> false
             else -> true
@@ -227,13 +239,15 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     fun sendPresence(): Boolean {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 APP.conference._room.room.sendPresence();
             } catch (e) {
                 return e.message;
             }
-            """.trimMargin())
+            """.trimMargin()
+        )
         return when (result) {
             is String -> false
             else -> true
@@ -241,13 +255,15 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     fun leave(): Boolean {
-        val result = driver.executeScript("""
+        val result = driver.executeScript(
+            """
             try {
                 return APP.conference._room.leave();
             } catch (e) {
                 return e.message;
             }
-        """.trimMargin())
+            """.trimMargin()
+        )
 
         // Let's wait till we are alone in the room
         // (give time for the js Promise to finish before quiting selenium)

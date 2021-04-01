@@ -25,7 +25,6 @@ import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.logger
-import org.jitsi.jibri.util.extensions.error
 import java.io.File
 
 data class XmppCredentials(

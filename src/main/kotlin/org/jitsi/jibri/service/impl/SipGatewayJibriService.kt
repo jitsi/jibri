@@ -59,17 +59,26 @@ class SipGatewayJibriService(
      * Used for the selenium interaction
      */
     private val jibriSelenium = JibriSelenium(
+        logger,
         JibriSeleniumOptions(
-            displayName = sipGatewayServiceParams.sipClientParams.displayName,
+            displayName = if (sipGatewayServiceParams.sipClientParams.sipAddress.isNotBlank()) {
+                sipGatewayServiceParams.sipClientParams.sipAddress.substringBeforeLast("@")
+            } else {
+                sipGatewayServiceParams.sipClientParams.displayName
+            },
             // by default we wait 30 minutes alone in the call before deciding to hangup
             emptyCallTimeout = Duration.ofMinutes(30),
-            extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1"))
+            extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1")
+        )
     )
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
      */
-    private val pjsuaClient = PjsuaClient(PjsuaClientParams(sipGatewayServiceParams.sipClientParams))
+    private val pjsuaClient = PjsuaClient(
+        logger,
+        PjsuaClientParams(sipGatewayServiceParams.sipClientParams)
+    )
 
     /**
      * The handle to the scheduled process monitor task, which we use to
@@ -93,7 +102,8 @@ class SipGatewayJibriService(
     override fun start() {
         jibriSelenium.joinCall(
             sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS),
-            sipGatewayServiceParams.callLoginParams)
+            sipGatewayServiceParams.callLoginParams
+        )
 
         // when in auto-answer mode we want to start as quick as possible as
         // we will be waiting for a sip call to come

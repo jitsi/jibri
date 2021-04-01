@@ -31,7 +31,6 @@ import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
-import org.jitsi.jibri.util.extensions.error
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
 import java.util.regex.Pattern
@@ -74,9 +73,12 @@ data class StreamingParams(
 class StreamingJibriService(
     private val streamingParams: StreamingParams
 ) : StatefulJibriService("Streaming") {
-    private val capturer = FfmpegCapturer()
+    init {
+        logger.addContext("session_id", streamingParams.sessionId)
+    }
+    private val capturer = FfmpegCapturer(logger)
     private val sink: Sink
-    private val jibriSelenium = JibriSelenium()
+    private val jibriSelenium = JibriSelenium(logger)
 
     private val rtmpAllowList: List<Pattern> by config {
         "jibri.streaming.rtmp-allow-list".from(Config.configSource)

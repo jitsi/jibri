@@ -21,14 +21,13 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.SipGatewayJibriService
 import org.jitsi.jibri.service.impl.StreamingJibriService
-import org.jitsi.jibri.util.extensions.debug
-import java.util.logging.Logger
+import org.jitsi.utils.logging2.createLogger
 
 /**
  * Client for pushing statsd values
  */
 class JibriStatsDClient(hostname: String = "localhost", port: Int = 8125) {
-    private val logger = Logger.getLogger(this::class.qualifiedName)
+    private val logger = createLogger()
     private val statsd = NonBlockingStatsDClient(
         "jibri",
         hostname,
@@ -36,7 +35,7 @@ class JibriStatsDClient(hostname: String = "localhost", port: Int = 8125) {
     )
 
     fun incrementCounter(aspect: String, vararg tags: String) {
-        logger.debug("Incrementing statsd counter: $aspect:${tags.joinToString(":")}")
+        logger.debug { "Incrementing statsd counter: $aspect:${tags.joinToString(":")}" }
         statsd.incrementCounter(aspect, *tags)
     }
 
