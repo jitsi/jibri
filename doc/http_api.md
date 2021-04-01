@@ -15,7 +15,13 @@ Code: `200`
 Body:
 ```
 {
-    "busy": Boolean // true if Jibri is currently busy, false otherwise
+  "status":{
+    "busyStatus": String // "IDLE", "BUSY" or "EXPIRED"
+    "health":{
+      "healthStatus": String // "HEALTHY" or "UNHEALTHY"
+      "details": Map<String,HealthStatus> // Hash of component -> healthStatus above - only valid is "JibriManager" at present.
+    }
+  }
 }
 ```
 This call should always respond with a `200` and the status encoded in the response body.  The lack of any response would represent an error of some sort
