@@ -172,7 +172,7 @@ private fun handleCommandLineArgs(args: Array<String>) {
         .defaultHelp(true)
         .description("Start Jibri")
     argParser.addArgument("-c", "--config")
-        .required(true)
+        .required(false)
         .type(String::class.java)
         .help("Path to the jibri config file")
     argParser.addArgument("--internal-http-port")
@@ -198,7 +198,9 @@ private fun handleCommandLineArgs(args: Array<String>) {
         }
     }
 
-    setupLegacyConfig(configFilePath)
+    configFilePath?.let {
+        setupLegacyConfig(it)
+    } ?: logger.info("No legacy config file set")
 }
 
 /**
