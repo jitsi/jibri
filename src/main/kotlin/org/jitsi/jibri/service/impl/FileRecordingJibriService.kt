@@ -142,10 +142,12 @@ class FileRecordingJibriService(
     override fun start() {
         if (!createIfDoesNotExist(sessionRecordingDirectory, logger)) {
             publishStatus(ComponentState.Error(ErrorCreatingRecordingsDirectory))
+            return
         }
         if (!Files.isWritable(sessionRecordingDirectory)) {
             logger.error("Unable to write to $recordingsDirectory")
             publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable))
+            return
         }
         jibriSelenium.joinCall(
             fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
