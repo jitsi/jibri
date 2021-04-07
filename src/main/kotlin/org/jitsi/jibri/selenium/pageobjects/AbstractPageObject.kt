@@ -19,7 +19,6 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.remote.RemoteWebDriver
-import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 
 /**
@@ -29,7 +28,6 @@ import kotlin.time.measureTime
 open class AbstractPageObject(protected val driver: RemoteWebDriver) {
     private val logger = createLogger()
 
-    @ExperimentalTime
     open fun visit(url: String): Boolean {
         logger.info("Visiting url $url")
 

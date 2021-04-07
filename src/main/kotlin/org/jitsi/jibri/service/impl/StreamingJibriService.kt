@@ -34,7 +34,6 @@ import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
 import java.util.regex.Pattern
-import kotlin.time.ExperimentalTime
 
 const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
 private const val STREAMING_MAX_BITRATE = 2976
@@ -97,7 +96,6 @@ class StreamingJibriService(
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
     }
 
-    @ExperimentalTime
     override fun start() {
         if (rtmpAllowList.none { it.matcher(streamingParams.rtmpUrl).matches() }) {
             logger.error("RTMP url ${streamingParams.rtmpUrl} is not allowed")

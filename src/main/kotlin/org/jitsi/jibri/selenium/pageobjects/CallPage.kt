@@ -22,7 +22,6 @@ import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
-import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
 /**
@@ -37,7 +36,6 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         PageFactory.initElements(driver, this)
     }
 
-    @ExperimentalTime
     override fun visit(url: String): Boolean {
         if (!super.visit(url)) {
             return false
@@ -47,12 +45,12 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 WebDriverWait(driver, 30).until {
                     val result = driver.executeScript(
                         """
-                    try {
-                        return APP.conference._room.isJoined();
-                    } catch (e) {
-                        return e.message;
-                    }
-                    """.trimMargin()
+                        try {
+                            return APP.conference._room.isJoined();
+                        } catch (e) {
+                            return e.message;
+                        }
+                        """.trimMargin()
                     )
                     when (result) {
                         is Boolean -> result

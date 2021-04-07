@@ -30,7 +30,6 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.whenever
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
-import kotlin.time.ExperimentalTime
 
 data class SipGatewayServiceParams(
     /**
@@ -100,7 +99,6 @@ class SipGatewayJibriService(
      * each of the displays and writing to video devices which selenium
      * and pjsua will use
      */
-    @ExperimentalTime
     override fun start() {
         jibriSelenium.joinCall(
             sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS),

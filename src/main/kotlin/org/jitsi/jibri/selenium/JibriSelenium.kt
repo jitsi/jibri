@@ -233,7 +233,6 @@ class JibriSelenium(
     /**
      * Join a a web call with Selenium
      */
-    @kotlin.time.ExperimentalTime
     fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null) {
         // These are all blocking calls, so offload the work to another thread
         TaskPools.ioPool.submit {

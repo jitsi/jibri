@@ -46,7 +46,6 @@ import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
-import kotlin.time.ExperimentalTime
 
 /**
  * Parameters needed for starting a [FileRecordingJibriService]
@@ -140,7 +139,6 @@ class FileRecordingJibriService(
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
     }
 
-    @ExperimentalTime
     override fun start() {
         if (!createIfDoesNotExist(sessionRecordingDirectory, logger)) {
             publishStatus(ComponentState.Error(ErrorCreatingRecordingsDirectory))
@@ -177,7 +175,7 @@ class FileRecordingJibriService(
         } catch (t: Throwable) {
             logger.error(
                 "An error occurred while trying to get the participants list, proceeding with " +
-                        "an empty participants list",
+                    "an empty participants list",
                 t
             )
             listOf<Map<String, Any>>()
