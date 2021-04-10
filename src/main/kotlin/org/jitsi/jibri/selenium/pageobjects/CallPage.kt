@@ -22,6 +22,7 @@ import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
+import kotlin.time.measureTimedValue
 
 /**
  * Page object representing the in-call page on a jitsi-meet server.
@@ -36,37 +37,41 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     override fun visit(url: String): Boolean {
-        logger.debug { "Visiting url $url" }
         if (!super.visit(url)) {
             return false
         }
-        val start = System.currentTimeMillis()
-        return try {
-            WebDriverWait(driver, 30).until {
-                val result = driver.executeScript(
-                    """
-                    try {
-                        return APP.conference._room.isJoined();
-                    } catch (e) {
-                        return e.message;
-                    }
-                    """.trimMargin()
-                )
-                when (result) {
-                    is Boolean -> result
-                    else -> {
-                        logger.debug { "Not joined yet: $result" }
-                        false
+        val (result, totalTime) = measureTimedValue {
+            try {
+                WebDriverWait(driver, 30).until {
+                    val result = driver.executeScript(
+                        """
+                        try {
+                            return APP.conference._room.isJoined();
+                        } catch (e) {
+                            return e.message;
+                        }
+                        """.trimMargin()
+                    )
+                    when (result) {
+                        is Boolean -> result
+                        else -> {
+                            logger.debug { "Not joined yet: $result" }
+                            false
+                        }
                     }
                 }
+                true
+            } catch (t: TimeoutException) {
+                logger.error("Timed out waiting for call page to load")
+                false
             }
-            val totalTime = System.currentTimeMillis() - start
-            logger.info("Waited $totalTime milliseconds for call page to load")
-            true
-        } catch (t: TimeoutException) {
-            logger.error("Timed out waiting for call page to load")
-            false
         }
+
+        if (result) {
+            logger.info("Waited $totalTime to join the conference")
+        }
+
+        return result
     }
 
     fun getNumParticipants(): Int {

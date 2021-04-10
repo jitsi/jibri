@@ -17,15 +17,25 @@
 
 package org.jitsi.jibri.selenium.pageobjects
 
+import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.remote.RemoteWebDriver
+import kotlin.time.measureTime
 
 /**
  * [AbstractPageObject] is a page object class containing logic common to
  * all page object instances
  */
 open class AbstractPageObject(protected val driver: RemoteWebDriver) {
+    private val logger = createLogger()
+
     open fun visit(url: String): Boolean {
-        driver.get(url)
+        logger.info("Visiting url $url")
+
+        val totalTime = measureTime {
+            driver.get(url)
+        }
+
+        logger.info("Waited $totalTime for driver to load page")
         return true
     }
 }

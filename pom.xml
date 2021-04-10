@@ -294,6 +294,7 @@
                             <args>
                                 <arg>-Werror</arg>
                                 <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
+                                <arg>-Xopt-in=kotlin.time.ExperimentalTime</arg>
                             </args>
                         </configuration>
                     </execution>
