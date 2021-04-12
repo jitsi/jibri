@@ -53,12 +53,14 @@ data class SipGatewayServiceParams(
  * forwarding them to the other side.
  */
 class SipGatewayJibriService(
-    private val sipGatewayServiceParams: SipGatewayServiceParams
+    private val sipGatewayServiceParams: SipGatewayServiceParams,
+    jibriSelenium: JibriSelenium? = null,
+    pjsuaClient: PjsuaClient? = null
 ) : StatefulJibriService("SIP gateway") {
     /**
      * Used for the selenium interaction
      */
-    private val jibriSelenium = JibriSelenium(
+    private val jibriSelenium = jibriSelenium ?: JibriSelenium(
         logger,
         JibriSeleniumOptions(
             displayName = if (sipGatewayServiceParams.sipClientParams.sipAddress.isNotBlank()) {
@@ -66,6 +68,7 @@ class SipGatewayJibriService(
             } else {
                 sipGatewayServiceParams.sipClientParams.displayName
             },
+            email = sipGatewayServiceParams.callParams.email,
             // by default we wait 30 minutes alone in the call before deciding to hangup
             emptyCallTimeout = Duration.ofMinutes(30),
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1")
@@ -75,7 +78,7 @@ class SipGatewayJibriService(
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)
      */
-    private val pjsuaClient = PjsuaClient(
+    private val pjsuaClient = pjsuaClient ?: PjsuaClient(
         logger,
         PjsuaClientParams(sipGatewayServiceParams.sipClientParams)
     )
@@ -87,8 +90,8 @@ class SipGatewayJibriService(
     private var processMonitorTask: ScheduledFuture<*>? = null
 
     init {
-        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubComponent(PjsuaClient.COMPONENT_ID, pjsuaClient)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, this.jibriSelenium)
+        registerSubComponent(PjsuaClient.COMPONENT_ID, this.pjsuaClient)
     }
 
     /**
