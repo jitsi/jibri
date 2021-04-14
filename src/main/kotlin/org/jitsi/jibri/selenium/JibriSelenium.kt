@@ -52,7 +52,13 @@ import java.util.logging.Level
  * Parameters needed for joining the call in Selenium
  */
 data class CallParams(
-    val callUrlInfo: CallUrlInfo
+    val callUrlInfo: CallUrlInfo,
+    /**
+     * The email that should be used for jibri.  Note that this
+     * is currently only used in the sipgateway gateway scenario; when doing
+     * recording the jibri is 'invisible' in the call
+     */
+    val email: String = ""
 )
 
 /**
