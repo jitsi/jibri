@@ -58,8 +58,22 @@ data class CallParams(
      * is currently only used in the sipgateway gateway scenario; when doing
      * recording the jibri is 'invisible' in the call
      */
-    val email: String = ""
-)
+    val email: String = "",
+    /**
+     * SipJibri will set the passcode in the local storage
+     * This will be used by jitsi-meet to send the conference passcode to prosody
+     * and bypass the password prompt
+     */
+    val passcode: String? = null
+) {
+    override fun toString(): String {
+        return if (passcode.isNullOrEmpty()) {
+            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode)"
+        } else {
+            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****)"
+        }
+    }
+}
 
 /**
  * Options that can be passed to [JibriSelenium]
@@ -239,7 +253,7 @@ class JibriSelenium(
     /**
      * Join a a web call with Selenium
      */
-    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null) {
+    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null, passcode: String? = null) {
         // These are all blocking calls, so offload the work to another thread
         TaskPools.ioPool.submit {
             try {
@@ -254,6 +268,9 @@ class JibriSelenium(
                     localStorageValues["xmpp_username_override"] =
                         "${xmppCredentials.username}@${xmppCredentials.domain}"
                     localStorageValues["xmpp_password_override"] = xmppCredentials.password
+                }
+                passcode?.let {
+                    localStorageValues["xmpp_conference_password_override"] = passcode
                 }
                 setLocalStorageValues(localStorageValues)
                 if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {

@@ -105,7 +105,8 @@ class SipGatewayJibriService(
     override fun start() {
         jibriSelenium.joinCall(
             sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS),
-            sipGatewayServiceParams.callLoginParams
+            sipGatewayServiceParams.callLoginParams,
+            sipGatewayServiceParams.callParams.passcode
         )
 
         // when in auto-answer mode we want to start as quick as possible as
