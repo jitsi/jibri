@@ -34,8 +34,8 @@ sudo apt-get install ffmpeg
 ### Google Chrome stable & Chromedriver
 The latest Google Chrome stable build should be used. It may be able to be installed direclty via apt, but the manual instructions for installing it are as follows:
 ```bash
-curl -sS -o - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add
-echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo sh -c 'gpg --dearmor > /usr/share/keyrings/google-chrome-keyring.gpg'
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > sudo tee /etc/apt/sources.list.d/google-chrome.list
 apt-get -y update
 apt-get -y install google-chrome-stable
 ```
@@ -65,11 +65,11 @@ These can be installed using the following:
 The Jibri packages can be found in the stable repository on downloads.jitsi.org.
 First install the Jitsi repository key onto your system:
 ```bash
-wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
+curl https://download.jitsi.org/jitsi-key.gpg.key | sudo sh -c 'gpg --dearmor > /usr/share/keyrings/jitsi-keyring.gpg'
 ```
 Create a sources.list.d file with the repository:
 ```bash
-sudo sh -c "echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list"
+echo 'deb [signed-by=/usr/share/keyrings/jitsi-keyring.gpg] https://download.jitsi.org stable/' | sudo tee /etc/apt/sources.list.d/jitsi-stable.list > /dev/null
 ```
 Update your package list:
 ```bash
