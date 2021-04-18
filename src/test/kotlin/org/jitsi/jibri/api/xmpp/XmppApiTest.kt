@@ -80,6 +80,8 @@ class XmppApiTest : ShouldSpec() {
             name = "xmppEnvName",
             xmppServerHosts = listOf("xmppServerHost1", "xmppServerHost2"),
             xmppDomain = "xmppDomain",
+            // FLOSS PATCH, 2021-01-12
+            xmppPort = "xmppPort",
             controlLogin = XmppCredentials(
                 domain = "controlXmppDomain",
                 username = "xmppUsername",

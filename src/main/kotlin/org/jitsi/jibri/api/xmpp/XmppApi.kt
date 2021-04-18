@@ -111,6 +111,14 @@ class XmppApi(
                         disableCertificateVerification = config.trustAllXmppCerts
                     }
 
+                    // FLOSS PATCH, 2021-01-12
+                    if (config.xmppPort != "") {
+                        logger.info("The xmppPort config is enabled for this Jibri")
+                        port = config.xmppPort
+                    } else {
+                        port = "5222"
+                    }
+
                     val recordingMucJid =
                         JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}").toString()
                     val sipMucJid: String? = config.sipControlMuc?.let {

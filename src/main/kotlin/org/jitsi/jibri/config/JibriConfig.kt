@@ -70,6 +70,11 @@ data class XmppEnvironmentConfig(
     @JsonProperty("xmpp_domain")
     val xmppDomain: String,
     /**
+     * Optional port for XMPP connection, FLOSS PATCH, 2021-01-12
+     */
+    @JsonProperty("xmpp_port")
+    val xmppPort: String,
+    /**
      * The login information for the control API
      */
     @JsonProperty("control_login")
@@ -120,6 +125,8 @@ public fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig
         name = getString("name"),
         xmppServerHosts = getStringList("xmpp-server-hosts"),
         xmppDomain = getString("xmpp-domain"),
+        /* FLOSS PATCH, 2021-01-12 */
+        xmppPort = getString("xmpp-port"),
         controlLogin = getConfig("control-login").toXmppCredentials(),
         controlMuc = getConfig("control-muc").toXmppMuc(),
         sipControlMuc = if (hasPath("sip-control-muc")) {
