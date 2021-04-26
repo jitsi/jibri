@@ -45,9 +45,9 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
         "someemail@jitsi.net"
     )
     private val callLoginParams = XmppCredentials(
-        "domain",
-        "username",
-        "password"
+        domain = "domain",
+        username = "username",
+        password = "password"
     )
     private val sipClientParams = SipClientParams(
         "sipAddress@sip.8x8.vc",
