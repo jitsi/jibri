@@ -102,6 +102,7 @@ class XmppApi(
                     domain = config.controlLogin.domain
                     username = config.controlLogin.username
                     password = config.controlLogin.password
+                    config.controlLogin.port?.let { port = it.toString() }
 
                     if (config.trustAllXmppCerts) {
                         logger.info(

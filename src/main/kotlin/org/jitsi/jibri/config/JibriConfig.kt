@@ -29,6 +29,7 @@ import java.io.File
 
 data class XmppCredentials(
     val domain: String = "",
+    val port: Int? = null,
     val username: String = "",
     val password: String = ""
 )
@@ -36,6 +37,7 @@ data class XmppCredentials(
 fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials =
     XmppCredentials(
         domain = getString("domain"),
+        port = if (hasPath("port")) getInt("port") else null,
         username = getString("username"),
         password = getString("password")
     )
@@ -115,7 +117,7 @@ data class XmppEnvironmentConfig(
     val trustAllXmppCerts: Boolean = true
 )
 
-public fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
+fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
     XmppEnvironmentConfig(
         name = getString("name"),
         xmppServerHosts = getStringList("xmpp-server-hosts"),
