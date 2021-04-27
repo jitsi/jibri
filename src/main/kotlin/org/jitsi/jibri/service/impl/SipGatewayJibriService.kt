@@ -69,7 +69,7 @@ class SipGatewayJibriService(
                 sipGatewayServiceParams.sipClientParams.displayName
             },
             email = sipGatewayServiceParams.callParams.email,
-            callStatsUsername = sipGatewayServiceParams.callParams.callStatsUsername,
+            callStatsUsernameOverride = sipGatewayServiceParams.callParams.callStatsUsernameOverride,
             // by default we wait 30 minutes alone in the call before deciding to hangup
             emptyCallTimeout = Duration.ofMinutes(30),
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1")

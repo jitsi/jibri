@@ -69,15 +69,15 @@ data class CallParams(
      * Override the default value of callStats username.
      * Note that this is currently only used in the sipgateway gateway scenario;
      */
-    val callStatsUsername: String = ""
+    val callStatsUsernameOverride: String = ""
 ) {
     override fun toString(): String {
         return if (passcode.isNullOrEmpty()) {
             "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode" +
-                    ", callStatsUsername=$callStatsUsername)"
+                    ", callStatsUsernameOverride=$callStatsUsernameOverride)"
         } else {
             "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****" +
-                    ", callStatsUsername=$callStatsUsername)"
+                    ", callStatsUsernameOverride=$callStatsUsernameOverride)"
         }
     }
 }
@@ -106,7 +106,7 @@ data class JibriSeleniumOptions(
      * The callstats username to be used for jibri.
      * Set this only to override the default callStatsUsername
      */
-    val callStatsUsername: String = "",
+    val callStatsUsernameOverride: String = "",
     /**
      * Chrome command line flags to add (in addition to the common
      * ones)
@@ -273,8 +273,8 @@ class JibriSelenium(
                 HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
                 var callStatsUsername = "jibri"
-                if (jibriSeleniumOptions.callStatsUsername.isNotEmpty()) {
-                    callStatsUsername = jibriSeleniumOptions.callStatsUsername
+                if (jibriSeleniumOptions.callStatsUsernameOverride.isNotEmpty()) {
+                    callStatsUsername = jibriSeleniumOptions.callStatsUsernameOverride
                 } else if (MainConfig.jibriId.isNotEmpty()) {
                     callStatsUsername = MainConfig.jibriId
                 }
