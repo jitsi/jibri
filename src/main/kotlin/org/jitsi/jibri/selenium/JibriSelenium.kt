@@ -64,13 +64,20 @@ data class CallParams(
      * This will be used by jitsi-meet to send the conference passcode to prosody
      * and bypass the password prompt
      */
-    val passcode: String? = null
+    val passcode: String? = null,
+    /**
+     * Override the default value of callStats username.
+     * Note that this is currently only used in the sipgateway gateway scenario;
+     */
+    val callStatsUsernameOverride: String = ""
 ) {
     override fun toString(): String {
         return if (passcode.isNullOrEmpty()) {
-            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode)"
+            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode" +
+                    ", callStatsUsernameOverride=$callStatsUsernameOverride)"
         } else {
-            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****)"
+            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****" +
+                    ", callStatsUsernameOverride=$callStatsUsernameOverride)"
         }
     }
 }
@@ -96,6 +103,11 @@ data class JibriSeleniumOptions(
      */
     val email: String = "",
     /**
+     * The callstats username to be used for jibri.
+     * Set this only to override the default callStatsUsername
+     */
+    val callStatsUsernameOverride: String = "",
+    /**
      * Chrome command line flags to add (in addition to the common
      * ones)
      */
@@ -111,6 +123,7 @@ val SIP_GW_URL_OPTIONS = listOf(
     "config.iAmSipGateway=true",
     "config.ignoreStartMuted=true",
     "config.analytics.disabled=true",
+    "config.enableEmailInStats=false",
     "config.p2p.enabled=false",
     "config.prejoinPageEnabled=false",
     "config.requireDisplayName=false",
@@ -259,10 +272,17 @@ class JibriSelenium(
             try {
                 HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
 
+                var callStatsUsername = "jibri"
+                if (jibriSeleniumOptions.callStatsUsernameOverride.isNotEmpty()) {
+                    callStatsUsername = jibriSeleniumOptions.callStatsUsernameOverride
+                } else if (MainConfig.jibriId.isNotEmpty()) {
+                    callStatsUsername = MainConfig.jibriId
+                }
+
                 val localStorageValues = mutableMapOf(
                     "displayname" to jibriSeleniumOptions.displayName,
                     "email" to jibriSeleniumOptions.email,
-                    "callStatsUserName" to if (MainConfig.jibriId.isNotEmpty()) MainConfig.jibriId else "jibri"
+                    "callStatsUserName" to callStatsUsername
                 )
                 xmppCredentials?.let {
                     localStorageValues["xmpp_username_override"] =

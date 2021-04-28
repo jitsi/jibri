@@ -97,9 +97,10 @@ class HttpApi(
                  * via the HTTP API at this point.
                  */
                 post("startService") {
-                    val startServiceParams = call.receive<StartServiceParams>()
-                    logger.debug { "Got a start service request with params $startServiceParams" }
                     try {
+                        val startServiceParams = call.receive<StartServiceParams>()
+                        logger.debug { "Got a start service request with params $startServiceParams" }
+
                         handleStartService(startServiceParams)
                         call.respond(HttpStatusCode.OK)
                     } catch (e: JibriBusyException) {
@@ -107,6 +108,7 @@ class HttpApi(
                     } catch (e: IllegalStateException) {
                         call.respond(HttpStatusCode.PreconditionFailed, e.message ?: "")
                     } catch (t: Throwable) {
+                        logger.error("Error starting service $t", t)
                         call.respond(HttpStatusCode.InternalServerError)
                     }
                 }
