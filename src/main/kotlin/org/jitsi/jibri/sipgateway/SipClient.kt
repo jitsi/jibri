@@ -35,7 +35,10 @@ data class SipClientParams(
      * incoming invites and will auto answer the first one.
      */
     val autoAnswer: Boolean = false,
-
+    /**
+     * The direction of the SIP call: inbound or outbound
+     */
+    val direction: String? = null,
     /**
      * The username to use if registration is needed.
      */

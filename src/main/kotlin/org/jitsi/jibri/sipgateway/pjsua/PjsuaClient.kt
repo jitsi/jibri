@@ -81,6 +81,11 @@ class PjsuaClient(
             command.add("--realm=*")
             command.add("--username=${pjsuaClientParams.sipClientParams.userName.substringBefore('@')}")
             command.add("--password=${pjsuaClientParams.sipClientParams.password}")
+            if (pjsuaClientParams.sipClientParams.direction != null && pjsuaClientParams.sipClientParams.direction == "outbound") {
+                // The proxy we'll use for all the outgoing SIP requests;
+                // The client should not specify a Route header in the sip INVITE message. Using hide will let the server set the Route header
+                command.add("--proxy=sip:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')};transport=tcp;hide")
+            }
         } else {
             command.add("--id=${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>")
         }
