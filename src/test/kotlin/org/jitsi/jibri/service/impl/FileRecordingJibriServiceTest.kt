@@ -17,166 +17,274 @@
 
 package org.jitsi.jibri.service.impl
 
-// internal class FileRecordingJibriServiceTest : ShouldSpec() {
-//    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
-//
-//    private fun setPerms(permsStr: String, p: Path) {
-//        val perms = PosixFilePermissions.fromString(permsStr)
-//        Files.setPosixFilePermissions(p, perms)
-//    }
-//
-//    private val fs = MemoryFileSystemBuilder.newLinux().build()
-//
-//    private val callParams = CallParams(
-//        CallUrlInfo("baseUrl", "callName")
-//    )
-//    private val callLoginParams = XmppCredentials(
-//        "domain",
-//        "username",
-//        "password"
-//    )
-//    private val recordingsDir = fs.getPath("/path/to/recordings")
-//    private val finalizeScript = fs.getPath("/path/to/finalize")
-//    private val sessionId = "session_id"
-//    private val additionalMetadata: Map<Any, Any> = mapOf(
-//        "token" to "my_token",
-//        "other_info" to "info"
-//    )
-//    private val fileRecordingParams = FileRecordingParams(
-//        callParams,
-//        sessionId,
-//        callLoginParams,
-//        finalizeScript,
-//        recordingsDir,
-//        additionalMetadata
-//    )
-//    private val executor: ScheduledExecutorService = mock()
-//    private val jibriSelenium: JibriSelenium = mock()
-//    private val capturer: Capturer = mock()
-//    private val sinkCapturer = argumentCaptor<Sink>()
-//    private val processFactory: ProcessFactory = mock()
-//
-//    private val fileRecordingJibriService = FileRecordingJibriService(
-//        fileRecordingParams,
-//        jibriSelenium,
-//        capturer,
-//        processFactory
-//    )
-//
-//    override fun beforeTest(description: Description) {
-//        TaskPools.recurringTasksPool = executor
-//    }
-//
-//    init {
-//        "start" {
-//            "when creating the recording directory fails" {
-//                Files.createDirectories(recordingsDir)
-//                setPerms("r--r--r--", recordingsDir)
-//                should("return false") {
-//                    fileRecordingJibriService.start() shouldBe false
-//                }
-//            }
-//            "when joining the call succeeds" {
-//                whenever(jibriSelenium.joinCall(any(), any())).thenReturn(true)
-//                "and the capturer starts successfully" {
-//                    whenever(capturer.start(sinkCapturer.capture())).thenReturn(true)
-//                    "and the recordings directory doesn't exist" {
-//                        val startResult = fileRecordingJibriService.start()
-//                        should("start the capturer") {
-//                            verify(capturer).start(any())
-//                        }
-//                        should("have selenium join the call") {
-//                            verify(jibriSelenium).joinCall(any(), any())
-//                        }
-//                        should("return true") {
-//                            startResult shouldBe true
-//                        }
-//                        should("create the recording directory") {
-//                            Files.exists(recordingsDir) shouldBe true
-//                        }
-//                        should("start the capturer with a sink wtih the right filename") {
-//                            sinkCapturer.firstValue.path.shouldContain(recordingsDir.toString())
-//                            sinkCapturer.firstValue.path.shouldContain(callParams.callUrlInfo.callName)
-//                        }
-//                    }
-//                    "and the recordings directory exists" {
-//                        Files.createDirectories(recordingsDir)
-//                        fileRecordingJibriService.start() shouldBe true
-//                    }
-//                    "and the recordings directory exists but isn't writable" {
-//                        Files.createDirectories(recordingsDir)
-//                        setPerms("r--r--r--", recordingsDir)
-//                        should("return false") {
-//                            fileRecordingJibriService.start() shouldBe false
-//                        }
-//                    }
-//                }
-//                "and the capturer doesn't start" {
-//                    whenever(capturer.start(sinkCapturer.capture())).thenReturn(false)
-//                    should("return false") {
-//                        fileRecordingJibriService.start() shouldBe false
-//                    }
-//                }
-//            }
-//            "when joining the call fails" {
-//                whenever(jibriSelenium.joinCall(any(), any())).thenReturn(false)
-//                should("return false") {
-//                    fileRecordingJibriService.start() shouldBe false
-//                }
-//            }
-//        }
-//        "stop" {
-//            "after a successful start" {
-//                whenever(jibriSelenium.joinCall(any(), any())).thenReturn(true)
-//                whenever(jibriSelenium.getParticipants()).thenReturn(listOf())
-//                whenever(capturer.start(any())).thenReturn(true)
-//
-//                fileRecordingJibriService.start()
-//                val recordingFile = recordingsDir.resolve(sessionId).resolve("recording.mp4")
-//                Files.createFile(recordingFile)
-//
-//                val setupFinalizeProcessMock = { shouldSucceed: Boolean ->
-//                    val finalizeProc: ProcessWrapper = mock()
-//                    val op = PipedOutputStream()
-//                    val stdOut = PipedInputStream(op)
-//                    whenever(finalizeProc.getOutput()).thenReturn(stdOut)
-//                    whenever(finalizeProc.waitFor()).thenReturn(if (shouldSucceed) 0 else 1)
-//                    whenever(finalizeProc.exitValue).thenReturn(if (shouldSucceed) 0 else 1)
-//                    whenever(finalizeProc.start()).thenAnswer {
-//                        Files.exists(recordingsDir.resolve(sessionId).resolve("metadata.json")) shouldBe true
-//                        val metadataReader = Files.newBufferedReader(recordingsDir.resolve(sessionId).resolve("metadata.json"))
-//                        val metaData: Map<Any, Any> = jacksonObjectMapper().readValue(metadataReader)
-//                        metaData.shouldContainAll(mapOf<Any, Any>(
-//                            "token" to "my_token",
-//                            "other_info" to "info",
-//                            "meeting_url" to "baseUrl/callName"
-//                        ))
-//                        op.close()
-//                    }
-//                    finalizeProc
-//                }
-//
-//                "regardless of whether or not finalize succeeds or fails" {
-//                    // This is code not dependent on finalize's return code, but we have to make it return
-//                    // something so we'll use success
-//                    val finalizeProc = setupFinalizeProcessMock(true)
-//                    val finalizeProcPath = argumentCaptor<List<String>>()
-//                    whenever(processFactory.createProcess(finalizeProcPath.capture(), anyOrNull(), any()))
-//                        .thenReturn(finalizeProc)
-//
-//                    fileRecordingJibriService.stop()
-//                    should("stop the capturer") {
-//                        verify(capturer).stop()
-//                    }
-//                    should("have selenium leave the call") {
-//                        verify(jibriSelenium).leaveCallAndQuitBrowser()
-//                    }
-//                    should("call the finalize script with the correct arguments") {
-//                        finalizeProcPath.firstValue[0] shouldBe finalizeScript.toString()
-//                        finalizeProcPath.firstValue[1] shouldBe recordingsDir.resolve(sessionId).toString()
-//                    }
-//                }
-//            }
-//        }
-//    }
-// }
+import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
+import io.kotest.core.spec.IsolationMode
+import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.Runs
+import io.mockk.every
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.slot
+import io.mockk.verify
+import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
+import org.jitsi.jibri.capture.ffmpeg.FfmpegFailedToStart
+import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.error.JibriError
+import org.jitsi.jibri.selenium.CallParams
+import org.jitsi.jibri.selenium.FailedToJoinCall
+import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.ProcessFactory
+import org.jitsi.jibri.util.ProcessWrapper
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermissions
+
+@Suppress("BlockingMethodInNonBlockingContext")
+internal class FileRecordingJibriServiceTest : ShouldSpec() {
+    override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
+
+    private val fs = MemoryFileSystemBuilder.newLinux().build()
+
+    private val callParams = CallParams(
+        CallUrlInfo("baseUrl", "callName")
+    )
+    private val callLoginParams = XmppCredentials(
+        "domain",
+        "username",
+        "password"
+    )
+    private val recordingsDir = fs.getPath("/tmp/recordings")
+    private val finalizeScript = fs.getPath("/path/to/finalize")
+    private val sessionId = "session_id"
+    private val additionalMetadata: Map<Any, Any> = mapOf(
+        "token" to "my_token",
+        "other_info" to "info"
+    )
+    private val fileRecordingParams = FileRecordingParams(
+        callParams,
+        sessionId,
+        callLoginParams,
+        additionalMetadata
+    )
+    private val seleniumMockHelper = SeleniumMockHelper()
+    private val capturerMockHelper = CapturerMockHelper()
+    private val processFactory: ProcessFactory = mockk()
+    private val statusUpdates = mutableListOf<ComponentState>()
+    private val fileRecordingJibriService = FileRecordingJibriService(
+        fileRecordingParams,
+        seleniumMockHelper.mock,
+        capturerMockHelper.mock,
+        processFactory,
+        fs
+    ).also {
+        it.addStatusHandler(statusUpdates::add)
+    }
+
+    init {
+        context("when the recording directory can't be created") {
+            Files.createDirectories(recordingsDir)
+            setPerms("r--r--r--", recordingsDir)
+
+            context("starting a file recording service") {
+                fileRecordingJibriService.start()
+
+                should("publish an error status") {
+                    statusUpdates shouldHaveSize 1
+                    val status = statusUpdates.first()
+
+                    status.shouldBeInstanceOf<ComponentState.Error>()
+                    status.error shouldBe ErrorCreatingRecordingsDirectory
+                }
+            }
+        }
+        context("starting a file recording service") {
+            fileRecordingJibriService.start()
+            should("create the recording directory") {
+                Files.exists(fs.getPath(recordingsDir.toString(), sessionId)) shouldBe true
+            }
+            should("have selenium join the call") {
+                verify { seleniumMockHelper.mock.joinCall(any(), any()) }
+            }
+            context("and selenium joins the call successfully") {
+                seleniumMockHelper.startSuccessfully()
+                should("start the capturer") {
+                    verify { capturerMockHelper.mock.start(any()) }
+                }
+                should("pass the correct arguments to the capturer's sink") {
+                    capturerMockHelper.sink.path.shouldContain(recordingsDir.toString())
+                    capturerMockHelper.sink.path.shouldContain(callParams.callUrlInfo.callName)
+                }
+                context("and the capturer starts successfully") {
+                    capturerMockHelper.startSuccessfully()
+
+                    should("publish that it's running") {
+                        statusUpdates shouldHaveSize 1
+                        val status = statusUpdates.first()
+
+                        status shouldBe ComponentState.Running
+                    }
+                }
+                context("but the capturer fails to start") {
+                    capturerMockHelper.error(FfmpegFailedToStart)
+
+                    should("publish an error") {
+                        statusUpdates shouldHaveSize 1
+                        val status = statusUpdates.first()
+
+                        status.shouldBeInstanceOf<ComponentState.Error>()
+                    }
+                }
+            }
+
+            context("but joining the call fails") {
+                seleniumMockHelper.error(FailedToJoinCall)
+
+                should("publish an error") {
+                    statusUpdates shouldHaveSize 1
+                    val status = statusUpdates.first()
+
+                    status.shouldBeInstanceOf<ComponentState.Error>()
+                }
+            }
+        }
+        context("stopping a service which has successfully started") {
+            // First get the service in a 'successful start' state.
+            fileRecordingJibriService.start()
+            seleniumMockHelper.startSuccessfully()
+            capturerMockHelper.startSuccessfully()
+
+            // Validate that it started
+            statusUpdates shouldHaveSize 1
+            val status = statusUpdates.first()
+            status shouldBe ComponentState.Running
+
+            context("where no media file was written") {
+                fileRecordingJibriService.stop()
+                should("not run the finalize scripts") {
+                    verify(exactly = 0) { processFactory.createProcess(any(), any()) }
+                }
+                should("delete the directory") {
+                    Files.exists(fs.getPath(recordingsDir.toString(), sessionId)) shouldBe false
+                }
+                should("still tell selenium to leave the call") {
+                    verify { seleniumMockHelper.mock.leaveCallAndQuitBrowser() }
+                }
+            }
+
+            context("where a media file was written") {
+                Files.createFile(fs.getPath(capturerMockHelper.sink.path))
+                every { seleniumMockHelper.mock.getParticipants() } returns listOf(mapOf("a" to "b"))
+                val finalizeProcessMock = createFinalizeProcessMock(true)
+                every {
+                    processFactory.createProcess(match { it.first().contains("finalize") }, any(), any(), any())
+                } returns finalizeProcessMock
+
+                fileRecordingJibriService.stop()
+
+                should("get the list of participants from selenium") {
+                    verify { seleniumMockHelper.mock.getParticipants() }
+                }
+                should("write the metadata file") {
+                    Files.exists(fs.getPath(recordingsDir.toString(), sessionId, "metadata.json")) shouldBe true
+                }
+                should("still tell selenium to leave the call") {
+                    verify { seleniumMockHelper.mock.leaveCallAndQuitBrowser() }
+                }
+            }
+        }
+    }
+
+    private fun setPerms(permsStr: String, p: Path) {
+        val perms = PosixFilePermissions.fromString(permsStr)
+        Files.setPosixFilePermissions(p, perms)
+    }
+}
+
+// This wraps a mock of a Capturer, and does some setup/exposes some helpers to make its use more ergonomic
+private class CapturerMockHelper {
+    private val sinkSlot = slot<Sink>()
+    private val eventHandlers = mutableListOf<(ComponentState) -> Boolean>()
+
+    val mock: FfmpegCapturer = mockk(relaxed = true) {
+        every { addStatusHandler(captureLambda()) } answers {
+            // This behavior mimics what's done in StatusPublisher#addStatusHandler
+            eventHandlers.add {
+                lambda<(ComponentState) -> Unit>().captured(it)
+                true
+            }
+        }
+
+        every { start(capture(sinkSlot)) } just Runs
+    }
+
+    val sink: Sink
+        get() = sinkSlot.captured
+
+    fun startSuccessfully() {
+        eventHandlers.forEach { it(ComponentState.Running) }
+    }
+
+    fun error(error: JibriError) {
+        eventHandlers.forEach { it(ComponentState.Error(error)) }
+    }
+}
+
+private class SeleniumMockHelper {
+    private val eventHandlers = mutableListOf<(ComponentState) -> Boolean>()
+
+    val mock: JibriSelenium = mockk(relaxed = true) {
+        every { addTemporaryHandler(capture(eventHandlers)) } just Runs
+        every { addStatusHandler(captureLambda()) } answers {
+            // This behavior mimics what's done in StatusPublisher#addStatusHandler
+            eventHandlers.add {
+                lambda<(ComponentState) -> Unit>().captured(it)
+                true
+            }
+        }
+    }
+
+    fun startSuccessfully() {
+        eventHandlers.forEach { it(ComponentState.Running) }
+    }
+
+    fun error(error: JibriError) {
+        eventHandlers.forEach { it(ComponentState.Error(error)) }
+    }
+}
+
+private fun createFinalizeProcessMock(shouldSucceed: Boolean): ProcessWrapper {
+    val op = PipedOutputStream()
+    val stdOut = PipedInputStream(op)
+    return mockk {
+        every { getOutput() } returns stdOut
+        every { waitFor() } answers {
+            if (shouldSucceed) {
+                0
+            } else {
+                1
+            }
+        }
+        every { exitValue } answers {
+            if (shouldSucceed) {
+                0
+            } else {
+                1
+            }
+        }
+
+        every { start() } answers {
+            // Finish instantly and close the output stream so the task waiting on it to finish logging
+            // doesn't have to block for long.
+            op.close()
+        }
+    }
+}
