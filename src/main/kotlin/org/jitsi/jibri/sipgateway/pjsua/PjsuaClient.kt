@@ -89,6 +89,12 @@ class PjsuaClient(
             command.add("--auto-answer-timer=30")
             command.add("--auto-answer=200")
         } else {
+            // The proxy we'll use for all the outgoing SIP requests;
+            // The client should not specify a Route header in the sip INVITE message. Using hide will let the server set the Route header
+            if (pjsuaClientParams.sipClientParams.userName != null) {
+                command.add("--proxy=sip:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')};" +
+                        "transport=tcp;hide")
+            }
             command.add("sip:${pjsuaClientParams.sipClientParams.sipAddress}")
         }
 
