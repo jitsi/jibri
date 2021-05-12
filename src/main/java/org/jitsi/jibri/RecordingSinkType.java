@@ -40,7 +40,7 @@ public enum RecordingSinkType
         this.recordingSinkType = recordingMode;
     }
 
-    @JsonCreator
+    @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static RecordingSinkType fromString(@JsonProperty("sinkType") final String text) {
         return RecordingSinkType.valueOf(text.toUpperCase());
     }
