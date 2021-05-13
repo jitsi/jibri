@@ -72,6 +72,11 @@ data class XmppEnvironmentConfig(
     @JsonProperty("xmpp_domain")
     val xmppDomain: String,
     /**
+     * The baseUrl we'll use, if set, to join the call
+     */
+    @JsonProperty("baseUrl")
+    val baseUrl: String?,
+    /**
      * The login information for the control API
      */
     @JsonProperty("control_login")
@@ -122,6 +127,9 @@ fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
         name = getString("name"),
         xmppServerHosts = getStringList("xmpp-server-hosts"),
         xmppDomain = getString("xmpp-domain"),
+        baseUrl = if (hasPath("base-url")) {
+            getString("base-url")
+        } else null,
         controlLogin = getConfig("control-login").toXmppCredentials(),
         controlMuc = getConfig("control-muc").toXmppMuc(),
         sipControlMuc = if (hasPath("sip-control-muc")) {
