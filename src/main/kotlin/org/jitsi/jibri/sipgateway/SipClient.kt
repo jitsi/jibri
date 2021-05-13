@@ -26,8 +26,8 @@ data class SipClientParams(
      */
     val sipAddress: String = "",
     /**
-     * The display name we'll use for the web conference
-     * in the pjsua call
+     * The display name used by pjsua as identity when listening for or sending an invite
+     * For sending an invite, this should be the name of the entity initiating the invite
      */
     val displayName: String = "",
     /**

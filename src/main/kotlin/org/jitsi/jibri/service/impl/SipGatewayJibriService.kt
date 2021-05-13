@@ -63,7 +63,9 @@ class SipGatewayJibriService(
     private val jibriSelenium = jibriSelenium ?: JibriSelenium(
         logger,
         JibriSeleniumOptions(
-            displayName = if (sipGatewayServiceParams.sipClientParams.sipAddress.isNotBlank()) {
+            displayName = if (sipGatewayServiceParams.callParams.displayName.isNotBlank()) {
+                sipGatewayServiceParams.callParams.displayName
+            } else if (sipGatewayServiceParams.sipClientParams.sipAddress.isNotBlank()) {
                 sipGatewayServiceParams.sipClientParams.sipAddress.substringBeforeLast("@")
             } else {
                 sipGatewayServiceParams.sipClientParams.displayName
@@ -75,6 +77,7 @@ class SipGatewayJibriService(
             extraChromeCommandLineFlags = listOf("--alsa-input-device=plughw:1,1")
         )
     )
+
     /**
      * The SIP client we'll use to connect to the SIP call (currently only a
      * pjsua implementation exists)

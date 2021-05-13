@@ -69,15 +69,20 @@ data class CallParams(
      * Override the default value of callStats username.
      * Note that this is currently only used in the sipgateway gateway scenario;
      */
-    val callStatsUsernameOverride: String = ""
+    val callStatsUsernameOverride: String = "",
+    /**
+     * Display name which when it is set, it is used by jibri when joining the web conference.
+     * Note that this is currently only used in the sipgateway gateway scenario;
+     */
+    val displayName: String = ""
 ) {
     override fun toString(): String {
         return if (passcode.isNullOrEmpty()) {
             "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode" +
-                    ", callStatsUsernameOverride=$callStatsUsernameOverride)"
+                    ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
         } else {
             "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****" +
-                    ", callStatsUsernameOverride=$callStatsUsernameOverride)"
+                    ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
         }
     }
 }
