@@ -22,7 +22,7 @@
         <kotest.version>4.4.3</kotest.version>
         <mockk.version>1.10.0</mockk.version>
         <ktor.version>1.5.2</ktor.version>
-        <jicoco.version>1.1-54-g5387346</jicoco.version>
+        <jicoco.version>1.1-84-g1d06d1f</jicoco.version>
     </properties>
 
     <dependencies>
@@ -96,13 +96,6 @@
             <groupId>net.sourceforge.argparse4j</groupId>
             <artifactId>argparse4j</artifactId>
             <version>0.8.1</version>
-        </dependency>
-        <!-- Explicitly add this dep to match what ktor-server-jetty needs (otherwise
-        jicoco will bring in an older version -->
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-util</artifactId>
-            <version>9.4.40.v20210413</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
