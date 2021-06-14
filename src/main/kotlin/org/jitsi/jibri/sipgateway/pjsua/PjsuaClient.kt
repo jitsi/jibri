@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.sipgateway.pjsua
 
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaExitedPrematurely
@@ -24,6 +25,8 @@ import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
+import org.jitsi.metaconfig.from
+import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
 
@@ -40,6 +43,9 @@ class PjsuaClient(
 ) : SipClient() {
     private val logger = createChildLogger(parentLogger)
     private val pjsua: JibriSubprocess = JibriSubprocess(logger, "pjsua")
+    private val sipOutboundPrefix: String? by optionalconfig(
+        "jibri.sip.outbound-prefix".from(Config.configSource)
+    )
 
     companion object {
         const val COMPONENT_ID = "Pjsua"
@@ -70,14 +76,27 @@ class PjsuaClient(
             PJSUA_SCRIPT_FILE_LOCATION
         )
 
+        /**
+         * A SIP address is written in user@domain.tld format in a similar fashion to an email address.
+         * An address like: sip:1-999-123-4567@voip-provider.example.net
+         *
+         * The default sip scheme is `sip` if none is specified; Valid options would be `sip` or `sips`
+         */
+        val sipAddress = pjsuaClientParams.sipClientParams.sipAddress.getSipAddress()
+        val sipScheme = pjsuaClientParams.sipClientParams.sipAddress.getSipScheme() ?: "sip"
+
         if (pjsuaClientParams.sipClientParams.userName != null &&
             pjsuaClientParams.sipClientParams.password != null
         ) {
             command.add(
                 "--id=${pjsuaClientParams.sipClientParams.displayName} " +
-                    "<sip:${pjsuaClientParams.sipClientParams.userName}>"
+                        "<$sipScheme:${pjsuaClientParams.sipClientParams.userName}>"
             )
-            command.add("--registrar=sip:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')}")
+            command.add(
+                "--registrar=$sipScheme:${
+                    pjsuaClientParams.sipClientParams.userName.substringAfter('@')
+                }"
+            )
             command.add("--realm=*")
             command.add("--username=${pjsuaClientParams.sipClientParams.userName.substringBefore('@')}")
             command.add("--password=${pjsuaClientParams.sipClientParams.password}")
@@ -92,14 +111,38 @@ class PjsuaClient(
             // The proxy we'll use for all the outgoing SIP requests;
             // The client should not specify a Route header in the sip INVITE message. Using hide will let the server set the Route header
             if (pjsuaClientParams.sipClientParams.userName != null) {
-                command.add("--proxy=sip:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')};" +
-                        "transport=tcp;hide")
+                command.add(
+                    "--proxy=$sipScheme:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')};" +
+                            "transport=tcp;hide"
+                )
             }
-            command.add("sip:${pjsuaClientParams.sipClientParams.sipAddress}")
+
+            if (sipOutboundPrefix.isNullOrEmpty()) {
+                command.add("$sipScheme:$sipAddress")
+            } else {
+                command.add("$sipScheme:${sipOutboundPrefix}$sipAddress")
+            }
         }
 
         pjsua.launch(command, mapOf("DISPLAY" to X_DISPLAY))
     }
 
     override fun stop() = pjsua.stop()
+
+    private fun String.getSipAddress(): String {
+        if (this.isNotEmpty() && this.hasSipSchemeEmbedded()) {
+            return this.substringAfter(":")
+        }
+        return this
+    }
+
+    private fun String.getSipScheme(): String? {
+        if (this.isNotEmpty() && this.hasSipSchemeEmbedded()) {
+            return this.substringBefore(":")
+        }
+        return null
+    }
+
+    private fun String.hasSipSchemeEmbedded(): Boolean =
+        contains("sip:", ignoreCase = true) || contains("sips:", ignoreCase = true)
 }
