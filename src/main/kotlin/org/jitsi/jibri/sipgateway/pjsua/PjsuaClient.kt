@@ -21,10 +21,12 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaExitedPrematurely
+import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaFileHandler
 import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
+import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.metaconfig.from
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.Logger
@@ -42,13 +44,14 @@ class PjsuaClient(
     private val pjsuaClientParams: PjsuaClientParams
 ) : SipClient() {
     private val logger = createChildLogger(parentLogger)
-    private val pjsua: JibriSubprocess = JibriSubprocess(logger, "pjsua")
+    private val pjsua: JibriSubprocess = JibriSubprocess(logger, "pjsua", pjsuaOutputLogger)
     private val sipOutboundPrefix: String? by optionalconfig(
         "jibri.sip.outbound-prefix".from(Config.configSource)
     )
 
     companion object {
         const val COMPONENT_ID = "Pjsua"
+        private val pjsuaOutputLogger = getLoggerWithHandler("pjsua", PjsuaFileHandler())
     }
 
     init {
