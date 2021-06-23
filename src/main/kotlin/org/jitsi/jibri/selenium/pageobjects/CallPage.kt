@@ -151,6 +151,34 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
+    fun injectLocalParticipantTrackerScript(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                window._isLocalParticipantKicked=false
+                
+                APP.conference._room.room.addListener(
+                    "xmpp.kicked",
+                    (isSelfPresence, actorId, kickedParticipantId, reason) => {
+                        console.log("Jibri got a KICKED event: ", isSelfPresence, actorId, kickedParticipantId, reason);
+                        if (isSelfPresence) {
+                            window._isLocalParticipantKicked=true
+                        }
+                    }
+                );
+                
+                return true;
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin()
+        )
+        return when (result) {
+            is Boolean -> result
+            else -> false
+        }
+    }
+
     fun getParticipants(): List<Map<String, Any>> {
         val result = driver.executeScript(
             """
@@ -190,6 +218,23 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 logger.error("error running numRemoteParticipantsJigasi script: $result ${result::class.java}")
                 0
             }
+        }
+    }
+
+    fun isLocalParticipantKicked(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return window._isLocalParticipantKicked;
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin()
+        )
+        if (result is Boolean) {
+            return result
+        } else {
+            return false
         }
     }
 

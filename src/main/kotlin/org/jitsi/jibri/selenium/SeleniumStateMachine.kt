@@ -26,6 +26,7 @@ sealed class SeleniumEvent {
     object CallEmpty : SeleniumEvent()
     object NoMediaReceived : SeleniumEvent()
     object ChromeHung : SeleniumEvent()
+    object LocalParticipantKicked : SeleniumEvent()
 }
 
 sealed class SideEffect
@@ -52,6 +53,9 @@ class SeleniumStateMachine : NotifyingStateMachine() {
             }
             on<SeleniumEvent.NoMediaReceived> {
                 transitionTo(ComponentState.Error(NoMediaReceived))
+            }
+            on<SeleniumEvent.LocalParticipantKicked> {
+                transitionTo(ComponentState.Finished)
             }
             on<SeleniumEvent.ChromeHung> {
                 transitionTo(ComponentState.Error(ChromeHung))

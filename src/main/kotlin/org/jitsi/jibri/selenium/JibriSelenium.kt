@@ -23,6 +23,7 @@ import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.selenium.status_checks.EmptyCallStatusCheck
+import org.jitsi.jibri.selenium.status_checks.LocalParticipantKickedStatusCheck
 import org.jitsi.jibri.selenium.status_checks.MediaReceivedStatusCheck
 import org.jitsi.jibri.selenium.util.BrowserFileHandler
 import org.jitsi.jibri.status.ComponentState
@@ -120,7 +121,12 @@ data class JibriSeleniumOptions(
     /**
      * How long we should stay in a call with no other participants before quitting
      */
-    val emptyCallTimeout: Duration = EmptyCallStatusCheck.defaultCallEmptyTimeout
+    val emptyCallTimeout: Duration = EmptyCallStatusCheck.defaultCallEmptyTimeout,
+    /**
+     * Use local participant status checks, such as if the local participant is kicked out
+     * This is currently only used in the sipgateway gateway scenario;
+     */
+    val enableLocalParticipantStatusChecks: Boolean = false
 )
 
 val SIP_GW_URL_OPTIONS = listOf(
@@ -212,10 +218,14 @@ class JibriSelenium(
         // Note that the order here is important: we always want to check for no participants before we check
         // for media being received, since the call being empty will also mean Jibri is not receiving media but should
         // not cause Jibri to go unhealthy (like not receiving media when there are others in the call will).
-        val callStatusChecks = listOf(
+        val callStatusChecks = mutableListOf(
             EmptyCallStatusCheck(logger, callEmptyTimeout = jibriSeleniumOptions.emptyCallTimeout),
             MediaReceivedStatusCheck(logger)
         )
+        if (jibriSeleniumOptions.enableLocalParticipantStatusChecks) {
+            callStatusChecks.add(LocalParticipantKickedStatusCheck(logger))
+        }
+
         // We fire all state transitions in the ioPool, otherwise we may try and cancel the
         // recurringCallStatusCheckTask from within the thread it was executing in.  Another solution would've been
         // to pass 'false' to recurringCallStatusCheckTask.cancel, but it felt cleaner to separate the threads
@@ -260,8 +270,11 @@ class JibriSelenium(
      * Keep track of all the participants who take part in the call while
      * Jibri is active
      */
-    private fun addParticipantTracker() {
+    private fun addParticipantTrackers() {
         CallPage(chromeDriver).injectParticipantTrackerScript()
+        if (jibriSeleniumOptions.enableLocalParticipantStatusChecks) {
+            CallPage(chromeDriver).injectLocalParticipantTrackerScript()
+        }
     }
 
     fun addToPresence(key: String, value: String): Boolean = CallPage(chromeDriver).addToPresence(key, value)
@@ -302,7 +315,7 @@ class JibriSelenium(
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)
                 } else {
                     startRecurringCallStatusChecks()
-                    addParticipantTracker()
+                    addParticipantTrackers()
                     currCallUrl = callUrlInfo.callUrl
                     stateMachine.transition(SeleniumEvent.CallJoined)
                 }
