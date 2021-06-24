@@ -218,12 +218,12 @@ class JibriSelenium(
         // Note that the order here is important: we always want to check for no participants before we check
         // for media being received, since the call being empty will also mean Jibri is not receiving media but should
         // not cause Jibri to go unhealthy (like not receiving media when there are others in the call will).
-        val callStatusChecks = mutableListOf(
-            EmptyCallStatusCheck(logger, callEmptyTimeout = jibriSeleniumOptions.emptyCallTimeout),
-            MediaReceivedStatusCheck(logger)
-        )
-        if (jibriSeleniumOptions.enableLocalParticipantStatusChecks) {
-            callStatusChecks.add(LocalParticipantKickedStatusCheck(logger))
+        val callStatusChecks = buildList {
+            add(EmptyCallStatusCheck(logger, callEmptyTimeout = jibriSeleniumOptions.emptyCallTimeout))
+            add(MediaReceivedStatusCheck(logger))
+            if (jibriSeleniumOptions.enableLocalParticipantStatusChecks) {
+                add(LocalParticipantKickedStatusCheck(logger))
+            }
         }
 
         // We fire all state transitions in the ioPool, otherwise we may try and cancel the

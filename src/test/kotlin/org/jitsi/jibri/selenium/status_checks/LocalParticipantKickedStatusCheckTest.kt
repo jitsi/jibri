@@ -5,21 +5,17 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.spyk
-import org.jitsi.jibri.helpers.FakeClock
-import org.jitsi.jibri.helpers.minutes
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.utils.logging2.Logger
 
 class LocalParticipantKickedStatusCheckTest : ShouldSpec() {
-    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+    override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
-    private val clock: FakeClock = spyk()
     private val callPage: CallPage = mockk()
     private val logger: Logger = mockk(relaxed = true)
 
-    private val check = LocalParticipantKickedStatusCheck(logger, clock = clock)
+    private val check = LocalParticipantKickedStatusCheck(logger)
 
     init {
         context("when local participant is kicked") {
@@ -32,11 +28,8 @@ class LocalParticipantKickedStatusCheckTest : ShouldSpec() {
         }
         context("when local participant is not kicked") {
             every { callPage.isLocalParticipantKicked() } returns false
-            clock.elapse(5.minutes)
             context("the check") {
-                should("never return LocalParticipantKicked state") {
-                    check.run(callPage) shouldBe null
-                    clock.elapse(10.minutes)
+                should("returns null state") {
                     check.run(callPage) shouldBe null
                 }
             }
