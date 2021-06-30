@@ -29,9 +29,9 @@ import io.mockk.verify
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
+import org.jitsi.jibri.helpers.SeleniumMockHelper
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.FailedToJoinCall
-import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
@@ -130,29 +130,6 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
                 verify { seleniumMockHelper.mock.leaveCallAndQuitBrowser() }
             }
         }
-    }
-}
-
-private class SeleniumMockHelper {
-    private val eventHandlers = mutableListOf<(ComponentState) -> Boolean>()
-
-    val mock: JibriSelenium = mockk(relaxed = true) {
-        every { addTemporaryHandler(capture(eventHandlers)) } just Runs
-        every { addStatusHandler(captureLambda()) } answers {
-            // This behavior mimics what's done in StatusPublisher#addStatusHandler
-            eventHandlers.add {
-                lambda<(ComponentState) -> Unit>().captured(it)
-                true
-            }
-        }
-    }
-
-    fun startSuccessfully() {
-        eventHandlers.forEach { it(ComponentState.Running) }
-    }
-
-    fun error(error: JibriError) {
-        eventHandlers.forEach { it(ComponentState.Error(error)) }
     }
 }
 
