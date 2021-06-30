@@ -23,10 +23,12 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
 import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceFinalizer
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.whenever
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
@@ -47,6 +49,8 @@ data class SipGatewayServiceParams(
     val sipClientParams: SipClientParams
 )
 
+private const val FINALIZE_SCRIPT_LOCATION = "/opt/jitsi/jibri/finalize_sip.sh"
+
 /**
  * A [JibriService] responsible for joining both a web call
  * and a SIP call, capturing the audio and video from each, and
@@ -55,7 +59,12 @@ data class SipGatewayServiceParams(
 class SipGatewayJibriService(
     private val sipGatewayServiceParams: SipGatewayServiceParams,
     jibriSelenium: JibriSelenium? = null,
-    pjsuaClient: PjsuaClient? = null
+    pjsuaClient: PjsuaClient? = null,
+    processFactory: ProcessFactory = ProcessFactory(),
+    private val jibriServiceFinalizer: JibriServiceFinalizer = JibriServiceFinalizeCommandRunner(
+        processFactory,
+        listOf(FINALIZE_SCRIPT_LOCATION)
+    )
 ) : StatefulJibriService("SIP gateway") {
     /**
      * Used for the selenium interaction
@@ -129,5 +138,6 @@ class SipGatewayJibriService(
         processMonitorTask?.cancel(false)
         pjsuaClient.stop()
         jibriSelenium.leaveCallAndQuitBrowser()
+        jibriServiceFinalizer.doFinalize()
     }
 }
