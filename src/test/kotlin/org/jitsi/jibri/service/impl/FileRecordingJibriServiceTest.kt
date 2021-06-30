@@ -35,9 +35,9 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegFailedToStart
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
+import org.jitsi.jibri.helpers.SeleniumMockHelper
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.FailedToJoinCall
-import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.ProcessFactory
@@ -59,11 +59,11 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
     )
     private val callLoginParams = XmppCredentials(
         "domain",
+        8080,
         "username",
         "password"
     )
     private val recordingsDir = fs.getPath("/tmp/recordings")
-    private val finalizeScript = fs.getPath("/path/to/finalize")
     private val sessionId = "session_id"
     private val additionalMetadata: Map<Any, Any> = mapOf(
         "token" to "my_token",
@@ -228,29 +228,6 @@ private class CapturerMockHelper {
 
     val sink: Sink
         get() = sinkSlot.captured
-
-    fun startSuccessfully() {
-        eventHandlers.forEach { it(ComponentState.Running) }
-    }
-
-    fun error(error: JibriError) {
-        eventHandlers.forEach { it(ComponentState.Error(error)) }
-    }
-}
-
-private class SeleniumMockHelper {
-    private val eventHandlers = mutableListOf<(ComponentState) -> Boolean>()
-
-    val mock: JibriSelenium = mockk(relaxed = true) {
-        every { addTemporaryHandler(capture(eventHandlers)) } just Runs
-        every { addStatusHandler(captureLambda()) } answers {
-            // This behavior mimics what's done in StatusPublisher#addStatusHandler
-            eventHandlers.add {
-                lambda<(ComponentState) -> Unit>().captured(it)
-                true
-            }
-        }
-    }
 
     fun startSuccessfully() {
         eventHandlers.forEach { it(ComponentState.Running) }
