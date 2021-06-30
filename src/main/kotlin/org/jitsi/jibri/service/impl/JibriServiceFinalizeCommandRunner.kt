@@ -17,8 +17,10 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.service.JibriServiceFinalizer
+import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.utils.logging2.createLogger
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
 class JibriServiceFinalizeCommandRunner(
@@ -26,7 +28,7 @@ class JibriServiceFinalizeCommandRunner(
     private val finalizeCommand: List<String>
 ) : JibriServiceFinalizer {
 
-    protected val logger = createLogger()
+    private val logger = createLogger()
 
     /**
      * Helper to execute the finalize script and wait for its completion.
@@ -43,11 +45,11 @@ class JibriServiceFinalizeCommandRunner(
         try {
             with(processFactory.createProcess(finalizeCommand, logger)) {
                 start()
-                val streamDone = org.jitsi.jibri.util.LoggingUtils.logOutputOfProcess(this, logger)
+                val streamDone = LoggingUtils.logOutputOfProcess(this, logger)
                 waitFor()
                 // Make sure we get all the logs
                 try {
-                    streamDone.get(10, java.util.concurrent.TimeUnit.SECONDS)
+                    streamDone.get(10, TimeUnit.SECONDS)
                 } catch (e: TimeoutException) {
                     logger.error("Timed out waiting for process logger task to complete")
                     streamDone.cancel(true)

@@ -30,6 +30,7 @@ import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.helpers.SeleniumMockHelper
+import org.jitsi.jibri.helpers.createFinalizeProcessMock
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.FailedToJoinCall
 import org.jitsi.jibri.sipgateway.SipClientParams
@@ -132,19 +133,44 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
             status shouldBe ComponentState.Running
 
             // Stop the service
+            val finalizeProcessMock = createFinalizeProcessMock(true)
+            every {
+                processFactory.createProcess(eq(listOf("/opt/jitsi/jibri/finalize_sip.sh")), any(), any(), any())
+            } returns finalizeProcessMock
+
             sipGatewayJibriService.stop()
             should("tell selenium to leave the call") {
                 verify { seleniumMockHelper.mock.leaveCallAndQuitBrowser() }
             }
-            should("run the finalize script") {
-                verify {
-                    processFactory.createProcess(
-                        eq(listOf("/opt/jitsi/jibri/finalize_sip.sh")),
-                        any(),
-                        any(),
-                        any()
-                    )
-                }
+            should("run the finalize command") {
+                finalizeProcessMock.start()
+            }
+        }
+
+        context("stopping a service which has successfully started, but finalize script fails") {
+            // First get the service in a 'successful start' state.
+            sipGatewayJibriService.start()
+            seleniumMockHelper.startSuccessfully()
+            pjsuaClientMockHelper.startSuccessfully()
+
+            // Validate that it started
+            statusUpdates shouldHaveSize 1
+            val status = statusUpdates.first()
+            status shouldBe ComponentState.Running
+
+            // Stop the service
+            val finalizeProcessMock = createFinalizeProcessMock(false)
+            every {
+                processFactory.createProcess(eq(listOf("/opt/jitsi/jibri/finalize_sip.sh")), any(), any(), any())
+            } returns finalizeProcessMock
+
+            sipGatewayJibriService.stop()
+            should("tell selenium to leave the call") {
+                verify { seleniumMockHelper.mock.leaveCallAndQuitBrowser() }
+            }
+            should("run the finalize command") {
+                finalizeProcessMock.start()
+                finalizeProcessMock.waitFor()
             }
         }
     }
