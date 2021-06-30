@@ -110,7 +110,7 @@ class FileRecordingJibriService(
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
-    private var sink: Sink
+    private var sink: FileSink
     private val recordingsDirectory: String by config {
         "JibriConfig::recordingDirectory" { Config.legacyConfigSource.recordingDirectory!! }
         "jibri.recording.recordings-directory".from(Config.configSource)
@@ -142,10 +142,12 @@ class FileRecordingJibriService(
     override fun start() {
         if (!createIfDoesNotExist(sessionRecordingDirectory, logger)) {
             publishStatus(ComponentState.Error(ErrorCreatingRecordingsDirectory))
+            return
         }
         if (!Files.isWritable(sessionRecordingDirectory)) {
             logger.error("Unable to write to $recordingsDirectory")
             publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable))
+            return
         }
         jibriSelenium.joinCall(
             fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
@@ -170,6 +172,22 @@ class FileRecordingJibriService(
         logger.info("Stopping capturer")
         capturer.stop()
         logger.info("Quitting selenium")
+
+        // It's possible that the service was stopped before we even wrote anything, so check if we actually wrote
+        // any data to disk.  If not, we'll skip writing the metadata and running the finalize script and instead
+        // just delete the directory
+        val recordedMedia = Files.exists(sink.file)
+        if (!recordedMedia) {
+            logger.info("No media was recorded, deleting directory and skipping metadata file & finalize")
+            try {
+                Files.delete(sessionRecordingDirectory)
+            } catch (t: Throwable) {
+                logger.error("Problem deleting session recording directory", t)
+            }
+            jibriSelenium.leaveCallAndQuitBrowser()
+            return
+        }
+
         val participants = try {
             jibriSelenium.getParticipants()
         } catch (t: Throwable) {
