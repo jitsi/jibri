@@ -36,14 +36,12 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegFailedToStart
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.helpers.SeleniumMockHelper
+import org.jitsi.jibri.helpers.createFinalizeProcessMock
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.FailedToJoinCall
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.ProcessFactory
-import org.jitsi.jibri.util.ProcessWrapper
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
@@ -199,6 +197,10 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                 should("still tell selenium to leave the call") {
                     verify { seleniumMockHelper.mock.leaveCallAndQuitBrowser() }
                 }
+                should("run the finalize command") {
+                    verify { finalizeProcessMock.start() }
+                    verify { finalizeProcessMock.waitFor() }
+                }
             }
         }
     }
@@ -235,33 +237,5 @@ private class CapturerMockHelper {
 
     fun error(error: JibriError) {
         eventHandlers.forEach { it(ComponentState.Error(error)) }
-    }
-}
-
-private fun createFinalizeProcessMock(shouldSucceed: Boolean): ProcessWrapper {
-    val op = PipedOutputStream()
-    val stdOut = PipedInputStream(op)
-    return mockk {
-        every { getOutput() } returns stdOut
-        every { waitFor() } answers {
-            if (shouldSucceed) {
-                0
-            } else {
-                1
-            }
-        }
-        every { exitValue } answers {
-            if (shouldSucceed) {
-                0
-            } else {
-                1
-            }
-        }
-
-        every { start() } answers {
-            // Finish instantly and close the output stream so the task waiting on it to finish logging
-            // doesn't have to block for long.
-            op.close()
-        }
     }
 }

@@ -16,6 +16,7 @@ resources/debian-package/opt/jitsi/jibri/reload.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/shutdown.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/collect-dump-logs.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/pjsua.sh opt/jitsi/jibri
+resources/debian-package/opt/jitsi/jibri/finalize_sip.sh opt/jitsi/jibri
 
 target/jibri.jar opt/jitsi/jibri
 lib/logging.properties etc/jitsi/jibri

@@ -30,11 +30,11 @@ import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.JibriServiceFinalizer
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
-import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.whenever
@@ -44,8 +44,6 @@ import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 /**
  * Parameters needed for starting a [FileRecordingJibriService]
@@ -99,14 +97,17 @@ class FileRecordingJibriService(
     private val fileRecordingParams: FileRecordingParams,
     jibriSelenium: JibriSelenium? = null,
     capturer: FfmpegCapturer? = null,
-    private val processFactory: ProcessFactory = ProcessFactory(),
-    fileSystem: FileSystem = FileSystems.getDefault()
+    processFactory: ProcessFactory = ProcessFactory(),
+    fileSystem: FileSystem = FileSystems.getDefault(),
+    private var jibriServiceFinalizer: JibriServiceFinalizer? = null
 ) : StatefulJibriService("File recording") {
     init {
         logger.addContext("session_id", fileRecordingParams.sessionId)
     }
+
     private val capturer = capturer ?: FfmpegCapturer(logger)
     private val jibriSelenium = jibriSelenium ?: JibriSelenium(logger)
+
     /**
      * The [Sink] this class will use to model the file on the filesystem
      */
@@ -121,6 +122,7 @@ class FileRecordingJibriService(
         }
         "jibri.recording.finalize-script".from(Config.configSource)
     }
+
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
      * be nested within [recordingsDirectory].
@@ -137,6 +139,13 @@ class FileRecordingJibriService(
 
         registerSubComponent(JibriSelenium.COMPONENT_ID, this.jibriSelenium)
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
+
+        jibriServiceFinalizer = JibriServiceFinalizeCommandRunner(
+            processFactory, listOf(
+                finalizeScriptPath,
+                sessionRecordingDirectory.toString()
+            )
+        )
     }
 
     override fun start() {
@@ -193,7 +202,7 @@ class FileRecordingJibriService(
         } catch (t: Throwable) {
             logger.error(
                 "An error occurred while trying to get the participants list, proceeding with " +
-                    "an empty participants list",
+                        "an empty participants list",
                 t
             )
             listOf<Map<String, Any>>()
@@ -220,39 +229,7 @@ class FileRecordingJibriService(
         }
         jibriSelenium.leaveCallAndQuitBrowser()
         logger.info("Finalizing the recording")
-        finalize()
-    }
-
-    /**
-     * Helper to execute the finalize script and wait for its completion.
-     * NOTE that this will block for however long the finalize script takes
-     * to complete (by design)
-     */
-    private fun finalize() {
-        try {
-            val finalizeCommand = listOf(
-                finalizeScriptPath,
-                sessionRecordingDirectory.toString()
-            )
-            with(processFactory.createProcess(finalizeCommand, logger)) {
-                start()
-                val streamDone = LoggingUtils.logOutputOfProcess(this, logger)
-                waitFor()
-                // Make sure we get all the logs
-                try {
-                    streamDone.get(10, TimeUnit.SECONDS)
-                } catch (e: TimeoutException) {
-                    logger.error("Timed out waiting for process logger task to complete")
-                    streamDone.cancel(true)
-                } catch (e: Exception) {
-                    logger.error("Exception while waiting for process logger task to complete")
-                    streamDone.cancel(true)
-                }
-                logger.info("Recording finalize script finished with exit value $exitValue")
-            }
-        } catch (e: Exception) {
-            logger.error("Failed to run finalize script", e)
-        }
+        jibriServiceFinalizer?.doFinalize()
     }
 }
 
