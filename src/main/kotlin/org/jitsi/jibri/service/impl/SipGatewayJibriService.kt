@@ -22,6 +22,7 @@ import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
+import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceFinalizer
 import org.jitsi.jibri.sipgateway.SipClientParams
@@ -127,10 +128,26 @@ class SipGatewayJibriService(
         // we will be waiting for a sip call to come
         if (sipGatewayServiceParams.sipClientParams.autoAnswer) {
             pjsuaClient.start()
+            whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+                logger.info("Selenium joined the call")
+                addSipMetadataToPresence()
+            }
         } else {
             whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
+                logger.info("Selenium joined the call, starting pjsua")
                 pjsuaClient.start()
+                addSipMetadataToPresence()
             }
+        }
+    }
+
+    private fun addSipMetadataToPresence() {
+        try {
+            jibriSelenium.addToPresence("sip_address", sipGatewayServiceParams.sipClientParams.sipAddress)
+            jibriSelenium.sendPresence()
+        } catch (t: Throwable) {
+            logger.error("Error while setting fields in presence", t)
+            publishStatus(ComponentState.Error(ErrorSettingPresenceFields))
         }
     }
 

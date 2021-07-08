@@ -88,6 +88,10 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
                 should("start pjsua") {
                     verify { pjsuaClientMockHelper.mock.start() }
                 }
+                should("add sip metadata to presence") {
+                    verify { seleniumMockHelper.mock.addToPresence("sip_address", "sipAddress@sip.8x8.vc") }
+                    verify { seleniumMockHelper.mock.sendPresence() }
+                }
                 context("and the pjsua starts successfully") {
                     pjsuaClientMockHelper.startSuccessfully()
 
