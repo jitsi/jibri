@@ -58,3 +58,28 @@ abstract class SipClient : StatusPublisher<ComponentState>() {
      */
     abstract fun stop()
 }
+
+/**
+ * A SIP address is written in user@domain.tld format in a similar fashion to an email address.
+ * An address like: sip:1-999-123-4567@voip-provider.example.net
+ */
+fun String.getSipAddress(): String {
+    if (this.isNotEmpty() && this.hasSipSchemeEmbedded()) {
+        return this.substringAfter(":")
+    }
+    return this
+}
+
+/**
+ * Valid options would be `sip` or `sips`
+ * The default sip scheme is `sip` if none is specified
+ */
+fun String.getSipScheme(): String {
+    if (this.isNotEmpty() && this.hasSipSchemeEmbedded()) {
+        return this.substringBefore(":")
+    }
+    return "sip"
+}
+
+private fun String.hasSipSchemeEmbedded(): Boolean =
+    contains("sip:", ignoreCase = true) || contains("sips:", ignoreCase = true)

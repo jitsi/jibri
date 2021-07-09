@@ -20,6 +20,8 @@ package org.jitsi.jibri.sipgateway.pjsua
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sipgateway.SipClient
 import org.jitsi.jibri.sipgateway.SipClientParams
+import org.jitsi.jibri.sipgateway.getSipAddress
+import org.jitsi.jibri.sipgateway.getSipScheme
 import org.jitsi.jibri.sipgateway.pjsua.util.PjsuaExitedPrematurely
 import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
@@ -76,14 +78,8 @@ class PjsuaClient(
             PJSUA_SCRIPT_FILE_LOCATION
         )
 
-        /**
-         * A SIP address is written in user@domain.tld format in a similar fashion to an email address.
-         * An address like: sip:1-999-123-4567@voip-provider.example.net
-         *
-         * The default sip scheme is `sip` if none is specified; Valid options would be `sip` or `sips`
-         */
         val sipAddress = pjsuaClientParams.sipClientParams.sipAddress.getSipAddress()
-        val sipScheme = pjsuaClientParams.sipClientParams.sipAddress.getSipScheme() ?: "sip"
+        val sipScheme = pjsuaClientParams.sipClientParams.sipAddress.getSipScheme()
 
         if (pjsuaClientParams.sipClientParams.userName != null &&
             pjsuaClientParams.sipClientParams.password != null
@@ -128,21 +124,4 @@ class PjsuaClient(
     }
 
     override fun stop() = pjsua.stop()
-
-    private fun String.getSipAddress(): String {
-        if (this.isNotEmpty() && this.hasSipSchemeEmbedded()) {
-            return this.substringAfter(":")
-        }
-        return this
-    }
-
-    private fun String.getSipScheme(): String? {
-        if (this.isNotEmpty() && this.hasSipSchemeEmbedded()) {
-            return this.substringBefore(":")
-        }
-        return null
-    }
-
-    private fun String.hasSipSchemeEmbedded(): Boolean =
-        contains("sip:", ignoreCase = true) || contains("sips:", ignoreCase = true)
 }

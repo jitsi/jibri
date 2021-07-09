@@ -26,6 +26,8 @@ import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceFinalizer
 import org.jitsi.jibri.sipgateway.SipClientParams
+import org.jitsi.jibri.sipgateway.getSipAddress
+import org.jitsi.jibri.sipgateway.getSipScheme
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClient
 import org.jitsi.jibri.sipgateway.pjsua.PjsuaClientParams
 import org.jitsi.jibri.status.ComponentState
@@ -143,7 +145,9 @@ class SipGatewayJibriService(
 
     private fun addSipMetadataToPresence() {
         try {
-            jibriSelenium.addToPresence("sip_address", sipGatewayServiceParams.sipClientParams.sipAddress)
+            val sipAddress = sipGatewayServiceParams.sipClientParams.sipAddress.getSipAddress()
+            val sipScheme = sipGatewayServiceParams.sipClientParams.sipAddress.getSipScheme()
+            jibriSelenium.addToPresence("sip_address", "$sipScheme:$sipAddress")
             jibriSelenium.sendPresence()
         } catch (t: Throwable) {
             logger.error("Error while setting fields in presence", t)
