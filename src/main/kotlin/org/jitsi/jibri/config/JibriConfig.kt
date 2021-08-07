@@ -32,7 +32,11 @@ data class XmppCredentials(
     val port: Int? = null,
     val username: String = "",
     val password: String = ""
-)
+) {
+    override fun toString(): String {
+        return "XmppCredentials(domain=$domain, port=$port, username=$username, password=*****)"
+    }
+}
 
 fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials =
     XmppCredentials(
