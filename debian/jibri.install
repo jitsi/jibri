@@ -18,5 +18,5 @@ resources/debian-package/opt/jitsi/jibri/collect-dump-logs.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/pjsua.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/finalize_sip.sh opt/jitsi/jibri
 
-target/jibri.jar opt/jitsi/jibri
+target/jibri-8.0-XMPP-JIBRI-BASE-URL-SNAPSHOT.jar opt/jitsi/jibri
 lib/logging.properties etc/jitsi/jibri
