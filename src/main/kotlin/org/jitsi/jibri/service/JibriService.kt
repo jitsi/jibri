@@ -42,7 +42,7 @@ data class AppData(
     val fileRecordingMetadata: Map<Any, Any>?,
 
     @JsonProperty("base_url")
-    val baseUrl : String
+    val baseUrl: String
 )
 
 /**

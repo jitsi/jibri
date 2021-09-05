@@ -285,7 +285,8 @@ class XmppApi(
         val appData = startIq.appData?.let {
             jacksonObjectMapper().readValue<AppData>(startIq.appData)
         }
-        var baseUrl = if (appData?.baseUrl == null || appData.baseUrl.isEmpty() ) xmppEnvironment.baseUrl else appData.baseUrl;
+        var baseUrl = if (appData?.baseUrl == null || appData.baseUrl.isEmpty())
+            xmppEnvironment.baseUrl else appData.baseUrl
         val callUrlInfo = getCallUrlInfoFromJid(
             startIq.room,
             xmppEnvironment.stripFromRoomDomain,
