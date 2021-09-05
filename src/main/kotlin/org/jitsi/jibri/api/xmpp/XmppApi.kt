@@ -282,15 +282,16 @@ class XmppApi(
         xmppEnvironment: XmppEnvironmentConfig,
         serviceStatusHandler: JibriServiceStatusHandler
     ) {
+        val appData = startIq.appData?.let {
+            jacksonObjectMapper().readValue<AppData>(startIq.appData)
+        }
+        var baseUrl = if (appData?.baseUrl == null || appData.baseUrl.isEmpty() ) xmppEnvironment.baseUrl else appData.baseUrl;
         val callUrlInfo = getCallUrlInfoFromJid(
             startIq.room,
             xmppEnvironment.stripFromRoomDomain,
             xmppEnvironment.xmppDomain,
-            startIq.baseUrl
+            baseUrl
         )
-        val appData = startIq.appData?.let {
-            jacksonObjectMapper().readValue<AppData>(startIq.appData)
-        }
         val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
