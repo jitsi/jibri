@@ -161,6 +161,7 @@ class XmppApi(
      */
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
         logger.info("Received JibriIq ${jibriIq.toXML()} from environment $mucClient")
+        logger.info("Receibed JibriIQ App Data ${jibriIq.appData}")
         val xmppEnvironment = xmppConfigs.find { it.xmppServerHosts.contains(mucClient.id) }
             ?: return IQ.createErrorResponse(
                 jibriIq,
@@ -285,8 +286,10 @@ class XmppApi(
         val appData = startIq.appData?.let {
             jacksonObjectMapper().readValue<AppData>(startIq.appData)
         }
+        logger.info("XmppApi appData ${appData}")
         var baseUrl = if (appData?.baseUrl == null || appData.baseUrl.isEmpty())
             xmppEnvironment.baseUrl else appData.baseUrl
+        logger.info("XmppApi baseUrl ${baseUrl}")
         val callUrlInfo = getCallUrlInfoFromJid(
             startIq.room,
             xmppEnvironment.stripFromRoomDomain,
