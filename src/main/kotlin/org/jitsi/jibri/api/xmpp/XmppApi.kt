@@ -296,7 +296,7 @@ class XmppApi(
 	val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
-
+        logger.info("Parse brajendra")
         when (startIq.mode()) {
             JibriMode.FILE -> {
                 jibriManager.startFileRecording(
