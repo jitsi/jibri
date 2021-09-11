@@ -1,3 +1,4 @@
+
 /*
  * Copyright @ 2018 Atlassian Pty Ltd
  *
@@ -23,6 +24,7 @@ import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.maps.shouldContainKey
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 
 internal class AppDataTest : ShouldSpec() {
@@ -39,7 +41,8 @@ internal class AppDataTest : ShouldSpec() {
                         "service_name":"dropbox",
                         "token":"XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
                     }
-                }
+                },
+                "base_url" : "http://baseurl.com/"
             }
             """.trimIndent()
             should("be parsed correctly") {
@@ -47,6 +50,7 @@ internal class AppDataTest : ShouldSpec() {
                 appData.fileRecordingMetadata shouldNotBe null
                 appData.fileRecordingMetadata?.shouldContainKey("upload_credentials")
                 appData.fileRecordingMetadata?.get("upload_credentials") shouldNotBe null
+                appData.baseUrl shouldNotBe null
                 @Suppress("UNCHECKED_CAST")
                 (appData.fileRecordingMetadata?.get("upload_credentials") as Map<Any, Any>)
                     .shouldContainExactly(
@@ -55,6 +59,7 @@ internal class AppDataTest : ShouldSpec() {
                             "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
                         )
                     )
+                (appData.baseUrl).shouldBe("http://baseurl.com/")
             }
         }
         context("a json-encoded app data structure with an extra top-level field") {
@@ -68,6 +73,7 @@ internal class AppDataTest : ShouldSpec() {
                         "token":"XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
                     }
                 },
+                "base_url" : "http://baseurl.com/",
                 "other_new_field": "hello"
             }
             """.trimIndent()
@@ -76,6 +82,7 @@ internal class AppDataTest : ShouldSpec() {
                 appData.fileRecordingMetadata shouldNotBe null
                 appData.fileRecordingMetadata?.shouldContainKey("upload_credentials")
                 appData.fileRecordingMetadata?.get("upload_credentials") shouldNotBe null
+                appData.baseUrl shouldNotBe null
                 @Suppress("UNCHECKED_CAST")
                 (appData.fileRecordingMetadata?.get("upload_credentials") as Map<Any, Any>)
                     .shouldContainExactly(
@@ -84,7 +91,9 @@ internal class AppDataTest : ShouldSpec() {
                             "token" to "XXXXXXXXYYYYYYYYYZZZZZZAAAAAAABBBBBBCCCDDD"
                         )
                     )
+                (appData.baseUrl).shouldBe("http://baseurl.com/")
             }
         }
     }
 }
+

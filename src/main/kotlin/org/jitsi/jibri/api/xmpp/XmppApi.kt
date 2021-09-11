@@ -49,6 +49,7 @@ import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
+import org.jitsi.jibri.CallUrlInfo
 
 private class UnsupportedIqMode(val iqMode: String) : Exception()
 
@@ -282,16 +283,17 @@ class XmppApi(
         xmppEnvironment: XmppEnvironmentConfig,
         serviceStatusHandler: JibriServiceStatusHandler
     ) {
-        val callUrlInfo = getCallUrlInfoFromJid(
-            startIq.room,
-            xmppEnvironment.stripFromRoomDomain,
-            xmppEnvironment.xmppDomain,
-            xmppEnvironment.baseUrl
-        )
+
         val appData = startIq.appData?.let {
             jacksonObjectMapper().readValue<AppData>(startIq.appData)
         }
-        val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
+
+
+        var baseUrl = if (appData?.baseUrl == null || appData.baseUrl.isEmpty())
+    		xmppEnvironment.baseUrl else appData.baseUrl
+	val callUrlInfo = CallUrlInfo(baseUrl.orEmpty(), "")
+ 
+	val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
         val callParams = CallParams(callUrlInfo)
         logger.info("Parsed call url info: $callUrlInfo")
 

@@ -1,0 +1,9 @@
+/etc/jitsi/jibri/asoundrc
+/etc/jitsi/jibri/icewm.preferences
+/etc/jitsi/jibri/jibri.conf
+/etc/jitsi/jibri/logging.properties
+/etc/jitsi/jibri/pjsua.config
+/etc/jitsi/jibri/xorg-video-dummy.conf
+/etc/systemd/system/jibri-icewm.service
+/etc/systemd/system/jibri-xorg.service
+/etc/systemd/system/jibri.service

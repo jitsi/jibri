@@ -1,0 +1,17 @@
+./resources/debian-package/etc/jitsi/jibri/asoundrc
+./resources/debian-package/etc/jitsi/jibri/jibri.conf
+./resources/debian-package/etc/jitsi/jibri/icewm.preferences
+./resources/debian-package/etc/jitsi/jibri/xorg-video-dummy.conf
+./resources/debian-package/etc/jitsi/jibri/pjsua.config
+./resources/debian-package/etc/systemd/system/jibri-icewm.service
+./resources/debian-package/etc/systemd/system/jibri.service
+./resources/debian-package/etc/systemd/system/jibri-xorg.service
+./resources/debian-package/opt/jitsi/jibri/launch.sh
+./resources/debian-package/opt/jitsi/jibri/graceful_shutdown.sh
+./resources/debian-package/opt/jitsi/jibri/reload.sh
+./resources/debian-package/opt/jitsi/jibri/shutdown.sh
+./resources/debian-package/opt/jitsi/jibri/collect-dump-logs.sh
+./resources/debian-package/opt/jitsi/jibri/pjsua.sh
+./resources/debian-package/opt/jitsi/jibri/finalize_sip.sh
+./target/jibri.jar
+./lib/logging.properties

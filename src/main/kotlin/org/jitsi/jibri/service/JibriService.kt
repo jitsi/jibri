@@ -39,7 +39,10 @@ data class AppData(
      * to the metadata file when doing a recording.
      */
     @JsonProperty("file_recording_metadata")
-    val fileRecordingMetadata: Map<Any, Any>?
+    val fileRecordingMetadata: Map<Any, Any>?,
+
+    @JsonProperty("base_url")
+    val baseUrl: String
 )
 
 /**

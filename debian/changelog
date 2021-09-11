@@ -1,5 +1,21 @@
-jibri (0.2.0-1) UNRELEASED; urgency=medium
+jibri (8.0-104-g9871ba1-1) unstable; urgency=medium
 
+  * Built from git. 9871ba1
+
+ -- Ubuntu <ubuntu@ip-172-31-26-58.ec2.internal>  Sat, 11 Sep 2021 11:12:17 +0000
+
+jibri (8.0-104-g9871ba1-1) unstable; urgency=medium
+
+  * Built from git. 9871ba1
+
+ -- Ubuntu <ubuntu@ip-172-31-26-58.ec2.internal>  Wed, 08 Sep 2021 10:55:45 +0000
+
+jibri (8.0-104-g9871ba1-1) unstable; urgency=medium
+
+  [ brian ]
   * Initial release. (Closes: #XXXXXX)
 
- -- brian <brian@brian-VirtualBox>  Tue, 27 Mar 2018 14:04:40 -0700
+  [ Ubuntu ]
+  * Built from git. 9871ba1
+
+ -- Ubuntu <ubuntu@ip-172-31-26-58.ec2.internal>  Wed, 08 Sep 2021 10:06:33 +0000

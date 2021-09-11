@@ -195,7 +195,8 @@ class XmppApiTest : ShouldSpec() {
                             )
                         )
                     )
-                    val appData = AppData(fileRecordingMetadata = fileMetaData)
+		    val baseUrl = "http://baseurl.com/"
+                    val appData = AppData(fileRecordingMetadata = fileMetaData, baseUrl = baseUrl)
                     val jsonString = jacksonObjectMapper().writeValueAsString(appData)
                     jibriIq.appData = jsonString
 
