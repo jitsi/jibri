@@ -1,10 +1,10 @@
 11770458e7f0f0b72781734149558d32  opt/jitsi/jibri/collect-dump-logs.sh
 ab1a531d0214b0bedfdf2f9bd0d6290d  opt/jitsi/jibri/finalize_sip.sh
 ad11d54f59647ae00718737d71b6db25  opt/jitsi/jibri/graceful_shutdown.sh
-f88f4489579602cfeb939a565f490192  opt/jitsi/jibri/jibri.jar
+f355bb76a5e30df9e04a0a94c0666554  opt/jitsi/jibri/jibri.jar
 1175a866a7d2e2d5aec864c4f5e5b49a  opt/jitsi/jibri/launch.sh
 616cfd60cb145e040fcf78e9d9675198  opt/jitsi/jibri/pjsua.sh
 2bee280320aeb1e480943ac7c5769c76  opt/jitsi/jibri/reload.sh
 22af410b6c2d6fdb9380a4fc8b68b287  opt/jitsi/jibri/shutdown.sh
-a6989a74140cf3fd21ab1bdbe3dee499  usr/share/doc/jibri/changelog.Debian.gz
+4643032b89cbd28a22a8eeee37cda5d8  usr/share/doc/jibri/changelog.Debian.gz
 92877b5d50df32f1a9b742403aea1c2a  usr/share/doc/jibri/copyright

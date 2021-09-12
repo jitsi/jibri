@@ -288,10 +288,12 @@ class XmppApi(
             jacksonObjectMapper().readValue<AppData>(startIq.appData)
         }
 
-
         var baseUrl = if (appData?.baseUrl == null || appData.baseUrl.isEmpty())
     		xmppEnvironment.baseUrl else appData.baseUrl
-	val callUrlInfo = CallUrlInfo(baseUrl.orEmpty(), "")
+      
+	val callName = startIq.room.localpart.toString()
+        val listParams =  listOf<String>("roomId", callName) 
+	val callUrlInfo = CallUrlInfo(baseUrl.orEmpty(), "", listParams)
  
 	val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
         val callParams = CallParams(callUrlInfo)
