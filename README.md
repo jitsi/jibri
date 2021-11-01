@@ -59,7 +59,7 @@ sudo chmod 0755 /usr/local/bin/chromedriver
 ### Miscellaneous required tools
 See the debian [control file](debian/control) for the dependencies that are required.
 These can be installed using the following:
-`sudo apt-get install default-jre-headless ffmpeg curl alsa-utils icewm xdotool xserver-xorg-input-void xserver-xorg-video-dummy`
+`sudo apt-get install default-jre-headless ffmpeg curl alsa-utils icewm xdotool xserver-xorg-video-dummy ruby-hocon`
 
 ### Jitsi Debian Repository
 The Jibri packages can be found in the stable repository on downloads.jitsi.org.
