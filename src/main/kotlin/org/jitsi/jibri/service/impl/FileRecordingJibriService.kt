@@ -141,7 +141,8 @@ class FileRecordingJibriService(
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
 
         jibriServiceFinalizer = JibriServiceFinalizeCommandRunner(
-            processFactory, listOf(
+            processFactory,
+            listOf(
                 finalizeScriptPath,
                 sessionRecordingDirectory.toString()
             )
@@ -202,7 +203,7 @@ class FileRecordingJibriService(
         } catch (t: Throwable) {
             logger.error(
                 "An error occurred while trying to get the participants list, proceeding with " +
-                        "an empty participants list",
+                    "an empty participants list",
                 t
             )
             listOf<Map<String, Any>>()
