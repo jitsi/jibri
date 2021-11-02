@@ -128,7 +128,7 @@ data class XmppEnvironmentConfig(
      * Whether to append a randomly generated string to the nickname used in the control MUC.
      */
     @JsonProperty("randomize_control_muc_nickname")
-    val randomizeControlMucNickname: Boolean = false,
+    val randomizeControlMucNickname: Boolean = false
 )
 
 fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
