@@ -123,7 +123,12 @@ data class XmppEnvironmentConfig(
      * cert on this XMPP domain
      */
     @JsonProperty("always_trust_certs")
-    val trustAllXmppCerts: Boolean = true
+    val trustAllXmppCerts: Boolean = true,
+    /**
+     * Whether to append a randomly generated string to the nickname used in the control MUC.
+     */
+    @JsonProperty("randomize_control_muc_nickname")
+    val randomizeControlMucNickname: Boolean = false
 )
 
 fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
@@ -142,7 +147,8 @@ fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
         callLogin = getConfig("call-login").toXmppCredentials(),
         stripFromRoomDomain = getString("strip-from-room-domain"),
         usageTimeoutMins = getDuration("usage-timeout").toMinutes().toInt(),
-        trustAllXmppCerts = getBoolean("trust-all-xmpp-certs")
+        trustAllXmppCerts = getBoolean("trust-all-xmpp-certs"),
+        randomizeControlMucNickname = getBoolean("randomize-control-muc-nickname")
     )
 
 data class JibriConfig(
