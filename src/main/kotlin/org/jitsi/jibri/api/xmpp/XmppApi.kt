@@ -49,6 +49,7 @@ import org.jivesoftware.smack.packet.XMPPError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
+import kotlin.random.Random
 
 private class UnsupportedIqMode(val iqMode: String) : Exception()
 
@@ -121,6 +122,9 @@ class XmppApi(
                     }
                     mucJids = listOfNotNull(recordingMucJid, sipMucJid)
                     mucNickname = config.controlMuc.nickname
+                    if (config.randomizeControlMucNickname) {
+                        mucNickname += "-${Random.nextInt(1000)}"
+                    }
                 }
 
                 mucClientManager.addMucClient(clientConfig)
