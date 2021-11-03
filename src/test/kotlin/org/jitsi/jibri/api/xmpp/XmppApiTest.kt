@@ -52,7 +52,7 @@ import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.Stanza
-import org.jivesoftware.smack.packet.XMPPError
+import org.jivesoftware.smack.packet.StanzaError
 import org.jxmpp.jid.impl.JidCreate
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
@@ -212,7 +212,7 @@ class XmppApiTest : ShouldSpec() {
                     every { unknownMucClient.id } returns "unknown name"
                     val result = xmppApi.handleIq(jibriIq, unknownMucClient)
                     result.error shouldNotBe null
-                    result.error.condition shouldBe XMPPError.Condition.bad_request
+                    result.error.condition shouldBe StanzaError.Condition.bad_request
                 }
             }
         }

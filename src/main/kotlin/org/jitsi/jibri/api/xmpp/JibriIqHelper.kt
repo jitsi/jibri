@@ -18,9 +18,7 @@
 package org.jitsi.jibri.api.xmpp
 
 import org.jitsi.xmpp.extensions.jibri.JibriIq
-import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
 import org.jivesoftware.smack.packet.IQ
-import org.jivesoftware.smack.packet.Presence
 import org.jxmpp.jid.Jid
 
 // TODO: this functionality should be added to JibriIq
@@ -71,16 +69,5 @@ fun JibriIq.mode(): JibriMode {
         JibriIq.RecordingMode.FILE -> JibriMode.FILE
         JibriIq.RecordingMode.STREAM -> JibriMode.STREAM
         else -> JibriMode.UNDEFINED
-    }
-}
-
-class JibriPresenceHelper {
-    companion object {
-        fun createPresence(status: JibriStatusPacketExt, to: Jid): Presence {
-            val pres = Presence(Presence.Type.available)
-            pres.to = to
-            pres.overrideExtension(status)
-            return pres
-        }
     }
 }

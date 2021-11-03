@@ -45,7 +45,7 @@ import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientConfiguration
 import org.jitsi.xmpp.mucclient.MucClientManager
 import org.jivesoftware.smack.packet.IQ
-import org.jivesoftware.smack.packet.XMPPError
+import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
@@ -83,7 +83,7 @@ class XmppApi(
         PingManager.setDefaultPingInterval(30)
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
-            JibriIq.ELEMENT_NAME, JibriIq.NAMESPACE, JibriIqProvider()
+            JibriIq.ELEMENT, JibriIq.NAMESPACE, JibriIqProvider()
         )
         updatePresence(jibriStatusManager.overallStatus)
         jibriStatusManager.addStatusHandler(::updatePresence)
@@ -155,7 +155,7 @@ class XmppApi(
         return if (iq is JibriIq) {
             handleJibriIq(iq, mucClient)
         } else {
-            IQ.createErrorResponse(iq, XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request))
+            IQ.createErrorResponse(iq, StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build())
         }
     }
 
@@ -168,14 +168,14 @@ class XmppApi(
         val xmppEnvironment = xmppConfigs.find { it.xmppServerHosts.contains(mucClient.id) }
             ?: return IQ.createErrorResponse(
                 jibriIq,
-                XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request)
+                StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build()
             )
         return when (jibriIq.action) {
             JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
             JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)
             else -> IQ.createErrorResponse(
                 jibriIq,
-                XMPPError.getBuilder().setCondition(XMPPError.Condition.bad_request)
+                StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build()
             )
         }
     }
