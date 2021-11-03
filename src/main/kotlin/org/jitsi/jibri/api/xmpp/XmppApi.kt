@@ -44,6 +44,7 @@ import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientConfiguration
 import org.jitsi.xmpp.mucclient.MucClientManager
+import org.jivesoftware.smack.ConnectionConfiguration
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.provider.ProviderManager
@@ -112,6 +113,13 @@ class XmppApi(
                         )
                         disableCertificateVerification = config.trustAllXmppCerts
                     }
+
+                    if (config.securityMode == ConnectionConfiguration.SecurityMode.disabled) {
+                        logger.info(
+                            "XMPP security is disabled for this domain, no TLS will be used."
+                        )
+                    }
+                    securityMode = config.securityMode
 
                     val recordingMucJid =
                         JidCreate.bareFrom("${config.controlMuc.roomName}@${config.controlMuc.domain}").toString()
