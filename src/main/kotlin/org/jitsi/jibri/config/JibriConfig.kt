@@ -131,12 +131,7 @@ data class XmppEnvironmentConfig(
      */
     @JsonProperty("security_mode")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    val securityMode: ConnectionConfiguration.SecurityMode? = null,
-    /**
-     * Whether to append a randomly generated string to the nickname used in the control MUC.
-     */
-    @JsonProperty("randomize_control_muc_nickname")
-    val randomizeControlMucNickname: Boolean = false
+    val securityMode: ConnectionConfiguration.SecurityMode? = null
 )
 
 fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
@@ -158,8 +153,7 @@ fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
         trustAllXmppCerts = getBoolean("trust-all-xmpp-certs"),
         securityMode = if (hasPath("security-mode")) {
             getEnum(ConnectionConfiguration.SecurityMode::class.java, "security-mode")
-        } else null,
-        randomizeControlMucNickname = getBoolean("randomize-control-muc-nickname")
+        } else null
     )
 
 data class JibriConfig(
