@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.config
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.logger
+import org.jivesoftware.smack.ConnectionConfiguration
 import java.io.File
 
 data class XmppCredentials(
@@ -123,7 +125,13 @@ data class XmppEnvironmentConfig(
      * cert on this XMPP domain
      */
     @JsonProperty("always_trust_certs")
-    val trustAllXmppCerts: Boolean = true
+    val trustAllXmppCerts: Boolean = true,
+    /**
+     * The XMPP security mode to use for the XMPP connection
+     */
+    @JsonProperty("security_mode")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    val securityMode: ConnectionConfiguration.SecurityMode? = null
 )
 
 fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
@@ -142,7 +150,10 @@ fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
         callLogin = getConfig("call-login").toXmppCredentials(),
         stripFromRoomDomain = getString("strip-from-room-domain"),
         usageTimeoutMins = getDuration("usage-timeout").toMinutes().toInt(),
-        trustAllXmppCerts = getBoolean("trust-all-xmpp-certs")
+        trustAllXmppCerts = getBoolean("trust-all-xmpp-certs"),
+        securityMode = if (hasPath("security-mode")) {
+            getEnum(ConnectionConfiguration.SecurityMode::class.java, "security-mode")
+        } else null
     )
 
 data class JibriConfig(

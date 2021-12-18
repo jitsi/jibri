@@ -35,7 +35,7 @@ sudo apt-get install ffmpeg
 The latest Google Chrome stable build should be used. It may be able to be installed direclty via apt, but the manual instructions for installing it are as follows:
 ```bash
 curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo sh -c 'gpg --dearmor > /usr/share/keyrings/google-chrome-keyring.gpg'
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > sudo tee /etc/apt/sources.list.d/google-chrome.list
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
 apt-get -y update
 apt-get -y install google-chrome-stable
 ```
@@ -59,7 +59,7 @@ sudo chmod 0755 /usr/local/bin/chromedriver
 ### Miscellaneous required tools
 See the debian [control file](debian/control) for the dependencies that are required.
 These can be installed using the following:
-`sudo apt-get install default-jre-headless ffmpeg curl alsa-utils icewm xdotool xserver-xorg-input-void xserver-xorg-video-dummy`
+`sudo apt-get install default-jre-headless ffmpeg curl alsa-utils icewm xdotool xserver-xorg-video-dummy ruby-hocon`
 
 ### Jitsi Debian Repository
 The Jibri packages can be found in the stable repository on downloads.jitsi.org.
