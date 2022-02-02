@@ -94,11 +94,26 @@ class XmppApi(
             statsDClient?.incrementCounter(XMPP_HALF_OPEN_RECOVERED)
         }
 
+        /**
+         * If XMPP disconnects we lost our communication channel with jicofo. Jicofo currently doesn't attempt to
+         * communicate later, and starts a new session (with a different jibri) immediately. Make sure in this case the
+         * recording is stopped.
+         */
         override fun closed(mucClient: MucClient) {
             statsDClient?.incrementCounter(XMPP_CLOSED)
+            logger.warn("XMPP disconnected, stopping.")
+            jibriManager.stopService()
         }
+
+        /**
+         * If XMPP disconnects we lost our communication channel with jicofo. Jicofo currently doesn't attempt to
+         * communicate later, and starts a new session (with a different jibri) immediately. Make sure in this case the
+         * recording is stopped.
+         */
         override fun closedOnError(mucClient: MucClient) {
             statsDClient?.incrementCounter(XMPP_CLOSED_ON_ERROR)
+            logger.warn("XMPP disconnected, stopping.")
+            jibriManager.stopService()
         }
 
     }
