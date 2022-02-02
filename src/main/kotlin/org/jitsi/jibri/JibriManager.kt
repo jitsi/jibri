@@ -107,7 +107,7 @@ class JibriManager : StatusPublisher<Any>() {
         "jibri.single-use-mode".from(Config.configSource)
     }
 
-    private val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
+    val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
 
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from

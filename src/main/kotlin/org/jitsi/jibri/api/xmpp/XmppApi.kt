@@ -32,6 +32,15 @@ import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.service.impl.YOUTUBE_URL
 import org.jitsi.jibri.sipgateway.SipClientParams
+import org.jitsi.jibri.statsd.JibriStatsDClient
+import org.jitsi.jibri.statsd.XMPP_CLOSED
+import org.jitsi.jibri.statsd.XMPP_CLOSED_ON_ERROR
+import org.jitsi.jibri.statsd.XMPP_CONNECTED
+import org.jitsi.jibri.statsd.XMPP_HALF_OPEN_DETECTED
+import org.jitsi.jibri.statsd.XMPP_HALF_OPEN_RECOVERED
+import org.jitsi.jibri.statsd.XMPP_PING_FAILED
+import org.jitsi.jibri.statsd.XMPP_RECONNECTING
+import org.jitsi.jibri.statsd.XMPP_RECONNECTION_FAILED
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
@@ -40,6 +49,7 @@ import org.jitsi.utils.logging2.createLogger
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
 import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
+import org.jitsi.xmpp.mucclient.ConnectionStateListener
 import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientConfiguration
@@ -67,9 +77,31 @@ private class UnsupportedIqMode(val iqMode: String) : Exception()
 class XmppApi(
     private val jibriManager: JibriManager,
     private val xmppConfigs: List<XmppEnvironmentConfig>,
-    private val jibriStatusManager: JibriStatusManager
+    private val jibriStatusManager: JibriStatusManager,
+    private val statsDClient: JibriStatsDClient? = null
 ) : IQListener {
     private val logger = createLogger()
+
+    private val connectionStateListener = object : ConnectionStateListener {
+        override fun connected(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_CONNECTED) }
+        override fun reconnecting(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_RECONNECTING) }
+        override fun reconnectionFailed(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_RECONNECTION_FAILED)
+        }
+        override fun pingFailed(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_PING_FAILED) }
+        override fun halfOpenDetected(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_HALF_OPEN_DETECTED) }
+        override fun halfOpenRecovered(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_HALF_OPEN_RECOVERED)
+        }
+
+        override fun closed(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_CLOSED)
+        }
+        override fun closedOnError(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_CLOSED_ON_ERROR)
+        }
+
+    }
     private lateinit var mucClientManager: MucClientManager
 
     /**
@@ -90,6 +122,7 @@ class XmppApi(
 
         mucClientManager.registerIQ(JibriIq())
         mucClientManager.setIQListener(this)
+        mucClientManager.addConnectionStateListener(connectionStateListener)
 
         // Join all the MUCs we've been told to
         for (config in xmppConfigs) {
