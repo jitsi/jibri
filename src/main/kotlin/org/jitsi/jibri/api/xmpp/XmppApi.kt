@@ -83,15 +83,23 @@ class XmppApi(
     private val logger = createLogger()
 
     private val connectionStateListener = object : ConnectionStateListener {
-        override fun connected(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_CONNECTED) }
-        override fun reconnecting(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_RECONNECTING) }
-        override fun reconnectionFailed(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_RECONNECTION_FAILED)
+        override fun connected(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_CONNECTED, mucClient.tags())
         }
-        override fun pingFailed(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_PING_FAILED) }
-        override fun halfOpenDetected(mucClient: MucClient) { statsDClient?.incrementCounter(XMPP_HALF_OPEN_DETECTED) }
+        override fun reconnecting(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_RECONNECTING, mucClient.tags())
+        }
+        override fun reconnectionFailed(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_RECONNECTION_FAILED, mucClient.tags())
+        }
+        override fun pingFailed(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_PING_FAILED, mucClient.tags())
+        }
+        override fun halfOpenDetected(mucClient: MucClient) {
+            statsDClient?.incrementCounter(XMPP_HALF_OPEN_DETECTED, mucClient.tags())
+        }
         override fun halfOpenRecovered(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_HALF_OPEN_RECOVERED)
+            statsDClient?.incrementCounter(XMPP_HALF_OPEN_RECOVERED, mucClient.tags())
         }
 
         /**
@@ -100,7 +108,7 @@ class XmppApi(
          * recording is stopped.
          */
         override fun closed(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_CLOSED)
+            statsDClient?.incrementCounter(XMPP_CLOSED, mucClient.tags())
             maybeStop(mucClient)
         }
 
@@ -110,7 +118,7 @@ class XmppApi(
          * recording is stopped.
          */
         override fun closedOnError(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_CLOSED_ON_ERROR)
+            statsDClient?.incrementCounter(XMPP_CLOSED_ON_ERROR, mucClient.tags())
             maybeStop(mucClient)
         }
 
@@ -122,6 +130,9 @@ class XmppApi(
                 jibriManager.stopService()
             }
         }
+
+        /** Create statsd tags for a [MucClient]. */
+        private fun MucClient.tags() = "xmpp_server_host:$id"
     }
     private lateinit var mucClientManager: MucClientManager
 
