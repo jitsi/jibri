@@ -101,8 +101,7 @@ class XmppApi(
          */
         override fun closed(mucClient: MucClient) {
             statsDClient?.incrementCounter(XMPP_CLOSED)
-            logger.warn("XMPP disconnected, stopping.")
-            jibriManager.stopService()
+            maybeStop(mucClient)
         }
 
         /**
@@ -112,10 +111,17 @@ class XmppApi(
          */
         override fun closedOnError(mucClient: MucClient) {
             statsDClient?.incrementCounter(XMPP_CLOSED_ON_ERROR)
-            logger.warn("XMPP disconnected, stopping.")
-            jibriManager.stopService()
+            maybeStop(mucClient)
         }
 
+        private fun maybeStop(mucClient: MucClient) {
+            val xmppEnvironment = getXmppEnvironment(mucClient) ?: return
+            val environmentContext = createEnvironmentContext(xmppEnvironment, mucClient)
+            if (jibriManager.currentEnvironmentContext == environmentContext) {
+                logger.warn("XMPP disconnected, stopping.")
+                jibriManager.stopService()
+            }
+        }
     }
     private lateinit var mucClientManager: MucClientManager
 
@@ -217,7 +223,7 @@ class XmppApi(
      */
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
         logger.info("Received JibriIq ${jibriIq.toXML()} from environment $mucClient")
-        val xmppEnvironment = xmppConfigs.find { it.xmppServerHosts.contains(mucClient.id) }
+        val xmppEnvironment = getXmppEnvironment(mucClient)
             ?: return IQ.createErrorResponse(
                 jibriIq,
                 StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build()
@@ -230,6 +236,10 @@ class XmppApi(
                 StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build()
             )
         }
+    }
+
+    private fun getXmppEnvironment(mucClient: MucClient) = xmppConfigs.find {
+        it.xmppServerHosts.contains(mucClient.id)
     }
 
     /**
@@ -251,7 +261,12 @@ class XmppApi(
         // if it changes
         val serviceStatusHandler = createServiceStatusHandler(startJibriIq, mucClient)
         return try {
-            handleStartService(startJibriIq, xmppEnvironment, serviceStatusHandler)
+            handleStartService(
+                startJibriIq,
+                xmppEnvironment,
+                createEnvironmentContext(xmppEnvironment, mucClient),
+                serviceStatusHandler
+            )
             logger.info("Sending 'pending' response to start IQ")
             startJibriIq.createResult {
                 status = JibriIq.Status.PENDING
@@ -336,6 +351,7 @@ class XmppApi(
     private fun handleStartService(
         startIq: JibriIq,
         xmppEnvironment: XmppEnvironmentConfig,
+        environmentContext: EnvironmentContext,
         serviceStatusHandler: JibriServiceStatusHandler
     ) {
         val callUrlInfo = getCallUrlInfoFromJid(
@@ -356,7 +372,7 @@ class XmppApi(
                 jibriManager.startFileRecording(
                     serviceParams,
                     FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
-                    EnvironmentContext(xmppEnvironment.name),
+                    environmentContext,
                     serviceStatusHandler
                 )
             }
@@ -385,7 +401,7 @@ class XmppApi(
                         rtmpUrl = rtmpUrl,
                         viewingUrl = viewingUrl
                     ),
-                    EnvironmentContext(xmppEnvironment.name),
+                    environmentContext,
                     serviceStatusHandler
                 )
             }
@@ -397,7 +413,7 @@ class XmppApi(
                         xmppEnvironment.callLogin,
                         SipClientParams(startIq.sipAddress, startIq.displayName)
                     ),
-                    EnvironmentContext(xmppEnvironment.name),
+                    environmentContext,
                     serviceStatusHandler
                 )
             }
@@ -412,3 +428,6 @@ private fun String.isRtmpUrl(): Boolean =
     startsWith("rtmp://", ignoreCase = true) || startsWith("rtmps://", ignoreCase = true)
 private fun String.isViewingUrl(): Boolean =
     startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
+
+private fun createEnvironmentContext(xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient) =
+    EnvironmentContext("${xmppEnvironment.name}-${mucClient.id}")

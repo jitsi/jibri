@@ -80,10 +80,10 @@ data class CallParams(
     override fun toString(): String {
         return if (passcode.isNullOrEmpty()) {
             "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode" +
-                    ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
+                ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
         } else {
             "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****" +
-                    ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
+                ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
         }
     }
 }
