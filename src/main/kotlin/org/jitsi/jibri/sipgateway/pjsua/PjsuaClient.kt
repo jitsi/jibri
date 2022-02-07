@@ -86,11 +86,11 @@ class PjsuaClient(
         ) {
             command.add(
                 "--id=${pjsuaClientParams.sipClientParams.displayName} " +
-                        "<$sipScheme:${pjsuaClientParams.sipClientParams.userName}>"
+                    "<$sipScheme:${pjsuaClientParams.sipClientParams.userName}>"
             )
             command.add(
                 "--registrar=$sipScheme:${
-                    pjsuaClientParams.sipClientParams.userName.substringAfter('@')
+                pjsuaClientParams.sipClientParams.userName.substringAfter('@')
                 }"
             )
             command.add("--realm=*")
@@ -109,7 +109,7 @@ class PjsuaClient(
             if (pjsuaClientParams.sipClientParams.userName != null) {
                 command.add(
                     "--proxy=$sipScheme:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')};" +
-                            "transport=tcp;hide"
+                        "transport=tcp;hide"
                 )
             }
 

@@ -144,7 +144,8 @@ fun main(args: Array<String>) {
     val xmppApi = XmppApi(
         jibriManager = jibriManager,
         xmppConfigs = xmppEnvironments,
-        jibriStatusManager = jibriStatusManager
+        jibriStatusManager = jibriStatusManager,
+        jibriManager.statsDClient
     )
     xmppApi.start()
 
