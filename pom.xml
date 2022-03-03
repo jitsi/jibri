@@ -21,7 +21,7 @@
         <kotest.version>4.4.3</kotest.version>
         <mockk.version>1.10.0</mockk.version>
         <ktor.version>1.5.2</ktor.version>
-        <jicoco.version>1.1-102-g41d2a50</jicoco.version>
+        <jicoco.version>1.1-103-g7b1cd54</jicoco.version>
     </properties>
 
     <dependencies>

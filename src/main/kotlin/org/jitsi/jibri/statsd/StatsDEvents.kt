@@ -25,8 +25,6 @@ const val XMPP_CONNECTED = "xmpp-connected"
 const val XMPP_RECONNECTING = "xmpp-reconnecting"
 const val XMPP_RECONNECTION_FAILED = "xmpp-reconnection-failed"
 const val XMPP_PING_FAILED = "xmpp-ping-failed"
-const val XMPP_HALF_OPEN_DETECTED = "xmpp-half-open-detected"
-const val XMPP_HALF_OPEN_RECOVERED = "xmpp-half-open-recovered"
 const val XMPP_CLOSED = "xmpp-closed"
 const val XMPP_CLOSED_ON_ERROR = "xmpp-closed-on-error"
 

@@ -36,8 +36,6 @@ import org.jitsi.jibri.statsd.JibriStatsDClient
 import org.jitsi.jibri.statsd.XMPP_CLOSED
 import org.jitsi.jibri.statsd.XMPP_CLOSED_ON_ERROR
 import org.jitsi.jibri.statsd.XMPP_CONNECTED
-import org.jitsi.jibri.statsd.XMPP_HALF_OPEN_DETECTED
-import org.jitsi.jibri.statsd.XMPP_HALF_OPEN_RECOVERED
 import org.jitsi.jibri.statsd.XMPP_PING_FAILED
 import org.jitsi.jibri.statsd.XMPP_RECONNECTING
 import org.jitsi.jibri.statsd.XMPP_RECONNECTION_FAILED
@@ -94,12 +92,6 @@ class XmppApi(
         }
         override fun pingFailed(mucClient: MucClient) {
             statsDClient?.incrementCounter(XMPP_PING_FAILED, mucClient.tags())
-        }
-        override fun halfOpenDetected(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_HALF_OPEN_DETECTED, mucClient.tags())
-        }
-        override fun halfOpenRecovered(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_HALF_OPEN_RECOVERED, mucClient.tags())
         }
 
         /**
