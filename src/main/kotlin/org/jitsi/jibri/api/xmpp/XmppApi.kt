@@ -33,6 +33,7 @@ import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.service.impl.YOUTUBE_URL
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.statsd.JibriStatsDClient
+import org.jitsi.jibri.statsd.STOPPED_ON_XMPP_CLOSED
 import org.jitsi.jibri.statsd.XMPP_CLOSED
 import org.jitsi.jibri.statsd.XMPP_CLOSED_ON_ERROR
 import org.jitsi.jibri.statsd.XMPP_CONNECTED
@@ -119,6 +120,7 @@ class XmppApi(
             val environmentContext = createEnvironmentContext(xmppEnvironment, mucClient)
             if (jibriManager.currentEnvironmentContext == environmentContext) {
                 logger.warn("XMPP disconnected, stopping.")
+                statsDClient?.incrementCounter(STOPPED_ON_XMPP_CLOSED, mucClient.tags())
                 jibriManager.stopService()
             }
         }
