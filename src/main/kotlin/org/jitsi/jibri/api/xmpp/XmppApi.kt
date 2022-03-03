@@ -33,11 +33,10 @@ import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.service.impl.YOUTUBE_URL
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.statsd.JibriStatsDClient
+import org.jitsi.jibri.statsd.STOPPED_ON_XMPP_CLOSED
 import org.jitsi.jibri.statsd.XMPP_CLOSED
 import org.jitsi.jibri.statsd.XMPP_CLOSED_ON_ERROR
 import org.jitsi.jibri.statsd.XMPP_CONNECTED
-import org.jitsi.jibri.statsd.XMPP_HALF_OPEN_DETECTED
-import org.jitsi.jibri.statsd.XMPP_HALF_OPEN_RECOVERED
 import org.jitsi.jibri.statsd.XMPP_PING_FAILED
 import org.jitsi.jibri.statsd.XMPP_RECONNECTING
 import org.jitsi.jibri.statsd.XMPP_RECONNECTION_FAILED
@@ -95,12 +94,6 @@ class XmppApi(
         override fun pingFailed(mucClient: MucClient) {
             statsDClient?.incrementCounter(XMPP_PING_FAILED, mucClient.tags())
         }
-        override fun halfOpenDetected(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_HALF_OPEN_DETECTED, mucClient.tags())
-        }
-        override fun halfOpenRecovered(mucClient: MucClient) {
-            statsDClient?.incrementCounter(XMPP_HALF_OPEN_RECOVERED, mucClient.tags())
-        }
 
         /**
          * If XMPP disconnects we lost our communication channel with jicofo. Jicofo currently doesn't attempt to
@@ -127,6 +120,7 @@ class XmppApi(
             val environmentContext = createEnvironmentContext(xmppEnvironment, mucClient)
             if (jibriManager.currentEnvironmentContext == environmentContext) {
                 logger.warn("XMPP disconnected, stopping.")
+                statsDClient?.incrementCounter(STOPPED_ON_XMPP_CLOSED, mucClient.tags())
                 jibriManager.stopService()
             }
         }
