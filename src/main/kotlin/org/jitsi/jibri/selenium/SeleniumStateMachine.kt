@@ -25,6 +25,7 @@ sealed class SeleniumEvent {
     object FailedToJoinCall : SeleniumEvent()
     object CallEmpty : SeleniumEvent()
     object NoMediaReceived : SeleniumEvent()
+    object IceFailedEvent : SeleniumEvent()
     object ChromeHung : SeleniumEvent()
     object LocalParticipantKicked : SeleniumEvent()
 }
@@ -53,6 +54,9 @@ class SeleniumStateMachine : NotifyingStateMachine() {
             }
             on<SeleniumEvent.NoMediaReceived> {
                 transitionTo(ComponentState.Error(NoMediaReceived))
+            }
+            on<SeleniumEvent.IceFailedEvent> {
+                transitionTo(ComponentState.Error(IceFailed))
             }
             on<SeleniumEvent.LocalParticipantKicked> {
                 transitionTo(ComponentState.Finished)
