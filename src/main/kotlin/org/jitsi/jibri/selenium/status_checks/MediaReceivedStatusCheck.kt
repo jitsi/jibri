@@ -10,11 +10,14 @@ import java.time.Clock
 import java.time.Duration
 
 /**
- * Verify that the Jibri web client is receiving media from the other participants
- * in the call, and, if we don't receive any media for a certain time, return
- * [SeleniumEvent.NoMediaReceived].  There's a caveat that we'll say longer if there are participants
- * in the call but they are audio and video muted; eventually even in this scenario we'll
- * timeout, but return [SeleniumEvent.CallEmpty].
+ * Verify that the Jibri web client is receiving media from the other participants. There's two different cases:
+ * 1. If some participants have audio and/or video enabled (as advertised in signaling). In this case, if jibri
+ * receives no audio or video for [noMediaTimeout] it will fire a [SeleniumEvent.NoMediaReceived]. This should not
+ * happen in normal circumstances because if anyone is sending media, it should be forwarded to and received by jibri,
+ * and we have a separate [IceConnectionStatusCheck] for the connection to the bridge. The check is here as a safety
+ * net.
+ * 2. No participant has audio or video enabled (as advertised in signaling). In this case we timeout after
+ * [allMutedTimeout] and fire a [SeleniumEvent.CallEmpty] to avoid wasting resources.
  */
 class MediaReceivedStatusCheck(
     parentLogger: Logger,
@@ -66,8 +69,9 @@ class MediaReceivedStatusCheck(
 
     companion object {
         /**
-         * How long we'll stay in the call if we're not receiving any incoming media (assuming all participants
-         * are not muted)
+         * How long we'll stay in the call if we're not receiving any incoming media (assuming not all participants
+         * not muted). This should be long enough to allow for a participant losing their connection and re-connecting
+         * without restarting the recording.
          */
         val noMediaTimeout: Duration by config {
             "jibri.call-status-checks.no-media-timeout".from(Config.configSource)

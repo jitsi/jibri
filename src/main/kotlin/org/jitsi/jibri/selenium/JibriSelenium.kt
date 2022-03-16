@@ -23,6 +23,7 @@ import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.selenium.status_checks.EmptyCallStatusCheck
+import org.jitsi.jibri.selenium.status_checks.IceConnectionStatusCheck
 import org.jitsi.jibri.selenium.status_checks.LocalParticipantKickedStatusCheck
 import org.jitsi.jibri.selenium.status_checks.MediaReceivedStatusCheck
 import org.jitsi.jibri.selenium.util.BrowserFileHandler
@@ -223,6 +224,7 @@ class JibriSelenium(
         val callStatusChecks = buildList {
             add(EmptyCallStatusCheck(logger, callEmptyTimeout = jibriSeleniumOptions.emptyCallTimeout))
             add(MediaReceivedStatusCheck(logger))
+            add(IceConnectionStatusCheck(logger))
             if (jibriSeleniumOptions.enableLocalParticipantStatusChecks) {
                 add(LocalParticipantKickedStatusCheck(logger))
             }

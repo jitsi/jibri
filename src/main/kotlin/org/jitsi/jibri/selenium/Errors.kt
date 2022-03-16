@@ -22,3 +22,4 @@ import org.jitsi.jibri.status.ErrorScope
 object FailedToJoinCall : JibriError(ErrorScope.SESSION, "Failed to join the call")
 object ChromeHung : JibriError(ErrorScope.SESSION, "Chrome hung")
 object NoMediaReceived : JibriError(ErrorScope.SESSION, "No media received")
+object IceFailed : JibriError(ErrorScope.SESSION, "ICE failed")
