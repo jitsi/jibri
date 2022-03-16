@@ -21,5 +21,5 @@ package org.jitsi.jibri.webhooks.v1
 import org.jitsi.jibri.status.JibriStatus
 
 sealed class JibriEvent(val jibriId: String) {
-    class HealthEvent(jibriId: String, val status: JibriStatus) : JibriEvent(jibriId)
+    class HealthEvent(jibriId: String, val sessionId: String?, val status: JibriStatus) : JibriEvent(jibriId)
 }

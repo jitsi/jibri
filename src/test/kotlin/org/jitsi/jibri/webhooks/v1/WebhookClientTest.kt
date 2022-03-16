@@ -114,7 +114,7 @@ class WebhookClientTest : ShouldSpec({
         context("has a valid subscriber") {
             client.addSubscriber("success")
             context("calling updateStatus") {
-                client.updateStatus(goodStatus)
+                client.updateStatus("sessionId", goodStatus)
                 should("send a POST to the subscriber at the proper url") {
                     requests shouldHaveSize 1
                     with(requests[0]) {
@@ -128,7 +128,7 @@ class WebhookClientTest : ShouldSpec({
                         this should beInstanceOf<TextContent>()
                         this as TextContent
                         this.text shouldBe jacksonObjectMapper().writeValueAsString(
-                            JibriEvent.HealthEvent("test", goodStatus)
+                            JibriEvent.HealthEvent("test", "sessionId", goodStatus)
                         )
                         text shouldContain """
                             "jibriId":"test"
@@ -136,14 +136,14 @@ class WebhookClientTest : ShouldSpec({
                     }
                 }
                 context("and calling updateStatus again") {
-                    client.updateStatus(badStatus)
+                    client.updateStatus("sessionId", badStatus)
                     should("send another request with the new status") {
                         requests shouldHaveSize 2
                         with(requests[1].body) {
                             this should beInstanceOf<TextContent>()
                             this as TextContent
                             this.text shouldContain jacksonObjectMapper().writeValueAsString(
-                                JibriEvent.HealthEvent("test", badStatus)
+                                JibriEvent.HealthEvent("test", "sessionId", badStatus)
                             )
                         }
                     }
@@ -155,7 +155,7 @@ class WebhookClientTest : ShouldSpec({
             client.addSubscriber("https://delay")
             client.addSubscriber("https://error")
             context("calling updateStatus") {
-                client.updateStatus(goodStatus)
+                client.updateStatus("sessionId", goodStatus)
                 should("send a POST to the subscribers at the proper url") {
                     requests shouldHaveSize 3
                     requests shouldContainRequestTo "success"
@@ -164,7 +164,7 @@ class WebhookClientTest : ShouldSpec({
                 }
                 context("and calling updateStatus again") {
                     requests.clear()
-                    client.updateStatus(goodStatus)
+                    client.updateStatus("sessionId", goodStatus)
                     should("send a POST to the subscribers at the proper url") {
                         requests shouldHaveSize 3
                         requests shouldContainRequestTo "success"

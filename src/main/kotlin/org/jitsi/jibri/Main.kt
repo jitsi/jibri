@@ -76,14 +76,14 @@ fun main(args: Array<String>) {
     val webhookClient = WebhookClient(MainConfig.jibriId)
 
     jibriStatusManager.addStatusHandler {
-        webhookClient.updateStatus(it)
+        webhookClient.updateStatus(jibriManager.getSessionId(),it)
     }
     webhookSubscribers.forEach(webhookClient::addSubscriber)
     val statusUpdaterTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(
         1,
         TimeUnit.MINUTES
     ) {
-        webhookClient.updateStatus(jibriStatusManager.overallStatus)
+        webhookClient.updateStatus(jibriManager.getSessionId(), jibriStatusManager.overallStatus)
     }
 
     val cleanupAndExit = { exitCode: Int ->

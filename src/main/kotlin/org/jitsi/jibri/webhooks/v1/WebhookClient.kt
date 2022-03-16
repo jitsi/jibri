@@ -103,14 +103,14 @@ class WebhookClient(
         webhookSubscribers.remove(subscriberBaseUrl)
     }
 
-    fun updateStatus(status: JibriStatus) = runBlocking {
+    fun updateStatus(sessionId: String?, status: JibriStatus) = runBlocking {
         logger.debug { "Updating ${webhookSubscribers.size} subscribers of status" }
         webhookSubscribers.forEach { subscriberBaseUrl ->
             launch(TaskPools.ioPool.asCoroutineDispatcher()) {
                 logger.debug { "Sending request to $subscriberBaseUrl" }
                 try {
                     val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/status") {
-                        body = JibriEvent.HealthEvent(jibriId, status)
+                        body = JibriEvent.HealthEvent(jibriId, sessionId, status)
                     }
                     logger.debug { "Got response from $subscriberBaseUrl: $resp" }
                     if (resp.status != HttpStatusCode.OK) {

@@ -54,7 +54,7 @@ fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink):
         "-video_size", ffmpegExecutorParams.resolution,
         // Note the values passed here will need to be changed based on the output of
         // ffmpeg -f avfoundation -list_devices true -i ""
-        "-i", "0:0",
+        "-i", "1:0",
         "-vsync", "2",
         "-acodec", "aac", "-strict", "-2", "-ar", "44100", "-b:a", "128k",
         "-c:v", "libx264", "-preset", ffmpegExecutorParams.videoEncodePreset,

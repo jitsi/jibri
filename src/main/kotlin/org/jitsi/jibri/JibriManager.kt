@@ -107,6 +107,7 @@ class JibriManager : StatusPublisher<Any>() {
         "jibri.single-use-mode".from(Config.configSource)
     }
 
+    private var sessionId: String? = null
     val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
 
     /**
@@ -134,6 +135,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
+        sessionId = fileRecordingRequestParams.sessionId;
         throwIfBusy()
         logger.info("Starting a file recording with params: $fileRecordingRequestParams")
         val service = FileRecordingJibriService(
@@ -293,5 +295,9 @@ class JibriManager : StatusPublisher<Any>() {
         } else {
             pendingIdleFunc = func
         }
+    }
+
+    fun getSessionId(): String? {
+        return sessionId;
     }
 }
