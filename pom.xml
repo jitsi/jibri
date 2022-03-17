@@ -291,7 +291,6 @@
                                 <sourceDir>${project.basedir}/src/main/java</sourceDir>
                             </sourceDirs>
                             <args>
-                                <arg>-Werror</arg>
                                 <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
                                 <arg>-Xopt-in=kotlin.time.ExperimentalTime</arg>
                             </args>
@@ -344,6 +343,7 @@
                         <!-- gradle.build.dir is the property name that JunitXmlReporter expects to find, even though
                         this is maven -->
                         <gradle.build.dir>${project.build.directory}/surefire-reports</gradle.build.dir>
+                        <java.util.logging.config.file>${project.basedir}/lib/test-logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
