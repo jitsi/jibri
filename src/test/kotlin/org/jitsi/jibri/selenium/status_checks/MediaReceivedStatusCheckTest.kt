@@ -84,7 +84,8 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
                     }
                 }
                 context("after the no-media timeout") {
-                    clock.elapse(Duration.ofSeconds(45))
+                    clock.elapse(MediaReceivedStatusCheck.noMediaTimeout)
+                    clock.elapse(Duration.ofSeconds(1))
                     should("report a no media error") {
                         check.run(callPage) shouldBe SeleniumEvent.NoMediaReceived
                     }
