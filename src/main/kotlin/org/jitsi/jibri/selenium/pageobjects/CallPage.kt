@@ -225,8 +225,20 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
      * Return true if ICE is connected.
      */
     fun isIceConnected(): Boolean {
-        val result: Any? = driver.executeScript("return APP.conference.getConnectionState()")
-        return result.toString().lowercase() == "connected"
+        val result: Any? = driver.executeScript(
+            """
+            try {
+                return APP.conference.getConnectionState();
+            } catch(e) {
+                return e.message;
+            }
+        """
+        )
+        return (result.toString().lowercase() == "connected").also {
+            if (!it) {
+                logger.warn("ICE not connected: $result")
+            }
+        }
     }
 
     fun isLocalParticipantKicked(): Boolean {
