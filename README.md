@@ -11,7 +11,7 @@ It works by launching a Chrome instance rendered in a virtual framebuffer and ca
 # Installing Jibri
 
 ### Installation notes
-* Jibri was built on ubuntu 16.04 (Xenial), and has been tested with the pre-built kernel and extra kernel modules (`linux-image-extra-virtual` package). Any other distribution or kernel configuration MAY work but has not been tested.
+* Jibri was built on Ubuntu 18.04 (Bionic), and has been tested with the pre-built kernel and extra kernel modules (`linux-image-extra-virtual` package). Any other distribution or kernel configuration MAY work but has not been tested.
 
 ## Pre-requisites
 ### ALSA and Loopback Device
