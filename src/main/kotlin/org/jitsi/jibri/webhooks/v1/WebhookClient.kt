@@ -40,6 +40,7 @@ import org.bouncycastle.openssl.PEMKeyPair
 import org.bouncycastle.openssl.PEMParser
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter
 import org.jitsi.jibri.config.Config
+import org.jitsi.jibri.status.JibriSessionStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.util.RefreshingProperty
 import org.jitsi.jibri.util.TaskPools
@@ -115,6 +116,26 @@ class WebhookClient(
                     logger.debug { "Got response from $subscriberBaseUrl: $resp" }
                     if (resp.status != HttpStatusCode.OK) {
                         logger.error("Error updating health for webhook subscriber $subscriberBaseUrl: $resp")
+                    }
+                } catch (e: HttpRequestTimeoutException) {
+                    logger.error("Request to $subscriberBaseUrl timed out")
+                }
+            }
+        }
+    }
+
+    fun updateSessionStatus(session: JibriSessionStatus) = runBlocking {
+        logger.debug { "Updating ${webhookSubscribers.size} subscribers of the session status" }
+        webhookSubscribers.forEach { subscriberBaseUrl ->
+            launch(TaskPools.ioPool.asCoroutineDispatcher()) {
+                logger.debug { "Sending request to $subscriberBaseUrl" }
+                try {
+                    val resp = client.postJson<HttpResponse>("$subscriberBaseUrl/v1/session/status") {
+                        body = JibriEvent.SessionEvent(jibriId, session)
+                    }
+                    logger.debug { "Got response from $subscriberBaseUrl: $resp" }
+                    if (resp.status != HttpStatusCode.OK) {
+                        logger.error("Error updating session for webhook subscriber $subscriberBaseUrl: $resp")
                     }
                 } catch (e: HttpRequestTimeoutException) {
                     logger.error("Request to $subscriberBaseUrl timed out")
