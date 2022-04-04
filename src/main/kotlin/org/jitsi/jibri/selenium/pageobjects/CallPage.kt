@@ -90,6 +90,11 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
+    /**
+     * Return true if there are no other participants in the conference.
+     */
+    fun isCallEmpty() = getNumParticipants() <= 1
+
     @Suppress("UNCHECKED_CAST")
     private fun getStats(): Map<String, Any?> {
         val result = driver.executeScript(
