@@ -36,13 +36,19 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.CallParams
+import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams
+import org.jitsi.jibri.status.JibriSessionStatus
+import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.status.JibriFailure
 import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.webhooks.v1.WebhookClient
 import org.jitsi.metaconfig.config
 import org.jitsi.utils.logging2.createLogger
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import javax.ws.rs.core.Response
 
 // TODO: this needs to include usageTimeout
@@ -65,7 +71,8 @@ data class StartServiceParams(
 
 class HttpApi(
     private val jibriManager: JibriManager,
-    private val jibriStatusManager: JibriStatusManager
+    private val jibriStatusManager: JibriStatusManager,
+    private val webhookClient: WebhookClient
 ) {
     private val logger = createLogger()
 
@@ -101,7 +108,8 @@ class HttpApi(
                         val startServiceParams = call.receive<StartServiceParams>()
                         logger.debug { "Got a start service request with params $startServiceParams" }
 
-                        handleStartService(startServiceParams)
+                        val serviceStatusHandler = createServiceStatusHandler(startServiceParams, webhookClient)
+                        handleStartService(startServiceParams, serviceStatusHandler)
                         call.respond(HttpStatusCode.OK)
                     } catch (e: JibriBusyException) {
                         call.respond(HttpStatusCode.PreconditionFailed, "Jibri is currently busy")
@@ -125,7 +133,45 @@ class HttpApi(
         }
     }
 
-    private fun handleStartService(startServiceParams: StartServiceParams) {
+    private fun createServiceStatusHandler(
+        serviceParams: StartServiceParams,
+        webhookClient: WebhookClient
+    ): JibriServiceStatusHandler {
+        return { serviceState ->
+            when (serviceState) {
+                is ComponentState.Error -> {
+                    val failure = JibriFailure(JibriIq.FailureReason.ERROR,
+                        serviceState.error)
+                    val componentSessionStatus = JibriSessionStatus(serviceParams.sessionId, JibriIq.Status.OFF,
+                        serviceParams.sipClientParams?.sipAddress,
+                        failure,
+                        serviceState.error.shouldRetry())
+                    logger.info(
+                        "Current service had an error ${serviceState.error}, " +
+                                "sending status error $componentSessionStatus"
+                    )
+                    webhookClient.updateSessionStatus(componentSessionStatus)
+                }
+                is ComponentState.Finished -> {
+                    val componentSessionStatus = JibriSessionStatus(serviceParams.sessionId, JibriIq.Status.OFF,
+                        serviceParams.sipClientParams?.sipAddress)
+                    logger.info("Current service finished, sending status off $componentSessionStatus")
+                    webhookClient.updateSessionStatus(componentSessionStatus)
+                }
+                is ComponentState.Running -> {
+                    val componentSessionStatus = JibriSessionStatus(serviceParams.sessionId, JibriIq.Status.ON,
+                        serviceParams.sipClientParams?.sipAddress)
+                    logger.info("Current service started up successfully, sending status on $componentSessionStatus")
+                    webhookClient.updateSessionStatus(componentSessionStatus)
+                }
+                else -> {
+                    logger.info("Webhook client ignoring service state update: $serviceState")
+                }
+            }
+        }
+    }
+
+    private fun handleStartService(startServiceParams: StartServiceParams, statusHandler: JibriServiceStatusHandler) {
         when (startServiceParams.sinkType) {
             RecordingSinkType.FILE -> {
                 // If it's a file recording, it must have the callLoginParams set
@@ -138,7 +184,8 @@ class HttpApi(
                         startServiceParams.sessionId,
                         callLoginParams
                     ),
-                    environmentContext = null
+                    environmentContext = null,
+                    statusHandler
                 )
             }
             RecordingSinkType.STREAM -> {
@@ -155,7 +202,8 @@ class HttpApi(
                         callLoginParams,
                         youTubeStreamKey
                     ),
-                    environmentContext = null
+                    environmentContext = null,
+                    statusHandler
                 )
             }
             RecordingSinkType.GATEWAY -> {
@@ -169,7 +217,9 @@ class HttpApi(
                         startServiceParams.callParams,
                         startServiceParams.callLoginParams,
                         sipClientParams
-                    )
+                    ),
+                    environmentContext = null,
+                    statusHandler
                 )
             }
         }

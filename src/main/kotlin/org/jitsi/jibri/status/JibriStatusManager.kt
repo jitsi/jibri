@@ -16,8 +16,10 @@
  */
 package org.jitsi.jibri.status
 
+import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.utils.logging.Logger
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.Delegates
 
@@ -44,6 +46,19 @@ data class OverallHealth(
 data class JibriStatus(
     val busyStatus: ComponentBusyStatus,
     val health: OverallHealth
+)
+
+data class JibriFailure(
+    val reason: JibriIq.FailureReason? = null,
+    val error: JibriError? = null
+)
+
+data class JibriSessionStatus(
+    val sessionId: String,
+    val status: JibriIq.Status,
+    val sipAddress: String? = null,
+    val failure: JibriFailure? = null,
+    val shouldRetry: Boolean? = null
 )
 
 /**

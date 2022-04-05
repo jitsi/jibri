@@ -152,7 +152,7 @@ fun main(args: Array<String>) {
     logger.info("Using port ${HttpApi.port} for HTTP API")
 
     // HttpApi
-    with(HttpApi(jibriManager, jibriStatusManager)) {
+    with(HttpApi(jibriManager, jibriStatusManager, webhookClient)) {
         embeddedServer(Jetty, port = HttpApi.port) {
             apiModule()
         }

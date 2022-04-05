@@ -53,14 +53,16 @@ import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.status.OverallHealth
+import org.jitsi.jibri.webhooks.v1.WebhookClient
 
 class HttpApiTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
     private val jibriManager: JibriManager = mockk()
     private val jibriStatusManager: JibriStatusManager = mockk()
+    private val webhookClient: WebhookClient = mockk()
 
-    private val api = HttpApi(jibriManager, jibriStatusManager)
+    private val api = HttpApi(jibriManager, jibriStatusManager, webhookClient)
 
     init {
         context("health") {
