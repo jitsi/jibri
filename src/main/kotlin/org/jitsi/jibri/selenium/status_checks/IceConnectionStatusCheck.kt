@@ -24,7 +24,8 @@ class IceConnectionStatusCheck(
     override fun run(callPage: CallPage): SeleniumEvent? {
         val now = clock.instant()
 
-        if (callPage.isIceConnected()) {
+        if (callPage.isCallEmpty() || callPage.isIceConnected()) {
+            // If there are no other participants we don't expect to have an ICE connection.
             timeOfLastSuccess = now
             return null
         }

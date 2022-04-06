@@ -46,9 +46,6 @@ class EmptyCallStatusCheck(
         }
     }
 
-    // <= 1 since the count will include jibri itself
-    private fun CallPage.isCallEmpty() = getNumParticipants() <= 1
-
     companion object {
         val defaultCallEmptyTimeout: Duration by config {
             "jibri.call-status-checks.default-call-empty-timeout".from(Config.configSource)

@@ -13,7 +13,9 @@ import org.jitsi.utils.secs
 
 class IceConnectionStatusCheckTest : ShouldSpec() {
     private val clock: FakeClock = spyk()
-    private val callPage: CallPage = mockk()
+    private val callPage: CallPage = mockk {
+        every { isCallEmpty() } returns false
+    }
     private val logger: Logger = mockk(relaxed = true)
 
     private val check = IceConnectionStatusCheck(logger, clock)
