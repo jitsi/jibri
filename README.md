@@ -17,8 +17,8 @@ It works by launching a Chrome instance rendered in a virtual framebuffer and ca
 ### ALSA and Loopback Device
 * First make sure the ALSA loopback module is available. The extra modules (including ALSA loopback) can be installed on Ubuntu 16.04 using package name `linux-image-extra-virtual`
 * Perform the following tasks as the root user
-  * Set up the module to be loaded on boot: `echo "snd-aloop" >> /etc/modules`
-  * Load the module into the running kernel: `modprobe snd-aloop`
+  * Set up the module to be loaded on boot: `echo "snd_aloop" >> /etc/modules`
+  * Load the module into the running kernel: `modprobe snd_aloop`
   * Check to see that the module is already loaded: `lsmod | grep snd_aloop`
 * If the output shows the snd-aloop module loaded, then the ALSA loopback configuration step is complete.
 
