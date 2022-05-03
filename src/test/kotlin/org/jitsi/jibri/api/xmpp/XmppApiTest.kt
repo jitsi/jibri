@@ -85,7 +85,7 @@ class XmppApiTest : ShouldSpec() {
                 domain = "controlXmppDomain",
                 username = "xmppUsername",
                 password = "xmppPassword",
-                port     = 5222
+                port = 5222
             ),
             controlMuc = XmppMuc(
                 domain = "xmppMucDomain",
