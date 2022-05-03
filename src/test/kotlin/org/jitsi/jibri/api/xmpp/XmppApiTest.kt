@@ -78,13 +78,14 @@ class XmppApiTest : ShouldSpec() {
         val jibriManager: JibriManager = mockk(relaxed = true)
         val xmppConfig = XmppEnvironmentConfig(
             name = "xmppEnvName",
-            xmppServerHosts = listOf("xmppServerHost1", "xmppServerHost2"),
+            xmppServerHosts = listOf("xmppServerHost1", "xmppServerHost2:6222"),
             xmppDomain = "xmppDomain",
             baseUrl = "baseUrl",
             controlLogin = XmppCredentials(
                 domain = "controlXmppDomain",
                 username = "xmppUsername",
-                password = "xmppPassword"
+                password = "xmppPassword",
+                port     = 5222
             ),
             controlMuc = XmppMuc(
                 domain = "xmppMucDomain",
