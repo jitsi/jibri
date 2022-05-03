@@ -154,15 +154,21 @@ class XmppApi(
         for (config in xmppConfigs) {
             for (host in config.xmppServerHosts) {
                 logger.info("Connecting to xmpp environment on $host with config $config")
+                val hostDetails: List<String> = host.split(":")
 
                 // We need to use the host as the ID because we'll only get one MUC client per 'ID' and
                 // we may have multiple hosts for the same environment
                 val clientConfig = MucClientConfiguration(host).apply {
-                    hostname = host
+                    hostname = hostDetails[0]
                     domain = config.controlLogin.domain
                     username = config.controlLogin.username
                     password = config.controlLogin.password
-                    config.controlLogin.port?.let { port = it.toString() }
+
+                    if (hostDetails.size > 1) {
+                        port = hostDetails[1]
+                    } else {
+                        config.controlLogin.port?.let { port = it.toString() }
+                    }
 
                     if (config.trustAllXmppCerts) {
                         logger.info(
