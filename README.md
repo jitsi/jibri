@@ -93,13 +93,50 @@ sudo usermod -aG adm,audio,video,plugdev jibri
 [reference.conf](src/main/resources/reference.conf) for the default values and an example of how to set up jibri.conf.  Only
 override the values you want to change from their defaults in `jibri.conf`.
 
+```
+jibri {
+    .....
+    api {
+        xmpp {
+            environments = [
+                {
+                    name = "yourdomain.com"
+                    xmpp-server-hosts = ["1.2.3.4"],
+                    xmpp-domain = "yourdomain.com"
+                    control-login {
+                        domain = "auth.yourdomain.com"
+                        username = "jibri"
+                        password = "jibriauthpass"
+                        port = 5222
+                    }
+                    control-muc {
+                        domain = "internal.auth.yourdomain.com"
+                        room-name = "JibriBrewery"
+                        nickname = "myjibri-1-2-3-4"
+                    }
+                    call-login {
+                        domain = "recorder.yourdomain.com"
+                        username = "recorder"
+                        password = "jibrirecorderpass"
+                    }
+                    strip-from-room-domain = "conference."
+                    trust-all-xmpp-certs = true
+                    usage-timeout = 0
+                }
+            ]
+        }
+    }
+    .....
+}
+```
+
 ### Logging
 By default, Jibri logs to `/var/log/jitsi/jibri`.  If you don't install via the debian package, you'll need to make sure this directory exists (or change the location to which Jibri logs by editing the [log config](lib/logging.properties)
 
 
 # Configuring a Jitsi Meet environment for Jibri
 
-Jibri requires some settings to be enabled within a Jitsi Meet configuration. These changes include virtualhosts and accounts in Prosody, settings for the jitsi meet web (within config.js) as well as `jicofo sip-communicator.properties`.
+Jibri requires some settings to be enabled within a Jitsi Meet configuration. These changes include virtualhosts and accounts in Prosody, settings for the jitsi meet web (within config.js) as well as `jicofo.conf`.
 
 ## Prosody
 
@@ -132,10 +169,16 @@ prosodyctl register recorder recorder.yourdomain.com jibrirecorderpass
 The first account is the one Jibri will use to log into the control MUC (where Jibri will send its status and await commands).  The second account is the one Jibri will use as a client in selenium when it joins the call so that it can be treated in a special way by the Jitsi Meet web UI.
 
 ## Jicofo
-Edit `/etc/jitsi/jicofo/sip-communicator.properties` (or similar), set the appropriate MUC to look for the Jibri Controllers. This should be the same MUC as is referenced in jibri's `config.json` file. Restart Jicofo after setting this property. It's also suggested to set the PENDING_TIMEOUT to 90 seconds, to allow the Jibri some time to start up before being marked as failed.
+Edit `/etc/jitsi/jicofo/jicofo.conf`, set the appropriate MUC to look for the Jibri Controllers. This should be the same MUC as is referenced in jibri's `config.json` file. Restart Jicofo after setting this property. It's also suggested to set the pending-timeout to 90 seconds, to allow the Jibri some time to start up before being marked as failed.
 ```
-org.jitsi.jicofo.jibri.BREWERY=JibriBrewery@internal.auth.yourdomain.com
-org.jitsi.jicofo.jibri.PENDING_TIMEOUT=90
+jicofo {
+  ...
+  jibri {
+    brewery-jid = "JibriBrewery@internal.auth.yourdomain.com"
+    pending-timeout = 90 seconds
+  }
+  ...
+}
 ```
 
 ## Jitsi Meet
