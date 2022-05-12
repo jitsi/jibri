@@ -136,7 +136,8 @@ class XmppApiTest : ShouldSpec() {
                 verify { mucClientManager.setIQListener(xmppApi) }
             }
             should("create a muc client for each xmpp host") {
-                verify(exactly = 2) { mucClientManager.addMucClient(any()) }
+                verify(exactly = 1) { mucClientManager.addMucClient(match { it.port == "5222" }) }
+                verify(exactly = 1) { mucClientManager.addMucClient(match { it.port == "6222" }) }
             }
 
             context("when receiving a start recording iq") {
