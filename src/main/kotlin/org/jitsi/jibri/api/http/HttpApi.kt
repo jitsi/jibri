@@ -49,7 +49,7 @@ import org.jitsi.jibri.webhooks.v1.WebhookClient
 import org.jitsi.metaconfig.config
 import org.jitsi.utils.logging2.createLogger
 import org.jitsi.xmpp.extensions.jibri.JibriIq
-import javax.ws.rs.core.Response
+import jakarta.ws.rs.core.Response
 
 // TODO: this needs to include usageTimeout
 data class StartServiceParams(
