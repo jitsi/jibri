@@ -18,7 +18,7 @@
 package org.jitsi.jibri
 
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.jetty.Jetty
+import io.ktor.server.jetty11.Jetty
 import kotlinx.coroutines.CancellationException
 import net.sourceforge.argparse4j.ArgumentParsers
 import org.jitsi.jibri.api.http.HttpApi
