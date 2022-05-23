@@ -26,7 +26,7 @@ import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
+import kotlin.time.Duration.Companion.seconds
 
 internal class TeeLogicTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf

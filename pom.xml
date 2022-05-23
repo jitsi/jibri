@@ -10,7 +10,7 @@
 
     <properties>
         <selenium.version>3.12.0</selenium.version>
-        <kotlin.version>1.4.31</kotlin.version>
+        <kotlin.version>1.6.21</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
@@ -18,9 +18,9 @@
         <jersey.version>2.30.1</jersey.version>
         <jackson.version>2.9.5</jackson.version>
         <junit.version>5.2.0</junit.version>
-        <kotest.version>4.4.3</kotest.version>
+        <kotest.version>5.3.0</kotest.version>
         <mockk.version>1.10.0</mockk.version>
-        <ktor.version>1.5.2</ktor.version>
+        <ktor.version>2.0.1</ktor.version>
         <jicoco.version>1.1-103-g7b1cd54</jicoco.version>
     </properties>
 
@@ -131,27 +131,37 @@
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-apache</artifactId>
+            <artifactId>ktor-client-apache-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-jackson</artifactId>
+            <artifactId>ktor-client-jackson-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-server-core</artifactId>
+            <artifactId>ktor-server-core-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-server-jetty</artifactId>
+            <artifactId>ktor-server-jetty-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-jackson</artifactId>
+            <artifactId>ktor-serialization-jackson-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-content-negotiation-jvm</artifactId>
+            <version>${ktor.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-content-negotiation-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
@@ -225,7 +235,7 @@
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-server-test-host</artifactId>
+            <artifactId>ktor-server-test-host-jvm</artifactId>
             <version>${ktor.version}</version>
             <scope>test</scope>
         </dependency>
@@ -280,9 +290,9 @@
                                 <sourceDir>${project.basedir}/src/main/java</sourceDir>
                             </sourceDirs>
                             <args>
-                                <arg>-Werror</arg>
-                                <arg>-Xopt-in=kotlin.ExperimentalStdlibApi</arg>
-                                <arg>-Xopt-in=kotlin.time.ExperimentalTime</arg>
+                                <!-- <arg>-Werror</arg> -->
+                                <arg>-opt-in=kotlin.ExperimentalStdlibApi</arg>
+                                <arg>-opt-in=kotlin.time.ExperimentalTime</arg>
                             </args>
                         </configuration>
                     </execution>

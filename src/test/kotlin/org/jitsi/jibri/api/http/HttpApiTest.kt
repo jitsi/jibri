@@ -18,9 +18,10 @@
 package org.jitsi.jibri.api.http
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.kotest.core.names.TestName
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.core.spec.style.scopes.ShouldSpecContextScope
+import io.kotest.core.spec.style.scopes.ShouldSpecContainerScope
 import io.kotest.core.test.TestContext
 import io.kotest.core.test.createTestName
 import io.kotest.matchers.shouldBe
@@ -170,5 +171,7 @@ class HttpApiTest : ShouldSpec() {
  * A non-suspend version of `should` so that it can be called from within the KTOR test harness
  * scope
  */
-fun ShouldSpecContextScope.shouldb(name: String, test: suspend TestContext.() -> Unit) =
-    runBlocking { addTest(createTestName("should ", name, true), xdisabled = false, test = test) }
+fun ShouldSpecContainerScope.shouldb(name: String, test: suspend TestContext.() -> Unit) =
+    runBlocking {
+        registerTest(TestName("should ", name, true), config = null, disabled = false, test = test)
+    }
