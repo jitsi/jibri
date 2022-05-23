@@ -18,7 +18,8 @@
 package org.jitsi.jibri
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import java.util.*
+import java.util.Locale
+import java.util.Objects
 
 /**
  * We assume the 'baseUrl' represents a sort of landing page (on the same
