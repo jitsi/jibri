@@ -18,7 +18,6 @@
 package org.jitsi.jibri
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import java.util.Locale
 import java.util.Objects
 
 /**
@@ -54,6 +53,6 @@ data class CallUrlInfo(
 
     override fun hashCode(): Int {
         // Purposefully ignore urlParams here
-        return Objects.hash(baseUrl.lowercase(Locale.getDefault()), callName.lowercase(Locale.getDefault()))
+        return Objects.hash(baseUrl.lowercase(), callName.lowercase())
     }
 }
