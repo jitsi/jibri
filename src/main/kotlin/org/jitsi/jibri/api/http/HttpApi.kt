@@ -140,27 +140,35 @@ class HttpApi(
         return { serviceState ->
             when (serviceState) {
                 is ComponentState.Error -> {
-                    val failure = JibriFailure(JibriIq.FailureReason.ERROR,
-                        serviceState.error)
-                    val componentSessionStatus = JibriSessionStatus(serviceParams.sessionId, JibriIq.Status.OFF,
+                    val failure = JibriFailure(
+                        JibriIq.FailureReason.ERROR,
+                        serviceState.error
+                    )
+                    val componentSessionStatus = JibriSessionStatus(
+                        serviceParams.sessionId, JibriIq.Status.OFF,
                         serviceParams.sipClientParams?.sipAddress,
                         failure,
-                        serviceState.error.shouldRetry())
+                        serviceState.error.shouldRetry()
+                    )
                     logger.info(
                         "Current service had an error ${serviceState.error}, " +
-                                "sending status error $componentSessionStatus"
+                            "sending status error $componentSessionStatus"
                     )
                     webhookClient.updateSessionStatus(componentSessionStatus)
                 }
                 is ComponentState.Finished -> {
-                    val componentSessionStatus = JibriSessionStatus(serviceParams.sessionId, JibriIq.Status.OFF,
-                        serviceParams.sipClientParams?.sipAddress)
+                    val componentSessionStatus = JibriSessionStatus(
+                        serviceParams.sessionId, JibriIq.Status.OFF,
+                        serviceParams.sipClientParams?.sipAddress
+                    )
                     logger.info("Current service finished, sending status off $componentSessionStatus")
                     webhookClient.updateSessionStatus(componentSessionStatus)
                 }
                 is ComponentState.Running -> {
-                    val componentSessionStatus = JibriSessionStatus(serviceParams.sessionId, JibriIq.Status.ON,
-                        serviceParams.sipClientParams?.sipAddress)
+                    val componentSessionStatus = JibriSessionStatus(
+                        serviceParams.sessionId, JibriIq.Status.ON,
+                        serviceParams.sipClientParams?.sipAddress
+                    )
                     logger.info("Current service started up successfully, sending status on $componentSessionStatus")
                     webhookClient.updateSessionStatus(componentSessionStatus)
                 }
