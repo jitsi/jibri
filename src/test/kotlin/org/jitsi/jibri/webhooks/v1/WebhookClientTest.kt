@@ -20,19 +20,15 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.types.beInstanceOf
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockEngineConfig
-import io.ktor.client.engine.mock.MockRequestHandler
 import io.ktor.client.engine.mock.respondError
 import io.ktor.client.engine.mock.respondOk
+import io.ktor.client.engine.mock.toByteReadPacket
 import io.ktor.client.request.HttpRequestData
-import io.ktor.content.TextContent
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
@@ -124,28 +120,23 @@ class WebhookClientTest : ShouldSpec({
                 }
                 should("send the correct data") {
                     requests[0].body.contentType shouldBe ContentType.Application.Json
-                    with(requests[0].body) {
-                        this should beInstanceOf<TextContent>()
-                        this as TextContent
-                        this.text shouldBe jacksonObjectMapper().writeValueAsString(
-                            JibriEvent.HealthEvent("test", goodStatus)
-                        )
-                        text shouldContain """
-                            "jibriId":"test"
-                        """.trimIndent()
-                    }
+                    val requestBody = requests[0].body.toByteReadPacket().readText()
+                    requestBody shouldBe jacksonObjectMapper().writeValueAsString(
+                        JibriEvent.HealthEvent("test", goodStatus)
+                    )
+                    requestBody shouldContain """
+                        "jibriId":"test"
+                    """.trimIndent()
                 }
                 context("and calling updateStatus again") {
                     client.updateStatus(badStatus)
                     should("send another request with the new status") {
                         requests shouldHaveSize 2
-                        with(requests[1].body) {
-                            this should beInstanceOf<TextContent>()
-                            this as TextContent
-                            this.text shouldContain jacksonObjectMapper().writeValueAsString(
-                                JibriEvent.HealthEvent("test", badStatus)
-                            )
-                        }
+                        val request1Body = requests[1].body.toByteReadPacket().readText()
+
+                        request1Body shouldContain jacksonObjectMapper().writeValueAsString(
+                            JibriEvent.HealthEvent("test", badStatus)
+                        )
                     }
                 }
             }
@@ -179,8 +170,4 @@ class WebhookClientTest : ShouldSpec({
 
 infix fun List<HttpRequestData>.shouldContainRequestTo(host: String) {
     this.find { it.url.host.contains(host) } shouldNotBe null
-}
-
-fun MockEngineConfig.addNotifyingHandler(handler: MockRequestHandler) {
-    requestHandlers += handler
 }

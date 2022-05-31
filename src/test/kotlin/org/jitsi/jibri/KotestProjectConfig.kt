@@ -17,11 +17,11 @@
 package org.jitsi.jibri
 
 import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.core.listeners.Listener
+import io.kotest.core.extensions.Extension
 import io.kotest.extensions.junitxml.JunitXmlReporter
 
 class KotestProjectConfig : AbstractProjectConfig() {
-    override fun listeners(): List<Listener> = listOf(
+    override fun extensions(): List<Extension> = listOf(
         /**
          * The JunitXmlReporter writes a junit5 compatible unit test output
          * but with the full scope of tests as their name, unlike the default

@@ -53,6 +53,6 @@ data class CallUrlInfo(
 
     override fun hashCode(): Int {
         // Purposefully ignore urlParams here
-        return Objects.hash(baseUrl.toLowerCase(), callName.toLowerCase())
+        return Objects.hash(baseUrl.lowercase(), callName.lowercase())
     }
 }

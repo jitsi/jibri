@@ -55,7 +55,7 @@ class RefreshingPropertyTest : ShouldSpec({
         }
         context("whose creator function throws an exception") {
             val exObj = object {
-                val prop: Int? by RefreshingProperty(Duration.ofSeconds(1), clock) {
+                val prop: Int? by RefreshingProperty<Int>(Duration.ofSeconds(1), clock) {
                     throw Exception("boom")
                 }
             }

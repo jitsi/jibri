@@ -20,11 +20,10 @@ package org.jitsi.jibri.api.http.internal
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.ktor.http.HttpMethod
+import io.ktor.client.request.post
 import io.ktor.http.HttpStatusCode
-import io.ktor.server.testing.TestApplicationEngine
-import io.ktor.server.testing.handleRequest
-import io.ktor.server.testing.withTestApplication
+import io.ktor.server.testing.ApplicationTestBuilder
+import io.ktor.server.testing.testApplication
 
 class InternalHttpApiTest : FunSpec() {
 
@@ -43,42 +42,40 @@ class InternalHttpApiTest : FunSpec() {
 
         test("gracefulShutdown should return a 200 and invoke the graceful shutdown handler") {
             apiTest {
-                with(handleRequest(HttpMethod.Post, "/jibri/api/internal/v1.0/gracefulShutdown")) {
-                    response.status() shouldBe HttpStatusCode.OK
-                    gracefulShutdownHandlerCalls shouldBe 1
-                    configChangedHandlerCalls shouldBe 0
-                    shutdownHandlerCalls shouldBe 0
-                }
+                val response = client.post("/jibri/api/internal/v1.0/gracefulShutdown")
+                response.status shouldBe HttpStatusCode.OK
+                gracefulShutdownHandlerCalls shouldBe 1
+                configChangedHandlerCalls shouldBe 0
+                shutdownHandlerCalls shouldBe 0
             }
         }
 
         test("notifyConfigChanged should return a 200 and invoke the config changed handler") {
             apiTest {
-                with(handleRequest(HttpMethod.Post, "/jibri/api/internal/v1.0/notifyConfigChanged")) {
-                    response.status() shouldBe HttpStatusCode.OK
-                    gracefulShutdownHandlerCalls shouldBe 0
-                    configChangedHandlerCalls shouldBe 1
-                    shutdownHandlerCalls shouldBe 0
-                }
+                val response = client.post("/jibri/api/internal/v1.0/notifyConfigChanged")
+                response.status shouldBe HttpStatusCode.OK
+                gracefulShutdownHandlerCalls shouldBe 0
+                configChangedHandlerCalls shouldBe 1
+                shutdownHandlerCalls shouldBe 0
             }
         }
 
         test("shutdown should return a 200 and invoke the shutdown handler") {
             apiTest {
-                with(handleRequest(HttpMethod.Post, "/jibri/api/internal/v1.0/shutdown")) {
-                    response.status() shouldBe HttpStatusCode.OK
-                    gracefulShutdownHandlerCalls shouldBe 0
-                    configChangedHandlerCalls shouldBe 0
-                    shutdownHandlerCalls shouldBe 1
-                }
+                val response = client.post("/jibri/api/internal/v1.0/shutdown")
+                response.status shouldBe HttpStatusCode.OK
+                gracefulShutdownHandlerCalls shouldBe 0
+                configChangedHandlerCalls shouldBe 0
+                shutdownHandlerCalls shouldBe 1
             }
         }
     }
-    private fun <R> apiTest(block: TestApplicationEngine.() -> R) {
+    private fun apiTest(block: suspend ApplicationTestBuilder.() -> Unit) {
         with(internalApi) {
-            withTestApplication({
-                internalApiModule()
-            }) {
+            testApplication {
+                application {
+                    internalApiModule()
+                }
                 block()
             }
         }
