@@ -14,13 +14,13 @@
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+        <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
         <jackson.version>2.9.5</jackson.version>
         <junit.version>5.8.2</junit.version>
         <kotest.version>5.3.0</kotest.version>
         <mockk.version>1.10.0</mockk.version>
-        <ktor.version>2.0.1</ktor.version>
-        <jicoco.version>1.1-103-g7b1cd54</jicoco.version>
+        <ktor.version>2.0.2-jitsi</ktor.version>
+        <jicoco.version>1.1-107-gfb316f8</jicoco.version>
     </properties>
 
     <dependencies>
@@ -100,13 +100,6 @@
             <artifactId>argparse4j</artifactId>
             <version>0.8.1</version>
         </dependency>
-        <!-- Explicitly add this dep to match what ktor-server-jetty needs (otherwise
-        jicoco will bring in an older version -->
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-util</artifactId>
-            <version>9.4.44.v20210927</version>
-        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-xmpp-extensions</artifactId>
@@ -145,7 +138,7 @@
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-server-jetty-jvm</artifactId>
+            <artifactId>ktor-server-jetty11-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
@@ -237,6 +230,19 @@
             <artifactId>ktor-server-test-host-jvm</artifactId>
             <version>${ktor.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                  <groupId>io.ktor</groupId>
+                  <artifactId>ktor-client-jetty-jvm</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Force ktor-server-test-host to use a compatible jetty version. -->
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-client-jetty11-jvm</artifactId>
+            <version>${ktor.version}</version>
+            <scope>test</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
         <dependency>
@@ -289,7 +295,7 @@
                                 <sourceDir>${project.basedir}/src/main/java</sourceDir>
                             </sourceDirs>
                             <args>
-                                <!-- <arg>-Werror</arg> -->
+                                <arg>-Werror</arg>
                                 <arg>-opt-in=kotlin.ExperimentalStdlibApi</arg>
                                 <arg>-opt-in=kotlin.time.ExperimentalTime</arg>
                             </args>
