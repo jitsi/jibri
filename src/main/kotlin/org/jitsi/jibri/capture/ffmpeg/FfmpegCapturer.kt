@@ -42,10 +42,10 @@ import org.jitsi.utils.logging2.createChildLogger
  */
 data class FfmpegExecutorParams(
     val resolution: String = FfmpegCapturer.resolution,
-    val framerate: Int = 30,
-    val videoEncodePreset: String = "veryfast",
-    val queueSize: Int = 4096,
-    val streamingMaxBitrate: Int = 2976,
+    val framerate: Int = FfmpegCapturer.framerate,
+    val videoEncodePreset: String = FfmpegCapturer.videoEncodePreset,
+    val queueSize: Int = FfmpegCapturer.queueSize,
+    val streamingMaxBitrate: Int = FfmpegCapturer.streamingMaxBitrate,
     val streamingBufSize: Int = streamingMaxBitrate * 2,
     // The range of the CRF scale is 0–51, where 0 is lossless,
     // 23 is the default, and 51 is worst quality possible. A lower value
@@ -54,7 +54,7 @@ data class FfmpegExecutorParams(
     // it should look the same or nearly the same as the input but it
     // isn't technically lossless.
     // https://trac.ffmpeg.org/wiki/Encode/H.264#crf
-    val h264ConstantRateFactor: Int = 25,
+    val h264ConstantRateFactor: Int = FfmpegCapturer.h264ConstantRateFactor,
     val gopSize: Int = framerate * 2,
     val audioSource: String = FfmpegCapturer.audioSource,
     val audioDevice: String = FfmpegCapturer.audioDevice
@@ -78,7 +78,11 @@ class FfmpegCapturer(
         const val COMPONENT_ID = "Ffmpeg Capturer"
         private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
         val resolution: String by config("jibri.ffmpeg.resolution".from(Config.configSource))
-
+        val framerate: Int by config("jibri.ffmpeg.framerate".from(Config.configSource))
+        val videoEncodePreset: String by config("jibri.ffmpeg.video-encode-preset".from(Config.configSource))
+        val queueSize: Int by config("jibri.ffmpeg.queue-size".from(Config.configSource))
+        val streamingMaxBitrate: Int by config("jibri.ffmpeg.streaming-max-bitrate".from(Config.configSource))
+        val h264ConstantRateFactor: Int by config("jibri.ffmpeg.h264-constant-rate-factor".from(Config.configSource))
         val audioSource: String by config("jibri.ffmpeg.audio-source".from(Config.configSource))
         val audioDevice: String by config("jibri.ffmpeg.audio-device".from(Config.configSource))
     }
