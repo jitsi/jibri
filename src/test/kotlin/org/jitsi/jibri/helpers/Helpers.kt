@@ -16,11 +16,14 @@
  */
 package org.jitsi.jibri.helpers
 
+import io.mockk.every
+import io.mockk.mockk
 import org.jitsi.jibri.util.LoggingUtils
 import org.jitsi.jibri.util.ProcessWrapper
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.utils.logging2.Logger
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.ScheduledExecutorService
@@ -64,6 +67,17 @@ fun LoggingUtils.Companion.resetOutputLogger() {
 
 fun TaskPools.Companion.setIoPool(pool: ExecutorService) {
     ioPool = pool
+}
+
+// Execute tasks in place (in the current thread, blocking)
+val inPlaceExecutor: ExecutorService = mockk {
+    every { submit(any()) } answers {
+        firstArg<Runnable>().run()
+        CompletableFuture<Unit>()
+    }
+    every { execute(any()) } answers {
+        firstArg<Runnable>().run()
+    }
 }
 
 fun TaskPools.Companion.resetIoPool() {
