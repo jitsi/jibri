@@ -20,7 +20,7 @@
         <kotest.version>5.3.0</kotest.version>
         <mockk.version>1.10.0</mockk.version>
         <ktor.version>2.0.2-jitsi</ktor.version>
-        <jicoco.version>1.1-107-gfb316f8</jicoco.version>
+        <jicoco.version>1.1-113-g4e7ea8b</jicoco.version>
         <jitsi.utils.version>1.0-119-ga7b23ff</jitsi.utils.version>
     </properties>
 
