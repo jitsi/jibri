@@ -22,7 +22,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import org.jitsi.jibri.helpers.FakeClock
+import org.jitsi.utils.time.FakeClock
 import org.jitsi.jibri.helpers.minutes
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.selenium.SeleniumEvent
@@ -31,7 +31,7 @@ import org.jitsi.utils.logging2.Logger
 import java.time.Duration
 
 internal class EmptyCallStatusCheckTest : ShouldSpec() {
-    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+    override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
     private val clock: FakeClock = spyk()
     private val callPage: CallPage = mockk()

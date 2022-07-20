@@ -19,9 +19,9 @@ package org.jitsi.jibri.util
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.spyk
-import org.jitsi.jibri.helpers.FakeClock
 import org.jitsi.jibri.helpers.minutes
 import org.jitsi.jibri.helpers.seconds
+import org.jitsi.utils.time.FakeClock
 import java.time.Duration
 
 class RefreshingPropertyTest : ShouldSpec({

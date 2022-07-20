@@ -35,6 +35,7 @@ import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.config.XmppMuc
+import org.jitsi.jibri.helpers.inPlaceExecutor
 import org.jitsi.jibri.helpers.resetIoPool
 import org.jitsi.jibri.helpers.setIoPool
 import org.jitsi.jibri.service.AppData
@@ -54,8 +55,6 @@ import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.Stanza
 import org.jivesoftware.smack.packet.StanzaError
 import org.jxmpp.jid.impl.JidCreate
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutorService
 
 class XmppApiTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -113,12 +112,7 @@ class XmppApiTest : ShouldSpec() {
         every { jibriStatusManager.overallStatus } returns expectedStatus
 
         beforeSpec {
-            val executorService: ExecutorService = mockk()
-            every { executorService.submit(any<Runnable>()) } answers {
-                firstArg<Runnable>().run()
-                CompletableFuture<Unit>()
-            }
-            TaskPools.setIoPool(executorService)
+            TaskPools.setIoPool(inPlaceExecutor)
         }
 
         afterSpec {

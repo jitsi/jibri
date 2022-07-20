@@ -32,16 +32,14 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
-import io.mockk.every
-import io.mockk.slot
-import io.mockk.spyk
 import kotlinx.coroutines.delay
+import org.jitsi.jibri.helpers.inPlaceExecutor
+import org.jitsi.jibri.helpers.resetIoPool
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.OverallHealth
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.test.concurrent.FakeExecutorService
 
 class WebhookClientTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
@@ -87,23 +85,12 @@ class WebhookClientTest : ShouldSpec({
         }
     )
 
-    // Coroutines will sometimes try to execute a launch in the calling thread, so the normal FakeExecutorService
-    // doesn't work as it relies on the calling code finishing and then the test code being able to call runOne
-    // or runAll, etc.  This overrides the execute method (which is what gets used by coroutine dispatchers) and
-    // executes the Runnable immediately.
-    val ioExecutor: FakeExecutorService = spyk {
-        val runnable = slot<Runnable>()
-        every { execute(capture(runnable)) } answers {
-            runnable.captured.run()
-        }
-    }
-
     beforeSpec {
-        TaskPools.ioPool = ioExecutor
+        TaskPools.ioPool = inPlaceExecutor
     }
 
     afterSpec {
-        TaskPools.Companion.ioPool = TaskPools.DefaultIoPool
+        TaskPools.resetIoPool()
     }
 
     context("when the client") {
