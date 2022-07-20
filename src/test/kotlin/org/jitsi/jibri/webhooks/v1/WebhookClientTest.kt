@@ -41,7 +41,7 @@ import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.OverallHealth
 import org.jitsi.jibri.util.TaskPools
-import org.jitsi.test.concurrent.FakeExecutorService
+import org.jitsi.utils.concurrent.FakeScheduledExecutorService
 
 class WebhookClientTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
@@ -91,7 +91,7 @@ class WebhookClientTest : ShouldSpec({
     // doesn't work as it relies on the calling code finishing and then the test code being able to call runOne
     // or runAll, etc.  This overrides the execute method (which is what gets used by coroutine dispatchers) and
     // executes the Runnable immediately.
-    val ioExecutor: FakeExecutorService = spyk {
+    val ioExecutor: FakeScheduledExecutorService = spyk {
         val runnable = slot<Runnable>()
         every { execute(capture(runnable)) } answers {
             runnable.captured.run()

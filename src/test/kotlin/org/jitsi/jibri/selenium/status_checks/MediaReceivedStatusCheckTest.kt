@@ -6,11 +6,11 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
-import org.jitsi.jibri.helpers.FakeClock
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.selenium.SeleniumEvent
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.utils.logging2.Logger
+import org.jitsi.utils.time.FakeClock
 import java.time.Duration
 
 class MediaReceivedStatusCheckTest : ShouldSpec() {
