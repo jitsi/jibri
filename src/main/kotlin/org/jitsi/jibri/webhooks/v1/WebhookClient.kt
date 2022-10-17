@@ -25,10 +25,7 @@ import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.HttpRequestBuilder
-import io.ktor.client.request.header
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
+import io.ktor.client.request.*
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -66,7 +63,7 @@ class WebhookClient(
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
     private val jwtInfo: JwtInfo? by optionalconfig {
         "jibri.jwt-info".from(Config.configSource)
-            .convertFrom<ConfigObject>(JwtInfo.Companion::fromConfig)
+            .convertFrom(JwtInfo.Companion::fromConfig)
     }
 
     // We refresh 5 minutes before the expiration
@@ -77,7 +74,7 @@ class WebhookClient(
                 .setIssuer(it.issuer)
                 .setAudience(it.audience)
                 .setExpiration(Date.from(clock.instant().plus(it.ttl)))
-                .signWith(SignatureAlgorithm.RS256, it.privateKey)
+                .signWith(it.privateKey, SignatureAlgorithm.RS256)
                 .compact()
         }
     }
@@ -92,7 +89,7 @@ class WebhookClient(
         }
         jwt?.let {
             defaultRequest {
-                header("Authorization", "Bearer $jwt")
+                bearerAuth(it)
             }
         }
     }
