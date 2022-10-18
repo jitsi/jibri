@@ -47,7 +47,10 @@ class RefreshingProperty<T>(
                 logger.debug("Refreshing property ${property.name} (not yet initialized or expired)...")
                 creationFunc()
             } catch (exception: Exception) {
-                logger.warn("Property refresh caused exception, will use null for property ${property.name}: ", exception)
+                logger.warn(
+                    "Property refresh caused exception, will use null for property ${property.name}: ",
+                    exception
+                )
                 null
             }
             valueCreationTimestamp = now
