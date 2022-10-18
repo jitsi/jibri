@@ -16,8 +16,10 @@
 
 package org.jitsi.jibri.util
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.mockk.spyk
 import org.jitsi.jibri.helpers.minutes
 import org.jitsi.jibri.helpers.seconds
@@ -62,6 +64,17 @@ class RefreshingPropertyTest : ShouldSpec({
             should("return null") {
                 exObj.prop shouldBe null
             }
+        }
+        context("whose creator function throws an Error") {
+            val exObj = object {
+                val prop: Int? by RefreshingProperty<Int>(Duration.ofSeconds(1), clock) {
+                    throw NoClassDefFoundError("javax.xml.bind.DatatypeConverter")
+                }
+            }
+            val error = shouldThrow<NoClassDefFoundError>() {
+                println(exObj.prop)
+            }
+            error.message shouldContain "javax.xml.bind.DatatypeConverter"
         }
     }
 })

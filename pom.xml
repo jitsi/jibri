@@ -20,6 +20,7 @@
         <kotest.version>5.3.0</kotest.version>
         <mockk.version>1.10.0</mockk.version>
         <ktor.version>2.0.2-jitsi</ktor.version>
+        <jwt.version>0.11.5</jwt.version>
         <jicoco.version>1.1-113-g4e7ea8b</jicoco.version>
         <jitsi.utils.version>1.0-119-ga7b23ff</jitsi.utils.version>
     </properties>
@@ -180,8 +181,20 @@
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-            <version>0.9.1</version>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jwt.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- testing -->
