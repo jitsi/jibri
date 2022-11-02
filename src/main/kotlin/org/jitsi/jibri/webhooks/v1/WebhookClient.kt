@@ -92,7 +92,7 @@ class WebhookClient(
         }
         jwt?.let {
             defaultRequest {
-                bearerAuth(it)
+                bearerAuth("$jwt")
             }
         }
     }
