@@ -112,7 +112,7 @@
             <version>2.5</version>
         </dependency>
         <dependency>
-            <groupId>com.github.tinder</groupId>
+            <groupId>com.tinder.statemachine</groupId>
             <artifactId>statemachine</artifactId>
             <version>0.2.0</version>
             <exclusions>
@@ -160,7 +160,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-metaconfig</artifactId>
-            <version>8fa8f1170a</version>
+            <version>1.0-11-g8cf950e</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.jetbrains.kotlin</groupId>
@@ -443,10 +443,6 @@
                 <enabled>true</enabled>
             </snapshots>
             <url>https://github.com/jitsi/jitsi-maven-repository/raw/master/snapshots/</url>
-        </repository>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
