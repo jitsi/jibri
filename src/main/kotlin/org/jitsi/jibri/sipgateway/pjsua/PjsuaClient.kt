@@ -96,8 +96,6 @@ class PjsuaClient(
             command.add("--realm=*")
             command.add("--username=${pjsuaClientParams.sipClientParams.userName.substringBefore('@')}")
             command.add("--password=${pjsuaClientParams.sipClientParams.password}")
-        } else {
-            command.add("--id=${pjsuaClientParams.sipClientParams.displayName} <sip:jibri@127.0.0.1>")
         }
 
         if (pjsuaClientParams.sipClientParams.autoAnswer) {
