@@ -98,6 +98,10 @@ class PjsuaClient(
             command.add("--password=${pjsuaClientParams.sipClientParams.password}")
         }
 
+        if (pjsuaClientParams.sipClientParams.contact != null) {
+            command.add("--contact=${pjsuaClientParams.sipClientParams.contact}")
+        }
+
         if (pjsuaClientParams.sipClientParams.autoAnswer) {
             command.add("--auto-answer-timer=30")
             command.add("--auto-answer=200")

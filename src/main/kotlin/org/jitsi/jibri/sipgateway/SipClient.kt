@@ -44,7 +44,12 @@ data class SipClientParams(
     /**
      * The password to use if registration is needed.
      */
-    val password: String? = null
+    val password: String? = null,
+
+    /**
+     * The optional contact address the invitee will be connecting to
+     */
+    val contact: String? = null
 )
 
 abstract class SipClient : StatusPublisher<ComponentState>() {
