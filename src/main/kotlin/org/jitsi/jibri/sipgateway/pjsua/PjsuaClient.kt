@@ -114,7 +114,8 @@ class PjsuaClient(
             // This proxy will be enabled if --proxy is not set explicitly through API
             // The client should not specify a Route header in the sip INVITE message. Using hide will let the server set the Route header
             if (pjsuaClientParams.sipClientParams.proxy == null &&
-                pjsuaClientParams.sipClientParams.userName != null) {
+                pjsuaClientParams.sipClientParams.userName != null
+            ) {
                 command.add(
                     "--proxy=$sipScheme:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')};" +
                         "transport=tcp;hide"
