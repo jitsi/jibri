@@ -98,8 +98,12 @@ class PjsuaClient(
             command.add("--password=${pjsuaClientParams.sipClientParams.password}")
         }
 
-        if (pjsuaClientParams.sipClientParams.contact != null) {
+        if (!pjsuaClientParams.sipClientParams.contact.isNullOrEmpty()) {
             command.add("--contact=${pjsuaClientParams.sipClientParams.contact}")
+        }
+
+        if (!pjsuaClientParams.sipClientParams.proxy.isNullOrEmpty()) {
+            command.add("--proxy=${pjsuaClientParams.sipClientParams.proxy}")
         }
 
         if (pjsuaClientParams.sipClientParams.autoAnswer) {
@@ -107,8 +111,11 @@ class PjsuaClient(
             command.add("--auto-answer=200")
         } else {
             // The proxy we'll use for all the outgoing SIP requests;
+            // This proxy will be enabled if --proxy is not set explicitly through API
             // The client should not specify a Route header in the sip INVITE message. Using hide will let the server set the Route header
-            if (pjsuaClientParams.sipClientParams.userName != null) {
+            if (pjsuaClientParams.sipClientParams.proxy == null &&
+                pjsuaClientParams.sipClientParams.userName != null
+            ) {
                 command.add(
                     "--proxy=$sipScheme:${pjsuaClientParams.sipClientParams.userName.substringAfter('@')};" +
                         "transport=tcp;hide"
