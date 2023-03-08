@@ -49,7 +49,12 @@ data class SipClientParams(
     /**
      * The optional contact address the invitee will be connecting to
      */
-    val contact: String? = null
+    val contact: String? = null,
+
+    /**
+     * The optional address of proxy server
+     */
+    val proxy: String? = null
 )
 
 abstract class SipClient : StatusPublisher<ComponentState>() {
