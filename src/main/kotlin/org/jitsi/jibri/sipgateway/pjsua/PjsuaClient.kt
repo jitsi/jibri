@@ -98,7 +98,7 @@ class PjsuaClient(
             command.add("--password=${pjsuaClientParams.sipClientParams.password}")
         }
 
-        if (pjsuaClientParams.sipClientParams.contact != null) {
+        if (!pjsuaClientParams.sipClientParams.contact.isNullOrEmpty()) {
             command.add("--contact=${pjsuaClientParams.sipClientParams.contact}")
         }
 
