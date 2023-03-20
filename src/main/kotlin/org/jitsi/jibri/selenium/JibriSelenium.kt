@@ -195,9 +195,9 @@ class JibriSelenium(
         ).build()
         val logPrefs = LoggingPreferences()
         logPrefs.enable(LogType.DRIVER, Level.ALL)
-        chromeOptions.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
+        chromeOptions.setCapability("LOGGING_PREFS", logPrefs)
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
-        chromeDriver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS)
+        chromeDriver.manage().timeouts().pageLoadTimeout(java.time.Duration.ofSeconds(60))
 
         stateMachine.onStateTransition(this::onSeleniumStateChange)
     }

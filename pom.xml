@@ -9,13 +9,13 @@
     <version>8.0-SNAPSHOT</version>
 
     <properties>
-        <selenium.version>3.12.0</selenium.version>
+        <selenium.version>4.5.2</selenium.version>
         <kotlin.version>1.6.21</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
-        <jackson.version>2.9.5</jackson.version>
+        <jackson.version>2.14.1</jackson.version>
         <junit.version>5.8.2</junit.version>
         <kotest.version>5.3.0</kotest.version>
         <mockk.version>1.10.0</mockk.version>
@@ -26,7 +26,12 @@
     </properties>
 
     <dependencies>
-       <dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.http2</groupId>
+            <artifactId>http2-server</artifactId>
+            <version>11.0.14</version>
+        </dependency>
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15on</artifactId>
             <version>1.70</version>

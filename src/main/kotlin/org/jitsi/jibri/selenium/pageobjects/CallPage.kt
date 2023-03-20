@@ -22,6 +22,7 @@ import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
+import java.time.Duration
 import kotlin.time.measureTimedValue
 
 /**
@@ -42,7 +43,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
         val (result, totalTime) = measureTimedValue {
             try {
-                WebDriverWait(driver, 30).until {
+                WebDriverWait(driver, java.time.Duration.ofSeconds(30)).until {
                     val result = driver.executeScript(
                         """
                         try {
@@ -342,7 +343,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
 
         // Let's wait till we are alone in the room
         // (give time for the js Promise to finish before quiting selenium)
-        WebDriverWait(driver, 2).until {
+        WebDriverWait(driver, java.time.Duration.ofSeconds(2)).until {
             getNumParticipants() == 1
         }
 
