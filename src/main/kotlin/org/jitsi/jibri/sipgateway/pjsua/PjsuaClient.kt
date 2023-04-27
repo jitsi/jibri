@@ -107,7 +107,7 @@ class PjsuaClient(
         }
 
         if (pjsuaClientParams.sipClientParams.autoAnswer) {
-            command.add("--auto-answer-timer=30")
+            command.add("--auto-answer-timer=${pjsuaClientParams.sipClientParams.autoAnswerTimer}")
             command.add("--auto-answer=200")
         } else {
             // The proxy we'll use for all the outgoing SIP requests;

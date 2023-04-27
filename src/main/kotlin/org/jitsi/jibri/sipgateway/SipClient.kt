@@ -25,16 +25,25 @@ data class SipClientParams(
      * The SIP address we'll be connecting to
      */
     val sipAddress: String = "",
+
     /**
      * The display name used by pjsua as identity when listening for or sending an invite
      * For sending an invite, this should be the name of the entity initiating the invite
      */
     val displayName: String = "",
+
     /**
      * Whether auto-answer is enabled, if it is, the client will listen for
      * incoming invites and will auto answer the first one.
      */
     val autoAnswer: Boolean = false,
+
+    /**
+     * The optional auto-answer-timer in seconds.
+     * If auto-answer is enabled, the client will listen for incoming invites
+     * during this time.
+     */
+    val autoAnswerTimer: Long? = 30,
 
     /**
      * The username to use if registration is needed.
