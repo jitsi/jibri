@@ -7,6 +7,7 @@ After=network.target
 User=jibri
 Group=jibri
 PermissionsStartOnly=true
+ExecStartPre=sudo -u jibri /usr/bin/google-chrome --timeout=1000 --headless about:blank
 ExecStart=/opt/jitsi/jibri/launch.sh
 ExecStop=/opt/jitsi/jibri/graceful_shutdown.sh
 ExecReload=/opt/jitsi/jibri/reload.sh
