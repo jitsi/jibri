@@ -12,6 +12,7 @@ resources/debian-package/etc/systemd/system/jibri-xorg.service etc/systemd/syste
 
 resources/debian-package/opt/jitsi/jibri/launch.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/graceful_shutdown.sh opt/jitsi/jibri
+resources/debian-package/opt/jitsi/jibri/wait_graceful_shutdown.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/reload.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/shutdown.sh opt/jitsi/jibri
 resources/debian-package/opt/jitsi/jibri/collect-dump-logs.sh opt/jitsi/jibri
