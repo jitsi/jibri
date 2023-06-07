@@ -102,12 +102,22 @@ class JibriManager : StatusPublisher<Any>() {
         "jibri.stats.enable-stats-d".from(Config.configSource)
     }
 
+    private val statsdHost: String by config {
+        "JibriConfig::statsdHost" { Config.legacyConfigSource.statsdHost!! }
+        "jibri.stats.host".from(Config.configSource)
+    }
+
+    private val statsdPort: Int by config {
+        "JibriConfig::statsdPort" { Config.legacyConfigSource.statsdPort!! }
+        "jibri.stats.port".from(Config.configSource)
+    }
+
     private val singleUseMode: Boolean by config {
         "JibriConfig::singleUseMode" { Config.legacyConfigSource.singleUseMode!! }
         "jibri.single-use-mode".from(Config.configSource)
     }
 
-    val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient() } else null
+    val statsDClient: JibriStatsDClient? = if (enableStatsD) { JibriStatsDClient(statsdHost, statsdPort) } else null
 
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from

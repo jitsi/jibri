@@ -84,7 +84,9 @@ jibri {
 Old method: in `config.json`:
 ```json
 {
-    "enable_stats_d": <boolean>
+    "enable_stats_d": <boolean>,
+    "statsd_host": <String>,
+    "statsd_port": <number>
 }
 ```
 New method: in `jibri.conf`:
@@ -92,6 +94,8 @@ New method: in `jibri.conf`:
 jibri {
     stats {
         enable-stats-d = <boolean>
+        host = <string>
+        port = <int>
     }
 }
 ```

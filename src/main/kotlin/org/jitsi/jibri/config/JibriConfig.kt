@@ -176,6 +176,10 @@ data class JibriConfig(
      */
     @JsonProperty("enable_stats_d")
     val enabledStatsD: Boolean? = null,
+    @JsonProperty("statsd_host")
+    val statsdHost: String? = "localhost",
+    @JsonProperty("statsd_port")
+    val statsdPort: Int? = 8125,
     @JsonProperty("finalize_recording_script_path")
     val finalizeRecordingScriptPath: String? = null,
     @JsonProperty("xmpp_environments")
