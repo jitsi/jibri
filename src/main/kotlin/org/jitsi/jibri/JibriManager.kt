@@ -103,12 +103,10 @@ class JibriManager : StatusPublisher<Any>() {
     }
 
     private val statsdHost: String by config {
-        "JibriConfig::statsdHost" { Config.legacyConfigSource.statsdHost!! }
         "jibri.stats.host".from(Config.configSource)
     }
 
     private val statsdPort: Int by config {
-        "JibriConfig::statsdPort" { Config.legacyConfigSource.statsdPort!! }
         "jibri.stats.port".from(Config.configSource)
     }
 
