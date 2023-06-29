@@ -8,6 +8,8 @@ Jibri provides services for recording or streaming a Jitsi Meet conference.
 
 It works by launching a Chrome instance rendered in a virtual framebuffer and capturing and encoding the output with ffmpeg. It is intended to be run on a separate machine (or a VM), with no other applications using the display or audio devices. Only one recording at a time is supported on a single jibri.
 
+**NOTE:** Jibri currently only works with a full-fledged Jitsi Meet installation. Using a different frontend won't work.
+
 # Installing Jibri
 
 ### Installation notes
