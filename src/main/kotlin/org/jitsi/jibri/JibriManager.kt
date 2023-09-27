@@ -85,11 +85,13 @@ data class FileRecordingRequestParams(
 class JibriManager : StatusPublisher<Any>() {
     private val logger = createLogger()
     private var currentActiveService: JibriService? = null
+
     /**
      * Store some arbitrary context optionally sent in the start service request so that we can report it in our
      * status
      */
     var currentEnvironmentContext: EnvironmentContext? = null
+
     /**
      * A function which will be executed the next time this Jibri is idle.  This can be used to schedule work that
      * can't be run while a Jibri session is active

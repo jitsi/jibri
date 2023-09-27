@@ -141,19 +141,25 @@ fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
         xmppDomain = getString("xmpp-domain"),
         baseUrl = if (hasPath("base-url")) {
             getString("base-url")
-        } else null,
+        } else {
+            null
+        },
         controlLogin = getConfig("control-login").toXmppCredentials(),
         controlMuc = getConfig("control-muc").toXmppMuc(),
         sipControlMuc = if (hasPath("sip-control-muc")) {
             getConfig("sip-control-muc").toXmppMuc()
-        } else null,
+        } else {
+            null
+        },
         callLogin = getConfig("call-login").toXmppCredentials(),
         stripFromRoomDomain = getString("strip-from-room-domain"),
         usageTimeoutMins = getDuration("usage-timeout").toMinutes().toInt(),
         trustAllXmppCerts = getBoolean("trust-all-xmpp-certs"),
         securityMode = if (hasPath("security-mode")) {
             getEnum(ConnectionConfiguration.SecurityMode::class.java, "security-mode")
-        } else null
+        } else {
+            null
+        }
     )
 
 data class JibriConfig(

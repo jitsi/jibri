@@ -52,10 +52,12 @@ enum class RunningStatus {
      * state could be [Status.FINISHED] and it's now ready to be shutdown cleanly.
      */
     RUNNING,
+
     /**
      * The process has exited
      */
     EXITED,
+
     /**
      * The process failed to start
      */

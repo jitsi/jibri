@@ -26,7 +26,9 @@ class StreamSink(val url: String, val streamingMaxBitrate: Int, val streamingBuf
     override val path: String = url
     override val format: String = "flv"
     override val options: Array<String> = arrayOf(
-        "-maxrate", "${streamingMaxBitrate}k",
-        "-bufsize", "${streamingBufSize}k"
+        "-maxrate",
+        "${streamingMaxBitrate}k",
+        "-bufsize",
+        "${streamingBufSize}k"
     )
 }

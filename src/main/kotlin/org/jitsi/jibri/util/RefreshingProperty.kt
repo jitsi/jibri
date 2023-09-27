@@ -16,12 +16,11 @@
 
 package org.jitsi.jibri.util
 
+import org.jitsi.utils.logging2.createLogger
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import kotlin.reflect.KProperty
-
-import org.jitsi.utils.logging2.createLogger
 
 /**
  * A property delegate which recreates a value when it's accessed after having been

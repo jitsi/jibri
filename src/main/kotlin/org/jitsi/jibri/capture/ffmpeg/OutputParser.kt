@@ -41,6 +41,7 @@ open class FfmpegOutputStatus(val lineType: OutputLineClassification, val detail
  * Represents a line of ffmpeg output that indicated there was a warning.
  */
 open class FfmpegErrorStatus(val error: JibriError) : FfmpegOutputStatus(OutputLineClassification.ERROR, error.detail)
+
 /**
  * Represents a line of ffmpeg output that indicated a bad RTMP URL
  */

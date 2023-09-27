@@ -19,13 +19,13 @@ package org.jitsi.jibri.capture.ffmpeg.executor
 
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
-import org.jitsi.jibri.status.ErrorScope
+import io.kotest.matchers.types.beInstanceOf
 import org.jitsi.jibri.capture.ffmpeg.FfmpegErrorStatus
 import org.jitsi.jibri.capture.ffmpeg.OutputLineClassification
 import org.jitsi.jibri.capture.ffmpeg.OutputParser
+import org.jitsi.jibri.status.ErrorScope
 
 internal class OutputParserTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf

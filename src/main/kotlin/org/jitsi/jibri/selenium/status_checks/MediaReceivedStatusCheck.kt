@@ -24,9 +24,11 @@ class MediaReceivedStatusCheck(
     private val clock: Clock = Clock.systemDefaultZone()
 ) : CallStatusCheck {
     private val logger = createChildLogger(parentLogger)
+
     // The last timestamp where we saw non-zero media.  We default with the
     // assumption we're receiving media.
     private var timeOfLastMedia = clock.instant()
+
     // The timestamp at which we last saw that all clients transitioned to muted
     private val clientsAllMutedTransitionTime = StateTransitionTimeTracker(clock)
 
@@ -76,6 +78,7 @@ class MediaReceivedStatusCheck(
         val noMediaTimeout: Duration by config {
             "jibri.call-status-checks.no-media-timeout".from(Config.configSource)
         }
+
         /**
          * How long we'll stay in the call if all participants are muted
          */

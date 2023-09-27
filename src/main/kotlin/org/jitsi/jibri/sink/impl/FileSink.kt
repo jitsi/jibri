@@ -39,8 +39,10 @@ class FileSink(recordingsDirectory: Path, callName: String, extension: String = 
     override val path: String = file.toString()
     override val format: String = extension
     override val options: Array<String> = arrayOf(
-        "-profile:v", "main",
-        "-level", "3.1"
+        "-profile:v",
+        "main",
+        "-level",
+        "3.1"
     )
 
     companion object {

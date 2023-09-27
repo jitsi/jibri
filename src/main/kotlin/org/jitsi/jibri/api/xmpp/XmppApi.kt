@@ -141,7 +141,9 @@ class XmppApi(
         PingManager.setDefaultPingInterval(30)
         JibriStatusPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
-            JibriIq.ELEMENT, JibriIq.NAMESPACE, JibriIqProvider()
+            JibriIq.ELEMENT,
+            JibriIq.NAMESPACE,
+            JibriIqProvider()
         )
         updatePresence(jibriStatusManager.overallStatus)
         jibriStatusManager.addStatusHandler(::updatePresence)
