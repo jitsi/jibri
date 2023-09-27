@@ -10,19 +10,19 @@
 
     <properties>
         <selenium.version>3.12.0</selenium.version>
-        <kotlin.version>1.6.21</kotlin.version>
+        <kotlin.version>1.9.10</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
         <jackson.version>2.9.5</jackson.version>
-        <junit.version>5.8.2</junit.version>
-        <kotest.version>5.3.0</kotest.version>
-        <mockk.version>1.10.0</mockk.version>
-        <ktor.version>2.0.2-jitsi</ktor.version>
+        <junit.version>5.10.0</junit.version>
+        <kotest.version>5.7.2</kotest.version>
+        <mockk.version>1.13.8</mockk.version>
+        <ktor.version>2.3.4</ktor.version>
         <jwt.version>0.11.5</jwt.version>
-        <jicoco.version>1.1-113-g4e7ea8b</jicoco.version>
-        <jitsi.utils.version>1.0-119-ga7b23ff</jitsi.utils.version>
+        <jicoco.version>1.1-127-gf49982f</jicoco.version>
+        <jitsi.utils.version>1.0-127-g6c65524</jitsi.utils.version>
     </properties>
 
     <dependencies>
@@ -140,7 +140,7 @@
         </dependency>
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-server-jetty11-jvm</artifactId>
+            <artifactId>ktor-server-jetty-jakarta-jvm</artifactId>
             <version>${ktor.version}</version>
         </dependency>
         <dependency>
@@ -201,13 +201,7 @@
         <dependency>
             <groupId>org.jitsi</groupId>
             <artifactId>jicoco-test-kotlin</artifactId>
-            <version>1.1-79-g6099be5</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jetbrains.kotlin</groupId>
-                    <artifactId>kotlin-stdlib-jdk8</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>${jicoco.version}</version>
         </dependency>
         <dependency>
             <groupId>io.kotest</groupId>
@@ -235,7 +229,7 @@
         </dependency>
         <dependency>
             <groupId>io.mockk</groupId>
-            <artifactId>mockk</artifactId>
+            <artifactId>mockk-jvm</artifactId>
             <version>${mockk.version}</version>
             <scope>test</scope>
         </dependency>
@@ -259,7 +253,7 @@
         <!-- Force ktor-server-test-host to use a compatible jetty version. -->
         <dependency>
             <groupId>io.ktor</groupId>
-            <artifactId>ktor-client-jetty11-jvm</artifactId>
+            <artifactId>ktor-client-jetty-jakarta-jvm</artifactId>
             <version>${ktor.version}</version>
             <scope>test</scope>
         </dependency>
