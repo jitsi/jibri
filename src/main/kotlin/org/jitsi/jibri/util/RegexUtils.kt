@@ -20,6 +20,7 @@ package org.jitsi.jibri.util
 // Regex definitions for parsing an ffmpeg output line
 const val digit = """\d"""
 const val oneOrMoreDigits = "$digit+"
+
 // "1" is treated as a valid decimal (the decimal point and any trailing numbers are not required)
 const val decimal = """$oneOrMoreDigits(\.$oneOrMoreDigits)?"""
 const val string = """[a-zA-Z]+"""

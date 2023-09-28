@@ -90,7 +90,7 @@ class PjsuaClient(
             )
             command.add(
                 "--registrar=$sipScheme:${
-                pjsuaClientParams.sipClientParams.userName.substringAfter('@')
+                    pjsuaClientParams.sipClientParams.userName.substringAfter('@')
                 }"
             )
             command.add("--realm=*")

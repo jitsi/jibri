@@ -27,6 +27,7 @@ const val XMPP_RECONNECTION_FAILED = "xmpp-reconnection-failed"
 const val XMPP_PING_FAILED = "xmpp-ping-failed"
 const val XMPP_CLOSED = "xmpp-closed"
 const val XMPP_CLOSED_ON_ERROR = "xmpp-closed-on-error"
+
 // A recording session was stopped because XMPP disconnected.
 const val STOPPED_ON_XMPP_CLOSED = "stopped-on-xmpp-closed"
 

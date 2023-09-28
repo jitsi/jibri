@@ -70,6 +70,7 @@ data class JibriSessionStatus(
 class JibriStatusManager : StatusPublisher<JibriStatus>() {
     private val logger = Logger.getLogger(this::class.qualifiedName)
     private val subComponentHealth: MutableMap<String, ComponentHealthDetails> = ConcurrentHashMap()
+
     /**
      * The overall [ComponentHealthStatus] for the entire Jibri, calculated by aggregating all sub-component
      * health status

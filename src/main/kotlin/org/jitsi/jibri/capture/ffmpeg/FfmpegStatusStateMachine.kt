@@ -26,6 +26,7 @@ sealed class FfmpegEvent(val outputLine: String) {
     class ErrorLine(val error: JibriError) : FfmpegEvent(error.detail)
     class FinishLine(outputLine: String) : FfmpegEvent(outputLine)
     class OtherLine(outputLine: String) : FfmpegEvent(outputLine)
+
     /**
      * Used any time Ffmpeg has exited, regardless of what [outputLine] contains. However,
      * [error] will be set if [outputLine] contains an error, so that we may describe the

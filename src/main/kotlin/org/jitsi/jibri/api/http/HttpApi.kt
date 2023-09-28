@@ -16,18 +16,19 @@
 
 package org.jitsi.jibri.api.http
 
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.http.HttpStatusCode
-import io.ktor.serialization.jackson.jackson
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import jakarta.ws.rs.core.Response
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
@@ -41,15 +42,14 @@ import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams
-import org.jitsi.jibri.status.JibriSessionStatus
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriFailure
+import org.jitsi.jibri.status.JibriSessionStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.webhooks.v1.WebhookClient
 import org.jitsi.metaconfig.config
 import org.jitsi.utils.logging2.createLogger
 import org.jitsi.xmpp.extensions.jibri.JibriIq
-import jakarta.ws.rs.core.Response
 
 // TODO: this needs to include usageTimeout
 data class StartServiceParams(
@@ -145,7 +145,8 @@ class HttpApi(
                         serviceState.error
                     )
                     val componentSessionStatus = JibriSessionStatus(
-                        serviceParams.sessionId, JibriIq.Status.OFF,
+                        serviceParams.sessionId,
+                        JibriIq.Status.OFF,
                         serviceParams.sipClientParams?.sipAddress,
                         failure,
                         serviceState.error.shouldRetry()
@@ -158,7 +159,8 @@ class HttpApi(
                 }
                 is ComponentState.Finished -> {
                     val componentSessionStatus = JibriSessionStatus(
-                        serviceParams.sessionId, JibriIq.Status.OFF,
+                        serviceParams.sessionId,
+                        JibriIq.Status.OFF,
                         serviceParams.sipClientParams?.sipAddress
                     )
                     logger.info("Current service finished, sending status off $componentSessionStatus")
@@ -166,7 +168,8 @@ class HttpApi(
                 }
                 is ComponentState.Running -> {
                     val componentSessionStatus = JibriSessionStatus(
-                        serviceParams.sessionId, JibriIq.Status.ON,
+                        serviceParams.sessionId,
+                        JibriIq.Status.ON,
                         serviceParams.sipClientParams?.sipAddress
                     )
                     logger.info("Current service started up successfully, sending status on $componentSessionStatus")

@@ -40,6 +40,7 @@ class ProcessWrapper(
     private val runtime: Runtime = Runtime.getRuntime()
 ) {
     private val logger = createChildLogger(parentLogger)
+
     /**
      * The actual underlying [Process] this wrapper
      * wraps

@@ -17,7 +17,6 @@
 
 package org.jitsi.jibri.service.impl
 
-import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
@@ -33,6 +32,7 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
+import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.util.regex.Pattern
 
 const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"

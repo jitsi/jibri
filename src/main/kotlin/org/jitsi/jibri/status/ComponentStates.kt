@@ -39,6 +39,7 @@ enum class ErrorScope {
      * whole 'healthy'
      */
     SESSION,
+
     /**
      * [SYSTEM] errors are unrecoverable, and will put Jibri in an unhealthy state
      */

@@ -28,6 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 open class StatusPublisher<T> {
     private val handlers: MutableList<(T) -> Boolean> = CopyOnWriteArrayList()
+
     /**
      * Add a status handler for this [StatusPublisher].  Handlers
      * will be notified synchronously in the order they were added.

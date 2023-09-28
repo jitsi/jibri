@@ -1,4 +1,4 @@
-// ktlint-disable filename
+
 
 /*
  * Copyright @ 2018 - present 8x8, Inc.
@@ -15,6 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("ktlint:standard:filename")
 
 package org.jitsi.jibri.service
 

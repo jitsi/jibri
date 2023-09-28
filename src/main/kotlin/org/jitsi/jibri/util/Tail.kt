@@ -30,6 +30,7 @@ import java.util.concurrent.Future
  */
 class TailLogic(inputStream: InputStream) {
     private val reader = BufferedReader(InputStreamReader(inputStream))
+
     @Volatile var mostRecentLine: String = ""
 
     fun readLine() {
