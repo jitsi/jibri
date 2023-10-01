@@ -1,4 +1,6 @@
 .idea/
 target/
-*.iml
 .kotlintest
+*~
+*.sw?
+*.iml
