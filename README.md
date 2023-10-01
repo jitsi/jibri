@@ -235,7 +235,7 @@ treated in a special way by the Jitsi Meet web UI.
 
 Edit `/etc/jitsi/jicofo/jicofo.conf`, set the appropriate MUC to look for the
 Jibri Controllers. This should be the same MUC as is referenced in jibri's
-`config.json` file. Restart Jicofo after setting this property. It's also
+`jibri.conf` file. Restart Jicofo after setting this property. It's also
 suggested to set the pending-timeout to 90 seconds, to allow the Jibri some time
 to start up before being marked as failed.
 
@@ -256,16 +256,20 @@ Edit the `/etc/jitsi/meet/yourdomain-config.js` file, add/set the following
 properties:
 
 ```javascript
-fileRecordingsEnabled: true, // If you want to enable file recording
-liveStreamingEnabled: true, // If you want to enable live streaming
-hiddenDomain: 'recorder.yourdomain.com',
-```
+// recording
+config.recordingService = {
+  enabled: true,
+  sharingEnabled: true,
+  hideStorageWarning: false,
+};
 
-Also make sure that in your interface config
-(`/usr/share/jitsi-meet/interface_config.js` by default), the `TOOLBAR_BUTTONS`
-array contains the `recording` value if you want to show the file recording
-button and the `livestreaming` value if you want to show the live streaming
-button.
+// liveStreaming
+config.liveStreaming = {
+  enabled: true,
+};
+
+config.hiddenDomain = "recorder.yourdomain.com";
+```
 
 Once recording is enabled in `yourdomain-config.js`, the recording button will
 become available in the user interface. However, until a valid jibri is seen by
@@ -273,12 +277,12 @@ Jicofo, the mesage "Recording currently unavailable" will be displayed when it
 is pressed. Once a jibri connects successfully, the user will instead be
 prompted to enter a stream key.
 
-**Note**: Make sure to update Jibri's `config.json` appropriately to match any
+**Note**: Make sure to update Jibri's `jibri.conf` appropriately to match any
 config done above.
 
 ## Start Jibri
 
-Once you have configured `config.json`, start the jibri service:
+Once you have configured `jibri.conf`, start the jibri service:
 
 ```bash
 sudo systemctl restart jibri
