@@ -216,10 +216,10 @@ VirtualHost "recorder.yourdomain.com"
   modules_enabled = {
     "ping";
   }
-  authentication = "internal_plain"
+  authentication = "internal_hashed"
 ```
 
-Setup the two accounts jibri will use.
+Setup the two accounts jibri will use:
 
 ```bash
 prosodyctl register jibri auth.yourdomain.com jibriauthpass
