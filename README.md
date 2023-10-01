@@ -57,10 +57,15 @@ installed direclty via apt, but the manual instructions for installing it are as
 follows:
 
 ```bash
-curl https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo sh -c 'gpg --dearmor > /usr/share/keyrings/google-chrome-keyring.gpg'
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+sudo su -l
+apt-get -y install wget curl gnupg jq unzip
+
+curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list
+
 apt-get -y update
 apt-get -y install google-chrome-stable
+apt-mark hold google-chrome-stable
 ```
 
 Add chrome managed policies file and set
@@ -75,13 +80,16 @@ echo '{ "CommandLineFlagSecurityWarningsEnabled": false }' >>/etc/opt/chrome/pol
 Chromedriver is also required and can be installed like so:
 
 ```bash
-CHROME_DRIVER_VERSION=`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`
-wget -N http://chromedriver.storage.googleapis.com/$CHROME_DRIVER_VERSION/chromedriver_linux64.zip -P ~/
-unzip ~/chromedriver_linux64.zip -d ~/
-rm ~/chromedriver_linux64.zip
-sudo mv -f ~/chromedriver /usr/local/bin/chromedriver
-sudo chown root:root /usr/local/bin/chromedriver
-sudo chmod 0755 /usr/local/bin/chromedriver
+CHROME_VER=$(dpkg -s google-chrome-stable | egrep "^Version" | cut -d " " -f2 | cut -d. -f1-3)
+CHROMELAB_LINK="https://googlechromelabs.github.io/chrome-for-testing"
+CHROMEDRIVER_LINK=$(curl -s $CHROMELAB_LINK/known-good-versions-with-downloads.json | jq -r ".versions[].downloads.chromedriver | select(. != null) | .[].url" | grep linux64 | grep "$CHROME_VER" | tail -1)
+wget -O /tmp/chromedriver-linux64.zip $CHROMEDRIVER_LINK
+
+rm -rf /tmp/chromedriver-linux64
+unzip -o /tmp/chromedriver-linux64.zip -d /tmp
+mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/
+chown root:root /usr/local/bin/chromedriver
+chmod 755 /usr/local/bin/chromedriver
 ```
 
 ### Miscellaneous required tools
