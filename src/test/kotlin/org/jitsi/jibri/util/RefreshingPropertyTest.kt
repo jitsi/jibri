@@ -71,7 +71,7 @@ class RefreshingPropertyTest : ShouldSpec({
                     throw NoClassDefFoundError("javax.xml.bind.DatatypeConverter")
                 }
             }
-            val error = shouldThrow<NoClassDefFoundError>() {
+            val error = shouldThrow<NoClassDefFoundError> {
                 println(exObj.prop)
             }
             error.message shouldContain "javax.xml.bind.DatatypeConverter"

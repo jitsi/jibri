@@ -40,13 +40,12 @@ data class XmppCredentials(
     }
 }
 
-fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials =
-    XmppCredentials(
-        domain = getString("domain"),
-        port = if (hasPath("port")) getInt("port") else null,
-        username = getString("username"),
-        password = getString("password")
-    )
+fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials = XmppCredentials(
+    domain = getString("domain"),
+    port = if (hasPath("port")) getInt("port") else null,
+    username = getString("username"),
+    password = getString("password")
+)
 
 data class XmppMuc(
     val domain: String,
@@ -55,12 +54,11 @@ data class XmppMuc(
     val nickname: String
 )
 
-fun com.typesafe.config.Config.toXmppMuc(): XmppMuc =
-    XmppMuc(
-        domain = getString("domain"),
-        roomName = getString("room-name"),
-        nickname = getString("nickname")
-    )
+fun com.typesafe.config.Config.toXmppMuc(): XmppMuc = XmppMuc(
+    domain = getString("domain"),
+    roomName = getString("room-name"),
+    nickname = getString("nickname")
+)
 
 data class XmppEnvironmentConfig(
     /**
@@ -134,33 +132,32 @@ data class XmppEnvironmentConfig(
     val securityMode: ConnectionConfiguration.SecurityMode? = null
 )
 
-fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig =
-    XmppEnvironmentConfig(
-        name = getString("name"),
-        xmppServerHosts = getStringList("xmpp-server-hosts"),
-        xmppDomain = getString("xmpp-domain"),
-        baseUrl = if (hasPath("base-url")) {
-            getString("base-url")
-        } else {
-            null
-        },
-        controlLogin = getConfig("control-login").toXmppCredentials(),
-        controlMuc = getConfig("control-muc").toXmppMuc(),
-        sipControlMuc = if (hasPath("sip-control-muc")) {
-            getConfig("sip-control-muc").toXmppMuc()
-        } else {
-            null
-        },
-        callLogin = getConfig("call-login").toXmppCredentials(),
-        stripFromRoomDomain = getString("strip-from-room-domain"),
-        usageTimeoutMins = getDuration("usage-timeout").toMinutes().toInt(),
-        trustAllXmppCerts = getBoolean("trust-all-xmpp-certs"),
-        securityMode = if (hasPath("security-mode")) {
-            getEnum(ConnectionConfiguration.SecurityMode::class.java, "security-mode")
-        } else {
-            null
-        }
-    )
+fun com.typesafe.config.Config.toXmppEnvironment(): XmppEnvironmentConfig = XmppEnvironmentConfig(
+    name = getString("name"),
+    xmppServerHosts = getStringList("xmpp-server-hosts"),
+    xmppDomain = getString("xmpp-domain"),
+    baseUrl = if (hasPath("base-url")) {
+        getString("base-url")
+    } else {
+        null
+    },
+    controlLogin = getConfig("control-login").toXmppCredentials(),
+    controlMuc = getConfig("control-muc").toXmppMuc(),
+    sipControlMuc = if (hasPath("sip-control-muc")) {
+        getConfig("sip-control-muc").toXmppMuc()
+    } else {
+        null
+    },
+    callLogin = getConfig("call-login").toXmppCredentials(),
+    stripFromRoomDomain = getString("strip-from-room-domain"),
+    usageTimeoutMins = getDuration("usage-timeout").toMinutes().toInt(),
+    trustAllXmppCerts = getBoolean("trust-all-xmpp-certs"),
+    securityMode = if (hasPath("security-mode")) {
+        getEnum(ConnectionConfiguration.SecurityMode::class.java, "security-mode")
+    } else {
+        null
+    }
+)
 
 data class JibriConfig(
     @JsonProperty("jibri_id")
