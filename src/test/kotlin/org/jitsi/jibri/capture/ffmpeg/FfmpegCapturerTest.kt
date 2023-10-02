@@ -55,9 +55,9 @@ internal class FfmpegCapturerTest : ShouldSpec() {
     private val sink: Sink = mockk()
     private val logger: Logger = mockk(relaxed = true)
 
-    private val FFMPEG_ENCODING_STATE = ProcessState(ProcessRunning(), "frame=42")
-    private val FFMPEG_ERROR_STATE = ProcessState(ProcessExited(255), "rtmp://blah Input/output error")
-    private val FFMPEG_FAILED_TO_START = ProcessState(ProcessFailedToStart(), "Failed to start")
+    private val ffmpegEncodingState = ProcessState(ProcessRunning(), "frame=42")
+    private val ffmpegErrorState = ProcessState(ProcessExited(255), "rtmp://blah Input/output error")
+    private val ffmpegFailedToStart = ProcessState(ProcessFailedToStart(), "Failed to start")
 
     private fun createCapturer(): FfmpegCapturer {
         val capturer = FfmpegCapturer(logger, osDetector, ffmpeg)
@@ -81,7 +81,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
             val ffmpegCapturer = createCapturer()
             context("when launching ffmpeg succeeds") {
                 every { ffmpeg.launch(any(), any()) } answers {
-                    ffmpegStateHandler.captured(FFMPEG_ENCODING_STATE)
+                    ffmpegStateHandler.captured(ffmpegEncodingState)
                 }
                 ffmpegCapturer.start(sink)
                 context("capturer") {
@@ -99,7 +99,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     }
                 }
                 context("and then encounters an error") {
-                    ffmpegStateHandler.captured(FFMPEG_ERROR_STATE)
+                    ffmpegStateHandler.captured(ffmpegErrorState)
                     context("capturer") {
                         should("report its status as error") {
                             capturerStateUpdates.last().shouldBeInstanceOf<ComponentState.Error>()
@@ -133,7 +133,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
             }
             context("when ffmpeg fails to start") {
                 every { ffmpeg.launch(any(), any()) } answers {
-                    ffmpegStateHandler.captured(FFMPEG_FAILED_TO_START)
+                    ffmpegStateHandler.captured(ffmpegFailedToStart)
                 }
                 ffmpegCapturer.start(sink)
                 context("capturer") {

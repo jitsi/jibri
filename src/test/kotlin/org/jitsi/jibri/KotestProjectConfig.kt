@@ -22,7 +22,7 @@ import io.kotest.extensions.junitxml.JunitXmlReporter
 
 class KotestProjectConfig : AbstractProjectConfig() {
     override fun extensions(): List<Extension> = listOf(
-        /**
+        /*
          * The JunitXmlReporter writes a junit5 compatible unit test output
          * but with the full scope of tests as their name, unlike the default
          * one which only includes the 'should' block from kotest tests as

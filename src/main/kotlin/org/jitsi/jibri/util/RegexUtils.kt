@@ -18,17 +18,17 @@
 package org.jitsi.jibri.util
 
 // Regex definitions for parsing an ffmpeg output line
-const val digit = """\d"""
-const val oneOrMoreDigits = "$digit+"
+const val DIGIT = """\d"""
+const val ONE_OR_MORE_DIGITS = "$DIGIT+"
 
 // "1" is treated as a valid decimal (the decimal point and any trailing numbers are not required)
-const val decimal = """$oneOrMoreDigits(\.$oneOrMoreDigits)?"""
-const val string = """[a-zA-Z]+"""
-const val dataSize = "$oneOrMoreDigits$string"
-const val timestamp = """$oneOrMoreDigits\:$oneOrMoreDigits\:$oneOrMoreDigits\.$oneOrMoreDigits"""
-const val bitrate = """$decimal$string\/$string"""
-const val speed = "${decimal}x"
-const val space = """\s"""
-const val nonSpace = """\S"""
-const val zeroOrMoreSpaces = "$space*"
-const val oneOrMoreNonSpaces = "$nonSpace+"
+const val DECIMAL = """$ONE_OR_MORE_DIGITS(\.$ONE_OR_MORE_DIGITS)?"""
+const val STRING = """[a-zA-Z]+"""
+const val DATA_SIZE = "$ONE_OR_MORE_DIGITS$STRING"
+const val TIMESTAMP = """$ONE_OR_MORE_DIGITS\:$ONE_OR_MORE_DIGITS\:$ONE_OR_MORE_DIGITS\.$ONE_OR_MORE_DIGITS"""
+const val BITRATE = """$DECIMAL$STRING\/$STRING"""
+const val SPEED = "${DECIMAL}x"
+const val SPACE = """\s"""
+const val NON_SPACE = """\S"""
+const val ZERO_OR_MORE_SPACES = "$SPACE*"
+const val ONE_OR_MORE_NON_SPACES = "$NON_SPACE+"

@@ -16,9 +16,9 @@
 package org.jitsi.jibri.capture.ffmpeg
 
 import org.jitsi.jibri.error.JibriError
-import org.jitsi.jibri.util.oneOrMoreDigits
-import org.jitsi.jibri.util.oneOrMoreNonSpaces
-import org.jitsi.jibri.util.zeroOrMoreSpaces
+import org.jitsi.jibri.util.ONE_OR_MORE_DIGITS
+import org.jitsi.jibri.util.ONE_OR_MORE_NON_SPACES
+import org.jitsi.jibri.util.ZERO_OR_MORE_SPACES
 import java.util.regex.Pattern
 
 enum class OutputLineClassification {
@@ -67,15 +67,16 @@ class OutputParser {
          * a fieldName or fieldValue).  This pattern will parse all fields from an ffmpeg output
          * string
          */
-        private const val ffmpegOutputFieldName = oneOrMoreNonSpaces
-        private const val ffmpegOutputFieldValue = oneOrMoreNonSpaces
-        private const val ffmpegOutputField =
-            "$zeroOrMoreSpaces($ffmpegOutputFieldName)$zeroOrMoreSpaces=$zeroOrMoreSpaces($ffmpegOutputFieldValue)"
+        private const val FFMPEG_OUTPUT_FIELD_NAME = ONE_OR_MORE_NON_SPACES
+        private const val FFMPEG_OUTPUT_FIELD_VALUE = ONE_OR_MORE_NON_SPACES
+        private const val FFMPEG_OUTPUT_FIELD =
+            "$ZERO_OR_MORE_SPACES($FFMPEG_OUTPUT_FIELD_NAME)$ZERO_OR_MORE_SPACES=" +
+                "$ZERO_OR_MORE_SPACES($FFMPEG_OUTPUT_FIELD_VALUE)"
 
-        private const val ffmpegEncodingLine = "($ffmpegOutputField)+$zeroOrMoreSpaces"
-        private const val ffmpegExitedLine = "Exiting.*signal$zeroOrMoreSpaces($oneOrMoreDigits).*"
-        private const val badRtmpUrl = "rtmp://.*Input/output error"
-        private const val brokenPipe = ".*Broken pipe.*"
+        private const val FFMPEG_ENCODING_LINE = "($FFMPEG_OUTPUT_FIELD)+$ZERO_OR_MORE_SPACES"
+        private const val FFMPEG_EXITED_LINE = "Exiting.*signal$ZERO_OR_MORE_SPACES($ONE_OR_MORE_DIGITS).*"
+        private const val BAD_RTMP_URL = "rtmp://.*Input/output error"
+        private const val BROKEN_PIPE = ".*Broken pipe.*"
 
         /**
          * Errors are done a bit differently, as different errors have different scopes.  For example,
@@ -84,8 +85,8 @@ class OutputParser {
          * to a function which takes in the output line and returns an [FfmpegErrorStatus]
          */
         private val errorTypes = mapOf<String, (String) -> FfmpegErrorStatus>(
-            badRtmpUrl to ::BadRtmpUrlStatus,
-            brokenPipe to ::BrokenPipeStatus
+            BAD_RTMP_URL to ::BadRtmpUrlStatus,
+            BROKEN_PIPE to ::BrokenPipeStatus
         )
 
         /**
@@ -93,7 +94,7 @@ class OutputParser {
          */
         fun parse(outputLine: String): FfmpegOutputStatus {
             // First we'll check if the output represents that ffmpeg has exited
-            val exitedMatcher = Pattern.compile(ffmpegExitedLine).matcher(outputLine)
+            val exitedMatcher = Pattern.compile(FFMPEG_EXITED_LINE).matcher(outputLine)
             if (exitedMatcher.matches()) {
                 return when (exitedMatcher.group(1).toInt()) {
                     // 2 is the signal we pass to stop ffmpeg
@@ -102,7 +103,7 @@ class OutputParser {
                 }
             }
             // Check if the output is a normal, encoding output
-            val encodingLineMatcher = Pattern.compile(ffmpegEncodingLine).matcher(outputLine)
+            val encodingLineMatcher = Pattern.compile(FFMPEG_ENCODING_LINE).matcher(outputLine)
             if (encodingLineMatcher.matches()) {
 //                val encodingFieldsMatcher = Pattern.compile(ffmpegOutputField).matcher(outputLine)
 //                val fields = mutableMapOf<String, Any>()
