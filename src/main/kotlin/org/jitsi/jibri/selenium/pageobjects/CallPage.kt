@@ -265,14 +265,16 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
 
     /**
      * Returns a count of how many remote participants are totally muted (audio
-     * and video).
+     * and video). We ignore jigasi participants as they maybe muted in their presence
+     * but also hard muted via the device, and we later ignore their state.
      */
     fun numRemoteParticipantsMuted(): Int {
         val result = driver.executeScript(
             """
             try {
                 return APP.conference._room.getParticipants()
-                    .filter(participant => participant.isAudioMuted() && participant.isVideoMuted())
+                    .filter(participant => participant.isAudioMuted() && participant.isVideoMuted() 
+                                && participant.getProperty("features_jigasi") !== true)
                     .length;
             } catch (e) {
                 return e.message;
