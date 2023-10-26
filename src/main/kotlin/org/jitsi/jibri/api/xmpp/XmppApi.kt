@@ -53,6 +53,7 @@ import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientConfiguration
 import org.jitsi.xmpp.mucclient.MucClientManager
+import org.jitsi.xmpp.util.XmlStringBuilderUtil.Companion.toStringOpt
 import org.jivesoftware.smack.ConnectionConfiguration
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.StanzaError
@@ -235,7 +236,7 @@ class XmppApi(
      * that this [JibriIq] was received on.
      */
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
-        logger.info("Received JibriIq ${jibriIq.toXML()} from environment $mucClient")
+        logger.info("Received JibriIq ${jibriIq.toStringOpt()} from environment $mucClient")
         val xmppEnvironment = getXmppEnvironment(mucClient)
             ?: return IQ.createErrorResponse(
                 jibriIq,
@@ -318,7 +319,7 @@ class XmppApi(
                         shouldRetry = serviceState.error.shouldRetry()
                         logger.info(
                             "Current service had an error ${serviceState.error}, " +
-                                "sending error iq ${toXML()}"
+                                "sending error iq ${toStringOpt()}"
                         )
                         mucClient.sendStanza(this)
                     }
@@ -326,14 +327,14 @@ class XmppApi(
                 is ComponentState.Finished -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
                         sipAddress = request.sipAddress
-                        logger.info("Current service finished, sending off iq ${toXML()}")
+                        logger.info("Current service finished, sending off iq ${toStringOpt()}")
                         mucClient.sendStanza(this)
                     }
                 }
                 is ComponentState.Running -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.ON)) {
                         sipAddress = request.sipAddress
-                        logger.info("Current service started up successfully, sending on iq ${toXML()}")
+                        logger.info("Current service started up successfully, sending on iq ${toStringOpt()}")
                         mucClient.sendStanza(this)
                     }
                 }
