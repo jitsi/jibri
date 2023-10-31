@@ -36,6 +36,7 @@ fun getFfmpegCommandLinux(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink
         *sink.options, "-pix_fmt", "yuv420p", "-r", ffmpegExecutorParams.framerate.toString(),
         "-crf", ffmpegExecutorParams.h264ConstantRateFactor.toString(),
         "-g", ffmpegExecutorParams.gopSize.toString(), "-tune", "zerolatency",
+        "-timestamp", "now",
         "-f", sink.format, sink.path
     )
 }
@@ -60,6 +61,7 @@ fun getFfmpegCommandMac(ffmpegExecutorParams: FfmpegExecutorParams, sink: Sink):
         "-c:v", "libx264", "-preset", ffmpegExecutorParams.videoEncodePreset,
         *sink.options, "-pix_fmt", "yuv420p", "-crf", ffmpegExecutorParams.h264ConstantRateFactor.toString(),
         "-g", ffmpegExecutorParams.gopSize.toString(), "-tune", "zerolatency",
+        "-timestamp", "now",
         "-f", sink.format, sink.path
     )
 }
