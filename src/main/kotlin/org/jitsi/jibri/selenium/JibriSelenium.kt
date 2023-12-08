@@ -166,6 +166,7 @@ val RECORDING_URL_OPTIONS = listOf(
  */
 class JibriSelenium(
     parentLogger: Logger,
+    val sessionId: String,
     private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions()
 ) : StatusPublisher<ComponentState>() {
     private val logger = createChildLogger(parentLogger)
@@ -187,6 +188,10 @@ class JibriSelenium(
     init {
         System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
         val chromeOptions = ChromeOptions()
+        val prefs = HashMap<String, Any>()
+        prefs["download.default_directory"] = "/recordings/$sessionId"
+        prefs["download.prompt_for_download"] = false
+        chromeOptions.setExperimentalOption("prefs", prefs)
         chromeOptions.addArguments(chromeOpts)
         chromeOptions.setExperimentalOption("w3c", false)
         chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
@@ -364,6 +369,8 @@ class JibriSelenium(
         chromeDriver.quit()
         logger.info("Chrome driver quit")
     }
+
+    fun getChromeDriver(): ChromeDriver = chromeDriver
 
     companion object {
         private val browserOutputLogger = getLoggerWithHandler("browser", BrowserFileHandler())
