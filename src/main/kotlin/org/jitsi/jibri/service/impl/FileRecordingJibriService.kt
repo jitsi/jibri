@@ -129,6 +129,10 @@ class FileRecordingJibriService(
         "jibri.recording.finalize-script".from(Config.configSource)
     }
 
+    private val recordingMode: String by config {
+        "jibri.recording.mode".from(Config.configSource)
+    }
+
     /**
      * The directory in which we'll store recordings for this particular session.  This is a directory that will
      * be nested within [recordingsDirectory].
@@ -176,8 +180,13 @@ class FileRecordingJibriService(
                 jibriSelenium.addToPresence("session_id", fileRecordingParams.sessionId)
                 jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
                 jibriSelenium.sendPresence()
-                startAndStopRecordingWithSelenium(driver = jibriSelenium.getChromeDriver())
-                publishStatus(status = ComponentState.Running)
+                when (recordingMode) {
+                    "ffmpeg" -> capturer.start(sink)
+                    else -> {
+                        startAndStopRecordingWithSelenium(driver = jibriSelenium.getChromeDriver())
+                        publishStatus(status = ComponentState.Running)
+                    }
+                }
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)
                 publishStatus(ComponentState.Error(ErrorSettingPresenceFields))
@@ -187,32 +196,38 @@ class FileRecordingJibriService(
 
     override fun stop() {
         logger.info("Stopping capturer")
-        startAndStopRecordingWithSelenium(driver = jibriSelenium.getChromeDriver(), type = "stop")
+        when (recordingMode) {
+            "ffmpeg" -> capturer.stop()
+            else -> startAndStopRecordingWithSelenium(driver = jibriSelenium.getChromeDriver(), type = "stop")
+        }
         logger.info("Quitting selenium")
+        when {
+            recordingMode != "ffmpeg" -> {
+                var found = false
+                val startTime: Long = System.currentTimeMillis()
+                while (!Files.exists(sink.file)) {
+                    sessionRecordingDirectory.listDirectoryEntries()
+                        .forEach { entry: Path ->
+                            run {
+                                val fileName: Path = entry.fileName
+                                when {
+                                    fileName.toString().endsWith(suffix = ".webm") ->
+                                        logger.info { "webm found: $entry. File is renaming from: ${sink.file}" }
+                                            .run {
+                                                found = true
+                                                sink.file = sessionRecordingDirectory.resolve(entry)
+                                                sink.format = "webm"
+                                            }
 
-        var found = false
-        val startTime: Long = System.currentTimeMillis()
-        while (!Files.exists(sink.file)) {
-            sessionRecordingDirectory.listDirectoryEntries()
-                .forEach { entry: Path ->
-                    run {
-                        val fileName: Path = entry.fileName
-                        when {
-                            fileName.toString().endsWith(suffix = ".webm") ->
-                                logger.info { "webm found: $entry. File is renaming from: ${sink.file}" }
-                                    .run {
-                                        found = true
-                                        sink.file = sessionRecordingDirectory.resolve(entry)
-                                        sink.format = "webm"
-                                    }
-
-                            else -> logger.warn { "Unhandled file: $fileName" }
+                                    else -> logger.warn { "Unhandled file: $fileName" }
+                                }
+                            }
                         }
-                    }
+                    if (found || System.currentTimeMillis() - startTime > 30 * 1_000)
+                        break
+                    TimeUnit.SECONDS.sleep(1).also { logger.info { "Media was not found, sleeping..." } }
                 }
-            if (found || System.currentTimeMillis() - startTime > 30 * 1_000)
-                break
-            TimeUnit.SECONDS.sleep(1).also { logger.info { "Media was not found, sleeping..." } }
+            }
         }
 
         // It's possible that the service was stopped before we even wrote anything, so check if we actually wrote
