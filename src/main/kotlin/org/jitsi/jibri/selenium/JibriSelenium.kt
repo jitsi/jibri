@@ -32,6 +32,7 @@ import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.scheduleAtFixedRate
 import org.jitsi.jibri.util.getLoggerWithHandler
+import org.jitsi.jibri.util.randomAlphaNum
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
 import org.jitsi.utils.logging2.Logger
@@ -307,8 +308,12 @@ class JibriSelenium(
                     "callStatsUserName" to callStatsUsername
                 )
                 xmppCredentials?.let {
-                    localStorageValues["xmpp_username_override"] =
-                        "${xmppCredentials.username}@${xmppCredentials.domain}"
+                    val username = if (xmppCredentials.randomizeUsername) {
+                        "${xmppCredentials.username}-${randomAlphaNum(8)}"
+                    } else {
+                        xmppCredentials.username
+                    }
+                    localStorageValues["xmpp_username_override"] = "$username@${xmppCredentials.domain}"
                     localStorageValues["xmpp_password_override"] = xmppCredentials.password
                 }
                 passcode?.let {
