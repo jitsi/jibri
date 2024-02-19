@@ -74,11 +74,12 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return result
     }
 
+    /** Returns the number of participants excluding hidden participants. */
     fun getNumParticipants(): Int {
         val result = driver.executeScript(
             """
             try {
-                return APP.conference.membersCount;
+                return (APP.conference._room.getParticipants().$PARTICIPANT_FILTER_SCRIPT).length + 1;
             } catch (e) {
                 return e.message;
             }
@@ -352,5 +353,13 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             is String -> false
             else -> true
         }
+    }
+
+    companion object {
+        /**
+         * Javascript to apply a filter to the list of participants to exclude ones which should be hidden from jibri.
+         */
+        const val PARTICIPANT_FILTER_SCRIPT =
+            "filter(p => !p.isHidden() || !(config.iAmRecorder && p.isHiddenFromRecorder()))"
     }
 }
