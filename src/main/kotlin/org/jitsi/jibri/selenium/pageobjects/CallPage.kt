@@ -204,13 +204,15 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     /**
-     * Return how many of the participants are Jigasi clients
+     * Return how many of the participants are Jigasi clients.
+     * Note: excludes any participants that are hidden (for example transcribers)
      */
     fun numRemoteParticipantsJigasi(): Int {
         val result = driver.executeScript(
             """
             try {
                 return APP.conference._room.getParticipants()
+                    .$PARTICIPANT_FILTER_SCRIPT
                     .filter(participant => participant.getProperty("features_jigasi") == true)
                     .length;
             } catch (e) {
@@ -268,12 +270,14 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
      * Returns a count of how many remote participants are totally muted (audio
      * and video). We ignore jigasi participants as they maybe muted in their presence
      * but also hard muted via the device, and we later ignore their state.
+     * Note: Excludes hidden participants.
      */
     fun numRemoteParticipantsMuted(): Int {
         val result = driver.executeScript(
             """
             try {
                 return APP.conference._room.getParticipants()
+                    .$PARTICIPANT_FILTER_SCRIPT
                     .filter(participant => participant.isAudioMuted() && participant.isVideoMuted() 
                                 && participant.getProperty("features_jigasi") !== true)
                     .length;
