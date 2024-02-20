@@ -363,6 +363,6 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         /**
          * Javascript to apply a filter to the list of participants to exclude ones which should be hidden from jibri.
          */
-        const val PARTICIPANT_FILTER_SCRIPT = "filter(p => !(p.isHidden() && p.isHiddenFromRecorder()))"
+        const val PARTICIPANT_FILTER_SCRIPT = "filter(p => !(p.isHidden() || p.isHiddenFromRecorder()))"
     }
 }
