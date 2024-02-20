@@ -39,13 +39,14 @@ class MediaReceivedStatusCheck(
         val numParticipants = callPage.getNumParticipants() - 1
         val numMutedParticipants = callPage.numRemoteParticipantsMuted()
         val numJigasiParticipants = callPage.numRemoteParticipantsJigasi()
+        val numHiddenParticipants = callPage.numHiddenParticipants()
         // We don't get any mute state for Jigasi participants, so to prevent timing out when only Jigasi participants
         // may be speaking, always count them as "muted"
         val allClientsMuted = (numMutedParticipants + numJigasiParticipants) == numParticipants
         logger.info(
             "Jibri client receive bitrates: $bitrates, num participants: $numParticipants, " +
                 "numMutedParticipants: $numMutedParticipants, numJigasis: $numJigasiParticipants, " +
-                "all clients muted? $allClientsMuted"
+                "numHiddenParticipants: $numHiddenParticipants, all clients muted? $allClientsMuted"
         )
         clientsAllMutedTransitionTime.maybeUpdate(allClientsMuted)
         val downloadBitrate = bitrates.getOrDefault("download", 0L) as Long

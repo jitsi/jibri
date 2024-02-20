@@ -229,6 +229,28 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
     }
 
+    /** How many of the participants are hidden or hiddenFromRecorder. */
+    fun numHiddenParticipants(): Int {
+        val result = driver.executeScript(
+            """
+            try {
+                return APP.conference._room.getParticipants()
+                    .filter(p => (p.isHidden() || p.isHiddenFromRecorder())
+                    .length;
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin()
+        )
+        return when (result) {
+            is Number -> result.toInt()
+            else -> {
+                logger.error("error running numHiddenParticipants script: $result ${result::class.java}")
+                0
+            }
+        }
+    }
+
     /**
      * Return true if ICE is connected.
      */
