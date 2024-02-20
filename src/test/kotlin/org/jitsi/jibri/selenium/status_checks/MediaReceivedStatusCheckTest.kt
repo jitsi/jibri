@@ -17,7 +17,9 @@ class MediaReceivedStatusCheckTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val clock: FakeClock = spyk()
-    private val callPage: CallPage = mockk()
+    private val callPage: CallPage = mockk {
+        every { numHiddenParticipants() } returns 0
+    }
     private val logger: Logger = mockk(relaxed = true)
 
     private val check = MediaReceivedStatusCheck(logger, clock)
