@@ -33,7 +33,8 @@ data class XmppCredentials(
     val domain: String = "",
     val port: Int? = null,
     val username: String = "",
-    val password: String = ""
+    val password: String = "",
+    val randomizeUsername: Boolean = false
 ) {
     override fun toString(): String {
         return "XmppCredentials(domain=$domain, port=$port, username=$username, password=*****)"
@@ -44,7 +45,8 @@ fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials = XmppCreden
     domain = getString("domain"),
     port = if (hasPath("port")) getInt("port") else null,
     username = getString("username"),
-    password = getString("password")
+    password = getString("password"),
+    randomizeUsername = getBoolean("randomize-username")
 )
 
 data class XmppMuc(
