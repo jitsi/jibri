@@ -235,7 +235,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             """
             try {
                 return APP.conference._room.getParticipants()
-                    .filter(p => (p.isHidden() || p.isHiddenFromRecorder())
+                    .filter(p => (p.isHidden() || p.isHiddenFromRecorder()))
                     .length;
             } catch (e) {
                 return e.message;
