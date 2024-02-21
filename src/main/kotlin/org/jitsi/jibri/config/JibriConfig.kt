@@ -46,7 +46,7 @@ fun com.typesafe.config.Config.toXmppCredentials(): XmppCredentials = XmppCreden
     port = if (hasPath("port")) getInt("port") else null,
     username = getString("username"),
     password = getString("password"),
-    randomizeUsername = getBoolean("randomize-username")
+    randomizeUsername = if (hasPath("randomize-username")) getBoolean("randomize-username") else false
 )
 
 data class XmppMuc(
