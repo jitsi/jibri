@@ -119,7 +119,7 @@ Install the latest jibri
 sudo apt-get install jibri
 ```
 
-### User, group
+### User and Group
 
 - Jibri is currently meant to be run as a regular system user. This example
   creatively uses username 'jibri' and group name 'jibri', but any user will do.
