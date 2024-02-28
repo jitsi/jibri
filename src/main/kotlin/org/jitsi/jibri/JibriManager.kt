@@ -20,6 +20,7 @@ package org.jitsi.jibri
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
+import org.jitsi.jibri.metrics.StatsConfig
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatusHandler
@@ -99,26 +100,13 @@ class JibriManager : StatusPublisher<Any>() {
     private var pendingIdleFunc: () -> Unit = {}
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
 
-    private val enableStatsD: Boolean by config {
-        "JibriConfig::enableStatsD" { Config.legacyConfigSource.enabledStatsD!! }
-        "jibri.stats.enable-stats-d".from(Config.configSource)
-    }
-
-    private val statsdHost: String by config {
-        "jibri.stats.host".from(Config.configSource)
-    }
-
-    private val statsdPort: Int by config {
-        "jibri.stats.port".from(Config.configSource)
-    }
-
     private val singleUseMode: Boolean by config {
         "JibriConfig::singleUseMode" { Config.legacyConfigSource.singleUseMode!! }
         "jibri.single-use-mode".from(Config.configSource)
     }
 
-    val statsDClient: JibriStatsDClient? = if (enableStatsD) {
-        JibriStatsDClient(statsdHost, statsdPort)
+    val statsDClient: JibriStatsDClient? = if (StatsConfig.enableStatsD) {
+        JibriStatsDClient(StatsConfig.statsdHost, StatsConfig.statsdPort)
     } else {
         null
     }
