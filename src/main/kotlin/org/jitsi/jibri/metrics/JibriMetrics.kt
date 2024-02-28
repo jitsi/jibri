@@ -43,7 +43,7 @@ class JibriMetrics {
         }
     }
 
-    fun busy(type: RecordingSinkType) {
+    fun requestWhileBusy(type: RecordingSinkType) {
         incrementStatsDCounter(ASPECT_BUSY, type.getTag())
         requestsWhileBusy.inc()
     }

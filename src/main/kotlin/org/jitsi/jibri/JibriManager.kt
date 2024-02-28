@@ -108,7 +108,7 @@ class JibriManager : StatusPublisher<Any>() {
     private fun throwIfBusy(sinkType: RecordingSinkType) {
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
-            jibriMetrics.busy(sinkType)
+            jibriMetrics.requestWhileBusy(sinkType)
             throw JibriBusyException()
         }
     }
