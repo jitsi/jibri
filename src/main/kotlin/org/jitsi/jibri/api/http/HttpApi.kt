@@ -16,6 +16,7 @@
 
 package org.jitsi.jibri.api.http
 
+import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
@@ -24,10 +25,12 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import io.prometheus.client.exporter.common.TextFormat
 import jakarta.ws.rs.core.Response
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
@@ -36,6 +39,8 @@ import org.jitsi.jibri.RecordingSinkType
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.JibriHealth
+import org.jitsi.jibri.metrics.JibriMetricsContainer
+import org.jitsi.jibri.metrics.StatsConfig
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
@@ -128,6 +133,31 @@ class HttpApi(
                     logger.debug { "Got stop service request" }
                     jibriManager.stopService()
                     call.respond(HttpStatusCode.OK)
+                }
+            }
+            if (StatsConfig.enablePrometheus) {
+                logger.info("Enabling prometheus interface at :$port/metrics")
+                get("/metrics") {
+                    val accept = call.request.headers["Accept"]
+                    when {
+                        accept?.startsWith("application/openmetrics-text") == true ->
+                            call.respondText(
+                                JibriMetricsContainer.getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100),
+                                contentType = ContentType.parse(TextFormat.CONTENT_TYPE_OPENMETRICS_100)
+                            )
+
+                        accept?.startsWith("text/plain") == true ->
+                            call.respondText(
+                                JibriMetricsContainer.getPrometheusMetrics(TextFormat.CONTENT_TYPE_004),
+                                contentType = ContentType.parse(TextFormat.CONTENT_TYPE_004)
+                            )
+
+                        else ->
+                            call.respondText(
+                                JibriMetricsContainer.jsonString,
+                                contentType = ContentType.parse("application/json")
+                            )
+                    }
                 }
             }
         }

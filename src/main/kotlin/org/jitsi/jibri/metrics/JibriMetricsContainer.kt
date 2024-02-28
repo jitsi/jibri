@@ -16,24 +16,6 @@
  */
 package org.jitsi.jibri.metrics
 
-import org.jitsi.jibri.config.Config
-import org.jitsi.metaconfig.config
+import org.jitsi.metrics.MetricsContainer
 
-object StatsConfig {
-    val enableStatsD: Boolean by config {
-        "JibriConfig::enableStatsD" { Config.legacyConfigSource.enabledStatsD!! }
-        "jibri.stats.enable-stats-d".from(Config.configSource)
-    }
-
-    val statsdHost: String by config {
-        "jibri.stats.host".from(Config.configSource)
-    }
-
-    val statsdPort: Int by config {
-        "jibri.stats.port".from(Config.configSource)
-    }
-
-    val enablePrometheus: Boolean by config {
-        "jibri.stats.prometheus.enabled".from(Config.configSource)
-    }
-}
+object JibriMetricsContainer : MetricsContainer(namespace = "jitsi_jibri")

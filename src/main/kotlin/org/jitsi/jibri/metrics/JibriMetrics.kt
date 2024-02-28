@@ -42,46 +42,104 @@ class JibriMetrics {
 
     fun busy(type: RecordingSinkType) {
         incrementStatsDCounter(ASPECT_BUSY, type.getTag())
+        requestsWhileBusy.inc()
     }
 
     fun start(type: RecordingSinkType) {
         incrementStatsDCounter(ASPECT_START, type.getTag())
+        sessionsStarted.inc()
     }
 
     fun stop(type: RecordingSinkType) {
         incrementStatsDCounter(ASPECT_STOP, type.getTag())
+        sessionsStopped.inc()
     }
 
     fun error(type: RecordingSinkType) {
         incrementStatsDCounter(ASPECT_ERROR, type.getTag())
+        errors.inc()
     }
 
     fun xmppConnected(tags: String) {
         incrementStatsDCounter(XMPP_CONNECTED, tags)
+        xmppConnected.inc()
     }
 
     fun xmppReconnecting(tags: String) {
         incrementStatsDCounter(XMPP_RECONNECTING, tags)
+        xmppReconnecting.inc()
     }
 
     fun xmppReconnectionFailed(tags: String) {
         incrementStatsDCounter(XMPP_RECONNECTION_FAILED, tags)
+        xmppReconnectionFailed.inc()
     }
 
     fun xmppPingFailed(tags: String) {
         incrementStatsDCounter(XMPP_PING_FAILED, tags)
+        xmppPingFailed.inc()
     }
 
     fun xmppClosed(tags: String) {
         incrementStatsDCounter(XMPP_CLOSED, tags)
+        xmppClosed.inc()
     }
 
     fun xmppClosedOnError(tags: String) {
         incrementStatsDCounter(XMPP_CLOSED_ON_ERROR, tags)
+        xmppClosedOnError.inc()
     }
 
     fun stoppedOnXmppClosed(tags: String) {
         incrementStatsDCounter(STOPPED_ON_XMPP_CLOSED, tags)
+        stoppedOnXmppClosed.inc()
+    }
+
+    companion object {
+        val sessionsStarted = JibriMetricsContainer.registerCounter(
+            "sessions_started",
+            "Number of times a session was started."
+        )
+        val sessionsStopped = JibriMetricsContainer.registerCounter(
+            "sessions_stopped",
+            "Number of times a session was stopped."
+        )
+        val errors = JibriMetricsContainer.registerCounter(
+            "errors",
+            "Number of errors."
+        )
+        val requestsWhileBusy = JibriMetricsContainer.registerCounter(
+            "busy",
+            "Number of times a request was received while the instance was busy."
+        )
+        val xmppConnected = JibriMetricsContainer.registerCounter(
+            "xmpp_connected",
+            "Number of time an XMPP connection connected."
+        )
+        val xmppReconnecting = JibriMetricsContainer.registerCounter(
+            "xmpp_reconnecting",
+            "Number of time an XMPP connection started re-connecting."
+        )
+        val xmppReconnectionFailed = JibriMetricsContainer.registerCounter(
+            "xmpp_reconnection_failed",
+            "Number of time an XMPP re-connection failed."
+        )
+        val xmppPingFailed = JibriMetricsContainer.registerCounter(
+            "xmpp_ping_failed",
+            "Number of time an XMPP ping timed out."
+        )
+        val xmppClosed = JibriMetricsContainer.registerCounter(
+            "xmpp_closed",
+            "Number of time an XMPP connection was closed."
+        )
+        val xmppClosedOnError = JibriMetricsContainer.registerCounter(
+            "xmpp_closed_on_error",
+            "Number of time an XMPP connection was closed on error."
+        )
+        val stoppedOnXmppClosed = JibriMetricsContainer.registerCounter(
+            "stopped_on_xmpp_closed",
+            "Number of time a session was stopped because XMPP disconnected."
+        )
     }
 }
 
