@@ -18,6 +18,9 @@ package org.jitsi.jibri.metrics
 
 import com.timgroup.statsd.NonBlockingStatsDClient
 import org.jitsi.jibri.RecordingSinkType
+import org.jitsi.jibri.status.ComponentBusyStatus
+import org.jitsi.jibri.status.ComponentHealthStatus
+import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.utils.logging2.createLogger
 
 class JibriMetrics {
@@ -95,6 +98,11 @@ class JibriMetrics {
         stoppedOnXmppClosed.inc()
     }
 
+    fun updateStatus(status: JibriStatus) {
+        healthy.set(status.health.healthStatus == ComponentHealthStatus.HEALTHY)
+        recording.set(status.busyStatus == ComponentBusyStatus.BUSY)
+    }
+
     companion object {
         val sessionsStarted = JibriMetricsContainer.registerCounter(
             "sessions_started",
@@ -139,6 +147,14 @@ class JibriMetrics {
         val stoppedOnXmppClosed = JibriMetricsContainer.registerCounter(
             "stopped_on_xmpp_closed",
             "Number of time a session was stopped because XMPP disconnected."
+        )
+        val healthy = JibriMetricsContainer.registerBooleanMetric(
+            "healthy",
+            "Whether the jibri instance is currently healthy."
+        )
+        val recording = JibriMetricsContainer.registerBooleanMetric(
+            "recording",
+            "Whether the jibri instance is currently in use."
         )
     }
 }
