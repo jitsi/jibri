@@ -16,72 +16,72 @@
  */
 package org.jitsi.jibri.metrics
 
+import com.timgroup.statsd.NonBlockingStatsDClient
 import org.jitsi.jibri.RecordingSinkType
-import org.jitsi.jibri.statsd.ASPECT_BUSY
-import org.jitsi.jibri.statsd.ASPECT_ERROR
-import org.jitsi.jibri.statsd.ASPECT_START
-import org.jitsi.jibri.statsd.ASPECT_STOP
-import org.jitsi.jibri.statsd.JibriStatsDClient
-import org.jitsi.jibri.statsd.STOPPED_ON_XMPP_CLOSED
-import org.jitsi.jibri.statsd.TAG_SERVICE_LIVE_STREAM
-import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
-import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
-import org.jitsi.jibri.statsd.XMPP_CLOSED
-import org.jitsi.jibri.statsd.XMPP_CLOSED_ON_ERROR
-import org.jitsi.jibri.statsd.XMPP_CONNECTED
-import org.jitsi.jibri.statsd.XMPP_PING_FAILED
-import org.jitsi.jibri.statsd.XMPP_RECONNECTING
-import org.jitsi.jibri.statsd.XMPP_RECONNECTION_FAILED
+import org.jitsi.utils.logging2.createLogger
 
 class JibriMetrics {
-    private val statsDClient: JibriStatsDClient? = if (StatsConfig.enableStatsD) {
-        JibriStatsDClient(StatsConfig.statsdHost, StatsConfig.statsdPort)
+    private val logger = createLogger()
+
+    private val statsd = if (StatsConfig.enableStatsD) {
+        NonBlockingStatsDClient(
+            "jibri",
+            StatsConfig.statsdHost,
+            StatsConfig.statsdPort
+        )
     } else {
         null
     }
 
+    private fun incrementStatsDCounter(aspect: String, vararg tags: String) {
+        statsd?.let {
+            logger.debug { "Incrementing statsd counter: $aspect:${tags.joinToString(":")}" }
+            it.incrementCounter(aspect, *tags)
+        }
+    }
+
     fun busy(type: RecordingSinkType) {
-        statsDClient?.incrementCounter(ASPECT_BUSY, type.getTag())
+        incrementStatsDCounter(ASPECT_BUSY, type.getTag())
     }
 
     fun start(type: RecordingSinkType) {
-        statsDClient?.incrementCounter(ASPECT_START, type.getTag())
+        incrementStatsDCounter(ASPECT_START, type.getTag())
     }
 
     fun stop(type: RecordingSinkType) {
-        statsDClient?.incrementCounter(ASPECT_STOP, type.getTag())
+        incrementStatsDCounter(ASPECT_STOP, type.getTag())
     }
 
     fun error(type: RecordingSinkType) {
-        statsDClient?.incrementCounter(ASPECT_ERROR, type.getTag())
+        incrementStatsDCounter(ASPECT_ERROR, type.getTag())
     }
 
     fun xmppConnected(tags: String) {
-        statsDClient?.incrementCounter(XMPP_CONNECTED, tags)
+        incrementStatsDCounter(XMPP_CONNECTED, tags)
     }
 
     fun xmppReconnecting(tags: String) {
-        statsDClient?.incrementCounter(XMPP_RECONNECTING, tags)
+        incrementStatsDCounter(XMPP_RECONNECTING, tags)
     }
 
     fun xmppReconnectionFailed(tags: String) {
-        statsDClient?.incrementCounter(XMPP_RECONNECTION_FAILED, tags)
+        incrementStatsDCounter(XMPP_RECONNECTION_FAILED, tags)
     }
 
     fun xmppPingFailed(tags: String) {
-        statsDClient?.incrementCounter(XMPP_PING_FAILED, tags)
+        incrementStatsDCounter(XMPP_PING_FAILED, tags)
     }
 
     fun xmppClosed(tags: String) {
-        statsDClient?.incrementCounter(XMPP_CLOSED, tags)
+        incrementStatsDCounter(XMPP_CLOSED, tags)
     }
 
     fun xmppClosedOnError(tags: String) {
-        statsDClient?.incrementCounter(XMPP_CLOSED_ON_ERROR, tags)
+        incrementStatsDCounter(XMPP_CLOSED_ON_ERROR, tags)
     }
 
     fun stoppedOnXmppClosed(tags: String) {
-        statsDClient?.incrementCounter(STOPPED_ON_XMPP_CLOSED, tags)
+        incrementStatsDCounter(STOPPED_ON_XMPP_CLOSED, tags)
     }
 }
 
