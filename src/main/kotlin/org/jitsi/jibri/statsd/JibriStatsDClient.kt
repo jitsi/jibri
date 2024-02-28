@@ -17,14 +17,11 @@
 package org.jitsi.jibri.statsd
 
 import com.timgroup.statsd.NonBlockingStatsDClient
-import org.jitsi.jibri.service.JibriService
-import org.jitsi.jibri.service.impl.FileRecordingJibriService
-import org.jitsi.jibri.service.impl.SipGatewayJibriService
-import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.utils.logging2.createLogger
 
 /**
- * Client for pushing statsd values
+ * Client for pushing statsd values.
+ * This should only be used via [JibriMetrics]
  */
 class JibriStatsDClient(hostname: String = "localhost", port: Int = 8125) {
     private val logger = createLogger()
@@ -37,16 +34,5 @@ class JibriStatsDClient(hostname: String = "localhost", port: Int = 8125) {
     fun incrementCounter(aspect: String, vararg tags: String) {
         logger.debug { "Incrementing statsd counter: $aspect:${tags.joinToString(":")}" }
         statsd.incrementCounter(aspect, *tags)
-    }
-
-    companion object {
-        fun getTagForService(service: JibriService?): String {
-            return when (service) {
-                is FileRecordingJibriService -> TAG_SERVICE_RECORDING
-                is StreamingJibriService -> TAG_SERVICE_LIVE_STREAM
-                is SipGatewayJibriService -> TAG_SERVICE_SIP_GATEWAY
-                else -> ""
-            }
-        }
     }
 }
