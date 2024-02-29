@@ -145,16 +145,17 @@ val SIP_GW_URL_OPTIONS = listOf(
 )
 
 val RECORDING_URL_OPTIONS = listOf(
-    "config.iAmRecorder=true",
+    "config.analytics.disabled=true",
+    "config.disableInitialGUM=true",
     "config.externalConnectUrl=null",
+    "config.iAmRecorder=true",
+    "config.p2p.enabled=false",
+    "config.prejoinConfig.enabled=false",
+    "config.prejoinPageEnabled=false",
+    "config.requireDisplayName=false",
     "config.startWithAudioMuted=true",
     "config.startWithVideoMuted=true",
-    "interfaceConfig.APP_NAME=\"Jibri\"",
-    "config.analytics.disabled=true",
-    "config.p2p.enabled=false",
-    "config.prejoinPageEnabled=false",
-    "config.prejoinConfig.enabled=false",
-    "config.requireDisplayName=false"
+    "interfaceConfig.APP_NAME=\"Jibri\""
 )
 
 /**
