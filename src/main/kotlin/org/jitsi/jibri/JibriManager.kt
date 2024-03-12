@@ -20,6 +20,7 @@ package org.jitsi.jibri
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
+import org.jitsi.jibri.metrics.JibriMetrics
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatusHandler
@@ -30,14 +31,6 @@ import org.jitsi.jibri.service.impl.SipGatewayJibriService
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingJibriService
 import org.jitsi.jibri.service.impl.StreamingParams
-import org.jitsi.jibri.statsd.ASPECT_BUSY
-import org.jitsi.jibri.statsd.ASPECT_ERROR
-import org.jitsi.jibri.statsd.ASPECT_START
-import org.jitsi.jibri.statsd.ASPECT_STOP
-import org.jitsi.jibri.statsd.JibriStatsDClient
-import org.jitsi.jibri.statsd.TAG_SERVICE_LIVE_STREAM
-import org.jitsi.jibri.statsd.TAG_SERVICE_RECORDING
-import org.jitsi.jibri.statsd.TAG_SERVICE_SIP_GATEWAY
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.ComponentState
@@ -99,29 +92,12 @@ class JibriManager : StatusPublisher<Any>() {
     private var pendingIdleFunc: () -> Unit = {}
     private var serviceTimeoutTask: ScheduledFuture<*>? = null
 
-    private val enableStatsD: Boolean by config {
-        "JibriConfig::enableStatsD" { Config.legacyConfigSource.enabledStatsD!! }
-        "jibri.stats.enable-stats-d".from(Config.configSource)
-    }
-
-    private val statsdHost: String by config {
-        "jibri.stats.host".from(Config.configSource)
-    }
-
-    private val statsdPort: Int by config {
-        "jibri.stats.port".from(Config.configSource)
-    }
-
     private val singleUseMode: Boolean by config {
         "JibriConfig::singleUseMode" { Config.legacyConfigSource.singleUseMode!! }
         "jibri.single-use-mode".from(Config.configSource)
     }
 
-    val statsDClient: JibriStatsDClient? = if (enableStatsD) {
-        JibriStatsDClient(statsdHost, statsdPort)
-    } else {
-        null
-    }
+    val jibriMetrics = JibriMetrics()
 
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from
@@ -129,10 +105,10 @@ class JibriManager : StatusPublisher<Any>() {
      * TODO: instead of the synchronized decorators, use a synchronized(this) block
      * which we can also use here
      */
-    private fun throwIfBusy() {
+    private fun throwIfBusy(sinkType: RecordingSinkType) {
         if (busy()) {
             logger.info("Jibri is busy, can't start service")
-            statsDClient?.incrementCounter(ASPECT_BUSY, TAG_SERVICE_RECORDING)
+            jibriMetrics.requestWhileBusy(sinkType)
             throw JibriBusyException()
         }
     }
@@ -148,7 +124,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
-        throwIfBusy()
+        throwIfBusy(RecordingSinkType.FILE)
         logger.info("Starting a file recording with params: $fileRecordingRequestParams")
         val service = FileRecordingJibriService(
             FileRecordingParams(
@@ -158,7 +134,7 @@ class JibriManager : StatusPublisher<Any>() {
                 serviceParams.appData?.fileRecordingMetadata
             )
         )
-        statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_RECORDING)
+        jibriMetrics.start(RecordingSinkType.FILE)
         startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
@@ -174,9 +150,9 @@ class JibriManager : StatusPublisher<Any>() {
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
         logger.info("Starting a stream with params: $serviceParams $streamingParams")
-        throwIfBusy()
+        throwIfBusy(RecordingSinkType.STREAM)
         val service = StreamingJibriService(streamingParams)
-        statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_LIVE_STREAM)
+        jibriMetrics.start(RecordingSinkType.STREAM)
         startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
@@ -188,7 +164,7 @@ class JibriManager : StatusPublisher<Any>() {
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
         logger.info("Starting a SIP gateway with params: $serviceParams $sipGatewayServiceParams")
-        throwIfBusy()
+        throwIfBusy(RecordingSinkType.GATEWAY)
         val service = SipGatewayJibriService(
             SipGatewayServiceParams(
                 sipGatewayServiceParams.callParams,
@@ -196,7 +172,7 @@ class JibriManager : StatusPublisher<Any>() {
                 sipGatewayServiceParams.sipClientParams
             )
         )
-        statsDClient?.incrementCounter(ASPECT_START, TAG_SERVICE_SIP_GATEWAY)
+        jibriMetrics.start(RecordingSinkType.GATEWAY)
         return startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
 
@@ -219,7 +195,7 @@ class JibriManager : StatusPublisher<Any>() {
             when (it) {
                 is ComponentState.Error -> {
                     if (it.error.scope == ErrorScope.SYSTEM) {
-                        statsDClient?.incrementCounter(ASPECT_ERROR, JibriStatsDClient.getTagForService(jibriService))
+                        jibriMetrics.error(jibriService.getSinkType())
                         publishStatus(ComponentHealthStatus.UNHEALTHY)
                     }
                     stopService()
@@ -270,7 +246,7 @@ class JibriManager : StatusPublisher<Any>() {
             logger.info("No service active, ignoring stop")
             return
         }
-        statsDClient?.incrementCounter(ASPECT_STOP, JibriStatsDClient.getTagForService(currentService))
+        jibriMetrics.stop(currentService.getSinkType())
         logger.info("Stopping the current service")
         serviceTimeoutTask?.cancel(false)
         // Note that this will block until the service is completely stopped
@@ -308,4 +284,11 @@ class JibriManager : StatusPublisher<Any>() {
             pendingIdleFunc = func
         }
     }
+}
+
+private fun JibriService.getSinkType() = when (this) {
+    is FileRecordingJibriService -> RecordingSinkType.FILE
+    is StreamingJibriService -> RecordingSinkType.GATEWAY
+    is SipGatewayJibriService -> RecordingSinkType.GATEWAY
+    else -> throw IllegalArgumentException("JibriService of unsupported type: ${JibriService::class.java.name}")
 }
