@@ -36,10 +36,10 @@ class JibriMetrics {
         null
     }
 
-    private fun incrementStatsDCounter(aspect: String, vararg tags: String) {
+    private fun incrementStatsDCounter(aspect: String, tag: String) {
         statsd?.let {
-            logger.debug { "Incrementing statsd counter: $aspect:${tags.joinToString(":")}" }
-            it.incrementCounter(aspect, *tags)
+            logger.debug { "Incrementing statsd counter: $aspect:$tag" }
+            it.incrementCounter(aspect, tag)
         }
     }
 
@@ -122,31 +122,31 @@ class JibriMetrics {
         )
         val xmppConnected = JibriMetricsContainer.registerCounter(
             "xmpp_connected",
-            "Number of time an XMPP connection connected."
+            "Number of times an XMPP connection connected."
         )
         val xmppReconnecting = JibriMetricsContainer.registerCounter(
             "xmpp_reconnecting",
-            "Number of time an XMPP connection started re-connecting."
+            "Number of times an XMPP connection started re-connecting."
         )
         val xmppReconnectionFailed = JibriMetricsContainer.registerCounter(
             "xmpp_reconnection_failed",
-            "Number of time an XMPP re-connection failed."
+            "Number of times an XMPP re-connection failed."
         )
         val xmppPingFailed = JibriMetricsContainer.registerCounter(
             "xmpp_ping_failed",
-            "Number of time an XMPP ping timed out."
+            "Number of times an XMPP ping timed out."
         )
         val xmppClosed = JibriMetricsContainer.registerCounter(
             "xmpp_closed",
-            "Number of time an XMPP connection was closed."
+            "Number of times an XMPP connection was closed."
         )
         val xmppClosedOnError = JibriMetricsContainer.registerCounter(
             "xmpp_closed_on_error",
-            "Number of time an XMPP connection was closed on error."
+            "Number of times an XMPP connection was closed on error."
         )
         val stoppedOnXmppClosed = JibriMetricsContainer.registerCounter(
             "stopped_on_xmpp_closed",
-            "Number of time a session was stopped because XMPP disconnected."
+            "Number of times a session was stopped because XMPP disconnected."
         )
         val healthy = JibriMetricsContainer.registerBooleanMetric(
             "healthy",
