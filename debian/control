@@ -3,10 +3,10 @@ Maintainer: dev@jitsi.org
 Section: net
 Priority: optional
 Standards-Version: 3.9.2
-Build-Depends: debhelper (>= 9)
+Build-Depends: openjdk-11-jdk | openjdk-17-jdk, debhelper (>= 9)
 
 Package: jibri
 Architecture: all
-Depends: default-jre-headless | java8-runtime-headless | java8-runtime, ffmpeg, curl, alsa-utils, icewm, xserver-xorg-video-dummy, procps, ruby-hocon
+Depends: openjdk-11-jre-headless | openjdk-11-jre | openjdk-17-jre-headless | openjdk-17-jre, ffmpeg, curl, alsa-utils, icewm, xserver-xorg-video-dummy, procps, ruby-hocon
 Description: Jibri
  Jibri can be used to capture data from a Jitsi Meet conference and record it to a file or stream it to a url
