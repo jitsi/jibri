@@ -43,7 +43,13 @@ import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.StandardOpenOption
+import java.util.concurrent.TimeUnit
+import kotlin.io.path.listDirectoryEntries
+import org.jitsi.jibri.selenium.util.SeleniumUtils
+import org.openqa.selenium.By
+import org.openqa.selenium.chrome.ChromeDriver
 
 /**
  * Parameters needed for starting a [FileRecordingJibriService]
@@ -106,7 +112,7 @@ class FileRecordingJibriService(
     }
 
     private val capturer = capturer ?: FfmpegCapturer(logger)
-    private val jibriSelenium = jibriSelenium ?: JibriSelenium(logger)
+    private val jibriSelenium = jibriSelenium ?: JibriSelenium(logger, fileRecordingParams.sessionId)
 
     /**
      * The [Sink] this class will use to model the file on the filesystem
@@ -121,6 +127,10 @@ class FileRecordingJibriService(
             Config.legacyConfigSource.finalizeRecordingScriptPath!!
         }
         "jibri.recording.finalize-script".from(Config.configSource)
+    }
+
+    private val recordingMode: String by config {
+        "jibri.recording.mode".from(Config.configSource)
     }
 
     /**
@@ -170,7 +180,13 @@ class FileRecordingJibriService(
                 jibriSelenium.addToPresence("session_id", fileRecordingParams.sessionId)
                 jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
                 jibriSelenium.sendPresence()
-                capturer.start(sink)
+                when (recordingMode) {
+                    "ffmpeg" -> capturer.start(sink)
+                    else -> {
+                        startAndStopRecordingWithSelenium(driver = jibriSelenium.getChromeDriver())
+                        publishStatus(status = ComponentState.Running)
+                    }
+                }
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)
                 publishStatus(ComponentState.Error(ErrorSettingPresenceFields))
@@ -180,8 +196,39 @@ class FileRecordingJibriService(
 
     override fun stop() {
         logger.info("Stopping capturer")
-        capturer.stop()
+        when (recordingMode) {
+            "ffmpeg" -> capturer.stop()
+            else -> startAndStopRecordingWithSelenium(driver = jibriSelenium.getChromeDriver(), type = "stop")
+        }
         logger.info("Quitting selenium")
+        when {
+            recordingMode != "ffmpeg" -> {
+                var found = false
+                val startTime: Long = System.currentTimeMillis()
+                while (!Files.exists(sink.file)) {
+                    sessionRecordingDirectory.listDirectoryEntries()
+                        .forEach { entry: Path ->
+                            run {
+                                val fileName: Path = entry.fileName
+                                when {
+                                    fileName.toString().endsWith(suffix = ".webm") ->
+                                        logger.info { "webm found: $entry. File is renaming from: ${sink.file}" }
+                                            .run {
+                                                found = true
+                                                sink.file = sessionRecordingDirectory.resolve(entry)
+                                                sink.format = "webm"
+                                            }
+
+                                    else -> logger.warn { "Unhandled file: $fileName" }
+                                }
+                            }
+                        }
+                    if (found || System.currentTimeMillis() - startTime > 30 * 1_000)
+                        break
+                    TimeUnit.SECONDS.sleep(1).also { logger.info { "Media was not found, sleeping..." } }
+                }
+            }
+        }
 
         // It's possible that the service was stopped before we even wrote anything, so check if we actually wrote
         // any data to disk.  If not, we'll skip writing the metadata and running the finalize script and instead
@@ -192,7 +239,7 @@ class FileRecordingJibriService(
             try {
                 Files.delete(sessionRecordingDirectory)
             } catch (t: Throwable) {
-                logger.error("Problem deleting session recording directory", t)
+                logger.error("Problem deleting session recording directory. ${t.message}")
             }
             jibriSelenium.leaveCallAndQuitBrowser()
             return
@@ -203,7 +250,7 @@ class FileRecordingJibriService(
         } catch (t: Throwable) {
             logger.error(
                 "An error occurred while trying to get the participants list, proceeding with " +
-                    "an empty participants list",
+                    "an empty participants list. ${t.message}",
                 t
             )
             listOf<Map<String, Any>>()
@@ -231,6 +278,20 @@ class FileRecordingJibriService(
         jibriSelenium.leaveCallAndQuitBrowser()
         logger.info("Finalizing the recording")
         jibriServiceFinalizer?.doFinalize()
+    }
+
+    /**
+     * Starts or stops local recording with Selenium.
+
+     * @param driver The ChromeDriver instance.
+     * @param type The type of action to perform, either "start" or "stop" default is "start"
+     */
+    private fun startAndStopRecordingWithSelenium(driver: ChromeDriver, type: String = "start") {
+        logger.info { "startAndStopRecordingWithSelenium called. id: ${jibriSelenium.sessionId}, type: $type" }
+        SeleniumUtils.click(driver, By.id("more-actions-id"))
+        SeleniumUtils.click(driver, By.id("menu-item-local-recording"))
+        SeleniumUtils.click(driver, By.id("modal-dialog-ok-button"))
+        logger.info { "Sleeping 5 seconds..." }.run { TimeUnit.SECONDS.sleep(5) }
     }
 }
 
