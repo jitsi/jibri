@@ -129,9 +129,12 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 console.log("There were " + existingMemberJids.length + " existing members");
                 existingMemberJids.forEach(jid => {
                     const existingMember = existingMembers[jid];
+                    const nick = existingMember.nick;
                     if (existingMember.identity) {
                         console.log("Member ", existingMember, " has identity, adding");
-                        existingMember.identity.lastKnownDisplayName = existingMember.nick;
+                        if (nick && nick.length > 0 && existingMember.identity.user) {
+                            existingMember.identity.user.name = nick;
+                        }
                         window._jibriParticipants.set(jid, existingMember.identity);
                     } else {
                         console.log("Member ", existingMember.jid, " has no identity, skipping");
@@ -142,7 +145,9 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                     (from, nick, role, hidden, statsid, status, identity) => {
                         console.log("Jibri got MUC_MEMBER_JOINED: ", from, identity);
                         if (!hidden && identity) {
-                            identity.lastKnownDisplayName = nick;
+                            if (nick && nick.length > 0 && identity.user) {
+                                identity.user.name = nick;
+                            }
                             window._jibriParticipants.set(from, identity);
                         }
                     }
@@ -151,8 +156,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                     "xmpp.display_name_changed",
                     (jid, displayName) => {
                         const identity = window._jibriParticipants.get(jid);
-                        if (identity) {
-                            identity.lastKnownDisplayName = displayName;
+                        if (displayName && displayName.length > 0 && identity && identity.user) {
+                            identity.user.name = displayName;
                         }
                     }
                 );
