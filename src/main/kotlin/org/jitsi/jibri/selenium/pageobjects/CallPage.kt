@@ -123,7 +123,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         val result = driver.executeScript(
             """
             try {
-                window._jibriParticipants = [];
+                window._jibriParticipants = new Map();
                 const existingMembers = APP.conference._room.room.members || {};
                 const existingMemberJids = Object.keys(existingMembers);
                 console.log("There were " + existingMemberJids.length + " existing members");
@@ -131,7 +131,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                     const existingMember = existingMembers[jid];
                     if (existingMember.identity) {
                         console.log("Member ", existingMember, " has identity, adding");
-                        window._jibriParticipants.push(existingMember.identity);
+                        existingMember.identity.lastKnownDisplayName = existingMember.nick;
+                        window._jibriParticipants.set(jid, existingMember.identity);
                     } else {
                         console.log("Member ", existingMember.jid, " has no identity, skipping");
                     }
@@ -141,10 +142,21 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                     (from, nick, role, hidden, statsid, status, identity) => {
                         console.log("Jibri got MUC_MEMBER_JOINED: ", from, identity);
                         if (!hidden && identity) {
-                            window._jibriParticipants.push(identity);
+                            identity.lastKnownDisplayName = nick;
+                            window._jibriParticipants.set(from, identity);
                         }
                     }
                 );
+                APP.conference._room.room.addListener(
+                    "xmpp.display_name_changed",
+                    (jid, displayName) => {
+                        const identity = window._jibriParticipants.get(jid);
+                        if (identity) {
+                            identity.lastKnownDisplayName = displayName;
+                        }
+                    }
+                );
+
                 return true;
             } catch (e) {
                 return e.message;
@@ -189,7 +201,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         val result = driver.executeScript(
             """
             try {
-                return window._jibriParticipants;
+                return window._jibriParticipants.values().toArray();
             } catch (e) {
                 return e.message;
             }
