@@ -123,15 +123,19 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         val result = driver.executeScript(
             """
             try {
-                window._jibriParticipants = [];
+                window._jibriParticipants = new Map();
                 const existingMembers = APP.conference._room.room.members || {};
                 const existingMemberJids = Object.keys(existingMembers);
                 console.log("There were " + existingMemberJids.length + " existing members");
                 existingMemberJids.forEach(jid => {
                     const existingMember = existingMembers[jid];
+                    const nick = existingMember.nick;
                     if (existingMember.identity) {
                         console.log("Member ", existingMember, " has identity, adding");
-                        window._jibriParticipants.push(existingMember.identity);
+                        if (nick && nick.length > 0 && existingMember.identity.user) {
+                            existingMember.identity.user.name = nick;
+                        }
+                        window._jibriParticipants.set(jid, existingMember.identity);
                     } else {
                         console.log("Member ", existingMember.jid, " has no identity, skipping");
                     }
@@ -141,10 +145,23 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                     (from, nick, role, hidden, statsid, status, identity) => {
                         console.log("Jibri got MUC_MEMBER_JOINED: ", from, identity);
                         if (!hidden && identity) {
-                            window._jibriParticipants.push(identity);
+                            if (nick && nick.length > 0 && identity.user) {
+                                identity.user.name = nick;
+                            }
+                            window._jibriParticipants.set(from, identity);
                         }
                     }
                 );
+                APP.conference._room.room.addListener(
+                    "xmpp.display_name_changed",
+                    (jid, displayName) => {
+                        const identity = window._jibriParticipants.get(jid);
+                        if (displayName && displayName.length > 0 && identity && identity.user) {
+                            identity.user.name = displayName;
+                        }
+                    }
+                );
+
                 return true;
             } catch (e) {
                 return e.message;
@@ -189,7 +206,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         val result = driver.executeScript(
             """
             try {
-                return window._jibriParticipants;
+                return window._jibriParticipants.values().toArray();
             } catch (e) {
                 return e.message;
             }
