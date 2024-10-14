@@ -18,6 +18,7 @@ package org.jitsi.jibri.api.http
 
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.parseHeaderValue
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -30,7 +31,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import io.prometheus.client.exporter.common.TextFormat
 import jakarta.ws.rs.core.Response
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
@@ -138,26 +138,10 @@ class HttpApi(
             if (StatsConfig.enablePrometheus) {
                 logger.info("Enabling prometheus interface at :$port/metrics")
                 get("/metrics") {
-                    val accept = call.request.headers["Accept"]
-                    when {
-                        accept?.startsWith("application/openmetrics-text") == true ->
-                            call.respondText(
-                                JibriMetricsContainer.getPrometheusMetrics(TextFormat.CONTENT_TYPE_OPENMETRICS_100),
-                                contentType = ContentType.parse(TextFormat.CONTENT_TYPE_OPENMETRICS_100)
-                            )
-
-                        accept?.startsWith("text/plain") == true ->
-                            call.respondText(
-                                JibriMetricsContainer.getPrometheusMetrics(TextFormat.CONTENT_TYPE_004),
-                                contentType = ContentType.parse(TextFormat.CONTENT_TYPE_004)
-                            )
-
-                        else ->
-                            call.respondText(
-                                JibriMetricsContainer.jsonString,
-                                contentType = ContentType.parse("application/json")
-                            )
-                    }
+                    val accepts =
+                        parseHeaderValue(call.request.headers["Accept"]).sortedBy { it.quality }.map { it.value }
+                    val (metrics, contentType) = JibriMetricsContainer.getMetrics(accepts)
+                    call.respondText(metrics, contentType = ContentType.parse(contentType))
                 }
             }
         }
