@@ -19,15 +19,13 @@ package org.jitsi.jibri.api.http.internal
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.jackson.jackson
 import io.ktor.server.application.Application
-import io.ktor.server.application.ApplicationCall
-import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.respond
+import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import io.ktor.util.pipeline.PipelineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -89,7 +87,7 @@ class InternalHttpApi(
 /**
  * Responds with [HttpStatusCode.OK] and then runs the given block
  */
-private suspend fun PipelineContext<*, ApplicationCall>.respondOkAndRun(block: () -> Unit) {
+private suspend fun RoutingContext.respondOkAndRun(block: () -> Unit) {
     val latch = CompletableDeferred<Nothing>()
     coroutineScope {
         launch {
