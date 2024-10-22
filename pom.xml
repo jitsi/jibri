@@ -19,7 +19,7 @@
         <junit.version>5.10.0</junit.version>
         <kotest.version>5.7.2</kotest.version>
         <mockk.version>1.13.8</mockk.version>
-        <ktor.version>2.3.4</ktor.version>
+        <ktor.version>3.0.0</ktor.version>
         <jwt.version>0.11.5</jwt.version>
         <jicoco.version>1.1-143-g175c44b</jicoco.version>
         <jitsi.utils.version>1.0-127-g6c65524</jitsi.utils.version>

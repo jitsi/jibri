@@ -32,6 +32,7 @@ import io.ktor.client.request.HttpRequestData
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.utils.io.readText
 import kotlinx.coroutines.delay
 import org.jitsi.jibri.helpers.inPlaceExecutor
 import org.jitsi.jibri.helpers.resetIoPool

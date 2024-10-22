@@ -170,6 +170,6 @@ class HttpApiTest : ShouldSpec() {
 private suspend fun testApplication(block: suspend ApplicationTestBuilder.() -> Unit) {
     val builder = ApplicationTestBuilder().apply { block() }
     val testApplication = TestApplication(builder)
-    testApplication.engine.start()
+    testApplication.start()
     testApplication.stop()
 }
