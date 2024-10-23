@@ -30,14 +30,14 @@ import java.time.format.DateTimeFormatter
  * over the value anyway.  Because of that I just made the value hard-coded.
  */
 class FileSink(recordingsDirectory: Path, callName: String, extension: String = "mp4") : Sink {
-    val file: Path
+    var file: Path
     init {
         val suffix = "_${LocalDateTime.now().format(TIMESTAMP_FORMATTER)}.$extension"
         val filename = "${callName.take(MAX_FILENAME_LENGTH - suffix.length)}$suffix"
         file = recordingsDirectory.resolve(filename)
     }
     override val path: String = file.toString()
-    override val format: String = extension
+    override var format: String = extension
     override val options: Array<String> = arrayOf(
         "-profile:v",
         "main",

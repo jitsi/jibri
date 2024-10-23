@@ -74,6 +74,7 @@ class SipGatewayJibriService(
      */
     private val jibriSelenium = jibriSelenium ?: JibriSelenium(
         logger,
+        "",
         JibriSeleniumOptions(
             displayName = if (sipGatewayServiceParams.callParams.displayName.isNotBlank()) {
                 sipGatewayServiceParams.callParams.displayName
