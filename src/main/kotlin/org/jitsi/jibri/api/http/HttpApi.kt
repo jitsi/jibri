@@ -139,7 +139,8 @@ class HttpApi(
                 logger.info("Enabling prometheus interface at :$port/metrics")
                 get("/metrics") {
                     val accepts =
-                        parseHeaderValue(call.request.headers["Accept"]).sortedBy { it.quality }.map { it.value }
+                        parseHeaderValue(call.request.headers["Accept"]).sortedByDescending { it.quality }
+                            .map { it.value }
                     val (metrics, contentType) = JibriMetricsContainer.getMetrics(accepts)
                     call.respondText(metrics, contentType = ContentType.parse(contentType))
                 }
