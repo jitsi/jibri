@@ -57,8 +57,6 @@ class WebhookClient(
         "jibri.jwt-info".from(Config.configSource)
             .convertFrom(JwtInfo.Companion::fromConfig)
     }
-
-    // We refresh 5 minutes before the expiration
     private val jwt: String? by RefreshingJwt(jwtInfo)
 
     private val client = client.config {
