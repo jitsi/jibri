@@ -35,7 +35,6 @@ import org.jitsi.metaconfig.config
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.util.regex.Pattern
 
-const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
 private const val STREAMING_MAX_BITRATE = 2976
 
 /**
@@ -76,6 +75,7 @@ class StreamingJibriService(
     init {
         logger.addContext("session_id", streamingParams.sessionId)
     }
+
     private val capturer = FfmpegCapturer(logger)
     private val sink: Sink
     private val jibriSelenium = JibriSelenium(logger)
@@ -97,18 +97,15 @@ class StreamingJibriService(
     }
 
     override fun start() {
-        if (rtmpAllowList.none { it.matcher(streamingParams.rtmpUrl).matches() }) {
-            logger.error("RTMP url ${streamingParams.rtmpUrl} is not allowed")
-            publishStatus(
-                ComponentState.Error(
-                    JibriError(
-                        ErrorScope.SESSION,
-                        "RTMP URL ${streamingParams.rtmpUrl} is not allowed"
-                    )
-                )
-            )
+        if (!streamingParams.rtmpUrl.isValidRtmpUrl()) {
+            publishSessionError("RTMP URL ${streamingParams.rtmpUrl} is not valid")
             return
         }
+        if (rtmpAllowList.none { it.matcher(streamingParams.rtmpUrl).matches() }) {
+            publishSessionError("RTMP URL ${streamingParams.rtmpUrl} is not allowed")
+            return
+        }
+
         jibriSelenium.joinCall(
             streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
             streamingParams.callLoginParams
@@ -120,6 +117,9 @@ class StreamingJibriService(
                 jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
                 jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
                 streamingParams.viewingUrl?.let { viewingUrl ->
+                    if (!viewingUrl.isValidViewingUrl()) {
+                        logger.warn("Viewing URL ${streamingParams.viewingUrl} is not valid")
+                    }
                     if (!jibriSelenium.addToPresence("live-stream-view-url", viewingUrl)) {
                         logger.error("Error adding live stream url to presence")
                     }
@@ -132,6 +132,21 @@ class StreamingJibriService(
             }
         }
     }
+
+    private fun publishSessionError(errorMessage: String) {
+        logger.error(errorMessage)
+        publishStatus(
+            ComponentState.Error(
+                JibriError(ErrorScope.SESSION, errorMessage)
+            )
+        )
+    }
+
+    private fun String.isValidRtmpUrl(): Boolean =
+        startsWith("rtmp://", ignoreCase = true) || startsWith("rtmps://", ignoreCase = true)
+
+    private fun String.isValidViewingUrl(): Boolean =
+        startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
 
     override fun stop() {
         logger.info("Stopping capturer")
