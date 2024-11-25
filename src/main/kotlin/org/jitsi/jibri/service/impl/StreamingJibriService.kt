@@ -78,7 +78,7 @@ class StreamingJibriService(
     }
     private val capturer = FfmpegCapturer(logger)
     private val sink: Sink
-    private val jibriSelenium = JibriSelenium(logger)
+    private val jibriSelenium = JibriSelenium(logger, streamingParams.sessionId)
 
     private val rtmpAllowList: List<Pattern> by config {
         "jibri.streaming.rtmp-allow-list".from(Config.configSource)
