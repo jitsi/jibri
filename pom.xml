@@ -20,7 +20,7 @@
         <kotest.version>5.7.2</kotest.version>
         <mockk.version>1.13.8</mockk.version>
         <ktor.version>3.0.0</ktor.version>
-        <jicoco.version>1.1-145-g9a3479a</jicoco.version>
+        <jicoco.version>1.1-150-g57913c0</jicoco.version>
         <jitsi.utils.version>1.0-127-g6c65524</jitsi.utils.version>
     </properties>
 
@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>jicoco</artifactId>
+            <artifactId>jicoco-mucclient</artifactId>
             <version>${jicoco.version}</version>
             <exclusions>
                 <exclusion>
