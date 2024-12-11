@@ -32,7 +32,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>jicoco</artifactId>
+            <artifactId>jicoco-mucclient</artifactId>
             <version>${jicoco.version}</version>
             <exclusions>
                 <exclusion>
