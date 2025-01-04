@@ -65,7 +65,7 @@ data class StartServiceParams(
      */
     val callLoginParams: XmppCredentials? = null,
     val sinkType: RecordingSinkType,
-    val youTubeStreamKey: String? = null,
+    val rtmpUrl: String? = null,
     /**
      * Params to be used if [RecordingSinkType] is [RecordingSinkType.GATEWAY]
      */
@@ -213,8 +213,8 @@ class HttpApi(
                 )
             }
             RecordingSinkType.STREAM -> {
-                val youTubeStreamKey = startServiceParams.youTubeStreamKey
-                    ?: throw IllegalStateException("Stream key missing")
+                val rtmpUrl = startServiceParams.rtmpUrl
+                    ?: throw IllegalStateException("Rtmp url missing")
                 // If it's a stream, it must have the callLoginParams set
                 val callLoginParams = startServiceParams.callLoginParams
                     ?: throw IllegalStateException("Call login params missing")
@@ -224,7 +224,7 @@ class HttpApi(
                         startServiceParams.callParams,
                         startServiceParams.sessionId,
                         callLoginParams,
-                        youTubeStreamKey
+                        rtmpUrl
                     ),
                     environmentContext = null,
                     statusHandler
