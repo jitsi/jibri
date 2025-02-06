@@ -34,6 +34,7 @@ import io.mockk.slot
 import io.mockk.verify
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.JibriSubprocess
@@ -52,7 +53,7 @@ internal class FfmpegCapturerTest : ShouldSpec() {
     private val ffmpeg: JibriSubprocess = mockk(relaxed = true)
     private val ffmpegStateHandler = slot<(ProcessState) -> Unit>()
     private val capturerStateUpdates = mutableListOf<ComponentState>()
-    private val sink: Sink = mockk()
+    private val sink: Sink = FileSink(mockk(relaxed = true), "path")
     private val logger: Logger = mockk(relaxed = true)
 
     private val ffmpegEncodingState = ProcessState(ProcessRunning(), "frame=42")
@@ -69,10 +70,6 @@ internal class FfmpegCapturerTest : ShouldSpec() {
 
     init {
         beforeSpec {
-            every { sink.format } returns "format"
-            every { sink.options } returns arrayOf("option1", "option2")
-            every { sink.path } returns "path"
-
             every { ffmpeg.addStatusHandler(capture(ffmpegStateHandler)) } just Runs
         }
         context("on any supported platform") {
@@ -163,8 +160,6 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     verify { ffmpeg.launch(capture(commandCaptor), any()) }
                     commandCaptor.captured should contain("x11grab")
                     commandCaptor.captured should contain("alsa")
-                    commandCaptor.captured should contain("option1")
-                    commandCaptor.captured should contain("option2")
                 }
             }
         }

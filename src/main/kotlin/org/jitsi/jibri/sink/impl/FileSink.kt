@@ -17,7 +17,10 @@
 
 package org.jitsi.jibri.sink.impl
 
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sink.Sink
+import org.jitsi.metaconfig.config
+import org.jitsi.metaconfig.from
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -29,15 +32,15 @@ import java.time.format.DateTimeFormatter
  * are able to append a timestamp to the filename, so we can't give the caller full control
  * over the value anyway.  Because of that I just made the value hard-coded.
  */
-class FileSink(recordingsDirectory: Path, callName: String, extension: String = "mp4") : Sink {
+class FileSink(recordingsDirectory: Path, callName: String) : Sink {
     val file: Path
     init {
-        val suffix = "_${LocalDateTime.now().format(TIMESTAMP_FORMATTER)}.$extension"
+        val suffix = "_${LocalDateTime.now().format(TIMESTAMP_FORMATTER)}.$recordingFormat"
         val filename = "${callName.take(MAX_FILENAME_LENGTH - suffix.length)}$suffix"
         file = recordingsDirectory.resolve(filename)
     }
     override val path: String = file.toString()
-    override val format: String = extension
+    override val format: String = recordingFormat
     override val options: Array<String> = arrayOf(
         "-profile:v",
         "main",
@@ -46,6 +49,7 @@ class FileSink(recordingsDirectory: Path, callName: String, extension: String = 
     )
 
     companion object {
+        val recordingFormat: String by config("jibri.ffmpeg.recording-format".from(Config.configSource))
         private val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
         const val MAX_FILENAME_LENGTH = 125
     }

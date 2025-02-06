@@ -19,9 +19,12 @@ package org.jitsi.jibri.capture.ffmpeg
 
 import org.jitsi.jibri.capture.Capturer
 import org.jitsi.jibri.capture.UnsupportedOsException
+import org.jitsi.jibri.capture.UnsupportedSinkTypeException
 import org.jitsi.jibri.capture.ffmpeg.util.FfmpegFileHandler
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sink.Sink
+import org.jitsi.jibri.sink.impl.FileSink
+import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.OsDetector
@@ -85,14 +88,39 @@ class FfmpegCapturer(
         val h264ConstantRateFactor: Int by config("jibri.ffmpeg.h264-constant-rate-factor".from(Config.configSource))
         val audioSource: String by config("jibri.ffmpeg.audio-source".from(Config.configSource))
         val audioDevice: String by config("jibri.ffmpeg.audio-device".from(Config.configSource))
+
+        val commandLinuxRecording: List<String> by config {
+            "jibri.ffmpeg.command-linux-recording".from(Config.configSource)
+        }
+        val commandLinuxStreaming: List<String> by config {
+            "jibri.ffmpeg.command-linux-streaming".from(Config.configSource)
+        }
+        val commandMacRecording: List<String> by config {
+            "jibri.ffmpeg.command-mac-recording".from(Config.configSource)
+        }
+        val commandMacStreaming: List<String> by config {
+            "jibri.ffmpeg.command-mac-streaming".from(Config.configSource)
+        }
     }
 
     init {
         val osType = osDetector.getOsType()
-        logger.debug { "Detected os as OS: $osType" }
+        logger.debug { "Detected OS: $osType" }
         getCommand = when (osType) {
-            OsType.MAC -> { sink: Sink -> getFfmpegCommandMac(FfmpegExecutorParams(), sink) }
-            OsType.LINUX -> { sink: Sink -> getFfmpegCommandLinux(FfmpegExecutorParams(), sink) }
+            OsType.MAC -> { sink: Sink ->
+                when (sink) {
+                    is StreamSink -> commandMacStreaming
+                    is FileSink -> commandMacRecording
+                    else -> throw UnsupportedSinkTypeException(sink)
+                } + listOf(sink.path)
+            }
+            OsType.LINUX -> { sink: Sink ->
+                when (sink) {
+                    is StreamSink -> commandLinuxStreaming
+                    is FileSink -> commandLinuxRecording
+                    else -> throw UnsupportedSinkTypeException(sink)
+                } + listOf(sink.path)
+            }
             else -> throw UnsupportedOsException()
         }
 
