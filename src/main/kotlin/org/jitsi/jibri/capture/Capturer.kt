@@ -20,6 +20,7 @@ package org.jitsi.jibri.capture
 import org.jitsi.jibri.sink.Sink
 
 class UnsupportedOsException(override var message: String = "Jibri does not support this OS") : Exception()
+class UnsupportedSinkTypeException(sink: Sink) : Exception("Unsupported sink type: ${sink::class.simpleName}")
 
 /**
  * [Capturer] represents a process which will capture media.

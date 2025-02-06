@@ -32,19 +32,15 @@ internal class FileSinkTest : ShouldSpec() {
 
     init {
         context("when created") {
-            val sink = FileSink(fs.getPath("/tmp/xxx"), "callname", "ext")
+            val sink = FileSink(fs.getPath("/tmp/xxx"), "callname")
             should("have the correct path") {
                 sink.path.shouldStartWith("/tmp/xxx")
                 sink.path.shouldContain("callname")
-                sink.path.shouldContain("ext")
-            }
-            should("have the correct format") {
-                sink.format shouldBe "ext"
             }
         }
         context("when created with a really long call name") {
             val reallyLongCallName = String.randomAlphas(200)
-            val sink = FileSink(fs.getPath("/tmp/xxx"), reallyLongCallName, "ext")
+            val sink = FileSink(fs.getPath("/tmp/xxx"), reallyLongCallName)
             should("not generate a filename longer than the max file length") {
                 sink.file.fileName.toString().length shouldBe FileSink.MAX_FILENAME_LENGTH
             }
