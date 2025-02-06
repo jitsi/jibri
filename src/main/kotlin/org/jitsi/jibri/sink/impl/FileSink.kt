@@ -35,15 +35,14 @@ import java.time.format.DateTimeFormatter
 class FileSink(recordingsDirectory: Path, callName: String) : Sink {
     val file: Path
     init {
-        val suffix = "_${LocalDateTime.now().format(TIMESTAMP_FORMATTER)}.$recordingFormat"
+        val suffix = "_${LocalDateTime.now().format(TIMESTAMP_FORMATTER)}.$recordingExtension"
         val filename = "${callName.take(MAX_FILENAME_LENGTH - suffix.length)}$suffix"
         file = recordingsDirectory.resolve(filename)
     }
     override val path: String = file.toString()
-    override val format: String = recordingFormat
 
     companion object {
-        val recordingFormat: String by config("jibri.ffmpeg.recording-format".from(Config.configSource))
+        val recordingExtension: String by config("jibri.ffmpeg.recording-extension".from(Config.configSource))
         private val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
         const val MAX_FILENAME_LENGTH = 125
     }

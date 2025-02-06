@@ -29,9 +29,4 @@ interface Sink {
      * The path to which this [Sink] has been designated to write
      */
     val path: String
-
-    /**
-     * The format of the container which this [Sink] will use
-     */
-    val format: String
 }

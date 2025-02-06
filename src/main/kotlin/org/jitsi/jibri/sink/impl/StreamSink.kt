@@ -17,19 +17,11 @@
 
 package org.jitsi.jibri.sink.impl
 
-import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.sink.Sink
-import org.jitsi.metaconfig.config
-import org.jitsi.metaconfig.from
 
 /**
  * [StreamSink] represents a sink which will write to a network stream
  */
 class StreamSink(val url: String) : Sink {
     override val path: String = url
-    override val format: String = streamingFormat
-
-    companion object {
-        val streamingFormat: String by config("jibri.ffmpeg.streaming-format".from(Config.configSource))
-    }
 }
