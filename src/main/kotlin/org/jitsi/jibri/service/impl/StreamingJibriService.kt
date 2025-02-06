@@ -36,7 +36,6 @@ import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.util.regex.Pattern
 
 const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
-private const val STREAMING_MAX_BITRATE = 2976
 
 /**
  * Parameters needed for starting a [StreamingJibriService]
@@ -86,11 +85,7 @@ class StreamingJibriService(
     }
 
     init {
-        sink = StreamSink(
-            url = streamingParams.rtmpUrl,
-            streamingMaxBitrate = STREAMING_MAX_BITRATE,
-            streamingBufSize = 2 * STREAMING_MAX_BITRATE
-        )
+        sink = StreamSink(url = streamingParams.rtmpUrl)
 
         registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)

@@ -34,9 +34,4 @@ interface Sink {
      * The format of the container which this [Sink] will use
      */
     val format: String
-
-    /**
-     * Any ffmpeg command-line options this [Sink] requires
-     */
-    val options: Array<String>
 }

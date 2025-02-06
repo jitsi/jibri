@@ -41,12 +41,6 @@ class FileSink(recordingsDirectory: Path, callName: String) : Sink {
     }
     override val path: String = file.toString()
     override val format: String = recordingFormat
-    override val options: Array<String> = arrayOf(
-        "-profile:v",
-        "main",
-        "-level",
-        "3.1"
-    )
 
     companion object {
         val recordingFormat: String by config("jibri.ffmpeg.recording-format".from(Config.configSource))
