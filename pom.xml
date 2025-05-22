@@ -20,7 +20,7 @@
         <kotest.version>5.7.2</kotest.version>
         <mockk.version>1.13.8</mockk.version>
         <ktor.version>3.0.0</ktor.version>
-        <jicoco.version>1.1-158-g9fcf1b7</jicoco.version>
+        <jicoco.version>1.1-159-gf9c2712</jicoco.version>
         <jitsi.utils.version>1.0-127-g6c65524</jitsi.utils.version>
     </properties>
 
@@ -109,7 +109,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-xmpp-extensions</artifactId>
-            <version>1.0-94-g29b94fa</version>
+            <version>1.0-95-ge113e35</version>
         </dependency>
         <dependency>
             <groupId>com.datadoghq</groupId>
