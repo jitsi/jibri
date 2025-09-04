@@ -342,7 +342,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         val result = driver.executeScript(
             """
             try {
-                APP.conference._room.room.addToPresence(
+                APP.conference._room.room.addOrReplaceInPresence(
                     '$key',
                     {
                         value: '$value'
