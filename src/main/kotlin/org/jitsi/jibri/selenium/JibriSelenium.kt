@@ -16,6 +16,7 @@
 
 package org.jitsi.jibri.selenium
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.MainConfig
 import org.jitsi.jibri.config.Config
@@ -49,8 +50,6 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-
 
 /**
  * Parameters needed for joining the call in Selenium
@@ -312,9 +311,11 @@ class JibriSelenium(
 
                 val callUrl = callUrlInfo.withAdditionalUrlParams(
                     listOf(
-                    "config.useHostPageLocalStorage=true",
-                    "appData.localStorageContent=\"${jacksonObjectMapper().writeValueAsString(localStorageValues).replace("\"", "\\\"")}\""
-                )).callUrl
+                        "config.useHostPageLocalStorage=true",
+                        "appData.localStorageContent=\"${jacksonObjectMapper().writeValueAsString(localStorageValues)
+                            .replace("\"", "\\\"")}\""
+                    )
+                ).callUrl
 
                 if (!CallPage(chromeDriver).visit(callUrl)) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)
