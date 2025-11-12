@@ -55,4 +55,7 @@ data class CallUrlInfo(
         // Purposefully ignore urlParams here
         return Objects.hash(baseUrl.lowercase(), callName.lowercase())
     }
+
+    fun withAdditionalUrlParams(params: List<String>): CallUrlInfo =
+        this.copy(urlParams = (this.urlParams + params).distinct())
 }
