@@ -16,12 +16,12 @@
 
 package org.jitsi.jibri.selenium
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.MainConfig
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
-import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.selenium.status_checks.EmptyCallStatusCheck
 import org.jitsi.jibri.selenium.status_checks.IceConnectionStatusCheck
 import org.jitsi.jibri.selenium.status_checks.LocalParticipantKickedStatusCheck
@@ -204,16 +204,6 @@ class JibriSelenium(
         stateMachine.onStateTransition(this::onSeleniumStateChange)
     }
 
-    /**
-     * Set various values to be put in local storage.  NOTE: the driver
-     * should have already navigated to the desired page
-     */
-    private fun setLocalStorageValues(keyValues: Map<String, String>) {
-        for ((key, value) in keyValues) {
-            chromeDriver.executeScript("window.localStorage.setItem('$key', '$value')")
-        }
-    }
-
     private fun onSeleniumStateChange(oldState: ComponentState, newState: ComponentState) {
         logger.info("Transitioning from state $oldState to $newState")
         publishStatus(newState)
@@ -288,14 +278,12 @@ class JibriSelenium(
     fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
     /**
-     * Join a a web call with Selenium
+     * Join a web call with Selenium
      */
     fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null, passcode: String? = null) {
         // These are all blocking calls, so offload the work to another thread
         TaskPools.ioPool.submit {
             try {
-                HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
-
                 var callStatsUsername = "jibri"
                 if (jibriSeleniumOptions.callStatsUsernameOverride.isNotEmpty()) {
                     callStatsUsername = jibriSeleniumOptions.callStatsUsernameOverride
@@ -320,8 +308,16 @@ class JibriSelenium(
                 passcode?.let {
                     localStorageValues["xmpp_conference_password_override"] = passcode
                 }
-                setLocalStorageValues(localStorageValues)
-                if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
+
+                val callUrl = callUrlInfo.withAdditionalUrlParams(
+                    listOf(
+                        "config.useHostPageLocalStorage=true",
+                        "appData.localStorageContent=\"${jacksonObjectMapper().writeValueAsString(localStorageValues)
+                            .replace("\"", "\\\"")}\""
+                    )
+                ).callUrl
+
+                if (!CallPage(chromeDriver).visit(callUrl)) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)
                 } else {
                     startRecurringCallStatusChecks()
