@@ -189,6 +189,8 @@ Jibri requires some settings to be enabled within a Jitsi Meet configuration.
 These changes include virtualhosts and accounts in Prosody, settings for the
 jitsi meet web (within config.js) as well as `jicofo.conf`.
 
+NB: Port 5222 has to be opened on the Jitst Meet server to allow inbound connections
+
 ## Prosody
 
 Create the internal MUC component entry. This is required so that the jibri
