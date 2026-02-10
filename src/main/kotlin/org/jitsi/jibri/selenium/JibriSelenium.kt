@@ -138,7 +138,6 @@ val SIP_GW_URL_OPTIONS = listOf(
     "config.analytics.disabled=true",
     "config.enableEmailInStats=false",
     "config.p2p.enabled=false",
-    "config.prejoinPageEnabled=false",
     "config.prejoinConfig.enabled=false",
     "config.requireDisplayName=false",
     "devices.videoInput=\"PJSUA\""
@@ -151,7 +150,6 @@ val RECORDING_URL_OPTIONS = listOf(
     "config.iAmRecorder=true",
     "config.p2p.enabled=false",
     "config.prejoinConfig.enabled=false",
-    "config.prejoinPageEnabled=false",
     "config.requireDisplayName=false",
     "config.startWithAudioMuted=true",
     "config.startWithVideoMuted=true",
@@ -280,7 +278,12 @@ class JibriSelenium(
     /**
      * Join a web call with Selenium
      */
-    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null, passcode: String? = null) {
+    fun joinCall(
+        callUrlInfo: CallUrlInfo,
+        xmppCredentials: XmppCredentials? = null,
+        passcode: String? = null,
+        unmute: Boolean = false
+    ) {
         // These are all blocking calls, so offload the work to another thread
         TaskPools.ioPool.submit {
             try {
@@ -318,6 +321,8 @@ class JibriSelenium(
                 )
 
                 if (!CallPage(chromeDriver).visit(callUrl)) {
+                    stateMachine.transition(SeleniumEvent.FailedToJoinCall)
+                } else if (unmute && !CallPage(chromeDriver).unmute()) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)
                 } else {
                     startRecurringCallStatusChecks()

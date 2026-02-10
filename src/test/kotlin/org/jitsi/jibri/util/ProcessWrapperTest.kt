@@ -56,6 +56,7 @@ internal class ProcessWrapperTest : ShouldSpec() {
 
             every { process.inputStream } returns inputStream
             every { process.destroyForcibly() } returns process
+            every { processBuilder.command(any<List<String>>()) } returns processBuilder
             every { processBuilder.start() } returns process
 
             processWrapper = ProcessWrapper(
