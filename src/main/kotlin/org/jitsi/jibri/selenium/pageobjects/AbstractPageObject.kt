@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.selenium.pageobjects
 
+import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.remote.RemoteWebDriver
 import kotlin.time.measureTime
@@ -28,11 +29,11 @@ import kotlin.time.measureTime
 open class AbstractPageObject(protected val driver: RemoteWebDriver) {
     private val logger = createLogger()
 
-    open fun visit(url: String): Boolean {
+    open fun visit(url: CallUrlInfo): Boolean {
         logger.info("Visiting url $url")
 
         val totalTime = measureTime {
-            driver.get(url)
+            driver.get(url.callUrl)
         }
 
         logger.info("Waited $totalTime for driver to load page")

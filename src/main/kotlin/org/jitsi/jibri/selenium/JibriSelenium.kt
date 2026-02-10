@@ -315,7 +315,7 @@ class JibriSelenium(
                         "appData.localStorageContent=\"${jacksonObjectMapper().writeValueAsString(localStorageValues)
                             .replace("\"", "\\\"")}\""
                     )
-                ).callUrl
+                )
 
                 if (!CallPage(chromeDriver).visit(callUrl)) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)

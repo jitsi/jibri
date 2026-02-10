@@ -64,7 +64,11 @@ data class SipClientParams(
      * The optional address of proxy server
      */
     val proxy: String? = null
-)
+) {
+    override fun toString() =
+        "SipClientParams(sipAddress: $sipAddress, displayName: $displayName, autoAnswer: $autoAnswer, " +
+            "autoAnswerTimer: $autoAnswerTimer, userName: $userName, password: ***, contact: $contact, proxy: $proxy)"
+}
 
 abstract class SipClient : StatusPublisher<ComponentState>() {
     /**
