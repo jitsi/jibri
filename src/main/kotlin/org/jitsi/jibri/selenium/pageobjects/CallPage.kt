@@ -75,6 +75,33 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return result
     }
 
+    /**
+     * Enable the local camera and microphone. Used in sip gateway mode.
+     */
+    fun unmute() = doUnmute("Audio") && doUnmute("Video")
+
+    private fun doUnmute(mediaType: String): Boolean {
+        return try {
+            val result = driver.executeScript(
+                """
+                    try {
+                            APP.conference.mute$mediaType(false);
+                        } catch (e) {
+                            return e.message;
+                        }
+                """.trimMargin()
+            )
+            if (result != null) {
+                logger.info { "Failed to unmute $mediaType: $result" }
+                return false
+            }
+            return true
+        } catch (t: TimeoutException) {
+            logger.error("Timed out waiting for unmute $mediaType")
+            false
+        }
+    }
+
     /** Returns the number of participants excluding hidden participants. */
     fun getNumParticipants(): Int {
         val result = driver.executeScript(

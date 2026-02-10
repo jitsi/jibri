@@ -81,7 +81,7 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
         context("starting a sip gateway service") {
             sipGatewayJibriService.start()
             should("have selenium join the call") {
-                verify { seleniumMockHelper.mock.joinCall(any(), any()) }
+                verify { seleniumMockHelper.mock.joinCall(any(), any(), any(), unmute = true) }
             }
             context("and selenium joins the call successfully") {
                 seleniumMockHelper.startSuccessfully()

@@ -67,7 +67,8 @@ data class SipClientParams(
 ) {
     override fun toString() =
         "SipClientParams(sipAddress: $sipAddress, displayName: $displayName, autoAnswer: $autoAnswer, " +
-            "autoAnswerTimer: $autoAnswerTimer, userName: $userName, password: ***, contact: $contact, proxy: $proxy)"
+            "autoAnswerTimer: $autoAnswerTimer, userName: $userName, " +
+            "password: ${if (password.isNullOrEmpty()) "empty" else "****"} contact: $contact, proxy: $proxy)"
 }
 
 abstract class SipClient : StatusPublisher<ComponentState>() {
