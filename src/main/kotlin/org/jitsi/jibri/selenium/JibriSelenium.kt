@@ -140,6 +140,7 @@ val SIP_GW_URL_OPTIONS = listOf(
     "config.p2p.enabled=false",
     "config.prejoinConfig.enabled=false",
     "config.requireDisplayName=false",
+    "config.deeplinking.disabled=true",
     "devices.videoInput=\"PJSUA\""
 )
 
@@ -151,6 +152,7 @@ val RECORDING_URL_OPTIONS = listOf(
     "config.p2p.enabled=false",
     "config.prejoinConfig.enabled=false",
     "config.requireDisplayName=false",
+    "config.deeplinking.disabled=true",
     "config.startWithAudioMuted=true",
     "config.startWithVideoMuted=true",
     "interfaceConfig.APP_NAME=\"Jibri\""
