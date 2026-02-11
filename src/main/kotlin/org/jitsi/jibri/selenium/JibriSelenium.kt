@@ -45,6 +45,8 @@ import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
 import org.openqa.selenium.remote.UnreachableBrowserException
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -314,11 +316,14 @@ class JibriSelenium(
                     localStorageValues["xmpp_conference_password_override"] = passcode
                 }
 
+                // jitsi-meet parses this twice...
+                val innerJson = jacksonObjectMapper().writeValueAsString(localStorageValues)
+                val innerJsonEscaped = innerJson.replace("\"", "\\\"")
+                val outerJson = "\"$innerJsonEscaped\""
                 val callUrl = callUrlInfo.withAdditionalUrlParams(
                     listOf(
                         "config.useHostPageLocalStorage=true",
-                        "appData.localStorageContent=\"${jacksonObjectMapper().writeValueAsString(localStorageValues)
-                            .replace("\"", "\\\"")}\""
+                        "appData.localStorageContent=${encodeURIComponent(outerJson)}",
                     )
                 )
 
@@ -379,3 +384,12 @@ class JibriSelenium(
         const val COMPONENT_ID = "Selenium"
     }
 }
+
+/** Match javascript's encodeURIComponent */
+private fun encodeURIComponent(str: String) = URLEncoder.encode(str, StandardCharsets.US_ASCII.toString())
+    .replace("+", "%20")
+    .replace("%21", "!")
+    .replace("%27", "'")
+    .replace("%28", "(")
+    .replace("%29", ")")
+    .replace("%7E", "~")
