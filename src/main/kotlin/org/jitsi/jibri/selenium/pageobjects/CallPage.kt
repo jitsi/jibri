@@ -404,20 +404,31 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
     }
 
     fun leave(): Boolean {
-        val result = driver.executeScript(
-            """
-            try {
-                return APP.conference._room.leave();
-            } catch (e) {
-                return e.message;
+        val result = try {
+            WebDriverWait(driver, 30).until {
+                driver.executeScript(
+                    """
+                    try {
+                        return APP.conference._room.leave();
+                    } catch (e) {
+                        return e.message;
+                    }
+                    """.trimMargin()
+                )
             }
-            """.trimMargin()
-        )
+        } catch (t: TimeoutException) {
+            logger.error("Timed out waiting for leave to complete")
+            return false
+        }
 
         // Let's wait till we are alone in the room
         // (give time for the js Promise to finish before quiting selenium)
-        WebDriverWait(driver, 2).until {
-            getNumParticipants() == 1
+        try {
+            WebDriverWait(driver, 2).until {
+                getNumParticipants() == 1
+            }
+        } catch (t: TimeoutException) {
+            logger.warn("Timed out waiting to be alone in room")
         }
 
         return when (result) {
