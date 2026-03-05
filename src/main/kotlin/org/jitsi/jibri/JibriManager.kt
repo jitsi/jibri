@@ -80,6 +80,13 @@ class JibriManager : StatusPublisher<Any>() {
     private var currentActiveService: JibriService? = null
 
     /**
+     * Flag to track if we're currently in the process of stopping a service.
+     * This prevents race conditions where stopService is called multiple times
+     * (e.g., once from XMPP stop command and once from service state transition).
+     */
+    private var isStopping: Boolean = false
+
+    /**
      * Store some arbitrary context optionally sent in the start service request so that we can report it in our
      * status
      */
@@ -235,33 +242,47 @@ class JibriManager : StatusPublisher<Any>() {
      */
     @Synchronized
     fun stopService() {
-        val currentService = currentActiveService ?: run {
-            // After an initial call to 'stopService', we'll stop ffmpeg and it will transition
-            // to 'finished', causing the entire service to transition to 'finished' and trigger
-            // another call to stopService (see the note above when installing the status handler
-            // on the jibri service).  A more complete fix for this is much larger, so for now
-            // we'll just check if the currentActiveService has already been cleared to prevent
-            // doing a double stop (which is mostly harmless, but does fire an extra 'stop'
-            // statsd event with an empty service tag)
-            logger.info("No service active, ignoring stop")
+        // Prevent race conditions where stopService is called multiple times
+        // (e.g., from XMPP stop command and from service state transition)
+        if (isStopping) {
+            logger.info("Stop already in progress, ignoring duplicate stop request")
             return
         }
-        jibriMetrics.stop(currentService.getSinkType())
-        logger.info("Stopping the current service")
-        serviceTimeoutTask?.cancel(false)
-        // Note that this will block until the service is completely stopped
-        currentService.stop()
-        currentActiveService = null
-        currentEnvironmentContext = null
-        // Invoke the function we've been told to next time we're idle
-        // and reset it
-        pendingIdleFunc()
-        pendingIdleFunc = {}
-        if (singleUseMode) {
-            logger.info("Jibri is in single-use mode, not returning to IDLE")
-            publishStatus(ComponentBusyStatus.EXPIRED)
-        } else {
-            publishStatus(ComponentBusyStatus.IDLE)
+
+        val currentService = currentActiveService
+        if (currentService == null) {
+            // This can happen if stopService is called multiple times due to a race condition.
+            // We still need to ensure the status is IDLE to prevent "stuck busy" issues.
+            logger.info("No service active, ensuring IDLE status is published")
+            pendingIdleFunc()
+            pendingIdleFunc = {}
+            if (!singleUseMode) {
+                publishStatus(ComponentBusyStatus.IDLE)
+            }
+            return
+        }
+
+        isStopping = true
+        try {
+            jibriMetrics.stop(currentService.getSinkType())
+            logger.info("Stopping the current service")
+            serviceTimeoutTask?.cancel(false)
+            // Note that this will block until the service is completely stopped
+            currentService.stop()
+            currentActiveService = null
+            currentEnvironmentContext = null
+            // Invoke the function we've been told to next time we're idle
+            // and reset it
+            pendingIdleFunc()
+            pendingIdleFunc = {}
+            if (singleUseMode) {
+                logger.info("Jibri is in single-use mode, not returning to IDLE")
+                publishStatus(ComponentBusyStatus.EXPIRED)
+            } else {
+                publishStatus(ComponentBusyStatus.IDLE)
+            }
+        } finally {
+            isStopping = false
         }
     }
 
