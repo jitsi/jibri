@@ -44,7 +44,11 @@ class ProcessWrapper(
             environment().putAll(environment)
         }.start()
     },
-    private val stopper: ProcessStopper = { pid -> Runtime.getRuntime().exec("kill -s SIGINT $pid") }
+    private val stopper: ProcessStopper = { pid ->
+        Runtime.getRuntime().exec(
+            arrayOf("kill", "-s", "SIGINT", pid.toString())
+        )
+    }
 ) {
     private val logger = createChildLogger(parentLogger)
 
