@@ -21,16 +21,13 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.within
 import org.jitsi.utils.logging2.Logger
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
@@ -41,9 +38,10 @@ import java.util.concurrent.TimeUnit
 internal class ProcessWrapperTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val processBuilder: ProcessBuilder = mockk(relaxed = true)
     private val process: Process = mockk(relaxed = true)
-    private val runtime: Runtime = mockk(relaxed = true)
+    private var stoppedPid: Long = -1
+    private lateinit var stopperException: Throwable
+    private var stopperThrows = false
     private lateinit var outputStream: PipedOutputStream
     private lateinit var inputStream: PipedInputStream
     private lateinit var processWrapper: ProcessWrapper
@@ -53,17 +51,22 @@ internal class ProcessWrapperTest : ShouldSpec() {
         beforeTest {
             outputStream = PipedOutputStream()
             inputStream = PipedInputStream(outputStream)
+            stopperThrows = false
 
             every { process.inputStream } returns inputStream
             every { process.destroyForcibly() } returns process
-            every { processBuilder.command(any<List<String>>()) } returns processBuilder
-            every { processBuilder.start() } returns process
+            every { process.pid() } returns 12345L
+
+            val stopper: ProcessStopper = { pid ->
+                if (stopperThrows) throw stopperException
+                stoppedPid = pid
+            }
 
             processWrapper = ProcessWrapper(
                 listOf(),
                 parentLogger = logger,
-                processBuilder = processBuilder,
-                runtime = runtime
+                processStarter = { process },
+                stopper = stopper
             )
             processWrapper.start()
         }
@@ -143,42 +146,42 @@ internal class ProcessWrapperTest : ShouldSpec() {
             }
         }
         context("stop") {
-            should("invoke the correct command") {
-                val execCaptor = slot<String>()
-                every { runtime.exec(capture(execCaptor)) } returns process
+            should("invoke the stopper with the process pid") {
                 processWrapper.stop()
-                execCaptor.captured shouldContain "kill -s SIGINT"
+                stoppedPid shouldBe 12345L
             }
-            context("when the runtime throws IOException") {
-                every { runtime.exec(any<String>()) } throws IOException()
+            context("when the stopper throws IOException") {
                 should("let the exception bubble up") {
-                    shouldThrow<IOException> { processWrapper.stop() }
+                    stopperThrows = true
+                    stopperException = java.io.IOException()
+                    shouldThrow<java.io.IOException> { processWrapper.stop() }
                 }
             }
-            context("when the runtime throws RuntimeException") {
-                every { runtime.exec(any<String>()) } throws RuntimeException()
+            context("when the stopper throws RuntimeException") {
                 should("let the exception bubble up") {
+                    stopperThrows = true
+                    stopperException = RuntimeException()
                     shouldThrow<RuntimeException> { processWrapper.stop() }
                 }
             }
         }
         context("stopAndWaitFor") {
-            should("invoke the correct command") {
-                val execCaptor = slot<String>()
-                every { runtime.exec(capture(execCaptor)) } returns process
+            should("invoke the stopper and wait") {
                 every { process.waitFor(any(), any()) } returns true
                 processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe true
-                execCaptor.captured shouldContain "kill -s SIGINT"
+                stoppedPid shouldBe 12345L
             }
-            context("when the runtime throws IOException") {
-                every { runtime.exec(any<String>()) } throws IOException()
+            context("when the stopper throws IOException") {
                 should("handle it correctly") {
+                    stopperThrows = true
+                    stopperException = java.io.IOException()
                     processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
                 }
             }
-            context("when the runtime throws RuntimeException") {
-                every { runtime.exec(any<String>()) } throws RuntimeException()
+            context("when the stopper throws RuntimeException") {
                 should("handle it correctly") {
+                    stopperThrows = true
+                    stopperException = RuntimeException()
                     processWrapper.stopAndWaitFor(Duration.ofSeconds(10)) shouldBe false
                 }
             }

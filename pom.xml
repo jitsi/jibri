@@ -349,6 +349,11 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.2</version>
                 <configuration>
+                    <argLine>
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                    </argLine>
                     <systemPropertyVariables>
                         <!-- gradle.build.dir is the property name that JunitXmlReporter expects to find, even though
                         this is maven -->
