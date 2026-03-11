@@ -183,7 +183,7 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                 every { seleniumMockHelper.mock.getParticipants() } returns listOf(mapOf("a" to "b"))
                 val finalizeProcessMock = createFinalizeProcessMock(true)
                 every {
-                    processFactory.createProcess(match { it.first().contains("finalize") }, any(), any(), any())
+                    processFactory.createProcess(match { it.first().contains("finalize") }, any(), any())
                 } returns finalizeProcessMock
 
                 fileRecordingJibriService.stop()

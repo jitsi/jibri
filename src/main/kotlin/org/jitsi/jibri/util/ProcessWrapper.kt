@@ -22,6 +22,8 @@ import java.io.InputStream
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
+typealias ProcessStopper = (pid: Long) -> Unit
+
 /**
  * A wrapper around [Process] that implements
  * behaviors more useful to Jibri.  This isn't done
@@ -35,28 +37,31 @@ class ProcessWrapper(
     command: List<String>,
     parentLogger: Logger,
     val environment: Map<String, String> = mapOf(),
-    private val processBuilder: ProcessBuilder = ProcessBuilder(),
-    private val runtime: Runtime = Runtime.getRuntime()
+    private val processStarter: () -> Process = {
+        ProcessBuilder().apply {
+            command(command)
+            redirectErrorStream(true)
+            environment().putAll(environment)
+        }.start()
+    },
+    private val stopper: ProcessStopper = { pid -> Runtime.getRuntime().exec("kill -s SIGINT $pid") }
 ) {
     private val logger = createChildLogger(parentLogger)
 
     /**
-     * The actual underlying [Process] this wrapper
-     * wraps
+     * The actual underlying [Process] this wrapper wraps
      */
     private lateinit var process: Process
 
     /**
      * A 'Tee' which allows us to split the stdout
      * stream coming from the process into multiple
-     * independent streams which can be read from
-     * independently
+     * independent streams which can be read from independently
      */
     private lateinit var tee: Tee
 
     /**
-     * Observes the most recent line of output from
-     * the wrapped process
+     * Observes the most recent line of output from the wrapped process
      */
     private lateinit var tail: Tail
 
@@ -74,18 +79,11 @@ class ProcessWrapper(
     val exitValue: Int
         get() = process.exitValue()
 
-    init {
-        processBuilder.command(command)
-        processBuilder.redirectErrorStream(true)
-        processBuilder.environment().putAll(environment)
-    }
-
     /**
-     * Starts this Process.  Will throw if there's an error
-     * (see [ProcessBuilder.start])
+     * Starts this Process.  Will throw if there's an error.
      */
     fun start() {
-        process = processBuilder.start()
+        process = processStarter()
         tee = Tee(process.inputStream)
         tail = Tail(getOutput())
     }
@@ -99,7 +97,7 @@ class ProcessWrapper(
         // because we want them to read everything available from the
         // process' inputstream. Once it's done, they'll read
         // the EOF and close things up correctly
-        runtime.exec("kill -s SIGINT ${process.pid()}")
+        stopper(process.pid())
     }
 
     /**
