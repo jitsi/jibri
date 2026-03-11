@@ -371,15 +371,17 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
             """
             try {
                 APP.conference._room.room.addOrReplaceInPresence(
-                    '$key',
+                    arguments[0],
                     {
-                        value: '$value'
+                        value: arguments[1]
                     }
                 );
             } catch (e) {
                 return e.message;
             }
-            """.trimMargin()
+            """.trimMargin(),
+            key,
+            value
         )
         return when (result) {
             is String -> false
