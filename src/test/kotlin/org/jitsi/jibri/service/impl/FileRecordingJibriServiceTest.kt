@@ -203,6 +203,27 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                 }
             }
         }
+        context("when sessionId contains special characters") {
+            val sessionId = "foo&bar/baz"
+            val fileRecordingParams = FileRecordingParams(
+                callParams,
+                sessionId,
+                callLoginParams
+            )
+
+            FileRecordingJibriService(
+                fileRecordingParams,
+                SeleniumMockHelper().mock,
+                CapturerMockHelper().mock,
+                mockk(),
+                fs
+            ).start()
+
+            should("sanitize the sessionId") {
+                // The sanitized version should replace all special chars with underscores
+                Files.exists(fs.getPath(recordingsDir.toString(), "foo_bar_baz")) shouldBe true
+            }
+        }
     }
 
     private fun setPerms(permsStr: String, p: Path) {
