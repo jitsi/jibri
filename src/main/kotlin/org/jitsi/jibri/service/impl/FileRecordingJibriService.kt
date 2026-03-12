@@ -128,7 +128,15 @@ class FileRecordingJibriService(
      * be nested within [recordingsDirectory].
      */
     private val sessionRecordingDirectory =
-        fileSystem.getPath(recordingsDirectory).resolve(fileRecordingParams.sessionId)
+        fileSystem.getPath(recordingsDirectory).resolve(sanitizeSessionId(fileRecordingParams.sessionId))
+
+    /**
+     * Sanitize the session ID to ensure it's safe for use as a directory name.
+     */
+    private fun sanitizeSessionId(sessionId: String): String {
+        // Replace any character that is not alphanumeric, dash, or underscore with underscore
+        return sessionId.replace(Regex("[^a-zA-Z0-9_-]"), "_")
+    }
 
     init {
         logger.info("Writing recording to $sessionRecordingDirectory, finalize script path $finalizeScriptPath")
