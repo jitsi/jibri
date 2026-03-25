@@ -25,11 +25,6 @@
     </properties>
 
     <dependencies>
-       <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.75</version>
-        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jicoco-mucclient</artifactId>
