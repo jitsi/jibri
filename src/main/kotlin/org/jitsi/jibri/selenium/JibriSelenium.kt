@@ -17,6 +17,8 @@
 package org.jitsi.jibri.selenium
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.MainConfig
 import org.jitsi.jibri.config.Config
@@ -168,7 +170,8 @@ val RECORDING_URL_OPTIONS = listOf(
  */
 class JibriSelenium(
     parentLogger: Logger,
-    private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions()
+    private val jibriSeleniumOptions: JibriSeleniumOptions = JibriSeleniumOptions(),
+    chromeDriver: ChromeDriver? = null
 ) : StatusPublisher<ComponentState>() {
     private val logger = createChildLogger(parentLogger)
     private var chromeDriver: ChromeDriver
@@ -176,6 +179,9 @@ class JibriSelenium(
     private val stateMachine = SeleniumStateMachine()
     private var shuttingDown = AtomicBoolean(false)
     private val chromeOpts: List<String> by config("jibri.chrome.flags".from(Config.configSource))
+    private val chromeQuitTimeout: Duration by config {
+        "jibri.chrome.quit-timeout".from(Config.configSource)
+    }
 
     /**
      * A task which executes at an interval and checks various aspects of the call to make sure things are
@@ -187,19 +193,24 @@ class JibriSelenium(
      * Set up default chrome driver options (using fake device, etc.)
      */
     init {
-        System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
-        val chromeOptions = ChromeOptions()
-        chromeOptions.addArguments(chromeOpts)
-        chromeOptions.setExperimentalOption("w3c", false)
-        chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
-        val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
-            mapOf("DISPLAY" to jibriSeleniumOptions.display)
-        ).build()
-        val logPrefs = LoggingPreferences()
-        logPrefs.enable(LogType.DRIVER, Level.ALL)
-        chromeOptions.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
-        chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
-        chromeDriver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS)
+        this.chromeDriver = if (chromeDriver != null) {
+            chromeDriver
+        } else {
+            System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
+            val chromeOptions = ChromeOptions()
+            chromeOptions.addArguments(chromeOpts)
+            chromeOptions.setExperimentalOption("w3c", false)
+            chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
+            val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
+                mapOf("DISPLAY" to jibriSeleniumOptions.display)
+            ).build()
+            val logPrefs = LoggingPreferences()
+            logPrefs.enable(LogType.DRIVER, Level.ALL)
+            chromeOptions.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
+            val driver = ChromeDriver(chromeDriverService, chromeOptions)
+            driver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS)
+            driver
+        }
 
         stateMachine.onStateTransition(this::onSeleniumStateChange)
     }
@@ -363,8 +374,49 @@ class JibriSelenium(
         }
         currCallUrl = null
         logger.info("Quitting chrome driver")
-        chromeDriver.quit()
-        logger.info("Chrome driver quit")
+        try {
+            runBlocking {
+                withTimeoutOrNull(chromeQuitTimeout.toMillis()) {
+                    chromeDriver.quit()
+                } ?: run {
+                    logger.error(
+                        "Chrome quit timed out after ${chromeQuitTimeout.seconds}s, " +
+                            "forcing process termination"
+                    )
+                    forceKillChrome()
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Error during chrome driver quit", e)
+            forceKillChrome()
+        }
+        logger.info("Chrome driver quit completed")
+    }
+
+    private fun forceKillChrome() {
+        try {
+            // Try to get the Chrome process and kill it specifically
+            val process = chromeDriver.capabilities.getCapability("chromeProcess") as? Process
+            if (process != null) {
+                process.destroyForcibly()
+                process.waitFor(5, TimeUnit.SECONDS)
+                logger.info("Chrome process forcefully terminated")
+            }
+
+            // Fallback: kill chromedriver process by PID if possible
+            try {
+                val chromeDriverService = chromeDriver.capabilities.getCapability("chromeDriverService")
+                // Try to get PID and kill specifically
+                val pidField = chromeDriverService?.javaClass?.getDeclaredField("process")
+                pidField?.isAccessible = true
+                val driverProcess = pidField?.get(chromeDriverService) as? Process
+                driverProcess?.destroyForcibly()?.waitFor(5, TimeUnit.SECONDS)
+            } catch (e: Exception) {
+                logger.debug("Could not get chromedriver process handle: ${e.message}")
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to force kill Chrome process, continuing anyway", e)
+        }
     }
 
     companion object {

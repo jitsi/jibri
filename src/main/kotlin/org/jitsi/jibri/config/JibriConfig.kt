@@ -28,6 +28,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.logger
 import org.jivesoftware.smack.ConnectionConfiguration
 import java.io.File
+import java.time.Duration
 
 data class XmppCredentials(
     val domain: String = "",
@@ -184,7 +185,9 @@ data class JibriConfig(
     @JsonProperty("finalize_recording_script_path")
     val finalizeRecordingScriptPath: String? = null,
     @JsonProperty("xmpp_environments")
-    val xmppEnvironments: List<XmppEnvironmentConfig>? = null
+    val xmppEnvironments: List<XmppEnvironmentConfig>? = null,
+    @JsonProperty("chrome_quit_timeout")
+    val chromeQuitTimeout: Duration = Duration.ofSeconds(30)
 )
 
 fun loadConfigFromFile(configFile: File): JibriConfig? {
