@@ -81,6 +81,7 @@ fun main(args: Array<String>) {
     jibriStatusManager.addStatusHandler {
         jibriManager.jibriMetrics.updateStatus(it)
     }
+    jibriManager.jibriMetrics.updateStatus(jibriStatusManager.overallStatus)
     webhookSubscribers.forEach(webhookClient::addSubscriber)
     val statusUpdaterTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(
         1,
