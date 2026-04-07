@@ -17,6 +17,7 @@
 
 package org.jitsi.jibri.selenium.pageobjects
 
+import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -36,7 +37,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         PageFactory.initElements(driver, this)
     }
 
-    override fun visit(url: String): Boolean {
+    override fun visit(url: CallUrlInfo): Boolean {
         if (!super.visit(url)) {
             return false
         }
@@ -72,6 +73,33 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
 
         return result
+    }
+
+    /**
+     * Enable the local camera and microphone. Used in sip gateway mode.
+     */
+    fun unmute() = doUnmute("Audio") && doUnmute("Video")
+
+    private fun doUnmute(mediaType: String): Boolean {
+        return try {
+            val result = driver.executeScript(
+                """
+                    try {
+                            APP.conference.mute$mediaType(false);
+                        } catch (e) {
+                            return e.message;
+                        }
+                """.trimMargin()
+            )
+            if (result != null) {
+                logger.info { "Failed to unmute $mediaType: $result" }
+                return false
+            }
+            return true
+        } catch (t: TimeoutException) {
+            logger.error("Timed out waiting for unmute $mediaType")
+            false
+        }
     }
 
     /** Returns the number of participants excluding hidden participants. */
@@ -342,16 +370,18 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         val result = driver.executeScript(
             """
             try {
-                APP.conference._room.room.addToPresence(
-                    '$key',
+                APP.conference._room.room.addOrReplaceInPresence(
+                    arguments[0],
                     {
-                        value: '$value'
+                        value: arguments[1]
                     }
                 );
             } catch (e) {
                 return e.message;
             }
-            """.trimMargin()
+            """.trimMargin(),
+            key,
+            value
         )
         return when (result) {
             is String -> false

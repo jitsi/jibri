@@ -39,7 +39,9 @@ class JibriSubprocess(
     private var processStatePublisher: ProcessStatePublisher? = null
 
     fun launch(command: List<String>, env: Map<String, String> = mapOf()) {
-        logger.info("Starting $name with command ${command.joinToString(separator = " ")} ($command)")
+        logger.info(
+            "Starting $name with: ${command.map { if (it.startsWith("--password")) "--password=****" else it }}"
+        )
         process = processFactory.createProcess(command, logger, env)
         try {
             process?.let {

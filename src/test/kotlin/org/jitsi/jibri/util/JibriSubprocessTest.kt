@@ -54,7 +54,7 @@ internal class JibriSubprocessTest : ShouldSpec() {
                 }
             }
 
-            every { processFactory.createProcess(any(), any(), any(), any()) } returns processWrapper
+            every { processFactory.createProcess(any(), any(), any()) } returns processWrapper
             every { processStatePublisher.addStatusHandler(capture(processStateHandler)) } just Runs
 
             subprocess.addStatusHandler { status ->

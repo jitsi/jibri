@@ -45,7 +45,6 @@ import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientConfiguration
 import org.jitsi.xmpp.mucclient.MucClientManager
-import org.jitsi.xmpp.util.XmlStringBuilderUtil.Companion.toStringOpt
 import org.jivesoftware.smack.ConnectionConfiguration
 import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.StanzaError
@@ -227,7 +226,10 @@ class XmppApi(
      * that this [JibriIq] was received on.
      */
     private fun handleJibriIq(jibriIq: JibriIq, mucClient: MucClient): IQ {
-        logger.info("Received JibriIq ${jibriIq.toStringOpt()} from environment $mucClient")
+        logger.info(
+            "Received JibriIq action=${jibriIq.action} mode=${jibriIq.recordingMode} " +
+                "room=${jibriIq.room} session=${jibriIq.sessionId} from environment $mucClient"
+        )
         val xmppEnvironment = getXmppEnvironment(mucClient)
             ?: return IQ.createErrorResponse(
                 jibriIq,
@@ -310,7 +312,7 @@ class XmppApi(
                         shouldRetry = serviceState.error.shouldRetry()
                         logger.info(
                             "Current service had an error ${serviceState.error}, " +
-                                "sending error iq ${toStringOpt()}"
+                                "sending error iq status=$status failureReason=$failureReason shouldRetry=$shouldRetry"
                         )
                         mucClient.sendStanza(this)
                     }
@@ -318,14 +320,14 @@ class XmppApi(
                 is ComponentState.Finished -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
                         sipAddress = request.sipAddress
-                        logger.info("Current service finished, sending off iq ${toStringOpt()}")
+                        logger.info("Current service finished, sending off iq status=$status")
                         mucClient.sendStanza(this)
                     }
                 }
                 is ComponentState.Running -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.ON)) {
                         sipAddress = request.sipAddress
-                        logger.info("Current service started up successfully, sending on iq ${toStringOpt()}")
+                        logger.info("Current service started up successfully, sending on iq status=$status")
                         mucClient.sendStanza(this)
                     }
                 }

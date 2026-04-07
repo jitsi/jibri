@@ -55,4 +55,10 @@ data class CallUrlInfo(
         // Purposefully ignore urlParams here
         return Objects.hash(baseUrl.lowercase(), callName.lowercase())
     }
+
+    fun withAdditionalUrlParams(params: List<String>): CallUrlInfo =
+        this.copy(urlParams = (this.urlParams + params).distinct())
+
+    override fun toString() = "CallUrlInfo(baseUrl='$baseUrl', callName='$callName', " +
+        "urlParams=${if (urlParams.isEmpty()) "empty" else "not-empty"})"
 }

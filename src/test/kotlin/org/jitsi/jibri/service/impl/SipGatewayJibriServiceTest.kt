@@ -81,7 +81,7 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
         context("starting a sip gateway service") {
             sipGatewayJibriService.start()
             should("have selenium join the call") {
-                verify { seleniumMockHelper.mock.joinCall(any(), any()) }
+                verify { seleniumMockHelper.mock.joinCall(any(), any(), any(), unmute = true) }
             }
             context("and selenium joins the call successfully") {
                 seleniumMockHelper.startSuccessfully()
@@ -139,7 +139,7 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
             // Stop the service
             val finalizeProcessMock = createFinalizeProcessMock(true)
             every {
-                processFactory.createProcess(eq(listOf("/opt/jitsi/jibri/finalize_sip.sh")), any(), any(), any())
+                processFactory.createProcess(eq(listOf("/opt/jitsi/jibri/finalize_sip.sh")), any(), any())
             } returns finalizeProcessMock
 
             sipGatewayJibriService.stop()
@@ -165,7 +165,7 @@ internal class SipGatewayJibriServiceTest : ShouldSpec() {
             // Stop the service
             val finalizeProcessMock = createFinalizeProcessMock(false)
             every {
-                processFactory.createProcess(eq(listOf("/opt/jitsi/jibri/finalize_sip.sh")), any(), any(), any())
+                processFactory.createProcess(eq(listOf("/opt/jitsi/jibri/finalize_sip.sh")), any(), any())
             } returns finalizeProcessMock
 
             sipGatewayJibriService.stop()

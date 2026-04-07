@@ -183,7 +183,7 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                 every { seleniumMockHelper.mock.getParticipants() } returns listOf(mapOf("a" to "b"))
                 val finalizeProcessMock = createFinalizeProcessMock(true)
                 every {
-                    processFactory.createProcess(match { it.first().contains("finalize") }, any(), any(), any())
+                    processFactory.createProcess(match { it.first().contains("finalize") }, any(), any())
                 } returns finalizeProcessMock
 
                 fileRecordingJibriService.stop()
@@ -201,6 +201,27 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                     verify { finalizeProcessMock.start() }
                     verify { finalizeProcessMock.waitFor() }
                 }
+            }
+        }
+        context("when sessionId contains special characters") {
+            val sessionId = "foo&bar/baz"
+            val fileRecordingParams = FileRecordingParams(
+                callParams,
+                sessionId,
+                callLoginParams
+            )
+
+            FileRecordingJibriService(
+                fileRecordingParams,
+                SeleniumMockHelper().mock,
+                CapturerMockHelper().mock,
+                mockk(),
+                fs
+            ).start()
+
+            should("sanitize the sessionId") {
+                // The sanitized version should replace all special chars with underscores
+                Files.exists(fs.getPath(recordingsDir.toString(), "foo_bar_baz")) shouldBe true
             }
         }
     }

@@ -16,12 +16,12 @@
 
 package org.jitsi.jibri.selenium
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.MainConfig
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
-import org.jitsi.jibri.selenium.pageobjects.HomePage
 import org.jitsi.jibri.selenium.status_checks.EmptyCallStatusCheck
 import org.jitsi.jibri.selenium.status_checks.IceConnectionStatusCheck
 import org.jitsi.jibri.selenium.status_checks.LocalParticipantKickedStatusCheck
@@ -45,6 +45,8 @@ import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
 import org.openqa.selenium.remote.CapabilityType
 import org.openqa.selenium.remote.UnreachableBrowserException
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -138,9 +140,9 @@ val SIP_GW_URL_OPTIONS = listOf(
     "config.analytics.disabled=true",
     "config.enableEmailInStats=false",
     "config.p2p.enabled=false",
-    "config.prejoinPageEnabled=false",
     "config.prejoinConfig.enabled=false",
     "config.requireDisplayName=false",
+    "config.deeplinking.disabled=true",
     "devices.videoInput=\"PJSUA\""
 )
 
@@ -151,8 +153,8 @@ val RECORDING_URL_OPTIONS = listOf(
     "config.iAmRecorder=true",
     "config.p2p.enabled=false",
     "config.prejoinConfig.enabled=false",
-    "config.prejoinPageEnabled=false",
     "config.requireDisplayName=false",
+    "config.deeplinking.disabled=true",
     "config.startWithAudioMuted=true",
     "config.startWithVideoMuted=true",
     "interfaceConfig.APP_NAME=\"Jibri\""
@@ -202,16 +204,6 @@ class JibriSelenium(
         chromeDriver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS)
 
         stateMachine.onStateTransition(this::onSeleniumStateChange)
-    }
-
-    /**
-     * Set various values to be put in local storage.  NOTE: the driver
-     * should have already navigated to the desired page
-     */
-    private fun setLocalStorageValues(keyValues: Map<String, String>) {
-        for ((key, value) in keyValues) {
-            chromeDriver.executeScript("window.localStorage.setItem('$key', '$value')")
-        }
     }
 
     private fun onSeleniumStateChange(oldState: ComponentState, newState: ComponentState) {
@@ -288,14 +280,17 @@ class JibriSelenium(
     fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
     /**
-     * Join a a web call with Selenium
+     * Join a web call with Selenium
      */
-    fun joinCall(callUrlInfo: CallUrlInfo, xmppCredentials: XmppCredentials? = null, passcode: String? = null) {
+    fun joinCall(
+        callUrlInfo: CallUrlInfo,
+        xmppCredentials: XmppCredentials? = null,
+        passcode: String? = null,
+        unmute: Boolean = false
+    ) {
         // These are all blocking calls, so offload the work to another thread
         TaskPools.ioPool.submit {
             try {
-                HomePage(chromeDriver).visit(callUrlInfo.baseUrl)
-
                 var callStatsUsername = "jibri"
                 if (jibriSeleniumOptions.callStatsUsernameOverride.isNotEmpty()) {
                     callStatsUsername = jibriSeleniumOptions.callStatsUsernameOverride
@@ -320,8 +315,21 @@ class JibriSelenium(
                 passcode?.let {
                     localStorageValues["xmpp_conference_password_override"] = passcode
                 }
-                setLocalStorageValues(localStorageValues)
-                if (!CallPage(chromeDriver).visit(callUrlInfo.callUrl)) {
+
+                // jitsi-meet parses this twice...
+                val innerJson = jacksonObjectMapper().writeValueAsString(localStorageValues)
+                val innerJsonEscaped = innerJson.replace("\"", "\\\"")
+                val outerJson = "\"$innerJsonEscaped\""
+                val callUrl = callUrlInfo.withAdditionalUrlParams(
+                    listOf(
+                        "config.useHostPageLocalStorage=true",
+                        "appData.localStorageContent=${encodeURIComponent(outerJson)}",
+                    )
+                )
+
+                if (!CallPage(chromeDriver).visit(callUrl)) {
+                    stateMachine.transition(SeleniumEvent.FailedToJoinCall)
+                } else if (unmute && !CallPage(chromeDriver).unmute()) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)
                 } else {
                     startRecurringCallStatusChecks()
@@ -376,3 +384,12 @@ class JibriSelenium(
         const val COMPONENT_ID = "Selenium"
     }
 }
+
+/** Match javascript's encodeURIComponent */
+private fun encodeURIComponent(str: String) = URLEncoder.encode(str, StandardCharsets.US_ASCII.toString())
+    .replace("+", "%20")
+    .replace("%21", "!")
+    .replace("%27", "'")
+    .replace("%28", "(")
+    .replace("%29", ")")
+    .replace("%7E", "~")

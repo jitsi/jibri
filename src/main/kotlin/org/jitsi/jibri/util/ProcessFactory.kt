@@ -22,9 +22,8 @@ class ProcessFactory {
     fun createProcess(
         command: List<String>,
         parentLogger: Logger,
-        environment: Map<String, String> = mapOf(),
-        processBuilder: ProcessBuilder = ProcessBuilder()
+        environment: Map<String, String> = mapOf()
     ): ProcessWrapper {
-        return ProcessWrapper(command, parentLogger, environment, processBuilder)
+        return ProcessWrapper(command, parentLogger, environment)
     }
 }
