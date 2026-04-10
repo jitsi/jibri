@@ -118,6 +118,7 @@ class FileRecordingJibriService(
         "jibri.recording.recordings-directory".from(Config.configSource)
     }
     private val finalizeScriptPath: String? by optionalconfig {
+        "JibriConfig::finalizeRecordingScriptPath" { Config.legacyConfigSource.finalizeRecordingScriptPath!! }
         "jibri.recording.finalize-script".from(Config.configSource)
     }
 
