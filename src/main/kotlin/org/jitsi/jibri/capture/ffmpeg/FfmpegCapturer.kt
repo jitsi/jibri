@@ -57,17 +57,26 @@ class FfmpegCapturer(
         const val COMPONENT_ID = "Ffmpeg Capturer"
         private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
 
+        val enableVideo: Boolean by config {
+            "jibri.ffmpeg.enable-video".from(Config.configSource)
+        }
         val commandLinuxRecording: List<String> by config {
             "jibri.ffmpeg.command-linux-recording".from(Config.configSource)
         }
         val commandLinuxStreaming: List<String> by config {
             "jibri.ffmpeg.command-linux-streaming".from(Config.configSource)
         }
+        val commandLinuxRecordingAudioOnly: List<String> by config {
+            "jibri.ffmpeg.command-linux-recording-audio-only".from(Config.configSource)
+        }
         val commandMacRecording: List<String> by config {
             "jibri.ffmpeg.command-mac-recording".from(Config.configSource)
         }
         val commandMacStreaming: List<String> by config {
             "jibri.ffmpeg.command-mac-streaming".from(Config.configSource)
+        }
+        val commandMacRecordingAudioOnly: List<String> by config {
+            "jibri.ffmpeg.command-mac-recording-audio-only".from(Config.configSource)
         }
     }
 
@@ -78,14 +87,14 @@ class FfmpegCapturer(
             OsType.MAC -> { sink: Sink ->
                 when (sink) {
                     is StreamSink -> commandMacStreaming
-                    is FileSink -> commandMacRecording
+                    is FileSink -> if (enableVideo) commandMacRecording else commandMacRecordingAudioOnly
                     else -> throw UnsupportedSinkTypeException(sink)
                 } + listOf(sink.path)
             }
             OsType.LINUX -> { sink: Sink ->
                 when (sink) {
                     is StreamSink -> commandLinuxStreaming
-                    is FileSink -> commandLinuxRecording
+                    is FileSink -> if (enableVideo) commandLinuxRecording else commandLinuxRecordingAudioOnly
                     else -> throw UnsupportedSinkTypeException(sink)
                 } + listOf(sink.path)
             }

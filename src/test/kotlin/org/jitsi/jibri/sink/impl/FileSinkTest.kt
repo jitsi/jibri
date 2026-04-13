@@ -22,7 +22,11 @@ import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldStartWith
+import io.mockk.every
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import kotlin.random.Random
 
 internal class FileSinkTest : ShouldSpec() {
@@ -43,6 +47,15 @@ internal class FileSinkTest : ShouldSpec() {
             val sink = FileSink(fs.getPath("/tmp/xxx"), reallyLongCallName)
             should("not generate a filename longer than the max file length") {
                 sink.file.fileName.toString().length shouldBe FileSink.MAX_FILENAME_LENGTH
+            }
+        }
+        context("when audio-only recording is enabled") {
+            mockkObject(FileSink.Companion)
+            every { FileSink.recordingExtension } returns "m4a"
+            afterSpec { unmockkObject(FileSink.Companion) }
+            val sink = FileSink(fs.getPath("/tmp/xxx"), "callname")
+            should("use the m4a file extension") {
+                sink.path.shouldEndWith(".m4a")
             }
         }
     }

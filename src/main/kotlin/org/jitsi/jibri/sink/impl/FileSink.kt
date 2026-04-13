@@ -42,7 +42,12 @@ class FileSink(recordingsDirectory: Path, callName: String) : Sink {
     override val path: String = file.toString()
 
     companion object {
-        val recordingExtension: String by config("jibri.ffmpeg.recording-extension".from(Config.configSource))
+        private val enableVideo: Boolean by config("jibri.ffmpeg.enable-video".from(Config.configSource))
+        private val videoExtension: String by config("jibri.ffmpeg.recording-extension".from(Config.configSource))
+        private val audioOnlyExtension: String by config(
+            "jibri.ffmpeg.recording-extension-audio-only".from(Config.configSource)
+        )
+        val recordingExtension: String get() = if (enableVideo) videoExtension else audioOnlyExtension
         private val TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss")
         const val MAX_FILENAME_LENGTH = 125
     }

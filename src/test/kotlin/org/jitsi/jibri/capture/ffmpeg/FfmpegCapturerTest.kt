@@ -24,13 +24,16 @@ import io.kotest.matchers.collections.contain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNot
 import io.kotest.matchers.types.beInstanceOf
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkObject
 import io.mockk.slot
+import io.mockk.unmockkObject
 import io.mockk.verify
 import org.jitsi.jibri.capture.UnsupportedOsException
 import org.jitsi.jibri.sink.Sink
@@ -172,6 +175,54 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     val commandCaptor = slot<List<String>>()
                     verify { ffmpeg.launch(capture(commandCaptor), any()) }
                     commandCaptor.captured should contain("avfoundation")
+                }
+            }
+        }
+        context("on linux with audio-only recording") {
+            every { osDetector.getOsType() } returns OsType.LINUX
+            mockkObject(FfmpegCapturer.Companion)
+            every { FfmpegCapturer.enableVideo } returns false
+            val ffmpegCapturer = createCapturer()
+            afterSpec { unmockkObject(FfmpegCapturer.Companion) }
+            context("the command") {
+                should("not include x11grab") {
+                    ffmpegCapturer.start(sink)
+                    val commandCaptor = slot<List<String>>()
+                    verify { ffmpeg.launch(capture(commandCaptor), any()) }
+                    commandCaptor.captured shouldNot contain("x11grab")
+                }
+                should("include alsa audio capture") {
+                    ffmpegCapturer.start(sink)
+                    val commandCaptor = slot<List<String>>()
+                    verify { ffmpeg.launch(capture(commandCaptor), any()) }
+                    commandCaptor.captured should contain("alsa")
+                }
+                should("suppress video output with -vn") {
+                    ffmpegCapturer.start(sink)
+                    val commandCaptor = slot<List<String>>()
+                    verify { ffmpeg.launch(capture(commandCaptor), any()) }
+                    commandCaptor.captured should contain("-vn")
+                }
+            }
+        }
+        context("on mac with audio-only recording") {
+            every { osDetector.getOsType() } returns OsType.MAC
+            mockkObject(FfmpegCapturer.Companion)
+            every { FfmpegCapturer.enableVideo } returns false
+            val ffmpegCapturer = createCapturer()
+            afterSpec { unmockkObject(FfmpegCapturer.Companion) }
+            context("the command") {
+                should("not include avfoundation video input") {
+                    ffmpegCapturer.start(sink)
+                    val commandCaptor = slot<List<String>>()
+                    verify { ffmpeg.launch(capture(commandCaptor), any()) }
+                    commandCaptor.captured shouldNot contain("-framerate")
+                }
+                should("suppress video output with -vn") {
+                    ffmpegCapturer.start(sink)
+                    val commandCaptor = slot<List<String>>()
+                    verify { ffmpeg.launch(capture(commandCaptor), any()) }
+                    commandCaptor.captured should contain("-vn")
                 }
             }
         }
