@@ -28,6 +28,7 @@ import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.config.loadConfigFromFile
 import org.jitsi.jibri.config.toXmppEnvironment
+import org.jitsi.jibri.environment.EnvironmentChecker
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatusManager
@@ -143,6 +144,17 @@ fun main(args: Array<String>) {
             .convertFrom<List<com.typesafe.config.Config>> { envConfigs -> envConfigs.map { it.toXmppEnvironment() } }
     }.get()
 
+    // Environment startup check: register as UNHEALTHY before XMPP APIs start
+    // so the initial MUC presence advertises UNHEALTHY until ChromeDriver is validated
+    val startupCheckEnabled = configSupplier<Boolean> {
+        "jibri.chrome.startup-check".from(Config.configSource)
+    }.get()
+    val environmentChecker = if (startupCheckEnabled) {
+        EnvironmentChecker(jibriStatusManager)
+    } else {
+        null
+    }
+
     // XmppApi
     val xmppApi = XmppApi(
         jibriManager = jibriManager,
@@ -150,6 +162,13 @@ fun main(args: Array<String>) {
         jibriStatusManager = jibriStatusManager
     )
     xmppApi.start()
+
+    // Run ChromeDriver validation probe in background after XMPP connections are established
+    environmentChecker?.let { checker ->
+        TaskPools.ioPool.submit {
+            checker.validate()
+        }
+    }
 
     logger.info("Using port ${HttpApi.port} for HTTP API")
 
