@@ -147,7 +147,7 @@ fun main(args: Array<String>) {
     // Environment startup check: register as UNHEALTHY before XMPP APIs start
     // so the initial MUC presence advertises UNHEALTHY until ChromeDriver is validated
     val startupCheckEnabled = configSupplier<Boolean> {
-        "jibri.chrome.startup-check".from(Config.configSource)
+        "jibri.chrome.startup-check.enabled".from(Config.configSource)
     }.get()
     val environmentChecker = if (startupCheckEnabled) {
         EnvironmentChecker(jibriStatusManager)

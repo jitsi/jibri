@@ -80,10 +80,10 @@ class EnvironmentChecker(
         private const val DISPLAY = ":0"
         private val chromeFlags: List<String> by config("jibri.chrome.flags".from(Config.configSource))
         private val configMaxAttempts: Int by config(
-            "jibri.chrome.startup-check-max-attempts".from(Config.configSource)
+            "jibri.chrome.startup-check.max-attempts".from(Config.configSource)
         )
         private val configRetryDelayMs: Long by config(
-            "jibri.chrome.startup-check-retry-delay".from(Config.configSource)
+            "jibri.chrome.startup-check.retry-delay".from(Config.configSource)
         )
 
         /**
