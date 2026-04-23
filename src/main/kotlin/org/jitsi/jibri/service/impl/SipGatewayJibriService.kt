@@ -97,7 +97,13 @@ class SipGatewayJibriService(
      */
     private val pjsuaClient = pjsuaClient ?: PjsuaClient(
         logger,
-        PjsuaClientParams(sipGatewayServiceParams.sipClientParams)
+        PjsuaClientParams(sipGatewayServiceParams.sipClientParams),
+        onDtmfCommand = { command ->
+            if (command == "*6") {
+                logger.info("Received *6 DTMF command from pjsua")
+                this.jibriSelenium.handleDtmfStar6()
+            }
+        }
     )
 
     /**

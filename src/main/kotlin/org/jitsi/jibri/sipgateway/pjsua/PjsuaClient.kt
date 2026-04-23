@@ -31,6 +31,13 @@ import org.jitsi.metaconfig.from
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStreamReader
+import java.nio.file.Files
+import java.nio.file.Paths
 
 data class PjsuaClientParams(
     val sipClientParams: SipClientParams
@@ -38,16 +45,19 @@ data class PjsuaClientParams(
 
 private const val PJSUA_SCRIPT_FILE_LOCATION = "/opt/jitsi/jibri/pjsua.sh"
 private const val X_DISPLAY = ":1"
+private const val DTMF_FIFO_PATH = "/tmp/jibri_pjsua_dtmf"
 
 class PjsuaClient(
     parentLogger: Logger,
-    private val pjsuaClientParams: PjsuaClientParams
+    private val pjsuaClientParams: PjsuaClientParams,
+    private val onDtmfCommand: ((String) -> Unit)? = null
 ) : SipClient() {
     private val logger = createChildLogger(parentLogger)
     private val pjsua: JibriSubprocess = JibriSubprocess(logger, "pjsua")
     private val sipOutboundPrefix: String? by optionalconfig(
         "jibri.sip.outbound-prefix".from(Config.configSource)
     )
+    private var dtmfReaderThread: Thread? = null
 
     companion object {
         const val COMPONENT_ID = "Pjsua"
@@ -74,6 +84,11 @@ class PjsuaClient(
     }
 
     override fun start() {
+        if (onDtmfCommand != null) {
+            createDtmfFifo()
+            startDtmfFifoReader()
+        }
+
         val command = mutableListOf(
             PJSUA_SCRIPT_FILE_LOCATION
         )
@@ -132,5 +147,67 @@ class PjsuaClient(
         pjsua.launch(command, mapOf("DISPLAY" to X_DISPLAY))
     }
 
-    override fun stop() = pjsua.stop()
+    private fun createDtmfFifo() {
+        try {
+            Files.deleteIfExists(Paths.get(DTMF_FIFO_PATH))
+            val process = Runtime.getRuntime().exec(arrayOf("mkfifo", DTMF_FIFO_PATH))
+            process.waitFor()
+            logger.info("Created DTMF FIFO at $DTMF_FIFO_PATH")
+        } catch (e: Exception) {
+            logger.error("Failed to create DTMF FIFO", e)
+        }
+    }
+
+    private fun startDtmfFifoReader() {
+        dtmfReaderThread = Thread {
+            try {
+                logger.info("DTMF FIFO reader waiting for pjsua to connect")
+                FileInputStream(File(DTMF_FIFO_PATH)).use { fis ->
+                    BufferedReader(InputStreamReader(fis)).use { reader ->
+                        var line = reader.readLine()
+                        while (line != null) {
+                            if (line.startsWith("DTMF_COMMAND:")) {
+                                onDtmfCommand?.invoke(line.removePrefix("DTMF_COMMAND:"))
+                            }
+                            line = reader.readLine()
+                        }
+                    }
+                }
+                logger.info("DTMF FIFO reader exited (EOF)")
+            } catch (e: Exception) {
+                logger.info("DTMF FIFO reader exited: ${e.message}")
+            }
+        }.also {
+            it.isDaemon = true
+            it.name = "dtmf-fifo-reader"
+            it.start()
+        }
+    }
+
+    override fun stop() {
+        pjsua.stop()
+        stopDtmfFifoReader()
+    }
+
+    private fun stopDtmfFifoReader() {
+        val fifoFile = File(DTMF_FIFO_PATH)
+        if (!fifoFile.exists()) return
+
+        // Open the write end to unblock dtmfReaderThread if it's blocking on open()
+        val unblockThread = Thread {
+            try {
+                FileOutputStream(fifoFile).close()
+            } catch (e: Exception) {}
+        }.also {
+            it.isDaemon = true
+            it.start()
+        }
+
+        dtmfReaderThread?.join(2000)
+        unblockThread.join(2000)
+
+        try {
+            Files.deleteIfExists(Paths.get(DTMF_FIFO_PATH))
+        } catch (e: Exception) {}
+    }
 }

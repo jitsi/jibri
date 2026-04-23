@@ -23,6 +23,7 @@ import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
+import java.util.concurrent.TimeUnit
 import kotlin.time.measureTimedValue
 
 /**
@@ -360,6 +361,153 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 0
             }
         }
+    }
+
+    fun isVisitor(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return APP.store.getState()['features/visitors']?.iAmVisitor === true;
+            } catch (e) {
+                return false;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: false
+    }
+
+    fun isLocalAudioMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return APP.conference.isLocalAudioMuted();
+            } catch (e) {
+                return true;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: true
+    }
+
+    /** Returns true if AV moderation is enabled for audio and the local participant is not approved to unmute. */
+    fun isAudioForceMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                var state = APP.store.getState();
+                var avMod = state['features/av-moderation'];
+                if (!avMod || !avMod.audioModerationEnabled) return false;
+                var local = state['features/base/participants']?.local;
+                if (local && local.role === 'moderator') return false;
+                return avMod.audioUnmuteApproved !== true;
+            } catch (e) {
+                return false;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: false
+    }
+
+    /** Returns true if AV moderation is enabled for video and the local participant is not approved to unmute. */
+    fun isVideoForceMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                var state = APP.store.getState();
+                var avMod = state['features/av-moderation'];
+                if (!avMod || !avMod.videoModerationEnabled) return false;
+                var local = state['features/base/participants']?.local;
+                if (local && local.role === 'moderator') return false;
+                return avMod.videoUnmuteApproved !== true;
+            } catch (e) {
+                return false;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: false
+    }
+
+    fun toggleVideoMute(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                var isMuted = APP.store.getState()['features/base/media'].video.muted;
+                APP.conference.muteVideo(!isMuted);
+                return true;
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin()
+        )
+        return result is Boolean && result
+    }
+
+    fun toggleAudioMute(): Any? {
+        driver.manage().timeouts().setScriptTimeout(20, TimeUnit.SECONDS)
+        return driver.executeAsyncScript(
+            """
+            var done = arguments[0];
+            try {
+                var isMuted = APP.conference.isLocalAudioMuted();
+                var unsubscribe;
+                var timer;
+                var cleanup = function() { clearTimeout(timer); if (unsubscribe) unsubscribe(); };
+
+                var waitForChange = function(ms, timeoutMsg) {
+                    timer = setTimeout(function() {
+                        cleanup();
+                        var st = APP.store.getState();
+                        var at = st['features/base/tracks'].filter(function(t) { return t.local && t.mediaType === 'audio'; });
+                        done(timeoutMsg + ' mediaMuted=' + st['features/base/media'].audio.muted +
+                             ' audioTracks=' + at.length + ' hasJitsiTrack=' + at.some(function(t) { return !!t.jitsiTrack; }));
+                    }, ms);
+                    unsubscribe = APP.store.subscribe(function() {
+                        var nowMuted = APP.conference.isLocalAudioMuted();
+                        if (nowMuted !== isMuted) {
+                            cleanup();
+                            done('ok wasMuted=' + isMuted + ' nowMuted=' + nowMuted);
+                        }
+                    });
+                };
+
+                if (!isMuted) {
+                    var localAudio = APP.store.getState()['features/base/tracks']
+                        .find(function(t) { return t.local && t.mediaType === 'audio' && t.jitsiTrack; });
+                    if (localAudio) {
+                        waitForChange(5000, 'timeout-muting');
+                        localAudio.jitsiTrack.mute().catch(function(e) { cleanup(); done('error-mute: ' + e); });
+                    } else {
+                        waitForChange(5000, 'timeout-mute-no-track');
+                        APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: true });
+                    }
+                } else {
+                    waitForChange(12000, 'timeout-unmuting');
+                    APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: false, ensureTrack: true });
+                }
+            } catch (e) {
+                done('error: ' + e.message);
+            }
+            """.trimMargin()
+        )
+    }
+
+    fun raiseHand(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                const local = APP.store.getState()['features/base/participants']?.local;
+                const isRaised = local && local.raisedHandTimestamp > 0;
+                APP.store.dispatch({
+                    type: 'LOCAL_PARTICIPANT_RAISE_HAND',
+                    raisedHandTimestamp: isRaised ? 0 : Date.now()
+                });
+                return true;
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin()
+        )
+        return result is Boolean && result
     }
 
     /**

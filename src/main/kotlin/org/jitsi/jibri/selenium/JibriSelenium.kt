@@ -279,6 +279,35 @@ class JibriSelenium(
 
     fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
+    fun handleDtmfStar6() {
+        logger.info("Handling *6 DTMF command")
+        val callPage = CallPage(chromeDriver)
+        if (callPage.isVisitor()) {
+            logger.info("In visitor mode, toggling raise hand")
+            callPage.raiseHand()
+        } else if (!callPage.isLocalAudioMuted()) {
+            logger.info("Currently unmuted, muting audio")
+            val audioResult = callPage.toggleAudioMute()
+            logger.info("toggleAudioMute result: $audioResult")
+        } else {
+            val audioForceMuted = callPage.isAudioForceMuted()
+            val videoForceMuted = callPage.isVideoForceMuted()
+            if (audioForceMuted && videoForceMuted) {
+                logger.info("Both audio and video force muted by AV moderation, raising hand to request unmute")
+                callPage.raiseHand()
+            } else {
+                if (!audioForceMuted) {
+                    val audioResult = callPage.toggleAudioMute()
+                    logger.info("toggleAudioMute result: $audioResult")
+                }
+                if (!videoForceMuted) {
+                    val videoResult = callPage.toggleVideoMute()
+                    logger.info("toggleVideoMute result: $videoResult")
+                }
+            }
+        }
+    }
+
     /**
      * Join a web call with Selenium
      */
