@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.exc.InvalidFormatException
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
-import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.logger
@@ -194,7 +194,7 @@ fun loadConfigFromFile(configFile: File): JibriConfig? {
             .readValue(configFile)
         logger.info("Successfully parsed legacy config")
         config
-    } catch (e: MissingKotlinParameterException) {
+    } catch (e: MismatchedInputException) {
         logger.error("A required config parameter was missing: ${e.originalMessage}")
         null
     } catch (e: UnrecognizedPropertyException) {

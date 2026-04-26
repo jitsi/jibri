@@ -15,7 +15,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <kotlin.compiler.jvmTarget>11</kotlin.compiler.jvmTarget>
-        <jackson.version>2.9.5</jackson.version>
+        <jackson.version>2.19.4</jackson.version>
         <junit.version>5.10.0</junit.version>
         <kotest.version>5.7.2</kotest.version>
         <mockk.version>1.13.8</mockk.version>
