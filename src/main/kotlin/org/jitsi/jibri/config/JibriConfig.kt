@@ -192,7 +192,7 @@ fun loadConfigFromFile(configFile: File): JibriConfig? {
         val config: JibriConfig = jacksonObjectMapper()
             .configure(JsonParser.Feature.ALLOW_COMMENTS, true)
             .readValue(configFile)
-        logger.info("Parsed legacy config:\n$config")
+        logger.info("Successfully parsed legacy config")
         config
     } catch (e: MissingKotlinParameterException) {
         logger.error("A required config parameter was missing: ${e.originalMessage}")
