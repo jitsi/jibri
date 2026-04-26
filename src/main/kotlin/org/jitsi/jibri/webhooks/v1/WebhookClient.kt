@@ -18,6 +18,7 @@ package org.jitsi.jibri.webhooks.v1
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
+import javax.net.ssl.SSLContext
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -49,7 +50,11 @@ import java.util.concurrent.CopyOnWriteArraySet
  */
 class WebhookClient(
     private val jibriId: String,
-    client: HttpClient = HttpClient(Apache)
+    client: HttpClient = HttpClient(Apache) {
+        engine {
+            sslContext = SSLContext.getDefault()
+        }
+    }
 ) {
     private val logger = createLogger()
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
