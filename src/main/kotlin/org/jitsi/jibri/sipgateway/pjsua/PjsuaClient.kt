@@ -33,8 +33,6 @@ import org.jitsi.metaconfig.from
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
-import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
@@ -42,6 +40,8 @@ import java.io.FileOutputStream
 import java.io.InputStreamReader
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 data class PjsuaClientParams(
     val sipClientParams: SipClientParams
@@ -202,8 +202,12 @@ class PjsuaClient(
             } catch (e: Exception) {}
         }
 
-        try { dtmfReaderTask?.get(2000, TimeUnit.MILLISECONDS) } catch (e: Exception) {}
-        try { unblockTask.get(2000, TimeUnit.MILLISECONDS) } catch (e: Exception) {}
+        try {
+            dtmfReaderTask?.get(2000, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {}
+        try {
+            unblockTask.get(2000, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {}
 
         try {
             Files.deleteIfExists(Paths.get(dtmfFifoPath))
