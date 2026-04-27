@@ -389,6 +389,19 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return result as? Boolean ?: true
     }
 
+    fun isLocalVideoMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return APP.conference.isLocalVideoMuted();
+            } catch (e) {
+                return true;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: true
+    }
+
     /** Returns true if AV moderation is enabled for audio and the local participant is not approved to unmute. */
     fun isAudioForceMuted(): Boolean {
         val result = driver.executeScript(

@@ -280,30 +280,45 @@ class JibriSelenium(
     fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
 
     fun handleDtmfStar6() {
-        logger.info("Handling *6 DTMF command")
+        logger.info("Handling *6 DTMF command (audio toggle)")
         val callPage = CallPage(chromeDriver)
         if (callPage.isVisitor()) {
             logger.info("In visitor mode, toggling raise hand")
             callPage.raiseHand()
         } else if (!callPage.isLocalAudioMuted()) {
-            logger.info("Currently unmuted, muting audio")
-            val audioResult = callPage.toggleAudioMute()
-            logger.info("toggleAudioMute result: $audioResult")
+            logger.info("Currently audio unmuted, muting audio")
+            val result = callPage.toggleAudioMute()
+            logger.info("toggleAudioMute result: $result")
         } else {
             val audioForceMuted = callPage.isAudioForceMuted()
-            val videoForceMuted = callPage.isVideoForceMuted()
-            if (audioForceMuted && videoForceMuted) {
-                logger.info("Both audio and video force muted by AV moderation, raising hand to request unmute")
+            if (audioForceMuted) {
+                logger.info("Audio force muted by AV moderation, raising hand to request unmute")
                 callPage.raiseHand()
             } else {
-                if (!audioForceMuted) {
-                    val audioResult = callPage.toggleAudioMute()
-                    logger.info("toggleAudioMute result: $audioResult")
-                }
-                if (!videoForceMuted) {
-                    val videoResult = callPage.toggleVideoMute()
-                    logger.info("toggleVideoMute result: $videoResult")
-                }
+                val result = callPage.toggleAudioMute()
+                logger.info("toggleAudioMute result: $result")
+            }
+        }
+    }
+
+    fun handleDtmfStar7() {
+        logger.info("Handling *7 DTMF command (video toggle)")
+        val callPage = CallPage(chromeDriver)
+        if (callPage.isVisitor()) {
+            logger.info("In visitor mode, toggling raise hand")
+            callPage.raiseHand()
+        } else if (!callPage.isLocalVideoMuted()) {
+            logger.info("Currently video unmuted, muting video")
+            val result = callPage.toggleVideoMute()
+            logger.info("toggleVideoMute result: $result")
+        } else {
+            val videoForceMuted = callPage.isVideoForceMuted()
+            if (videoForceMuted) {
+                logger.info("Video force muted by AV moderation, raising hand to request unmute")
+                callPage.raiseHand()
+            } else {
+                val result = callPage.toggleVideoMute()
+                logger.info("toggleVideoMute result: $result")
             }
         }
     }
