@@ -427,21 +427,69 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return result as? Boolean ?: false
     }
 
-    fun toggleVideoMute(): Boolean {
-        val result = driver.executeScript(
+    // Toggles video mute and waits for the Redux store to confirm the state change.
+    // muteVideo() returns a Promise — firing it synchronously and returning immediately
+    // would not guarantee the toggle completed. Unmuting requires re-acquiring the camera
+    // device, which is slower (12s timeout) than muting/releasing it (5s). On timeout,
+    // extra state is returned to help diagnose why the change did not complete.
+    fun toggleVideoMute(): Any? {
+        driver.manage().timeouts().setScriptTimeout(20, TimeUnit.SECONDS)
+        return driver.executeAsyncScript(
             """
+            var done = arguments[0];
             try {
-                var isMuted = APP.store.getState()['features/base/media'].video.muted;
-                APP.conference.muteVideo(!isMuted);
-                return true;
+                var isMuted = APP.conference.isLocalVideoMuted();
+                var unsubscribe;
+                var timer;
+                var cleanup = function() { clearTimeout(timer); if (unsubscribe) unsubscribe(); };
+
+                var waitForChange = function(ms, timeoutMsg) {
+                    timer = setTimeout(function() {
+                        cleanup();
+                        var st = APP.store.getState();
+                        var vt = st['features/base/tracks'].filter(function(t) { return t.local && t.mediaType === 'video'; });
+                        done(timeoutMsg + ' mediaMuted=' + st['features/base/media'].video.muted +
+                             ' videoTracks=' + vt.length + ' hasJitsiTrack=' + vt.some(function(t) { return !!t.jitsiTrack; }));
+                    }, ms);
+                    unsubscribe = APP.store.subscribe(function() {
+                        var nowMuted = APP.conference.isLocalVideoMuted();
+                        if (nowMuted !== isMuted) {
+                            cleanup();
+                            done('ok wasMuted=' + isMuted + ' nowMuted=' + nowMuted);
+                        }
+                    });
+                };
+
+                if (!isMuted) {
+                    // Prefer muting via the track directly so the Promise rejection is catchable.
+                    // Fall back to a Redux dispatch when no track is present yet.
+                    var localVideo = APP.store.getState()['features/base/tracks']
+                        .find(function(t) { return t.local && t.mediaType === 'video' && t.jitsiTrack; });
+                    if (localVideo) {
+                        waitForChange(5000, 'timeout-muting');
+                        localVideo.jitsiTrack.mute().catch(function(e) { cleanup(); done('error-mute: ' + e); });
+                    } else {
+                        waitForChange(5000, 'timeout-mute-no-track');
+                        APP.store.dispatch({ type: 'SET_VIDEO_MUTED', muted: true });
+                    }
+                } else {
+                    // ensureTrack tells Jitsi to re-acquire the camera if no track exists yet.
+                    waitForChange(12000, 'timeout-unmuting');
+                    APP.store.dispatch({ type: 'SET_VIDEO_MUTED', muted: false, ensureTrack: true });
+                }
             } catch (e) {
-                return e.message;
+                done('error: ' + e.message);
             }
             """.trimMargin()
         )
-        return result is Boolean && result
     }
 
+    // Toggles audio mute and waits for the Redux store to confirm the state change.
+    // Audio track operations (especially unmuting/re-acquiring the microphone) are async —
+    // dispatching and returning immediately would not guarantee the toggle completed.
+    // Unmuting has a longer timeout (12s) than muting (5s) because re-acquiring a device
+    // is slower than releasing it. On timeout, extra state is returned to help diagnose
+    // why the change did not complete.
     fun toggleAudioMute(): Any? {
         driver.manage().timeouts().setScriptTimeout(20, TimeUnit.SECONDS)
         return driver.executeAsyncScript(
@@ -471,6 +519,8 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                 };
 
                 if (!isMuted) {
+                    // Prefer muting via the track directly so the Promise rejection is catchable.
+                    // Fall back to a Redux dispatch when no track is present yet.
                     var localAudio = APP.store.getState()['features/base/tracks']
                         .find(function(t) { return t.local && t.mediaType === 'audio' && t.jitsiTrack; });
                     if (localAudio) {
@@ -481,6 +531,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
                         APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: true });
                     }
                 } else {
+                    // ensureTrack tells Jitsi to re-acquire the microphone if no track exists yet.
                     waitForChange(12000, 'timeout-unmuting');
                     APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: false, ensureTrack: true });
                 }
