@@ -27,6 +27,7 @@ import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
+import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.Logger
@@ -45,7 +46,6 @@ data class PjsuaClientParams(
 
 private const val PJSUA_SCRIPT_FILE_LOCATION = "/opt/jitsi/jibri/pjsua.sh"
 private const val X_DISPLAY = ":1"
-private const val DTMF_FIFO_PATH = "/tmp/jibri_pjsua_dtmf"
 
 class PjsuaClient(
     parentLogger: Logger,
@@ -56,6 +56,9 @@ class PjsuaClient(
     private val pjsua: JibriSubprocess = JibriSubprocess(logger, "pjsua")
     private val sipOutboundPrefix: String? by optionalconfig(
         "jibri.sip.outbound-prefix".from(Config.configSource)
+    )
+    private val dtmfFifoPath: String by config(
+        "jibri.sip.dtmf-fifo-path".from(Config.configSource)
     )
     private var dtmfReaderThread: Thread? = null
 
@@ -149,10 +152,10 @@ class PjsuaClient(
 
     private fun createDtmfFifo() {
         try {
-            Files.deleteIfExists(Paths.get(DTMF_FIFO_PATH))
-            val process = Runtime.getRuntime().exec(arrayOf("mkfifo", DTMF_FIFO_PATH))
+            Files.deleteIfExists(Paths.get(dtmfFifoPath))
+            val process = Runtime.getRuntime().exec(arrayOf("mkfifo", dtmfFifoPath))
             process.waitFor()
-            logger.info("Created DTMF FIFO at $DTMF_FIFO_PATH")
+            logger.info("Created DTMF FIFO at $dtmfFifoPath")
         } catch (e: Exception) {
             logger.error("Failed to create DTMF FIFO", e)
         }
@@ -162,7 +165,7 @@ class PjsuaClient(
         dtmfReaderThread = Thread {
             try {
                 logger.info("DTMF FIFO reader waiting for pjsua to connect")
-                FileInputStream(File(DTMF_FIFO_PATH)).use { fis ->
+                FileInputStream(File(dtmfFifoPath)).use { fis ->
                     BufferedReader(InputStreamReader(fis)).use { reader ->
                         var line = reader.readLine()
                         while (line != null) {
@@ -190,7 +193,7 @@ class PjsuaClient(
     }
 
     private fun stopDtmfFifoReader() {
-        val fifoFile = File(DTMF_FIFO_PATH)
+        val fifoFile = File(dtmfFifoPath)
         if (!fifoFile.exists()) return
 
         // Open the write end to unblock dtmfReaderThread if it's blocking on open()
@@ -207,7 +210,7 @@ class PjsuaClient(
         unblockThread.join(2000)
 
         try {
-            Files.deleteIfExists(Paths.get(DTMF_FIFO_PATH))
+            Files.deleteIfExists(Paths.get(dtmfFifoPath))
         } catch (e: Exception) {}
     }
 }
