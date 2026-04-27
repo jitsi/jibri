@@ -27,11 +27,14 @@ import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileInputStream
@@ -60,7 +63,7 @@ class PjsuaClient(
     private val dtmfFifoPath: String by config(
         "jibri.sip.dtmf-fifo-path".from(Config.configSource)
     )
-    private var dtmfReaderThread: Thread? = null
+    private var dtmfReaderTask: Future<*>? = null
 
     companion object {
         const val COMPONENT_ID = "Pjsua"
@@ -162,7 +165,7 @@ class PjsuaClient(
     }
 
     private fun startDtmfFifoReader() {
-        dtmfReaderThread = Thread {
+        dtmfReaderTask = TaskPools.ioPool.submit {
             try {
                 logger.info("DTMF FIFO reader waiting for pjsua to connect")
                 FileInputStream(File(dtmfFifoPath)).use { fis ->
@@ -180,10 +183,6 @@ class PjsuaClient(
             } catch (e: Exception) {
                 logger.info("DTMF FIFO reader exited: ${e.message}")
             }
-        }.also {
-            it.isDaemon = true
-            it.name = "dtmf-fifo-reader"
-            it.start()
         }
     }
 
@@ -196,18 +195,15 @@ class PjsuaClient(
         val fifoFile = File(dtmfFifoPath)
         if (!fifoFile.exists()) return
 
-        // Open the write end to unblock dtmfReaderThread if it's blocking on open()
-        val unblockThread = Thread {
+        // Open the write end to unblock the reader task if it's blocking on open()
+        val unblockTask = TaskPools.ioPool.submit {
             try {
                 FileOutputStream(fifoFile).close()
             } catch (e: Exception) {}
-        }.also {
-            it.isDaemon = true
-            it.start()
         }
 
-        dtmfReaderThread?.join(2000)
-        unblockThread.join(2000)
+        try { dtmfReaderTask?.get(2000, TimeUnit.MILLISECONDS) } catch (e: Exception) {}
+        try { unblockTask.get(2000, TimeUnit.MILLISECONDS) } catch (e: Exception) {}
 
         try {
             Files.deleteIfExists(Paths.get(dtmfFifoPath))
