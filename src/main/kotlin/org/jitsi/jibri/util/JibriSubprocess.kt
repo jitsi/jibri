@@ -18,7 +18,10 @@ package org.jitsi.jibri.util
 
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.time.Duration
+import java.util.concurrent.Callable
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -27,6 +30,7 @@ class JibriSubprocess(
     parentLogger: Logger,
     private val name: String,
     private val processOutputLogger: Logger? = null,
+    private val outputLineHandler: ((String) -> Unit)? = null,
     private val processFactory: ProcessFactory = ProcessFactory(),
     processStatePublisherProvider: ((ProcessWrapper) -> ProcessStatePublisher)? = null
 ) : StatusPublisher<ProcessState>() {
@@ -48,8 +52,18 @@ class JibriSubprocess(
                 it.start()
                 processStatePublisher = processStatePublisherProvider(it)
                 processStatePublisher!!.addStatusHandler(this::publishStatus)
-                if (processOutputLogger != null) {
-                    processLoggerTask = LoggingUtils.logOutputOfProcess(it, processOutputLogger)
+                if (processOutputLogger != null || outputLineHandler != null) {
+                    processLoggerTask = TaskPools.ioPool.submit(
+                        Callable<Boolean> {
+                            val reader = BufferedReader(InputStreamReader(it.getOutput()))
+                            while (true) {
+                                val line = reader.readLine() ?: break
+                                processOutputLogger?.info(line)
+                                outputLineHandler?.invoke(line)
+                            }
+                            return@Callable true
+                        }
+                    )
                 }
             } ?: run {
                 throw Exception("Process was null")
