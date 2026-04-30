@@ -106,7 +106,8 @@ class JibriSubprocess(
         } catch (e: TimeoutException) {
             logger.error("Stop operation for $name timed out after ${overallTimeout.seconds}s, forcing cancellation")
             stopTask.cancel(true)
-            // Last resort: try to force kill the process directly
+            // Last resort: close input stream to unblock readers, then force kill
+            process?.closeInputStream()
             try {
                 process?.destroyForcibly()
             } catch (t: Throwable) {

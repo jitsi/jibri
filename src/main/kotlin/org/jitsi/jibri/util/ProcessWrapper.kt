@@ -100,12 +100,16 @@ class ProcessWrapper(
         // process' inputstream. Once it's done, they'll read
         // the EOF and close things up correctly
         runtime.exec("kill -s SIGINT ${process.pid()}")
-        // Close the process input stream to unblock any threads waiting on read()
-        // This is necessary because threads blocked in native I/O don't respond
-        // to interruption, and we need to ensure the logging thread can exit
-        // when the process is hung (e.g., ffmpeg capturing from frozen Chrome)
+    }
+
+    /**
+     * Forcefully close the input stream to unblock any threads waiting on read().
+     * This should only be called when the process is hung and normal shutdown failed.
+     */
+    fun closeInputStream() {
         try {
             process.inputStream.close()
+            logger.debug("Process input stream closed to unblock readers")
         } catch (e: Exception) {
             logger.debug("Error closing process input stream: ${e.message}")
         }
