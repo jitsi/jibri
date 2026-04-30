@@ -108,6 +108,12 @@ class Tee(inputStream: InputStream) {
 
     fun stop() {
         task.cancel(true)
-        teeLogic.close()
+        // Close the underlying input stream to unblock the reader thread
+        // if it's stuck waiting for input from a hung process
+        try {
+            teeLogic.close()
+        } catch (e: Exception) {
+            // Ignore errors during cleanup
+        }
     }
 }

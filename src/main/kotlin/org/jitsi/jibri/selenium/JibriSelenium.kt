@@ -355,20 +355,28 @@ class JibriSelenium(
 
         browserOutputLogger.info("Logs for call $currCallUrl")
         try {
-            chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
-                val logEntries = chromeDriver.manage().logs().get(logType)
-                logger.info("Got ${logEntries.all.size} log entries for type $logType")
-                browserOutputLogger.info("========= TYPE=$logType ===========")
-                logEntries.all.forEach {
-                    browserOutputLogger.info(it.toString())
-                }
+            runBlocking {
+                withTimeoutOrNull(chromeQuitTimeout.toMillis()) {
+                    chromeDriver.manage().logs().availableLogTypes.forEach { logType ->
+                        val logEntries = chromeDriver.manage().logs().get(logType)
+                        logger.info("Got ${logEntries.all.size} log entries for type $logType")
+                        browserOutputLogger.info("========= TYPE=$logType ===========")
+                        logEntries.all.forEach {
+                            browserOutputLogger.info(it.toString())
+                        }
+                    }
+                } ?: logger.warn("Retrieving chromedriver logs timed out after ${chromeQuitTimeout.seconds}s")
             }
         } catch (t: Throwable) {
             logger.error("Error trying to get chromedriver logs", t)
         }
         logger.info("Leaving web call")
         try {
-            CallPage(chromeDriver).leave()
+            runBlocking {
+                withTimeoutOrNull(chromeQuitTimeout.toMillis()) {
+                    CallPage(chromeDriver).leave()
+                } ?: logger.warn("Leaving web call timed out after ${chromeQuitTimeout.seconds}s")
+            }
         } catch (t: Throwable) {
             logger.error("Error trying to leave the call", t)
         }

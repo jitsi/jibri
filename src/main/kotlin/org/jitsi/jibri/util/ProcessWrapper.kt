@@ -100,6 +100,15 @@ class ProcessWrapper(
         // process' inputstream. Once it's done, they'll read
         // the EOF and close things up correctly
         runtime.exec("kill -s SIGINT ${process.pid()}")
+        // Close the process input stream to unblock any threads waiting on read()
+        // This is necessary because threads blocked in native I/O don't respond
+        // to interruption, and we need to ensure the logging thread can exit
+        // when the process is hung (e.g., ffmpeg capturing from frozen Chrome)
+        try {
+            process.inputStream.close()
+        } catch (e: Exception) {
+            logger.debug("Error closing process input stream: ${e.message}")
+        }
     }
 
     /**

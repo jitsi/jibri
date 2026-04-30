@@ -199,6 +199,96 @@ internal class JibriSeleniumTimeoutTest : ShouldSpec() {
                 // Verify forceKillChrome was triggered
                 verify(atLeast = 1) { mockChromeDriver.capabilities }
             }
+
+            should("timeout when retrieving chromedriver logs hangs") {
+                val mockChromeDriver = mockk<ChromeDriver>(relaxed = true)
+                val mockCapabilities = mockk<Capabilities>(relaxed = true)
+
+                every { mockChromeDriver.manage() } returns mockk {
+                    every { logs } returns this@JibriSeleniumTimeoutTest.logs
+                    every { timeouts() } returns mockk {
+                        every { pageLoadTimeout(any(), any()) } returns mockk()
+                    }
+                }
+                every { mockChromeDriver.capabilities } returns mockCapabilities
+                every { mockCapabilities.getCapability(any()) } returns null
+
+                // Simulate logs.availableLogTypes hanging
+                every { logs.availableLogTypes } answers {
+                    Thread.sleep(10000)
+                    emptySet()
+                }
+
+                // Normal quit that returns immediately
+                every { mockChromeDriver.quit() } returns Unit
+
+                val selenium = JibriSelenium(
+                    parentLogger,
+                    JibriSeleniumOptions(
+                        display = ":0",
+                        displayName = "Test",
+                        email = "test@example.com",
+                        emptyCallTimeout = Duration.ofSeconds(30)
+                    ),
+                    mockChromeDriver
+                )
+
+                // Call leaveCallAndQuitBrowser - should return within timeout
+                val startTime = System.currentTimeMillis()
+                selenium.leaveCallAndQuitBrowser()
+                val duration = System.currentTimeMillis() - startTime
+
+                // Should complete within 2 seconds despite logs hanging for 10 seconds
+                duration shouldBeLessThan 2000
+
+                // Verify logs was attempted to be accessed
+                verify { logs.availableLogTypes }
+
+                // Verify quit was still called after timeout
+                verify { mockChromeDriver.quit() }
+            }
+
+            should("continue when leave call hangs and timeout is triggered") {
+                val mockChromeDriver = mockk<ChromeDriver>(relaxed = true)
+                val mockCapabilities = mockk<Capabilities>(relaxed = true)
+
+                every { mockChromeDriver.manage() } returns mockk {
+                    every { logs } returns this@JibriSeleniumTimeoutTest.logs
+                    every { timeouts() } returns mockk {
+                        every { pageLoadTimeout(any(), any()) } returns mockk()
+                    }
+                }
+                every { mockChromeDriver.capabilities } returns mockCapabilities
+                every { mockCapabilities.getCapability(any()) } returns null
+
+                // Normal logs retrieval
+                every { logs.availableLogTypes } returns emptySet()
+
+                // Normal quit that returns immediately
+                every { mockChromeDriver.quit() } returns Unit
+
+                val selenium = JibriSelenium(
+                    parentLogger,
+                    JibriSeleniumOptions(
+                        display = ":0",
+                        displayName = "Test",
+                        email = "test@example.com",
+                        emptyCallTimeout = Duration.ofSeconds(30)
+                    ),
+                    mockChromeDriver
+                )
+
+                // Call leaveCallAndQuitBrowser
+                val startTime = System.currentTimeMillis()
+                selenium.leaveCallAndQuitBrowser()
+                val duration = System.currentTimeMillis() - startTime
+
+                // Should complete quickly (within 1 second)
+                duration shouldBeLessThan 1000
+
+                // Verify quit was called
+                verify { mockChromeDriver.quit() }
+            }
         }
     }
 }

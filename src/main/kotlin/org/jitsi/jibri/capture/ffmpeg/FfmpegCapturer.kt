@@ -132,7 +132,8 @@ class FfmpegCapturer(
     }
 
     /**
-     * Stops the capturer
+     * Stops the capturer with a timeout to prevent indefinite hangs
+     * when the process is stuck (e.g., capturing from frozen Chrome)
      */
-    override fun stop() = ffmpeg.stop()
+    override fun stop() = ffmpeg.stopWithTimeout()
 }

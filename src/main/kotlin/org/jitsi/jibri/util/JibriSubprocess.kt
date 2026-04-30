@@ -91,4 +91,29 @@ class JibriSubprocess(
             logger.error("$name has still not exited!  Unable to stop it")
         }
     }
+
+    /**
+     * Stops the process with a hard overall timeout to prevent indefinite hangs.
+     * This method ensures that stop() will not block longer than the specified timeout,
+     * even if individual cleanup operations hang.
+     */
+    fun stopWithTimeout(overallTimeout: Duration = Duration.ofSeconds(60)) {
+        val stopTask = TaskPools.ioPool.submit {
+            stop()
+        }
+        try {
+            stopTask.get(overallTimeout.toMillis(), TimeUnit.MILLISECONDS)
+        } catch (e: TimeoutException) {
+            logger.error("Stop operation for $name timed out after ${overallTimeout.seconds}s, forcing cancellation")
+            stopTask.cancel(true)
+            // Last resort: try to force kill the process directly
+            try {
+                process?.destroyForcibly()
+            } catch (t: Throwable) {
+                logger.error("Failed to forcibly destroy $name process after timeout", t)
+            }
+        } catch (e: Exception) {
+            logger.error("Exception during stop operation for $name", e)
+        }
+    }
 }
