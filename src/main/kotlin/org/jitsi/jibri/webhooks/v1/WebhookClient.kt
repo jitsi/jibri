@@ -43,13 +43,18 @@ import org.jitsi.jwt.RefreshingJwt
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.createLogger
 import java.util.concurrent.CopyOnWriteArraySet
+import javax.net.ssl.SSLContext
 
 /**
  * A client for notifying subscribers of Jibri events
  */
 class WebhookClient(
     private val jibriId: String,
-    client: HttpClient = HttpClient(Apache)
+    client: HttpClient = HttpClient(Apache) {
+        engine {
+            sslContext = SSLContext.getDefault()
+        }
+    }
 ) {
     private val logger = createLogger()
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()
