@@ -18,7 +18,6 @@ package org.jitsi.jibri.webhooks.v1
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
-import javax.net.ssl.SSLContext
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -44,6 +43,7 @@ import org.jitsi.jwt.RefreshingJwt
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.createLogger
 import java.util.concurrent.CopyOnWriteArraySet
+import javax.net.ssl.SSLContext
 
 /**
  * A client for notifying subscribers of Jibri events

@@ -125,7 +125,10 @@ class JibriManager : StatusPublisher<Any>() {
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
         throwIfBusy(RecordingSinkType.FILE)
-        logger.info("Starting a file recording, sessionId=${fileRecordingRequestParams.sessionId}, call=${fileRecordingRequestParams.callParams}")
+        logger.info(
+            "Starting a file recording, sessionId=${fileRecordingRequestParams.sessionId}, " +
+                "call=${fileRecordingRequestParams.callParams}"
+        )
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
