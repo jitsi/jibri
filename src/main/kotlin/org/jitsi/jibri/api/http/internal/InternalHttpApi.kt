@@ -81,6 +81,9 @@ class InternalHttpApi(
                 .from(Config.commandLineArgs).softDeprecated("use jibri.api.http.internal-api-port")
             "jibri.api.http.internal-api-port".from(Config.configSource)
         }
+        val host: String by config {
+            "jibri.api.http.internal-api-host".from(Config.configSource)
+        }
     }
 }
 

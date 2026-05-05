@@ -254,5 +254,8 @@ class HttpApi(
             "http_api_port".from(Config.commandLineArgs).softDeprecated("use jibri.api.http.external-api-port")
             "jibri.api.http.external-api-port".from(Config.configSource)
         }
+        val host: String by config {
+            "jibri.api.http.external-api-host".from(Config.configSource)
+        }
     }
 }
