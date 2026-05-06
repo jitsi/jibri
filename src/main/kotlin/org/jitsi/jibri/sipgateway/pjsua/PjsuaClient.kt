@@ -27,10 +27,21 @@ import org.jitsi.jibri.sipgateway.pjsua.util.RemoteSipClientBusy
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.JibriSubprocess
 import org.jitsi.jibri.util.ProcessExited
+import org.jitsi.jibri.util.TaskPools
+import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.from
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStreamReader
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 data class PjsuaClientParams(
     val sipClientParams: SipClientParams
@@ -41,13 +52,18 @@ private const val X_DISPLAY = ":1"
 
 class PjsuaClient(
     parentLogger: Logger,
-    private val pjsuaClientParams: PjsuaClientParams
+    private val pjsuaClientParams: PjsuaClientParams,
+    private val onDtmfCommand: ((String) -> Unit)? = null
 ) : SipClient() {
     private val logger = createChildLogger(parentLogger)
     private val pjsua: JibriSubprocess = JibriSubprocess(logger, "pjsua")
     private val sipOutboundPrefix: String? by optionalconfig(
         "jibri.sip.outbound-prefix".from(Config.configSource)
     )
+    private val dtmfFifoPath: String by config(
+        "jibri.sip.dtmf-fifo-path".from(Config.configSource)
+    )
+    private var dtmfReaderTask: Future<*>? = null
 
     companion object {
         const val COMPONENT_ID = "Pjsua"
@@ -74,6 +90,11 @@ class PjsuaClient(
     }
 
     override fun start() {
+        if (onDtmfCommand != null) {
+            createDtmfFifo()
+            startDtmfFifoReader()
+        }
+
         val command = mutableListOf(
             PJSUA_SCRIPT_FILE_LOCATION
         )
@@ -132,5 +153,64 @@ class PjsuaClient(
         pjsua.launch(command, mapOf("DISPLAY" to X_DISPLAY))
     }
 
-    override fun stop() = pjsua.stop()
+    private fun createDtmfFifo() {
+        try {
+            Files.deleteIfExists(Paths.get(dtmfFifoPath))
+            val process = Runtime.getRuntime().exec(arrayOf("mkfifo", dtmfFifoPath))
+            process.waitFor()
+            logger.info("Created DTMF FIFO at $dtmfFifoPath")
+        } catch (e: Exception) {
+            logger.error("Failed to create DTMF FIFO", e)
+        }
+    }
+
+    private fun startDtmfFifoReader() {
+        dtmfReaderTask = TaskPools.ioPool.submit {
+            try {
+                logger.info("DTMF FIFO reader waiting for pjsua to connect")
+                FileInputStream(File(dtmfFifoPath)).use { fis ->
+                    BufferedReader(InputStreamReader(fis)).use { reader ->
+                        var line = reader.readLine()
+                        while (line != null) {
+                            if (line.startsWith("DTMF_COMMAND:")) {
+                                onDtmfCommand?.invoke(line.removePrefix("DTMF_COMMAND:"))
+                            }
+                            line = reader.readLine()
+                        }
+                    }
+                }
+                logger.info("DTMF FIFO reader exited (EOF)")
+            } catch (e: Exception) {
+                logger.info("DTMF FIFO reader exited: ${e.message}")
+            }
+        }
+    }
+
+    override fun stop() {
+        pjsua.stop()
+        stopDtmfFifoReader()
+    }
+
+    private fun stopDtmfFifoReader() {
+        val fifoFile = File(dtmfFifoPath)
+        if (!fifoFile.exists()) return
+
+        // Open the write end to unblock the reader task if it's blocking on open()
+        val unblockTask = TaskPools.ioPool.submit {
+            try {
+                FileOutputStream(fifoFile).close()
+            } catch (e: Exception) {}
+        }
+
+        try {
+            dtmfReaderTask?.get(2000, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {}
+        try {
+            unblockTask.get(2000, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {}
+
+        try {
+            Files.deleteIfExists(Paths.get(dtmfFifoPath))
+        } catch (e: Exception) {}
+    }
 }

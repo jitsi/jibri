@@ -41,7 +41,15 @@ internal class JibriSubprocessTest : ShouldSpec() {
     private val parentLogger: Logger = mockk(relaxed = true)
 
     @Suppress("MoveLambdaOutsideParentheses")
-    private val subprocess = JibriSubprocess(parentLogger, "name", mockk(), processFactory, { processStatePublisher })
+    private val subprocess = JibriSubprocess(
+        parentLogger,
+        "name",
+        mockk(),
+        processFactory = processFactory,
+        processStatePublisherProvider = {
+            processStatePublisher
+        }
+    )
     private val processStateHandler = slot<(ProcessState) -> Unit>()
     private val executorStateUpdates = mutableListOf<ProcessState>()
 
