@@ -34,12 +34,24 @@ cp env.example .env
 mkdir -p ~/.jitsi-meet-cfg/{web,transcripts,prosody/config,prosody/prosody-plugins-custom,jicofo,jvb,jigasi,jibri}
 ```
 
-### 2. Set `PUBLIC_URL` in `.env` to your local ethernet IP
+### 2. Edit `.env`: enable recording and set `PUBLIC_URL`
 
-Jibri is going to open the conference URL in Chrome from the host. Pointing
-the deployment at `localhost` won't work because Chrome's WebRTC needs an
-address that resolves the same way for jibri *and* the other browsers
-joining the call. Use the host's LAN address instead.
+Two changes in `~/dev/docker-jitsi-meet/.env`:
+
+**Enable recording.** This is what tells prosody to provision the `jibri`
+and `recorder` accounts (using `JIBRI_XMPP_PASSWORD` /
+`JIBRI_RECORDER_PASSWORD` from `gen-passwords.sh`) and what makes the web
+UI surface the record button. Without it, jibri can't even log into
+prosody.
+
+```sh
+ENABLE_RECORDING=true
+```
+
+**Point `PUBLIC_URL` at your LAN IP.** Jibri opens the conference URL in
+Chrome from the host. `localhost` won't do, because Chrome's WebRTC needs
+an address that resolves the same way for jibri *and* the other browsers
+joining the call. Use the host's LAN address.
 
 Find your local IP:
 
@@ -50,7 +62,8 @@ ipconfig getifaddr en0
 hostname -I | awk '{print $1}'
 ```
 
-Then in `~/dev/docker-jitsi-meet/.env`, set:
+Then set (HTTP/HTTPS port already exist in env.example — adjust if you
+moved them):
 
 ```sh
 HTTP_PORT=8000
