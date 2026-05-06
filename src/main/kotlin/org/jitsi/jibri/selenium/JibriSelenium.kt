@@ -189,7 +189,9 @@ class JibriSelenium(
      * Set up default chrome driver options (using fake device, etc.)
      */
     init {
-        System.setProperty("webdriver.chrome.logfile", "/var/log/jitsi/jibri/chromedriver.log")
+        if (System.getProperty("webdriver.chrome.logfile") == null) {
+            System.setProperty("webdriver.chrome.logfile", "/var/log/jitsi/jibri/chromedriver.log")
+        }
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(chromeOpts)
         chromeOptions.setExperimentalOption("w3c", false)
