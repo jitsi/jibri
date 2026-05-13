@@ -38,13 +38,13 @@ import org.jitsi.metaconfig.from
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.createChildLogger
 import org.openqa.selenium.TimeoutException
+import org.openqa.selenium.WebDriverException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeDriverService
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.logging.LoggingPreferences
-import org.openqa.selenium.remote.CapabilityType
-import org.openqa.selenium.remote.UnreachableBrowserException
+import java.io.File
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
@@ -194,16 +194,16 @@ class JibriSelenium(
         }
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(chromeOpts)
-        chromeOptions.setExperimentalOption("w3c", false)
         chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
-        val chromeDriverService = ChromeDriverService.Builder().withEnvironment(
-            mapOf("DISPLAY" to jibriSeleniumOptions.display)
-        ).build()
+        val chromeDriverService = ChromeDriverService.Builder()
+            .withEnvironment(mapOf("DISPLAY" to jibriSeleniumOptions.display))
+            .withLogFile(File("/var/log/jitsi/jibri/chromedriver.log"))
+            .build()
         val logPrefs = LoggingPreferences()
         logPrefs.enable(LogType.DRIVER, Level.ALL)
-        chromeOptions.setCapability(CapabilityType.LOGGING_PREFS, logPrefs)
+        chromeOptions.setCapability("goog:loggingPrefs", logPrefs)
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
-        chromeDriver.manage().timeouts().pageLoadTimeout(60, TimeUnit.SECONDS)
+        chromeDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(60))
 
         stateMachine.onStateTransition(this::onSeleniumStateChange)
     }
@@ -253,7 +253,7 @@ class JibriSelenium(
                 // which will result in this Jibri being marked as unhealthy
                 logger.error("Javascript timed out, assuming chrome has hung", t)
                 transitionState(SeleniumEvent.ChromeHung)
-            } catch (t: UnreachableBrowserException) {
+            } catch (t: WebDriverException) {
                 if (!shuttingDown.get()) {
                     logger.error("Can't reach browser", t)
                     transitionState(SeleniumEvent.ChromeHung)
