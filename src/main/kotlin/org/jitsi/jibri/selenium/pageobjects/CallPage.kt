@@ -269,7 +269,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return when (result) {
             is Number -> result.toInt()
             else -> {
-                logger.error("error running numRemoteParticipantsJigasi script: $result ${result::class.java}")
+                logger.error("error running numRemoteParticipantsJigasi script: $result ${result?.javaClass}")
                 0
             }
         }
@@ -291,7 +291,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return when (result) {
             is Number -> result.toInt()
             else -> {
-                logger.error("error running numHiddenParticipants script: $result ${result::class.java}")
+                logger.error("error running numHiddenParticipants script: $result ${result?.javaClass}")
                 0
             }
         }
@@ -357,7 +357,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return when (result) {
             is Number -> result.toInt()
             else -> {
-                logger.error("error running numRemoteParticipantsMuted script: $result ${result::class.java}")
+                logger.error("error running numRemoteParticipantsMuted script: $result ${result?.javaClass}")
                 0
             }
         }
