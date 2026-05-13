@@ -17,7 +17,7 @@
 package org.jitsi.jibri.webhooks.v1
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
+import io.ktor.client.engine.apache5.Apache5
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -50,7 +50,7 @@ import javax.net.ssl.SSLContext
  */
 class WebhookClient(
     private val jibriId: String,
-    client: HttpClient = HttpClient(Apache) {
+    client: HttpClient = HttpClient(Apache5) {
         engine {
             sslContext = SSLContext.getDefault()
         }
