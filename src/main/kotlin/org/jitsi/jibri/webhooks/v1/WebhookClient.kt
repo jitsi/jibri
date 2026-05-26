@@ -17,7 +17,7 @@
 package org.jitsi.jibri.webhooks.v1
 
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
+import io.ktor.client.engine.apache5.Apache5
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -43,13 +43,18 @@ import org.jitsi.jwt.RefreshingJwt
 import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.utils.logging2.createLogger
 import java.util.concurrent.CopyOnWriteArraySet
+import javax.net.ssl.SSLContext
 
 /**
  * A client for notifying subscribers of Jibri events
  */
 class WebhookClient(
     private val jibriId: String,
-    client: HttpClient = HttpClient(Apache)
+    client: HttpClient = HttpClient(Apache5) {
+        engine {
+            sslContext = SSLContext.getDefault()
+        }
+    }
 ) {
     private val logger = createLogger()
     private val webhookSubscribers: MutableSet<String> = CopyOnWriteArraySet()

@@ -1,0 +1,4 @@
+services:
+    prosody:
+        ports:
+            - '127.0.0.1:${XMPP_PORT:-5222}:${XMPP_PORT:-5222}'

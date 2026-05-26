@@ -126,10 +126,10 @@ fun main(args: Array<String>) {
         cleanupAndExit(255)
     }
 
-    logger.info("Using port ${InternalHttpApi.port} for internal HTTP API")
+    logger.info("Using ${InternalHttpApi.host}:${InternalHttpApi.port} for internal HTTP API")
 
     with(InternalHttpApi(configChangedHandler, gracefulShutdownHandler, shutdownHandler)) {
-        embeddedServer(Jetty, port = InternalHttpApi.port) {
+        embeddedServer(Jetty, host = InternalHttpApi.host, port = InternalHttpApi.port) {
             internalApiModule()
         }.start()
     }
@@ -170,11 +170,11 @@ fun main(args: Array<String>) {
         }
     }
 
-    logger.info("Using port ${HttpApi.port} for HTTP API")
+    logger.info("Using ${HttpApi.host}:${HttpApi.port} for HTTP API")
 
     // HttpApi
     with(HttpApi(jibriManager, jibriStatusManager, webhookClient)) {
-        embeddedServer(Jetty, port = HttpApi.port) {
+        embeddedServer(Jetty, host = HttpApi.host, port = HttpApi.port) {
             apiModule()
         }
     }.start()

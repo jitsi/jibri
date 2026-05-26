@@ -31,7 +31,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.ApplicationTestBuilder
-import io.ktor.server.testing.TestApplication
+import io.ktor.server.testing.runTestApplication
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -154,7 +154,7 @@ class HttpApiTest : ShouldSpec() {
         }
     }
     private suspend fun apiTest(block: suspend ApplicationTestBuilder.() -> Unit) {
-        testApplication {
+        runTestApplication {
             application {
                 with(api) {
                     apiModule()
@@ -163,13 +163,4 @@ class HttpApiTest : ShouldSpec() {
             block()
         }
     }
-}
-
-// Avoid runBlocking from Ktor [testApplication], for kotest.
-@Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-private suspend fun testApplication(block: suspend ApplicationTestBuilder.() -> Unit) {
-    val builder = ApplicationTestBuilder().apply { block() }
-    val testApplication = TestApplication(builder)
-    testApplication.start()
-    testApplication.stop()
 }

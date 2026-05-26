@@ -23,6 +23,7 @@ import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
+import java.time.Duration
 import kotlin.time.measureTimedValue
 
 /**
@@ -43,7 +44,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         }
         val (result, totalTime) = measureTimedValue {
             try {
-                WebDriverWait(driver, 30).until {
+                WebDriverWait(driver, Duration.ofSeconds(30)).until {
                     val result = driver.executeScript(
                         """
                         try {
@@ -268,7 +269,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return when (result) {
             is Number -> result.toInt()
             else -> {
-                logger.error("error running numRemoteParticipantsJigasi script: $result ${result::class.java}")
+                logger.error("error running numRemoteParticipantsJigasi script: $result ${result?.javaClass}")
                 0
             }
         }
@@ -290,7 +291,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return when (result) {
             is Number -> result.toInt()
             else -> {
-                logger.error("error running numHiddenParticipants script: $result ${result::class.java}")
+                logger.error("error running numHiddenParticipants script: $result ${result?.javaClass}")
                 0
             }
         }
@@ -356,10 +357,221 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
         return when (result) {
             is Number -> result.toInt()
             else -> {
-                logger.error("error running numRemoteParticipantsMuted script: $result ${result::class.java}")
+                logger.error("error running numRemoteParticipantsMuted script: $result ${result?.javaClass}")
                 0
             }
         }
+    }
+
+    fun isVisitor(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return APP.store.getState()['features/visitors']?.iAmVisitor === true;
+            } catch (e) {
+                return false;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: false
+    }
+
+    fun isLocalAudioMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return APP.conference.isLocalAudioMuted();
+            } catch (e) {
+                return true;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: true
+    }
+
+    fun isLocalVideoMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return APP.conference.isLocalVideoMuted();
+            } catch (e) {
+                return true;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: true
+    }
+
+    /** Returns true if AV moderation is enabled for audio and the local participant is not approved to unmute. */
+    fun isAudioForceMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                var state = APP.store.getState();
+                var avMod = state['features/av-moderation'];
+                if (!avMod || !avMod.audioModerationEnabled) return false;
+                var local = state['features/base/participants']?.local;
+                if (local && local.role === 'moderator') return false;
+                return avMod.audioUnmuteApproved !== true;
+            } catch (e) {
+                return false;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: false
+    }
+
+    /** Returns true if AV moderation is enabled for video and the local participant is not approved to unmute. */
+    fun isVideoForceMuted(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                var state = APP.store.getState();
+                var avMod = state['features/av-moderation'];
+                if (!avMod || !avMod.videoModerationEnabled) return false;
+                var local = state['features/base/participants']?.local;
+                if (local && local.role === 'moderator') return false;
+                return avMod.videoUnmuteApproved !== true;
+            } catch (e) {
+                return false;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: false
+    }
+
+    // Toggles video mute and waits for the Redux store to confirm the state change.
+    // muteVideo() returns a Promise — firing it synchronously and returning immediately
+    // would not guarantee the toggle completed. Unmuting requires re-acquiring the camera
+    // device, which is slower (12s timeout) than muting/releasing it (5s). On timeout,
+    // extra state is returned to help diagnose why the change did not complete.
+    fun toggleVideoMute(): Any? {
+        driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20))
+        return driver.executeAsyncScript(
+            """
+            var done = arguments[0];
+            try {
+                var isMuted = APP.conference.isLocalVideoMuted();
+                var unsubscribe;
+                var timer;
+                var cleanup = function() { clearTimeout(timer); if (unsubscribe) unsubscribe(); };
+
+                var waitForChange = function(ms, timeoutMsg) {
+                    timer = setTimeout(function() {
+                        cleanup();
+                        var st = APP.store.getState();
+                        var vt = st['features/base/tracks'].filter(function(t) { return t.local && t.mediaType === 'video'; });
+                        done(timeoutMsg + ' mediaMuted=' + st['features/base/media'].video.muted +
+                             ' videoTracks=' + vt.length + ' hasJitsiTrack=' + vt.some(function(t) { return !!t.jitsiTrack; }));
+                    }, ms);
+                    unsubscribe = APP.store.subscribe(function() {
+                        var nowMuted = APP.conference.isLocalVideoMuted();
+                        if (nowMuted !== isMuted) {
+                            cleanup();
+                            done('ok wasMuted=' + isMuted + ' nowMuted=' + nowMuted);
+                        }
+                    });
+                };
+
+                if (!isMuted) {
+                    // Prefer muting via the track directly so the Promise rejection is catchable.
+                    // Fall back to a Redux dispatch when no track is present yet.
+                    var localVideo = APP.store.getState()['features/base/tracks']
+                        .find(function(t) { return t.local && t.mediaType === 'video' && t.jitsiTrack; });
+                    if (localVideo) {
+                        waitForChange(5000, 'timeout-muting');
+                        localVideo.jitsiTrack.mute().catch(function(e) { cleanup(); done('error-mute: ' + e); });
+                    } else {
+                        waitForChange(5000, 'timeout-mute-no-track');
+                        APP.store.dispatch({ type: 'SET_VIDEO_MUTED', muted: true });
+                    }
+                } else {
+                    // ensureTrack tells Jitsi to re-acquire the camera if no track exists yet.
+                    waitForChange(12000, 'timeout-unmuting');
+                    APP.store.dispatch({ type: 'SET_VIDEO_MUTED', muted: false, ensureTrack: true });
+                }
+            } catch (e) {
+                done('error: ' + e.message);
+            }
+            """.trimMargin()
+        )
+    }
+
+    // Toggles audio mute and waits for the Redux store to confirm the state change.
+    // Audio track operations (especially unmuting/re-acquiring the microphone) are async —
+    // dispatching and returning immediately would not guarantee the toggle completed.
+    // Unmuting has a longer timeout (12s) than muting (5s) because re-acquiring a device
+    // is slower than releasing it. On timeout, extra state is returned to help diagnose
+    // why the change did not complete.
+    fun toggleAudioMute(): Any? {
+        driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20))
+        return driver.executeAsyncScript(
+            """
+            var done = arguments[0];
+            try {
+                var isMuted = APP.conference.isLocalAudioMuted();
+                var unsubscribe;
+                var timer;
+                var cleanup = function() { clearTimeout(timer); if (unsubscribe) unsubscribe(); };
+
+                var waitForChange = function(ms, timeoutMsg) {
+                    timer = setTimeout(function() {
+                        cleanup();
+                        var st = APP.store.getState();
+                        var at = st['features/base/tracks'].filter(function(t) { return t.local && t.mediaType === 'audio'; });
+                        done(timeoutMsg + ' mediaMuted=' + st['features/base/media'].audio.muted +
+                             ' audioTracks=' + at.length + ' hasJitsiTrack=' + at.some(function(t) { return !!t.jitsiTrack; }));
+                    }, ms);
+                    unsubscribe = APP.store.subscribe(function() {
+                        var nowMuted = APP.conference.isLocalAudioMuted();
+                        if (nowMuted !== isMuted) {
+                            cleanup();
+                            done('ok wasMuted=' + isMuted + ' nowMuted=' + nowMuted);
+                        }
+                    });
+                };
+
+                if (!isMuted) {
+                    // Prefer muting via the track directly so the Promise rejection is catchable.
+                    // Fall back to a Redux dispatch when no track is present yet.
+                    var localAudio = APP.store.getState()['features/base/tracks']
+                        .find(function(t) { return t.local && t.mediaType === 'audio' && t.jitsiTrack; });
+                    if (localAudio) {
+                        waitForChange(5000, 'timeout-muting');
+                        localAudio.jitsiTrack.mute().catch(function(e) { cleanup(); done('error-mute: ' + e); });
+                    } else {
+                        waitForChange(5000, 'timeout-mute-no-track');
+                        APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: true });
+                    }
+                } else {
+                    // ensureTrack tells Jitsi to re-acquire the microphone if no track exists yet.
+                    waitForChange(12000, 'timeout-unmuting');
+                    APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: false, ensureTrack: true });
+                }
+            } catch (e) {
+                done('error: ' + e.message);
+            }
+            """.trimMargin()
+        )
+    }
+
+    fun raiseHand(): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                const local = APP.store.getState()['features/base/participants']?.local;
+                const isRaised = local && local.raisedHandTimestamp > 0;
+                APP.store.dispatch({
+                    type: 'LOCAL_PARTICIPANT_RAISE_HAND',
+                    raisedHandTimestamp: isRaised ? 0 : Date.now()
+                });
+                return true;
+            } catch (e) {
+                return e.message;
+            }
+            """.trimMargin()
+        )
+        return result is Boolean && result
     }
 
     /**
@@ -418,7 +630,7 @@ class CallPage(driver: RemoteWebDriver) : AbstractPageObject(driver) {
 
         // Let's wait till we are alone in the room
         // (give time for the js Promise to finish before quiting selenium)
-        WebDriverWait(driver, 2).until {
+        WebDriverWait(driver, Duration.ofSeconds(2)).until {
             getNumParticipants() == 1
         }
 

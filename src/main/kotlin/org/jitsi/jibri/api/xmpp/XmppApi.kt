@@ -146,7 +146,7 @@ class XmppApi(
         // Join all the MUCs we've been told to
         for (config in xmppConfigs) {
             for (host in config.xmppServerHosts) {
-                logger.info("Connecting to xmpp environment on $host with config $config")
+                logger.info("Connecting to xmpp environment '${config.name}' on $host")
                 val hostDetails: List<String> = host.split(":")
 
                 // We need to use the host as the ID because we'll only get one MUC client per 'ID' and

@@ -125,7 +125,10 @@ class JibriManager : StatusPublisher<Any>() {
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
         throwIfBusy(RecordingSinkType.FILE)
-        logger.info("Starting a file recording with params: $fileRecordingRequestParams")
+        logger.info(
+            "Starting a file recording, sessionId=${fileRecordingRequestParams.sessionId}, " +
+                "call=${fileRecordingRequestParams.callParams}"
+        )
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
@@ -149,7 +152,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
-        logger.info("Starting a stream with params: $serviceParams $streamingParams")
+        logger.info("Starting a stream, sessionId=${streamingParams.sessionId}, call=${streamingParams.callParams}")
         throwIfBusy(RecordingSinkType.STREAM)
         val service = StreamingJibriService(streamingParams)
         jibriMetrics.start(RecordingSinkType.STREAM)
@@ -163,7 +166,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
-        logger.info("Starting a SIP gateway with params: $serviceParams $sipGatewayServiceParams")
+        logger.info("Starting a SIP gateway, call=${sipGatewayServiceParams.callParams}")
         throwIfBusy(RecordingSinkType.GATEWAY)
         val service = SipGatewayJibriService(
             SipGatewayServiceParams(
