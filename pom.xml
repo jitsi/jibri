@@ -125,7 +125,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-xmpp-extensions</artifactId>
-            <version>1.0-95-ge113e35</version>
+            <version>1.0-110-g00660c3</version>
         </dependency>
         <dependency>
             <groupId>com.datadoghq</groupId>
