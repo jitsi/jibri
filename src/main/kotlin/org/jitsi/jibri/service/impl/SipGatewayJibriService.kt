@@ -133,7 +133,9 @@ class SipGatewayJibriService(
      */
     override fun start() {
         jibriSelenium.joinCall(
-            sipGatewayServiceParams.callParams.callUrlInfo.copy(urlParams = SIP_GW_URL_OPTIONS),
+            sipGatewayServiceParams.callParams.callUrlInfo.copy(
+                urlParams = SIP_GW_URL_OPTIONS + sipGatewayServiceParams.callParams.extraUrlParams
+            ),
             sipGatewayServiceParams.callLoginParams,
             sipGatewayServiceParams.callParams.passcode,
             unmute = true

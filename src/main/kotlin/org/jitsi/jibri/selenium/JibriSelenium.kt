@@ -79,7 +79,11 @@ data class CallParams(
      * Display name which when it is set, it is used by jibri when joining the web conference.
      * Note that this is currently only used in the sipgateway gateway scenario;
      */
-    val displayName: String = ""
+    val displayName: String = "",
+    /**
+     * Extra URL params to add when joining the call, on top of the service-specific defaults.
+     */
+    val extraUrlParams: List<String> = listOf()
 ) {
     override fun toString(): String {
         return if (passcode.isNullOrEmpty()) {

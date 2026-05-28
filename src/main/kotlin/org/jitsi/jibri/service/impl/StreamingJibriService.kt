@@ -105,7 +105,9 @@ class StreamingJibriService(
             return
         }
         jibriSelenium.joinCall(
-            streamingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+            streamingParams.callParams.callUrlInfo.copy(
+                urlParams = RECORDING_URL_OPTIONS + streamingParams.callParams.extraUrlParams
+            ),
             streamingParams.callLoginParams
         )
 

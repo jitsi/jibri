@@ -371,7 +371,10 @@ class XmppApi(
             jacksonObjectMapper().readValue<AppData>(startIq.appData)
         }
         val serviceParams = ServiceParams(xmppEnvironment.usageTimeoutMins, appData)
-        val callParams = CallParams(callUrlInfo)
+        val extraUrlParams = buildList {
+            startIq.rtcStatsEnabled?.let { add("config.analytics.rtcstatsEnabled=$it") }
+        }
+        val callParams = CallParams(callUrlInfo, extraUrlParams = extraUrlParams)
         logger.info("Parsed call url info: $callUrlInfo")
 
         when (startIq.mode()) {
