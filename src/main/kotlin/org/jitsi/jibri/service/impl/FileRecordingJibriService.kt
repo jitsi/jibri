@@ -168,7 +168,9 @@ class FileRecordingJibriService(
             return
         }
         jibriSelenium.joinCall(
-            fileRecordingParams.callParams.callUrlInfo.copy(urlParams = RECORDING_URL_OPTIONS),
+            fileRecordingParams.callParams.callUrlInfo.copy(
+                urlParams = RECORDING_URL_OPTIONS + fileRecordingParams.callParams.extraUrlParams
+            ),
             fileRecordingParams.callLoginParams
         )
 
