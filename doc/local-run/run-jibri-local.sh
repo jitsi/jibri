@@ -46,6 +46,11 @@ XMPP_HOST="${XMPP_HOST:-127.0.0.1}"
 JIBRI_RECORDING_RESOLUTION="${JIBRI_RECORDING_RESOLUTION:-1280x720}"
 JIBRI_AUDIO_SOURCE="${JIBRI_AUDIO_SOURCE:-alsa}"
 JIBRI_AUDIO_DEVICE="${JIBRI_AUDIO_DEVICE:-plug:bsnoop}"
+# macOS only: avfoundation device indices for screen + audio capture.
+# Find them with: ffmpeg -f avfoundation -list_devices true -i ""
+# When unset, jibri's default input ("0:0", usually camera + mic) is used.
+JIBRI_MAC_VIDEO_DEVICE="${JIBRI_MAC_VIDEO_DEVICE:-}"
+JIBRI_MAC_AUDIO_DEVICE="${JIBRI_MAC_AUDIO_DEVICE:-}"
 JIBRI_INSTANCE_ID="${JIBRI_INSTANCE_ID:-jibri-local-$$}"
 JIBRI_STRIP_DOMAIN_JID="${JIBRI_STRIP_DOMAIN_JID:-${XMPP_MUC_DOMAIN%%.*}}"
 
@@ -75,6 +80,34 @@ EOF
   exit 1
 fi
 
+# macOS screen capture: avfoundation's screen devices only deliver the native
+# (retina) resolution, so drop -video_size from the input and scale on the
+# encoder side instead.
+FFMPEG_MAC_OVERRIDES=""
+if [ -n "$JIBRI_MAC_VIDEO_DEVICE" ]; then
+  [ -n "$JIBRI_MAC_AUDIO_DEVICE" ] || {
+    echo "JIBRI_MAC_VIDEO_DEVICE is set but JIBRI_MAC_AUDIO_DEVICE is not (pick one from: ffmpeg -f avfoundation -list_devices true -i \"\")" >&2
+    exit 1
+  }
+  FFMPEG_MAC_OVERRIDES=$(cat <<EOG
+    input-mac = [
+      "-thread_queue_size", "4096",
+      "-f", "avfoundation",
+      "-capture_cursor", "0",
+      "-framerate", "30",
+      "-i", "$JIBRI_MAC_VIDEO_DEVICE:$JIBRI_MAC_AUDIO_DEVICE"
+    ]
+    video-params = [
+      "-vf", "scale=${JIBRI_RECORDING_RESOLUTION%%x*}:-2",
+      "-c:v", "libx264",
+      "-pix_fmt", "yuv420p",
+      "-r", "30",
+      "-crf", "25"
+    ]
+EOG
+)
+fi
+
 cat > "$JIBRI_CONF" <<EOF
 jibri {
   id = "$JIBRI_INSTANCE_ID"
@@ -89,6 +122,7 @@ jibri {
     resolution = "$JIBRI_RECORDING_RESOLUTION"
     audio-source = "$JIBRI_AUDIO_SOURCE"
     audio-device = "$JIBRI_AUDIO_DEVICE"
+$FFMPEG_MAC_OVERRIDES
   }
 
   chrome {
