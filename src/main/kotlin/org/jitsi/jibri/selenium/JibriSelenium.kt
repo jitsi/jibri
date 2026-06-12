@@ -182,6 +182,7 @@ class JibriSelenium(
     private val stateMachine = SeleniumStateMachine()
     private var shuttingDown = AtomicBoolean(false)
     private val chromeOpts: List<String> by config("jibri.chrome.flags".from(Config.configSource))
+    private var callPage: CallPage
 
     /**
      * A task which executes at an interval and checks various aspects of the call to make sure things are
@@ -208,6 +209,7 @@ class JibriSelenium(
         chromeOptions.setCapability("goog:loggingPrefs", logPrefs)
         chromeDriver = ChromeDriver(chromeDriverService, chromeOptions)
         chromeDriver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(60))
+        callPage = CallPage.create(chromeDriver)
 
         stateMachine.onStateTransition(this::onSeleniumStateChange)
     }
@@ -239,7 +241,6 @@ class JibriSelenium(
             }
         }
         recurringCallStatusCheckTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
-            val callPage = CallPage(chromeDriver)
             try {
                 // Run through each of the checks.  If we hit one that returns an event, then we stop and process the
                 // state transition from that event. Note: it's intentional that we stop at the first check that fails
@@ -275,19 +276,19 @@ class JibriSelenium(
      * Jibri is active
      */
     private fun addParticipantTrackers() {
-        CallPage(chromeDriver).injectParticipantTrackerScript()
+        callPage.injectParticipantTrackerScript()
         if (jibriSeleniumOptions.enableLocalParticipantStatusChecks) {
-            CallPage(chromeDriver).injectLocalParticipantTrackerScript()
+            callPage.injectLocalParticipantTrackerScript()
         }
     }
 
-    fun addToPresence(key: String, value: String): Boolean = CallPage(chromeDriver).addToPresence(key, value)
+    fun addToPresence(key: String, value: String): Boolean = callPage.addToPresence(key, value)
 
-    fun sendPresence(): Boolean = CallPage(chromeDriver).sendPresence()
+    fun sendPresence(): Boolean = callPage.sendPresence()
 
     fun handleDtmfStar6() {
         logger.info("Handling *6 DTMF command (audio toggle)")
-        val callPage = CallPage(chromeDriver)
+
         if (callPage.isVisitor()) {
             logger.info("In visitor mode, toggling raise hand")
             callPage.raiseHand()
@@ -309,7 +310,7 @@ class JibriSelenium(
 
     fun handleDtmfStar7() {
         logger.info("Handling *7 DTMF command (video toggle)")
-        val callPage = CallPage(chromeDriver)
+
         if (callPage.isVisitor()) {
             logger.info("In visitor mode, toggling raise hand")
             callPage.raiseHand()
@@ -377,9 +378,9 @@ class JibriSelenium(
                     )
                 )
 
-                if (!CallPage(chromeDriver).visit(callUrl)) {
+                if (!callPage.visit(callUrl)) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)
-                } else if (unmute && !CallPage(chromeDriver).unmute()) {
+                } else if (unmute && !callPage.unmute()) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)
                 } else {
                     startRecurringCallStatusChecks()
@@ -395,7 +396,7 @@ class JibriSelenium(
     }
 
     fun getParticipants(): List<Map<String, Any>> {
-        return CallPage(chromeDriver).getParticipants()
+        return callPage.getParticipants()
     }
 
     fun leaveCallAndQuitBrowser() {
@@ -419,7 +420,7 @@ class JibriSelenium(
         }
         logger.info("Leaving web call")
         try {
-            CallPage(chromeDriver).leave()
+            callPage.leave()
         } catch (t: Throwable) {
             logger.error("Error trying to leave the call", t)
         }
