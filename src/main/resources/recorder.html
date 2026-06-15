@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Jibri Recorder</title>
+        <style>
+            body {
+                margin: 0;
+                background: #000;
+            }
+            #jitsiMeetContainer {
+                width: 100%;
+                height: 100vh;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="jitsiMeetContainer"></div>
+        <script>
+            const script = document.createElement("script");
+            script.src = `${window.location.origin}/external_api.js`;
+            script.onload = () => initializeRecorder();
+            script.onerror = () =>
+                console.error(`[recorder] Failed to load external_api.js from ${window.location.origin}`);
+            document.head.appendChild(script);
+
+            function initializeRecorder() {
+                const params = new URLSearchParams(window.location.search);
+                const room = params.get("room");
+                if (!room) {
+                    console.error("[recorder] Missing required 'room' parameter");
+                    return;
+                }
+                const domain = window.location.host;
+
+                console.log(`[recorder] Initializing for room=${room} domain=${domain}`);
+
+                try {
+                    const api = new JitsiMeetExternalAPI(domain, {
+                        roomName: room,
+                        parentNode: document.querySelector("#jitsiMeetContainer"),
+                        configOverwrite: {
+                            hosts: { domain, muc: `muc.${domain}` },
+                            iAmRecorder: true,
+                            disableInitialGUM: true,
+                            startWithAudioMuted: true,
+                            startWithVideoMuted: true,
+                            prejoinConfig: { enabled: false },
+                            p2p: { enabled: false },
+                        },
+                    });
+
+                    window.jibriRecorderApi = api;
+
+                    window.jibriPageState = {
+                        conferenceJoined: false,
+                        participantIds: new Set(),
+                        getRemoteParticipantCount() {
+                            return this.participantIds.size;
+                        },
+                    };
+
+                    api.addEventListener("conferenceJoined", () => {
+                        window.jibriPageState.conferenceJoined = true;
+                        window.jibriPageState.participantIds.clear();
+                        const participants = api.getParticipants?.() || [];
+                        participants.forEach((p) => {
+                            window.jibriPageState.participantIds.add(p.id);
+                        });
+                        console.log(`[recorder] conferenceJoined, participants=${participants.length}`);
+                    });
+
+                    api.addEventListener("participantJoined", (p) => {
+                        window.jibriPageState.participantIds.add(p.id);
+                    });
+
+                    api.addEventListener("participantLeft", (p) => {
+                        window.jibriPageState.participantIds.delete(p.id);
+                    });
+
+                    api.addEventListener("conferenceLeft", () => {
+                        window.jibriPageState.conferenceJoined = false;
+                        window.jibriPageState.participantIds.clear();
+                        console.log("[recorder] conferenceLeft");
+                    });
+
+                    api.addEventListener("readyToClose", () => {
+                        console.log("[recorder] readyToClose");
+                    });
+
+                    console.log("[recorder] Ready");
+                } catch (e) {
+                    console.error(`[recorder] Initialization failed: ${e.message}`);
+                    window.jibriRecorderApi = null;
+                }
+            }
+        </script>
+    </body>
+</html>
