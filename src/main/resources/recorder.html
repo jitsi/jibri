@@ -27,11 +27,12 @@
             function initializeRecorder() {
                 const params = new URLSearchParams(window.location.search);
                 const room = params.get("room");
+                const domain = window.location.hostname;
+
                 if (!room) {
                     console.error("[recorder] Missing required 'room' parameter");
                     return;
                 }
-                const domain = window.location.host;
 
                 console.log(`[recorder] Initializing for room=${room} domain=${domain}`);
 
@@ -40,7 +41,6 @@
                         roomName: room,
                         parentNode: document.querySelector("#jitsiMeetContainer"),
                         configOverwrite: {
-                            hosts: { domain, muc: `muc.${domain}` },
                             iAmRecorder: true,
                             disableInitialGUM: true,
                             startWithAudioMuted: true,

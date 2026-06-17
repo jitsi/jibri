@@ -15,11 +15,17 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun visit(url: CallUrlInfo): Boolean {
         val room = extractRoomName(url).lowercase()
-        val recorderUrl = "https://192.168.1.4:8443/recorder.html?room=$room"
-        logger.info("Loading recorder page for room=$room")
-        driver.get(recorderUrl)
-        return true
+        return try {
+            val recorderUrl = "${url.baseUrl}/recorder.html?room=$room"
+            logger.info("Loading recorder page from $recorderUrl")
+            driver.get(recorderUrl)
+            true
+        } catch (t: Throwable) {
+            logger.error("Failed to load recorder page: ${t.message}", t)
+            false
+        }
     }
+
 
     private fun extractRoomName(url: CallUrlInfo): String {
         return url.callName

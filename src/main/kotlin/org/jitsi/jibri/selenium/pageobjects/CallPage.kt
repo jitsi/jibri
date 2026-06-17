@@ -18,6 +18,8 @@
 package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.config.Config
+import org.jitsi.metaconfig.config
 import org.openqa.selenium.remote.RemoteWebDriver
 
 interface CallPage {
@@ -47,8 +49,11 @@ interface CallPage {
     fun getBitrates(): Map<String, Any?>
 
     companion object {
+        val useExternalAPI: Boolean by config {
+            "jibri.selenium.use-external-api".from(Config.configSource)
+        }
+
         fun create(driver: RemoteWebDriver): CallPage {
-            val useExternalAPI = System.getenv("JIBRI_USE_EXTERNAL_API") == "true"
             return if (useExternalAPI) {
                 ExternalAPIPage(driver)
             } else {
