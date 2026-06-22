@@ -4,10 +4,20 @@ import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
+import java.io.File
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 /** CallPage implementation with External API event-driven updates. */
 class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPage {
     private val logger = createLogger()
+
+    /**
+     * The bundled recorder.html, extracted to a local file so we can load it
+     * directly in the browser instead of relying on the deployment to serve it.
+     * Extracted lazily and reused for the lifetime of the page object.
+     */
+    private val recorderHtmlFile: File by lazy { extractRecorderHtml() }
 
     init {
         PageFactory.initElements(driver, this)
@@ -16,8 +26,16 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
     override fun visit(url: CallUrlInfo): Boolean {
         val room = extractRoomName(url).lowercase()
         return try {
-            val recorderUrl = "${url.baseUrl}/recorder.html?room=$room"
-            logger.info("Loading recorder page from $recorderUrl")
+            // The deployment base url is passed to the page so it can source
+            // external_api.js from the deployment (the page itself is loaded from a
+            // local file and has no deployment origin of its own).
+            val baseUrl = url.baseUrl
+            val recorderUrl = buildString {
+                append(recorderHtmlFile.toURI().toString())
+                append("?room=").append(encode(room))
+                append("&baseUrl=").append(encode(baseUrl))
+            }
+            logger.info("Loading recorder page for room=$room baseUrl=$baseUrl from $recorderUrl")
             driver.get(recorderUrl)
             true
         } catch (t: Throwable) {
@@ -26,10 +44,19 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
     }
 
-
     private fun extractRoomName(url: CallUrlInfo): String {
         return url.callName
     }
+
+    private fun extractRecorderHtml(): File {
+        val tmpFile = File.createTempFile("jibri-recorder", ".html").apply { deleteOnExit() }
+        val resource = javaClass.getResourceAsStream("/recorder.html")
+            ?: throw IllegalStateException("recorder.html not found on the classpath")
+        resource.use { input -> tmpFile.outputStream().use { input.copyTo(it) } }
+        return tmpFile
+    }
+
+    private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
 
     override fun unmute() = true
 

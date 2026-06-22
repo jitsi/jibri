@@ -17,22 +17,27 @@
     <body>
         <div id="jitsiMeetContainer"></div>
         <script>
-            const script = document.createElement("script");
-            script.src = `${window.location.origin}/external_api.js`;
-            script.onload = () => initializeRecorder();
-            script.onerror = () =>
-                console.error(`[recorder] Failed to load external_api.js from ${window.location.origin}`);
-            document.head.appendChild(script);
+            // This page may be loaded from a local file (file://) instead of being
+            // served by the deployment, so the deployment base url is passed in as a
+            // query parameter and used to source external_api.js and to connect to.
+            const params = new URLSearchParams(window.location.search);
+            const room = params.get("room");
+            const baseUrl = params.get("baseUrl");
+            if (!room) {
+                console.error("[recorder] Missing required 'room' parameter");
+            } else if (!baseUrl) {
+                console.error("[recorder] Missing required 'baseUrl' parameter");
+            } else {
+                const script = document.createElement("script");
+                script.src = `${baseUrl.replace(/\/$/, "")}/external_api.js`;
+                script.onload = () => initializeRecorder(room, baseUrl);
+                script.onerror = () =>
+                    console.error(`[recorder] Failed to load external_api.js from ${baseUrl}`);
+                document.head.appendChild(script);
+            }
 
-            function initializeRecorder() {
-                const params = new URLSearchParams(window.location.search);
-                const room = params.get("room");
-                const domain = window.location.hostname;
-
-                if (!room) {
-                    console.error("[recorder] Missing required 'room' parameter");
-                    return;
-                }
+            function initializeRecorder(room, baseUrl) {
+                const domain = new URL(baseUrl).host;
 
                 console.log(`[recorder] Initializing for room=${room} domain=${domain}`);
 

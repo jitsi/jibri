@@ -197,12 +197,16 @@ class JibriSelenium(
         if (System.getProperty("webdriver.chrome.logfile") == null) {
             System.setProperty("webdriver.chrome.logfile", "/var/log/jitsi/jibri/chromedriver.log")
         }
+        val chromeDriverLogFile = File(System.getProperty("webdriver.chrome.logfile"))
+        // chromedriver exits immediately (exit value 1) if it cannot open its log file, so make
+        // sure the parent directory exists.
+        chromeDriverLogFile.parentFile?.mkdirs()
         val chromeOptions = ChromeOptions()
         chromeOptions.addArguments(chromeOpts)
         chromeOptions.addArguments(jibriSeleniumOptions.extraChromeCommandLineFlags)
         val chromeDriverService = ChromeDriverService.Builder()
             .withEnvironment(mapOf("DISPLAY" to jibriSeleniumOptions.display))
-            .withLogFile(File("/var/log/jitsi/jibri/chromedriver.log"))
+            .withLogFile(chromeDriverLogFile)
             .build()
         val logPrefs = LoggingPreferences()
         logPrefs.enable(LogType.DRIVER, Level.ALL)
