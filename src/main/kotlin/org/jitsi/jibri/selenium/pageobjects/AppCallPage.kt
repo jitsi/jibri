@@ -1,4 +1,5 @@
 package org.jitsi.jibri.selenium.pageobjects
+
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.TimeoutException
@@ -21,7 +22,6 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
     }
 
     override fun visit(url: CallUrlInfo): Boolean {
-        logger.info("Loading legacy page (DOM polling): $url")
         if (!super.visit(url)) {
             return false
         }
@@ -59,6 +59,9 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         return result
     }
 
+    /**
+     * Enable the local camera and microphone. Used in sip gateway mode.
+     */
     override fun unmute() = doUnmute("Audio") && doUnmute("Video")
 
     private fun doUnmute(mediaType: String): Boolean {
@@ -83,27 +86,26 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         }
     }
 
+    /** Returns the number of participants excluding hidden participants. */
     override fun getNumParticipants(): Int {
-        return try {
-            val result = driver.executeScript(
-                """
-                try {
-                    return (APP.conference._room.getParticipants().$PARTICIPANT_FILTER_SCRIPT).length + 1;
-                } catch (e) {
-                    return e.message;
-                }
-                """.trimMargin()
-            )
-            when (result) {
-                is Number -> result.toInt()
-                else -> 1
+        val result = driver.executeScript(
+            """
+            try {
+                return (APP.conference._room.getParticipants().$PARTICIPANT_FILTER_SCRIPT).length + 1;
+            } catch (e) {
+                return e.message;
             }
-        } catch (t: Throwable) {
-            logger.error("Error getting participant count, assuming 1: $t")
-            1
+            """.trimMargin()
+        )
+        return when (result) {
+            is Number -> result.toInt()
+            else -> 1
         }
     }
 
+    /**
+     * Return true if there are no other participants in the conference.
+     */
     override fun isCallEmpty() = getNumParticipants() <= 1
 
     @Suppress("UNCHECKED_CAST")
@@ -230,6 +232,10 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         }
     }
 
+    /**
+     * Return how many of the participants are Jigasi clients.
+     * Note: excludes any participants that are hidden (for example transcribers)
+     */
     override fun numRemoteParticipantsJigasi(): Int {
         val result = driver.executeScript(
             """
@@ -252,6 +258,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         }
     }
 
+    /** How many of the participants are hidden or hiddenFromRecorder. */
     override fun numHiddenParticipants(): Int {
         val result = driver.executeScript(
             """
@@ -273,6 +280,9 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         }
     }
 
+    /**
+     * Return true if ICE is connected.
+     */
     override fun isIceConnected(): Boolean {
         val result: Any? = driver.executeScript(
             """
@@ -307,6 +317,12 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         }
     }
 
+    /**
+     * Returns a count of how many remote participants are totally muted (audio
+     * and video). We ignore jigasi participants as they maybe muted in their presence
+     * but also hard muted via the device, and we later ignore their state.
+     * Note: Excludes hidden participants.
+     */
     override fun numRemoteParticipantsMuted(): Int {
         val result = driver.executeScript(
             """
@@ -369,6 +385,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         return result as? Boolean ?: true
     }
 
+    /** Returns true if AV moderation is enabled for audio and the local participant is not approved to unmute. */
     override fun isAudioForceMuted(): Boolean {
         val result = driver.executeScript(
             """
@@ -387,6 +404,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         return result as? Boolean ?: false
     }
 
+    /** Returns true if AV moderation is enabled for video and the local participant is not approved to unmute. */
     override fun isVideoForceMuted(): Boolean {
         val result = driver.executeScript(
             """
@@ -405,6 +423,11 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         return result as? Boolean ?: false
     }
 
+    // Toggles video mute and waits for the Redux store to confirm the state change.
+    // muteVideo() returns a Promise — firing it synchronously and returning immediately
+    // would not guarantee the toggle completed. Unmuting requires re-acquiring the camera
+    // device, which is slower (12s timeout) than muting/releasing it (5s). On timeout,
+    // extra state is returned to help diagnose why the change did not complete.
     override fun toggleVideoMute(): Any? {
         driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20))
         return driver.executeAsyncScript(
@@ -434,6 +457,8 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
                 };
 
                 if (!isMuted) {
+                    // Prefer muting via the track directly so the Promise rejection is catchable.
+                    // Fall back to a Redux dispatch when no track is present yet.
                     var localVideo = APP.store.getState()['features/base/tracks']
                         .find(function(t) { return t.local && t.mediaType === 'video' && t.jitsiTrack; });
                     if (localVideo) {
@@ -444,6 +469,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
                         APP.store.dispatch({ type: 'SET_VIDEO_MUTED', muted: true });
                     }
                 } else {
+                    // ensureTrack tells Jitsi to re-acquire the camera if no track exists yet.
                     waitForChange(12000, 'timeout-unmuting');
                     APP.store.dispatch({ type: 'SET_VIDEO_MUTED', muted: false, ensureTrack: true });
                 }
@@ -454,6 +480,12 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         )
     }
 
+    // Toggles audio mute and waits for the Redux store to confirm the state change.
+    // Audio track operations (especially unmuting/re-acquiring the microphone) are async —
+    // dispatching and returning immediately would not guarantee the toggle completed.
+    // Unmuting has a longer timeout (12s) than muting (5s) because re-acquiring a device
+    // is slower than releasing it. On timeout, extra state is returned to help diagnose
+    // why the change did not complete.
     override fun toggleAudioMute(): Any? {
         driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20))
         return driver.executeAsyncScript(
@@ -483,6 +515,8 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
                 };
 
                 if (!isMuted) {
+                    // Prefer muting via the track directly so the Promise rejection is catchable.
+                    // Fall back to a Redux dispatch when no track is present yet.
                     var localAudio = APP.store.getState()['features/base/tracks']
                         .find(function(t) { return t.local && t.mediaType === 'audio' && t.jitsiTrack; });
                     if (localAudio) {
@@ -493,6 +527,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
                         APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: true });
                     }
                 } else {
+                    // ensureTrack tells Jitsi to re-acquire the microphone if no track exists yet.
                     waitForChange(12000, 'timeout-unmuting');
                     APP.store.dispatch({ type: 'SET_AUDIO_MUTED', muted: false, ensureTrack: true });
                 }
@@ -522,6 +557,10 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         return result is Boolean && result
     }
 
+    /**
+     * Add the given key, value pair to the presence map and send a new presence
+     * message
+     */
     override fun addToPresence(key: String, value: String): Boolean {
         val result = driver.executeScript(
             """
@@ -572,6 +611,8 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
             """.trimMargin()
         )
 
+        // Let's wait till we are alone in the room
+        // (give time for the js Promise to finish before quiting selenium)
         WebDriverWait(driver, Duration.ofSeconds(2)).until {
             getNumParticipants() == 1
         }
