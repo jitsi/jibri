@@ -78,7 +78,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
                 "return window.jibriPageState ? window.jibriPageState.getRemoteParticipantCount() + 1 : 1;"
             )
             val count = (result as? Number)?.toInt() ?: 1
-            logger.info("getNumParticipants: result=$result, count=$count")
+            logger.debug("getNumParticipants: result=$result, count=$count")
             count
         } catch (t: Throwable) {
             logger.error("Error getting participant count: ${t.message}")
