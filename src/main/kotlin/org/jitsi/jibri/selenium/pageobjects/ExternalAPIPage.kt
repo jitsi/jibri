@@ -41,6 +41,12 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             logger.info("Loading recorder page for room=$room baseUrl=$baseUrl from $recorderUrl")
             driver.get(recorderUrl)
 
+            val apiError = driver.executeScript("return window.jibriPageState?.apiError;")
+            if (apiError != null) {
+                logger.error("External API failed to initialize: $apiError")
+                return false
+            }
+
             WebDriverWait(driver, Duration.ofSeconds(30)).until {
                 (driver.executeScript(
                     "return window.jibriPageState?.conferenceJoined === true;"

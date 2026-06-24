@@ -36,10 +36,12 @@
 				script.onload = () => {
 					console.log("[recorder] external_api.js onload fired");
 				};
-				script.onerror = () =>
-					console.error(
-						`[recorder] Failed to load external_api.js from ${baseUrl}`,
-					);
+				script.onerror = () => {
+					const errorMsg = `Failed to load external_api.js from ${baseUrl}`;
+					window.jibriPageState = {
+						apiError: errorMsg,
+					};
+				};
 				document.head.appendChild(script);
 			}
 
@@ -70,6 +72,7 @@
 
 					window.jibriPageState = {
 						conferenceJoined: false,
+						apiError: null,
 						participantIds: new Set(),
 						getRemoteParticipantCount() {
 							return this.participantIds.size;
@@ -91,6 +94,10 @@
 						window.jibriPageState.participantIds.clear();
 					});
 
+					api.addListener("errorOccurred", (error) => {
+						const errorMsg = `${error.type}:${error.name} - ${error?.message}`;
+						window.jibriPageState.apiError = errorMsg;
+					});
 				} catch (e) {
 					window.jibriRecorderApi = null;
 				}
