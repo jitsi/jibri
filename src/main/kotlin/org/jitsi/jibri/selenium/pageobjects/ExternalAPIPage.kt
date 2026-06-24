@@ -2,11 +2,14 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
+import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
+import org.openqa.selenium.support.ui.WebDriverWait
 import java.io.File
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.Duration
 
 /** CallPage implementation with External API event-driven updates. */
 class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPage {
@@ -37,9 +40,16 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             }
             logger.info("Loading recorder page for room=$room baseUrl=$baseUrl from $recorderUrl")
             driver.get(recorderUrl)
+
+            WebDriverWait(driver, Duration.ofSeconds(30)).until {
+                (driver.executeScript(
+                    "return window.jibriPageState?.conferenceJoined === true;"
+                ) as? Boolean) ?: false
+            }
+            logger.info("Recorder page initialized successfully")
             true
-        } catch (t: Throwable) {
-            logger.error("Failed to load recorder page: ${t.message}", t)
+        } catch (e: Exception) {
+            logger.error("Failed to initialize recorder page: ${e.message}")
             false
         }
     }

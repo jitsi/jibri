@@ -1,104 +1,100 @@
 <!doctype html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Jibri Recorder</title>
-        <style>
-            body {
-                margin: 0;
-                background: #000;
-            }
-            #jitsiMeetContainer {
-                width: 100%;
-                height: 100vh;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="jitsiMeetContainer"></div>
-        <script>
-            // This page may be loaded from a local file (file://) instead of being
-            // served by the deployment, so the deployment base url is passed in as a
-            // query parameter and used to source external_api.js and to connect to.
-            const params = new URLSearchParams(window.location.search);
-            const room = params.get("room");
-            const baseUrl = params.get("baseUrl");
-            if (!room) {
-                console.error("[recorder] Missing required 'room' parameter");
-            } else if (!baseUrl) {
-                console.error("[recorder] Missing required 'baseUrl' parameter");
-            } else {
-                const script = document.createElement("script");
-                script.src = `${baseUrl.replace(/\/$/, "")}/external_api.js`;
-                script.onload = () => initializeRecorder(room, baseUrl);
-                script.onerror = () =>
-                    console.error(`[recorder] Failed to load external_api.js from ${baseUrl}`);
-                document.head.appendChild(script);
-            }
+	<head>
+		<meta charset="utf-8" />
+		<title>Jibri Recorder</title>
+		<style>
+			body {
+				margin: 0;
+				background: #000;
+			}
+			#jitsiMeetContainer {
+				width: 100%;
+				height: 100vh;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="jitsiMeetContainer"></div>
+		<script>
 
-            function initializeRecorder(room, baseUrl) {
-                const domain = new URL(baseUrl).host;
+			// This page may be loaded from a local file (file://) instead of being
+			// served by the deployment, so the deployment base url is passed in as a
+			// query parameter and used to source external_api.js and to connect to.
+			const params = new URLSearchParams(window.location.search);
+			const room = params.get("room");
+			const baseUrl = params.get("baseUrl");
+			if (!room) {
+				console.error("[recorder] Missing required 'room' parameter");
+			} else if (!baseUrl) {
+				console.error(
+					"[recorder] Missing required 'baseUrl' parameter",
+				);
+			} else {
+				const script = document.createElement("script");
+				script.src = `${baseUrl.replace(/\/$/, "")}/external_api.js`;
+				script.onload = () => {
+					console.log("[recorder] external_api.js onload fired");
+				};
+				script.onerror = () =>
+					console.error(
+						`[recorder] Failed to load external_api.js from ${baseUrl}`,
+					);
+				document.head.appendChild(script);
+			}
 
-                console.log(`[recorder] Initializing for room=${room} domain=${domain}`);
+			function initializeRecorder(room, baseUrl) {
+				const domain = new URL(baseUrl).host;
 
-                try {
-                    const api = new JitsiMeetExternalAPI(domain, {
-                        roomName: room,
-                        parentNode: document.querySelector("#jitsiMeetContainer"),
-                        configOverwrite: {
-                            iAmRecorder: true,
-                            disableInitialGUM: true,
-                            startWithAudioMuted: true,
-                            startWithVideoMuted: true,
-                            prejoinConfig: { enabled: false },
-                            p2p: { enabled: false },
-                        },
-                    });
+				console.log(
+					`[recorder] Initializing for room=${room} domain=${domain}`,
+				);
 
-                    window.jibriRecorderApi = api;
+				try {
+					const api = new JitsiMeetExternalAPI(domain, {
+						roomName: room,
+						parentNode: document.querySelector(
+							"#jitsiMeetContainer",
+						),
+						configOverwrite: {
+							iAmRecorder: true,
+							disableInitialGUM: true,
+							startWithAudioMuted: true,
+							startWithVideoMuted: true,
+							prejoinConfig: { enabled: false },
+							p2p: { enabled: false },
+						},
+					});
 
-                    window.jibriPageState = {
-                        conferenceJoined: false,
-                        participantIds: new Set(),
-                        getRemoteParticipantCount() {
-                            return this.participantIds.size;
-                        },
-                    };
+					window.jibriRecorderApi = api;
 
-                    api.addEventListener("conferenceJoined", () => {
-                        window.jibriPageState.conferenceJoined = true;
-                        window.jibriPageState.participantIds.clear();
-                        const participants = api.getParticipants?.() || [];
-                        participants.forEach((p) => {
-                            window.jibriPageState.participantIds.add(p.id);
-                        });
-                        console.log(`[recorder] conferenceJoined, participants=${participants.length}`);
-                    });
+					window.jibriPageState = {
+						conferenceJoined: false,
+						participantIds: new Set(),
+						getRemoteParticipantCount() {
+							return this.participantIds.size;
+						},
+					};
 
-                    api.addEventListener("participantJoined", (p) => {
-                        window.jibriPageState.participantIds.add(p.id);
-                    });
 
-                    api.addEventListener("participantLeft", (p) => {
-                        window.jibriPageState.participantIds.delete(p.id);
-                    });
 
-                    api.addEventListener("conferenceLeft", () => {
-                        window.jibriPageState.conferenceJoined = false;
-                        window.jibriPageState.participantIds.clear();
-                        console.log("[recorder] conferenceLeft");
-                    });
+					api.addListener("participantJoined", (p) => {
+						window.jibriPageState.participantIds.add(p.id);
+					});
 
-                    api.addEventListener("readyToClose", () => {
-                        console.log("[recorder] readyToClose");
-                    });
+					api.addListener("participantLeft", (p) => {
+						window.jibriPageState.participantIds.delete(p.id);
+					});
 
-                    console.log("[recorder] Ready");
-                } catch (e) {
-                    console.error(`[recorder] Initialization failed: ${e.message}`);
-                    window.jibriRecorderApi = null;
-                }
-            }
-        </script>
-    </body>
+					api.addListener("conferenceLeft", () => {
+						window.jibriPageState.conferenceJoined = false;
+						window.jibriPageState.participantIds.clear();
+					});
+
+				} catch (e) {
+					window.jibriRecorderApi = null;
+				}
+			}
+		</script>
+	</body>
 </html>
