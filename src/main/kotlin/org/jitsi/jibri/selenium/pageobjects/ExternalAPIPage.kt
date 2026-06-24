@@ -2,7 +2,6 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
-import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
@@ -48,9 +47,11 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             }
 
             WebDriverWait(driver, Duration.ofSeconds(30)).until {
-                (driver.executeScript(
-                    "return window.jibriPageState?.conferenceJoined === true;"
-                ) as? Boolean) ?: false
+                (
+                    driver.executeScript(
+                        "return window.jibriPageState?.conferenceJoined === true;"
+                    ) as? Boolean
+                    ) ?: false
             }
             logger.info("Recorder page initialized successfully")
             true

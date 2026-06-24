@@ -17,7 +17,6 @@
 	<body>
 		<div id="jitsiMeetContainer"></div>
 		<script>
-
 			// This page may be loaded from a local file (file://) instead of being
 			// served by the deployment, so the deployment base url is passed in as a
 			// query parameter and used to source external_api.js and to connect to.
@@ -78,8 +77,6 @@
 							return this.participantIds.size;
 						},
 					};
-
-
 
 					api.addListener("participantJoined", (p) => {
 						window.jibriPageState.participantIds.add(p.id);
