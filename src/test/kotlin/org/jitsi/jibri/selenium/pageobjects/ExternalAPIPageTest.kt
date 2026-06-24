@@ -2,6 +2,10 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.data.forAll
+import io.kotest.data.headers
+import io.kotest.data.row
+import io.kotest.data.table
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
@@ -21,6 +25,22 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.executeScript(any<String>()) } returns true
 
             page.visit(callUrl) shouldBe true
+        }
+
+        should("extract room name as last URL path segment") {
+            val t = table(
+                headers("input", "expectedRoom"),
+                row("roomname", "roomname"),
+                row("tenant/roomname", "roomname"),
+                row("tenant/abc/roomname", "roomname"),
+                row("org/tenant/abc/test", "test")
+            )
+            forAll(t) { input, expectedRoom ->
+                every { driver.get(match { url -> url.contains("room=$expectedRoom") }) } returns Unit
+                every { driver.executeScript(any<String>()) } returns true
+
+                page.visit(CallUrlInfo("https://meet.example.com", input)) shouldBe true
+            }
         }
 
         should("return false on timeout when conference never joins") {

@@ -27,7 +27,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
     }
 
     override fun visit(url: CallUrlInfo): Boolean {
-        val room = extractRoomName(url).lowercase()
+        val room = url.callName.substringAfterLast('/').lowercase()
         return try {
             // The deployment base url is passed to the page so it can source
             // external_api.js from the deployment (the page itself is loaded from a
@@ -52,10 +52,6 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             logger.error("Failed to initialize recorder page: ${e.message}")
             false
         }
-    }
-
-    private fun extractRoomName(url: CallUrlInfo): String {
-        return url.callName
     }
 
     private fun extractRecorderHtml(): File {
