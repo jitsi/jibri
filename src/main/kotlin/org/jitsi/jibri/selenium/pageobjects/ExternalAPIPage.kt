@@ -2,6 +2,7 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
+import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
@@ -27,36 +28,33 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun visit(url: CallUrlInfo): Boolean {
         val room = url.callName.substringAfterLast('/').lowercase()
+        // The deployment base url is passed to the page so it can source
+        // external_api.js from the deployment (the page itself is loaded from a
+        // local file and has no deployment origin of its own).
+        val baseUrl = url.baseUrl
+        val recorderUrl = buildString {
+            append(recorderHtmlFile.toURI().toString())
+            append("?room=").append(encode(room))
+            append("&baseUrl=").append(encode(baseUrl))
+        }
+        logger.info("Loading recorder page for room=$room baseUrl=$baseUrl from $recorderUrl")
+        driver.get(recorderUrl)
+
+        val apiError = driver.executeScript("return window.jibriPageState?.apiError;")
+        if (apiError != null) {
+            logger.error("External API failed to initialize: $apiError")
+            return false
+        }
+
         return try {
-            // The deployment base url is passed to the page so it can source
-            // external_api.js from the deployment (the page itself is loaded from a
-            // local file and has no deployment origin of its own).
-            val baseUrl = url.baseUrl
-            val recorderUrl = buildString {
-                append(recorderHtmlFile.toURI().toString())
-                append("?room=").append(encode(room))
-                append("&baseUrl=").append(encode(baseUrl))
-            }
-            logger.info("Loading recorder page for room=$room baseUrl=$baseUrl from $recorderUrl")
-            driver.get(recorderUrl)
-
-            val apiError = driver.executeScript("return window.jibriPageState?.apiError;")
-            if (apiError != null) {
-                logger.error("External API failed to initialize: $apiError")
-                return false
-            }
-
             WebDriverWait(driver, Duration.ofSeconds(30)).until {
-                (
-                    driver.executeScript(
-                        "return window.jibriPageState?.conferenceJoined === true;"
-                    ) as? Boolean
-                    ) ?: false
+                driver.executeScript("return !window.jibriPageState?.apiError && window.jibriPageState?.conferenceJoined === true;") as? Boolean
+                    ?: false
             }
             logger.info("Recorder page initialized successfully")
             true
-        } catch (e: Exception) {
-            logger.error("Failed to initialize recorder page: ${e.message}")
+        } catch (e: TimeoutException) {
+            logger.error("Failed to join conference: timeout waiting for conferenceJoined event")
             false
         }
     }

@@ -33,7 +33,7 @@
 				const script = document.createElement("script");
 				script.src = `${baseUrl.replace(/\/$/, "")}/external_api.js`;
 				script.onload = () => {
-					console.log("[recorder] external_api.js onload fired");
+					initializeRecorder(room, baseUrl);
 				};
 				script.onerror = () => {
 					const errorMsg = `Failed to load external_api.js from ${baseUrl}`;
@@ -78,6 +78,10 @@
 						},
 					};
 
+					api.addListener("videoConferenceJoined", () => {
+						window.jibriPageState.conferenceJoined = true;
+					});
+
 					api.addListener("participantJoined", (p) => {
 						window.jibriPageState.participantIds.add(p.id);
 					});
@@ -86,7 +90,7 @@
 						window.jibriPageState.participantIds.delete(p.id);
 					});
 
-					api.addListener("conferenceLeft", () => {
+					api.addListener("videoConferenceLeft", () => {
 						window.jibriPageState.conferenceJoined = false;
 						window.jibriPageState.participantIds.clear();
 					});
@@ -96,6 +100,10 @@
 						window.jibriPageState.apiError = errorMsg;
 					});
 				} catch (e) {
+					window.jibriPageState = {
+						apiError:
+							e.message || "Failed to initialize External API",
+					};
 					window.jibriRecorderApi = null;
 				}
 			}
