@@ -32,12 +32,17 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         // external_api.js from the deployment (the page itself is loaded from a
         // local file and has no deployment origin of its own).
         val baseUrl = url.baseUrl
+        // Convert tenant dots to slashes for URL path format.
+        val tenantPath = if (url.tenant.isNotEmpty()) url.tenant.replace(".", "/") else ""
         val recorderUrl = buildString {
             append(recorderHtmlFile.toURI().toString())
             append("?room=").append(encode(room))
             append("&baseUrl=").append(encode(baseUrl))
+            if (tenantPath.isNotEmpty()) {
+                append("&tenant=").append(encode(tenantPath))
+            }
         }
-        logger.info("Loading recorder page for room=$room baseUrl=$baseUrl from $recorderUrl")
+        logger.info("Loading recorder page for room=$room baseUrl=$baseUrl tenant=$tenantPath from $recorderUrl")
         driver.get(recorderUrl)
 
         val apiError = driver.executeScript("return window.jibriPageState?.apiError;")
@@ -48,8 +53,10 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
         return try {
             WebDriverWait(driver, Duration.ofSeconds(30)).until {
-                driver.executeScript("return !window.jibriPageState?.apiError && window.jibriPageState?.conferenceJoined === true;") as? Boolean
-                    ?: false
+                val script =
+                    "return !window.jibriPageState?.apiError && " +
+                        "window.jibriPageState?.conferenceJoined === true;"
+                driver.executeScript(script) as? Boolean ?: false
             }
             logger.info("Recorder page initialized successfully")
             true

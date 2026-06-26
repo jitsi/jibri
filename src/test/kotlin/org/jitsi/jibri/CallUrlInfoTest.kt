@@ -40,7 +40,7 @@ class CallUrlInfoTest : ShouldSpec() {
                 }
             }
             context("with url params") {
-                val info = CallUrlInfo("baseUrl", "callName", listOf("one", "two", "three"))
+                val info = CallUrlInfo("baseUrl", "callName", "", listOf("one", "two", "three"))
                 should("assign the fields correctly") {
                     info.baseUrl shouldBe "baseUrl"
                     info.callName shouldBe "callName"
@@ -68,7 +68,7 @@ class CallUrlInfoTest : ShouldSpec() {
                         val differentCallName = CallUrlInfo("differentUrl", "differentCallName")
                         val differentBaseUrlCase = CallUrlInfo("BASEURL", "callName")
                         val differentCallNameCase = CallUrlInfo("baseUrl", "CALLNAME")
-                        val withUrlParams = CallUrlInfo("baseUrl", "callName", listOf("one", "two", "three"))
+                        val withUrlParams = CallUrlInfo("baseUrl", "callName", "", listOf("one", "two", "three"))
 
                         val t = table(
                             headers("left", "right", "shouldEqual"),

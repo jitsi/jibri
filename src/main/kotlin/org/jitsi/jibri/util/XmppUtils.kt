@@ -51,8 +51,8 @@ fun getCallUrlInfoFromJid(
         }
 
         return when {
-            subdomain.isEmpty() -> CallUrlInfo(baseCallUrl, callName)
-            else -> CallUrlInfo("$baseCallUrl/$subdomain", callName)
+            subdomain.isEmpty() -> CallUrlInfo(baseCallUrl, callName, "")
+            else -> CallUrlInfo("$baseCallUrl/$subdomain", callName, subdomain.toString())
         }
     } catch (e: Exception) {
         throw CallUrlInfoFromJidException(

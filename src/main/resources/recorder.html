@@ -23,6 +23,7 @@
 			const params = new URLSearchParams(window.location.search);
 			const room = params.get("room");
 			const baseUrl = params.get("baseUrl");
+			const tenant = params.get("tenant");
 			if (!room) {
 				console.error("[recorder] Missing required 'room' parameter");
 			} else if (!baseUrl) {
@@ -33,7 +34,7 @@
 				const script = document.createElement("script");
 				script.src = `${baseUrl.replace(/\/$/, "")}/external_api.js`;
 				script.onload = () => {
-					initializeRecorder(room, baseUrl);
+					initializeRecorder(room, baseUrl, tenant);
 				};
 				script.onerror = () => {
 					const errorMsg = `Failed to load external_api.js from ${baseUrl}`;
@@ -44,16 +45,18 @@
 				document.head.appendChild(script);
 			}
 
-			function initializeRecorder(room, baseUrl) {
+			function initializeRecorder(room, baseUrl, tenant) {
 				const domain = new URL(baseUrl).host;
+				// Construct roomName matching URL format: tenant and room separated by slashes
+				const roomName = tenant ? `${tenant}/${room}` : room;
 
 				console.log(
-					`[recorder] Initializing for room=${room} domain=${domain}`,
+					`[recorder] Initializing for domain=${domain} roomName=${roomName}`,
 				);
 
 				try {
 					const api = new JitsiMeetExternalAPI(domain, {
-						roomName: room,
+						roomName: roomName,
 						parentNode: document.querySelector(
 							"#jitsiMeetContainer",
 						),
