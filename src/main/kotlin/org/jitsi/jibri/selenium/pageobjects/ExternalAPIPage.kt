@@ -45,23 +45,23 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         logger.info("Loading recorder page for room=$room baseUrl=$baseUrl tenant=$tenantPath from $recorderUrl")
         driver.get(recorderUrl)
 
-        val apiError = driver.executeScript("return window.jibriPageState?.apiError;")
-        if (apiError != null) {
-            logger.error("External API failed to initialize: $apiError")
-            return false
-        }
-
         return try {
             WebDriverWait(driver, Duration.ofSeconds(30)).until {
-                val script =
-                    "return !window.jibriPageState?.apiError && " +
-                        "window.jibriPageState?.conferenceJoined === true;"
-                driver.executeScript(script) as? Boolean ?: false
+                val apiError = driver.executeScript("return window.jibriPageState?.apiError;")
+                if (apiError != null) {
+                    throw IllegalStateException("API error: $apiError")
+                }
+                val script = "return window.jibriPageState?.conferenceJoined === true;"
+                val result = driver.executeScript(script) as? Boolean ?: false
+                result
             }
             logger.info("Recorder page initialized successfully")
             true
         } catch (e: TimeoutException) {
             logger.error("Failed to join conference: timeout waiting for conferenceJoined event")
+            false
+        } catch (e: IllegalStateException) {
+            logger.error("Failed to join conference: ${e.message}")
             false
         }
     }

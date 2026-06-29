@@ -25,12 +25,17 @@ internal class ExternalAPIPageTest : ShouldSpec() {
         should("return true when conference joined") {
             every { driver.get(any<String>()) } returns Unit
             every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
-            val conferenceJoinedScript =
-                "return !window.jibriPageState?.apiError && " +
-                    "window.jibriPageState?.conferenceJoined === true;"
-            every { driver.executeScript(conferenceJoinedScript) } returns true
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
 
             page.visit(callUrl) shouldBe true
+        }
+
+        should("return false when conference not joined") {
+            every { driver.get(any<String>()) } returns Unit
+            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns false
+
+            page.visit(callUrl) shouldBe false
         }
 
         should("extract room name and pass tenant from URL path") {
@@ -45,10 +50,7 @@ internal class ExternalAPIPageTest : ShouldSpec() {
                 val urlSlot = slot<String>()
                 every { driver.get(capture(urlSlot)) } returns Unit
                 every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
-                val confJoinedScript =
-                    "return !window.jibriPageState?.apiError && " +
-                        "window.jibriPageState?.conferenceJoined === true;"
-                every { driver.executeScript(confJoinedScript) } returns true
+                every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
 
                 page.visit(CallUrlInfo("https://meet.example.com", input, tenant)) shouldBe true
                 urlSlot.captured.shouldContain("room=$room")
@@ -58,27 +60,24 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             }
         }
 
-        should("return false on timeout when conference never joins") {
-            every { driver.get(any<String>()) } returns Unit
-            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
-            val confJoinedScript =
-                "return !window.jibriPageState?.apiError && " +
-                    "window.jibriPageState?.conferenceJoined === true;"
-            every { driver.executeScript(confJoinedScript) } returns false
+        should("return false if apiError occurs") {
+            val t = table(
+                headers("errorAtCall", "scenario"),
+                row(1, "at initialization"),
+                row(4, "during polling after 3 cycles")
+            )
+            forAll(t) { errorAtCall, scenario ->
+                every { driver.get(any<String>()) } returns Unit
+                var callCount = 0
+                every { driver.executeScript("return window.jibriPageState?.apiError;") } answers {
+                    callCount++
+                    if (callCount >= errorAtCall) "API error" else null
+                }
+                every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns false
 
-            page.visit(callUrl) shouldBe false
-        }
-
-        should("return false if exception occurs") {
-            every { driver.get(any<String>()) } returns Unit
-            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
-            val confJoinedScript =
-                "return !window.jibriPageState?.apiError && " +
-                    "window.jibriPageState?.conferenceJoined === true;"
-            every { driver.executeScript(confJoinedScript) } throws
-                org.openqa.selenium.TimeoutException("Script timeout")
-
-            page.visit(callUrl) shouldBe false
+                page.visit(callUrl) shouldBe false
+                callCount shouldBe errorAtCall
+            }
         }
 
         should("return participant count") {
