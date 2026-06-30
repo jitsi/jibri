@@ -158,6 +158,45 @@ JIBRI_AUDIO_DEVICE=default \
 specifically, find the right monitor source with `pactl list short sources`
 and pass it as `JIBRI_AUDIO_DEVICE` (e.g. `alsa_output.pci-…analog-stereo.monitor`).
 
+### 6b. (macOS only) Capture the screen instead of the camera
+
+Jibri's default macOS ffmpeg input is `-i 0:0` — whatever avfoundation
+device 0 is (usually a camera + the mic). To record the conference you
+want a **screen** device for video and a **loopback** device for audio.
+
+1. **Grant Screen Recording permission** to the terminal app you launch
+   the script from (System Settings → Privacy & Security → Screen
+   Recording), then fully quit and relaunch the terminal. Without it
+   avfoundation silently produces black frames.
+
+2. **Install a loopback audio device**, e.g. [BlackHole](https://github.com/ExistentialAudio/BlackHole)
+   (`brew install blackhole-2ch`), and route the call audio into it:
+   Audio MIDI Setup → `+` → *Create Multi-Output Device* → check both
+   BlackHole and your speakers, then select that multi-output device as
+   the system sound output. (Selecting BlackHole alone also works, but
+   you won't hear anything.)
+
+3. **Find the device indices**:
+
+   ```sh
+   ffmpeg -f avfoundation -list_devices true -i ""
+   # e.g. video: [2] Capture screen 0   audio: [2] BlackHole 2ch
+   ```
+
+4. **Run with the indices**:
+
+   ```sh
+   JIBRI_MAC_VIDEO_DEVICE=2 JIBRI_MAC_AUDIO_DEVICE=2 \
+   ~/dev/jibri/doc/local-run/run-jibri-local.sh
+   ```
+
+Note avfoundation screen devices capture the *whole* display at native
+(retina) resolution — there is no per-window capture in ffmpeg on macOS.
+The script scales the output down to `JIBRI_RECORDING_RESOLUTION` width,
+but whatever else is on that screen ends up in the recording, so keep the
+jibri Chrome window in front (or point it at a secondary display, e.g.
+`Capture screen 1`).
+
 ### 7. Run jibri
 
 ```sh
@@ -205,8 +244,10 @@ All overridable as env vars when invoking the script:
 | `XMPP_PORT` | `5222` | matches `.env` if set there |
 | `JIBRI_INSTANCE_ID` | `jibri-local-$$` | shows up as MUC nickname |
 | `CHROMEDRIVER` | `$JIBRI_DIR/chromedriver` | path to chromedriver binary |
-| `JIBRI_AUDIO_SOURCE` | `alsa` | ffmpeg `-f` for audio (`alsa`, `pulse`) |
-| `JIBRI_AUDIO_DEVICE` | `plug:bsnoop` | ffmpeg audio input device (e.g. `default` for pulse) |
+| `JIBRI_AUDIO_SOURCE` | `alsa` | Linux: ffmpeg `-f` for audio (`alsa`, `pulse`) |
+| `JIBRI_AUDIO_DEVICE` | `plug:bsnoop` | Linux: ffmpeg audio input device (e.g. `default` for pulse) |
+| `JIBRI_MAC_VIDEO_DEVICE` | unset | macOS: avfoundation video index (use a `Capture screen N` device) |
+| `JIBRI_MAC_AUDIO_DEVICE` | unset | macOS: avfoundation audio index (use a loopback device, e.g. BlackHole) |
 
 ## Troubleshooting
 
@@ -245,8 +286,25 @@ Option A (snd-aloop + `~/.asoundrc`) or skip ALSA and use Pulse via
 **ffmpeg quits abruptly with "Error opening output files: Invalid argument"**
 on macOS — usually an avfoundation arg conflict. Inspect
 `~/dev/jibri/.local/ffmpeg.0.txt` for the real ffmpeg stderr. Note that the
-default macOS ffmpeg input is `-i 0:0` (FaceTime camera + system mic), so
-the resulting mp4 will record your camera, **not** the chrome window. Native
-screen capture on macOS requires switching to a screen-capture device index
-plus a virtual audio loopback (e.g. BlackHole) — out of scope for this
-script.
+default macOS ffmpeg input is `-i 0:0` (camera + system mic), so the
+resulting mp4 records your camera, **not** the chrome window — see step 6b
+for screen capture via `JIBRI_MAC_VIDEO_DEVICE`/`JIBRI_MAC_AUDIO_DEVICE`.
+
+**Black video on macOS** — the terminal app that launched the script lacks
+the Camera (default `0:0` input) or Screen Recording (screen-capture input)
+permission. avfoundation doesn't error on a denied device; it delivers
+black frames. Grant the permission in System Settings → Privacy & Security
+and fully restart the terminal app.
+
+**Black video on Linux** — you're on a Wayland session
+(`echo $XDG_SESSION_TYPE`), where `x11grab` cannot see the screen and
+records black. Either log into an Xorg session, or run a dedicated virtual
+display and point both Chrome and ffmpeg at it:
+
+```sh
+Xvfb :1 -screen 0 1280x720x24 &
+DISPLAY=:1 ~/dev/jibri/doc/local-run/run-jibri-local.sh
+```
+
+(the second part — overriding ffmpeg's hardcoded `-i :0.0+0,0` grab target —
+currently requires editing `input-linux` in the generated conf).
