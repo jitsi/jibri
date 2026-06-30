@@ -30,6 +30,7 @@ import java.util.Objects
 data class CallUrlInfo(
     val baseUrl: String = "",
     val callName: String = "",
+    val tenant: String = "",
     private val urlParams: List<String> = listOf()
 ) {
     @get:JsonIgnore
