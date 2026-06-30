@@ -75,7 +75,7 @@ New method: in `jibri.conf`:
 ```hocon
 jibri {
     recording {
-        finalize-script = <path>
+        finalize-script = <path>  # Optional. If not set, no finalize script will be run.
     }
 }
 ```
