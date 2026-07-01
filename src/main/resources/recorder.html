@@ -75,27 +75,14 @@
 					window.jibriPageState = {
 						conferenceJoined: false,
 						apiError: null,
-						participantIds: new Set(),
-						getRemoteParticipantCount() {
-							return this.participantIds.size;
-						},
 					};
 
 					api.addListener("videoConferenceJoined", () => {
 						window.jibriPageState.conferenceJoined = true;
 					});
 
-					api.addListener("participantJoined", (p) => {
-						window.jibriPageState.participantIds.add(p.id);
-					});
-
-					api.addListener("participantLeft", (p) => {
-						window.jibriPageState.participantIds.delete(p.id);
-					});
-
 					api.addListener("videoConferenceLeft", () => {
 						window.jibriPageState.conferenceJoined = false;
-						window.jibriPageState.participantIds.clear();
 					});
 
 					api.addListener("errorOccurred", (error) => {
