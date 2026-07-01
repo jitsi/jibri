@@ -83,6 +83,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             val result = driver.executeScript(
                 "return window.jibriRecorderApi ? window.jibriRecorderApi.getNumberOfParticipants() : 1;"
             )
+            logger.debug("Number of participants: $result")
             (result as? Number)?.toInt() ?: 1
         } catch (t: Throwable) {
             logger.error("Error getting participant count: ${t.message}")
