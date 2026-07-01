@@ -24,6 +24,9 @@
 			const room = params.get("room");
 			const baseUrl = params.get("baseUrl");
 			const tenant = params.get("tenant");
+			const localStorageContent = params.get("localStorageContent");
+			const config = JSON.parse(params.get("config") || "{}");
+
 			if (!room) {
 				console.error("[recorder] Missing required 'room' parameter");
 			} else if (!baseUrl) {
@@ -34,7 +37,13 @@
 				const script = document.createElement("script");
 				script.src = `${baseUrl.replace(/\/$/, "")}/external_api.js`;
 				script.onload = () => {
-					initializeRecorder(room, baseUrl, tenant);
+					initializeRecorder(
+						room,
+						baseUrl,
+						tenant,
+						localStorageContent,
+						config,
+					);
 				};
 				script.onerror = () => {
 					const errorMsg = `Failed to load external_api.js from ${baseUrl}`;
@@ -45,9 +54,14 @@
 				document.head.appendChild(script);
 			}
 
-			function initializeRecorder(room, baseUrl, tenant) {
+			function initializeRecorder(
+				room,
+				baseUrl,
+				tenant,
+				localStorageContent,
+				config,
+			) {
 				const domain = new URL(baseUrl).host;
-				// Construct roomName matching URL format: tenant and room separated by slashes
 				const roomName = tenant ? `${tenant}/${room}` : room;
 
 				console.log(
@@ -55,19 +69,32 @@
 				);
 
 				try {
+					// Forwarded to the meeting iframe; how call-login credentials reach jitsi-meet.
+					if (localStorageContent) {
+						localStorage.setItem(
+							"jitsiLocalStorage",
+							localStorageContent,
+						);
+					}
+
 					const api = new JitsiMeetExternalAPI(domain, {
 						roomName: roomName,
 						parentNode: document.querySelector(
 							"#jitsiMeetContainer",
 						),
+
 						configOverwrite: {
+							...(config.config || {}),
 							iAmRecorder: true,
 							disableInitialGUM: true,
 							startWithAudioMuted: true,
 							startWithVideoMuted: true,
 							prejoinConfig: { enabled: false },
 							p2p: { enabled: false },
+							useHostPageLocalStorage: true,
 						},
+						interfaceConfigOverwrite: config.interfaceConfig || {},
+						devices: config.devices || {},
 					});
 
 					window.jibriRecorderApi = api;

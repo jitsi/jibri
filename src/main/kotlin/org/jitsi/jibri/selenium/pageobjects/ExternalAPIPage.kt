@@ -1,5 +1,6 @@
 package org.jitsi.jibri.selenium.pageobjects
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.TimeoutException
@@ -14,6 +15,7 @@ import java.time.Duration
 /** CallPage implementation with External API event-driven updates. */
 class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPage {
     private val logger = createLogger()
+    private val mapper by lazy { jacksonObjectMapper() }
 
     /**
      * The bundled recorder.html, extracted to a local file so we can load it
@@ -35,6 +37,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         val baseUrl = url.baseUrl
         // Convert tenant dots to slashes for URL path format.
         val tenantPath = if (url.tenant.isNotEmpty()) url.tenant.replace(".", "/") else ""
+        val localStorageContent = url.localStorageContent
         val recorderUrl = buildString {
             append(recorderHtmlFile.toURI().toString())
             append("?room=").append(encode(room))
@@ -42,8 +45,16 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             if (tenantPath.isNotEmpty()) {
                 append("&tenant=").append(encode(tenantPath))
             }
+            localStorageContent?.let {
+                append("&localStorageContent=").append(encode(it))
+            }
+            if (url.urlParams.isNotEmpty()) {
+                val parsedConfig = parseUrlParams(url.urlParams)
+                append("&config=").append(encode(mapper.writeValueAsString(parsedConfig)))
+            }
         }
-        logger.info("Loading recorder page for room=$room baseUrl=$baseUrl tenant=$tenantPath from $recorderUrl")
+
+        logger.info("Loading recorder page for room=$room baseUrl=$baseUrl tenant=$tenantPath")
         driver.get(recorderUrl)
 
         return try {
@@ -73,6 +84,42 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             ?: throw IllegalStateException("recorder.html not found on the classpath")
         resource.use { input -> tmpFile.outputStream().use { input.copyTo(it) } }
         return tmpFile
+    }
+
+    // Parses "config.a.b=value" strings into nested {config: {a: {b: value}}} objects.
+    private fun parseUrlParams(rawParams: List<String>): Map<String, Any?> {
+        val result = mutableMapOf<String, Any?>()
+
+        for (param in rawParams) {
+            if (param.isEmpty()) continue
+
+            val parts = param.split("=", limit = 2)
+            if (parts.size != 2) continue
+
+            val (key, rawValue) = parts
+            if (key.isEmpty() || rawValue.isEmpty()) continue
+
+            val value = try {
+                mapper.readValue(rawValue, Any::class.java)
+            } catch (e: Exception) {
+                rawValue
+            }
+
+            setNestedValue(result, key, value)
+        }
+
+        return result
+    }
+
+    // Recursively build nested map from dotted path: "config.a.b" → map[config][a][b] = value
+    @Suppress("UNCHECKED_CAST")
+    private fun setNestedValue(map: MutableMap<String, Any?>, path: String, value: Any?) {
+        val parts = path.split(".")
+        var current = map
+        for (i in 0 until parts.size - 1) {
+            current = (current.getOrPut(parts[i]) { mutableMapOf<String, Any?>() } as MutableMap<String, Any?>)
+        }
+        current[parts.last()] = value
     }
 
     private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)

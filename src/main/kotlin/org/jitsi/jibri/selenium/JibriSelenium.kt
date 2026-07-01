@@ -375,12 +375,16 @@ class JibriSelenium(
                 val innerJson = jacksonObjectMapper().writeValueAsString(localStorageValues)
                 val innerJsonEscaped = innerJson.replace("\"", "\\\"")
                 val outerJson = "\"$innerJsonEscaped\""
-                val callUrl = callUrlInfo.withAdditionalUrlParams(
-                    listOf(
-                        "config.useHostPageLocalStorage=true",
-                        "appData.localStorageContent=${encodeURIComponent(outerJson)}",
+                val encodedContent = encodeURIComponent(outerJson)
+
+                val callUrl = callUrlInfo
+                    .withAdditionalUrlParams(
+                        listOf(
+                            "config.useHostPageLocalStorage=true",
+                            "appData.localStorageContent=$encodedContent",
+                        )
                     )
-                )
+                    .withLocalStorageContent(innerJson)
 
                 if (!callPage.visit(callUrl)) {
                     stateMachine.transition(SeleniumEvent.FailedToJoinCall)

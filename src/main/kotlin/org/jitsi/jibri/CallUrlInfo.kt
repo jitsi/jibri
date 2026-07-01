@@ -31,7 +31,9 @@ data class CallUrlInfo(
     val baseUrl: String = "",
     val callName: String = "",
     val tenant: String = "",
-    private val urlParams: List<String> = listOf()
+    val urlParams: List<String> = listOf(),
+    @get:JsonIgnore
+    val localStorageContent: String? = null
 ) {
     @get:JsonIgnore
     val callUrl: String
@@ -59,6 +61,8 @@ data class CallUrlInfo(
 
     fun withAdditionalUrlParams(params: List<String>): CallUrlInfo =
         this.copy(urlParams = (this.urlParams + params).distinct())
+
+    fun withLocalStorageContent(content: String?): CallUrlInfo = this.copy(localStorageContent = content)
 
     override fun toString() = "CallUrlInfo(baseUrl='$baseUrl', callName='$callName', " +
         "urlParams=${if (urlParams.isEmpty()) "empty" else "not-empty"})"
