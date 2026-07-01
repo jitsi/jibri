@@ -81,11 +81,9 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
     override fun getNumParticipants(): Int {
         return try {
             val result = driver.executeScript(
-                "return window.jibriPageState ? window.jibriPageState.getRemoteParticipantCount() + 1 : 1;"
+                "return window.jibriRecorderApi ? window.jibriRecorderApi.getNumberOfParticipants() : 1;"
             )
-            val count = (result as? Number)?.toInt() ?: 1
-            logger.debug("getNumParticipants: result=$result, count=$count")
-            count
+            (result as? Number)?.toInt() ?: 1
         } catch (t: Throwable) {
             logger.error("Error getting participant count: ${t.message}")
             1
