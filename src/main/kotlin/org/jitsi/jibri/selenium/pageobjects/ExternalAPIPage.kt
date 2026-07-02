@@ -105,8 +105,43 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun isCallEmpty() = getNumParticipants() <= 1
 
+    private fun getStats(): Map<String, Any?> {
+        val iframes = driver.findElements(org.openqa.selenium.By.tagName("iframe"))
+        if (iframes.isEmpty()) {
+            logger.warn("No iframe found, cannot access APP.conference")
+            return mapOf()
+        }
+        val result = try {
+            // Switching frames because window.APP only exists in the iframe's window.
+            driver.switchTo().frame(iframes[0])
+            driver.executeScript(
+                """
+                try {
+                    return APP.conference.getStats();
+                } catch (e) {
+                    return e.message;
+                }
+                """.trimMargin()
+            )
+        } catch (t: Throwable) {
+            logger.error("Error getting stats: ${t.message}")
+            return mapOf()
+        } finally {
+            driver.switchTo().defaultContent()
+        }
+        @Suppress("UNCHECKED_CAST")
+        val stats = result as? Map<String, Any?>
+        if (stats == null) {
+            logger.error("Error running getStats script: $result ${result?.javaClass}")
+        }
+        return stats ?: mapOf()
+    }
+
     @Suppress("UNCHECKED_CAST")
-    override fun getBitrates(): Map<String, Any?> = mapOf()
+    override fun getBitrates(): Map<String, Any?> {
+        val stats = getStats()
+        return stats["bitrate"] as? Map<String, Any?> ?: mapOf()
+    }
 
     override fun injectParticipantTrackerScript(): Boolean = true
 
