@@ -2,9 +2,11 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
+import org.openqa.selenium.By
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
+import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.io.File
 import java.net.URLEncoder
@@ -106,14 +108,11 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
     override fun isCallEmpty() = getNumParticipants() <= 1
 
     private fun getStats(): Map<String, Any?> {
-        val iframes = driver.findElements(org.openqa.selenium.By.tagName("iframe"))
-        if (iframes.isEmpty()) {
-            logger.warn("No iframe found, cannot access APP.conference")
-            return mapOf()
-        }
         val result = try {
             // Switching frames because window.APP only exists in the iframe's window.
-            driver.switchTo().frame(iframes[0])
+            WebDriverWait(driver, Duration.ofSeconds(5)).until(
+                ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.tagName("iframe"))
+            )
             driver.executeScript(
                 """
                 try {
@@ -129,6 +128,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         } finally {
             driver.switchTo().defaultContent()
         }
+
         @Suppress("UNCHECKED_CAST")
         val stats = result as? Map<String, Any?>
         if (stats == null) {
