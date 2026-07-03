@@ -122,7 +122,7 @@ jibri {
     resolution = "$JIBRI_RECORDING_RESOLUTION"
     audio-source = "$JIBRI_AUDIO_SOURCE"
     audio-device = "$JIBRI_AUDIO_DEVICE"
-$FFMPEG_MAC_OVERRIDES
+    $FFMPEG_MAC_OVERRIDES
   }
 
   chrome {
@@ -201,6 +201,7 @@ org.jitsi.jibri.selenium.util.BrowserFileHandler.count = 5
 org.jitsi.level = FINE
 org.jitsi.jibri.config.level = INFO
 org.glassfish.level = INFO
+jdk.internal.net.http.level = INFO
 EOF
 
 JAR="$(ls -t "$JIBRI_DIR"/target/jibri-*-jar-with-dependencies.jar 2>/dev/null | head -n1 || true)"
