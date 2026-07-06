@@ -81,19 +81,19 @@ internal class ExternalAPIPageTest : ShouldSpec() {
         }
 
         should("return participant count") {
-            every { driver.executeScript(any<String>()) } returns 3L
+            every { driver.executeAsyncScript(any<String>()) } returns 3L
 
             page.getNumParticipants() shouldBe 3
         }
 
         should("return true when only recorder present") {
-            every { driver.executeScript(any<String>()) } returns 1L
+            every { driver.executeAsyncScript(any<String>()) } returns 1L
 
             page.isCallEmpty() shouldBe true
         }
 
         should("return false when participants present") {
-            every { driver.executeScript(any<String>()) } returns 2L
+            every { driver.executeAsyncScript(any<String>()) } returns 2L
 
             page.isCallEmpty() shouldBe false
         }
