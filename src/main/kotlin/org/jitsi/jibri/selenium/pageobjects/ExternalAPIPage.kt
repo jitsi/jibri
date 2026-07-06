@@ -24,6 +24,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     init {
         PageFactory.initElements(driver, this)
+        driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20))
     }
 
     override fun visit(url: CallUrlInfo): Boolean {
@@ -80,7 +81,6 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun getNumParticipants(): Int {
         return try {
-            driver.manage().timeouts().scriptTimeout(Duration.ofSeconds(20))
             val result = driver.executeAsyncScript(
                 """
                 const cb = arguments[arguments.length - 1];
