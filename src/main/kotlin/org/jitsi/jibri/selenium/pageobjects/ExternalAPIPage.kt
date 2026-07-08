@@ -106,7 +106,27 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
     override fun isCallEmpty() = getNumParticipants() <= 1
 
     @Suppress("UNCHECKED_CAST")
-    override fun getBitrates(): Map<String, Any?> = mapOf()
+    override fun getBitrates(): Map<String, Any?> {
+        return try {
+            val result = driver.executeAsyncScript(
+                """
+                const cb = arguments[arguments.length - 1];
+                if (!window.jibriRecorderApi) {
+                    cb({});
+                    return;
+                }
+                window.jibriRecorderApi.getConnectionStats()
+                    .then(stats => cb(stats || {}))
+                    .catch(() => cb({}));
+                """
+            )
+            val stats = result as? Map<String, Any?> ?: mapOf()
+            stats["bitrate"] as? Map<String, Any?> ?: mapOf()
+        } catch (t: Throwable) {
+            logger.error("Error getting bitrates: ${t.message}")
+            mapOf()
+        }
+    }
 
     override fun injectParticipantTrackerScript(): Boolean = true
 
