@@ -24,7 +24,6 @@
 			const room = params.get("room");
 			const baseUrl = params.get("baseUrl");
 			const tenant = params.get("tenant");
-			const localStorageContent = params.get("localStorageContent");
 			const config = JSON.parse(params.get("config") || "{}");
 
 			if (!room) {
@@ -37,13 +36,7 @@
 				const script = document.createElement("script");
 				script.src = `${baseUrl.replace(/\/$/, "")}/external_api.js`;
 				script.onload = () => {
-					initializeRecorder(
-						room,
-						baseUrl,
-						tenant,
-						localStorageContent,
-						config,
-					);
+					initializeRecorder(room, baseUrl, tenant, config);
 				};
 				script.onerror = () => {
 					const errorMsg = `Failed to load external_api.js from ${baseUrl}`;
@@ -54,13 +47,7 @@
 				document.head.appendChild(script);
 			}
 
-			function initializeRecorder(
-				room,
-				baseUrl,
-				tenant,
-				localStorageContent,
-				config,
-			) {
+			function initializeRecorder(room, baseUrl, tenant, config) {
 				const domain = new URL(baseUrl).host;
 				const roomName = tenant ? `${tenant}/${room}` : room;
 
@@ -69,14 +56,6 @@
 				);
 
 				try {
-					// Forwarded to the meeting iframe; how call-login credentials reach jitsi-meet.
-					if (localStorageContent) {
-						localStorage.setItem(
-							"jitsiLocalStorage",
-							localStorageContent,
-						);
-					}
-
 					const api = new JitsiMeetExternalAPI(domain, {
 						roomName: roomName,
 						parentNode: document.querySelector(
@@ -91,10 +70,9 @@
 							startWithVideoMuted: true,
 							prejoinConfig: { enabled: false },
 							p2p: { enabled: false },
-							useHostPageLocalStorage: true,
 						},
-						interfaceConfigOverwrite: config.interfaceConfig || {},
 						devices: config.devices || {},
+						interfaceConfigOverwrite: config.interfaceConfig || {},
 					});
 
 					window.jibriRecorderApi = api;

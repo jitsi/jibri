@@ -37,16 +37,12 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         val baseUrl = url.baseUrl
         // Convert tenant dots to slashes for URL path format.
         val tenantPath = if (url.tenant.isNotEmpty()) url.tenant.replace(".", "/") else ""
-        val localStorageContent = url.localStorageContent
         val recorderUrl = buildString {
             append(recorderHtmlFile.toURI().toString())
             append("?room=").append(encode(room))
             append("&baseUrl=").append(encode(baseUrl))
             if (tenantPath.isNotEmpty()) {
                 append("&tenant=").append(encode(tenantPath))
-            }
-            localStorageContent?.let {
-                append("&localStorageContent=").append(encode(it))
             }
             if (url.urlParams.isNotEmpty()) {
                 val parsedConfig = parseUrlParams(url.urlParams)
