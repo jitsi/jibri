@@ -56,6 +56,17 @@
 				);
 
 				try {
+					if (config.appData?.localStorageContent) {
+						const decoded = decodeURIComponent(
+							config.appData.localStorageContent,
+						);
+						const localStorageContent = JSON.parse(decoded);
+						localStorage.setItem(
+							"jitsiLocalStorage",
+							localStorageContent,
+						);
+					}
+
 					const api = new JitsiMeetExternalAPI(domain, {
 						roomName: roomName,
 						parentNode: document.querySelector(
