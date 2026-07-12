@@ -184,7 +184,28 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun numHiddenParticipants(): Int = 0
 
-    override fun isIceConnected(): Boolean = true
+    override fun isIceConnected(): Boolean {
+        return try {
+            val result = driver.executeAsyncScript(
+                """
+                const cb = arguments[arguments.length - 1];
+                if (!window.jibriRecorderApi) {
+                    cb(false);
+                    return;
+                }
+                window.jibriRecorderApi.getConnectionStats()
+                    .then(stats => cb(stats?.iceConnected === true))
+                    .catch(() => cb(false));
+                """
+            )
+            val iceConnected = result as? Boolean ?: false
+            logger.debug("ICE connected: $iceConnected")
+            iceConnected
+        } catch (t: Throwable) {
+            logger.error("Error while determining ICE connection status", t)
+            false
+        }
+    }
 
     override fun isLocalParticipantKicked(): Boolean = false
 
