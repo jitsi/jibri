@@ -177,9 +177,12 @@ class FileRecordingJibriService(
         whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
             logger.info("Selenium joined the call, starting the capturer")
             try {
-                jibriSelenium.addToPresence("session_id", fileRecordingParams.sessionId)
-                jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.FILE.toString())
-                jibriSelenium.sendPresence()
+                jibriSelenium.setParticipantProperties(
+                    mapOf(
+                        "session_id" to fileRecordingParams.sessionId,
+                        "mode" to JibriIq.RecordingMode.FILE.toString()
+                    )
+                )
                 capturer.start(sink)
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)

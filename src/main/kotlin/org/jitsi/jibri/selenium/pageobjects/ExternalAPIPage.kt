@@ -232,7 +232,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun raiseHand(): Boolean = true
 
-    override fun addToPresence(key: String, value: String): Boolean = true
+    override fun addToPresence(key: String, value: String): Boolean = setParticipantProperties(mapOf(key to value))
 
     override fun sendPresence(): Boolean = true
 
@@ -257,4 +257,27 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             false
         }
     }
+    override fun setParticipantProperties(properties: Map<String, String>): Boolean {
+        return try {
+            val result = driver.executeScript(
+                """
+                if (!window.jibriRecorderApi) {
+                    return false;
+                }
+                window.jibriRecorderApi.executeCommand('setParticipantProperties', arguments[0]);
+                return true;
+                """,
+                properties
+            ) as? Boolean ?: false
+            if (!result) {
+                logger.warn("Could not set participant properties, External API not ready")
+            }
+            result
+        } catch (t: Throwable) {
+            logger.error("Error setting participant properties: ${t.message}")
+            false
+        }
+    }
+
+    override fun leave(): Boolean = true
 }

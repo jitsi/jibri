@@ -45,6 +45,10 @@ interface CallPage {
     fun raiseHand(): Boolean
     fun addToPresence(key: String, value: String): Boolean
     fun sendPresence(): Boolean
+    fun setParticipantProperties(properties: Map<String, String>): Boolean {
+        properties.forEach { (key, value) -> addToPresence(key, value) }
+        return sendPresence()
+    }
     fun leave(): Boolean
     fun getBitrates(): Map<String, Any?>
 

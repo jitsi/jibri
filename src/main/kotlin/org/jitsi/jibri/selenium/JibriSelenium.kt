@@ -290,6 +290,10 @@ class JibriSelenium(
 
     fun sendPresence(): Boolean = callPage.sendPresence()
 
+    fun setParticipantProperties(properties: Map<String, String>): Boolean = callPage.setParticipantProperties(
+        properties
+    )
+
     fun handleDtmfStar6() {
         logger.info("Handling *6 DTMF command (audio toggle)")
 
