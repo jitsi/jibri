@@ -201,7 +201,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             logger.debug("Number of Jigasi participants: $numJigasiParticipants")
             numJigasiParticipants
         } catch (t: Throwable) {
-            logger.error("Error getting number of Jigasi participants: ${t.message}")
+            logger.error("Error getting number of Jigasi participants", t)
             0
         }
     }
