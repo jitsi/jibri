@@ -189,13 +189,17 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             val result = driver.executeAsyncScript(
                 """
                 const cb = arguments[arguments.length - 1];
-                if (!window.jibriRecorderApi) {
+                try {
+                    if (!window.jibriRecorderApi || typeof window.jibriRecorderApi.getConnectionStats !== 'function') {
+                        cb(false);
+                        return;
+                    }
+                    window.jibriRecorderApi.getConnectionStats()
+                        .then(stats => cb(stats?.iceConnected === true))
+                        .catch(() => cb(false));
+                } catch (e) {
                     cb(false);
-                    return;
                 }
-                window.jibriRecorderApi.getConnectionStats()
-                    .then(stats => cb(stats?.iceConnected === true))
-                    .catch(() => cb(false));
                 """
             )
             val iceConnected = result as? Boolean ?: false
