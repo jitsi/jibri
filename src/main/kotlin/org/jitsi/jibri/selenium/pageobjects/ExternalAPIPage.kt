@@ -120,55 +120,58 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     private fun encode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
 
+    /**
+     * Calls [methodName] on window.jibriRecorderApi, guarding against the API or the method
+     * not being ready yet and any error. [script] can assume `api` and `cb` are already in scope.
+     */
+    private fun callRecorderApiAsync(methodName: String, script: String): Any? {
+        return try {
+            driver.executeAsyncScript(
+                """
+                const cb = arguments[arguments.length - 1];
+                const api = window.jibriRecorderApi;
+                if (!api || typeof api.$methodName !== 'function') {
+                    cb(null);
+                    return;
+                }
+                $script
+                """
+            )
+        } catch (t: Throwable) {
+            logger.error("Error calling jibriRecorderApi.$methodName", t)
+            null
+        }
+    }
+
     override fun unmute() = true
 
     override fun getNumParticipants(): Int {
-        return try {
-            val result = driver.executeAsyncScript(
-                """
-                const cb = arguments[arguments.length - 1];
-                if (!window.jibriRecorderApi) {
-                    cb(1);
-                    return;
-                }
-                window.jibriRecorderApi.getRoomsInfo().then(roomsData => {
-                    const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
-                    cb(mainRoom?.participants?.length || 1);
-                }).catch(() => cb(1));
-                """
-            ) as? Number
-            val count = result?.toInt() ?: 1
-            logger.debug("Number of participants: $count")
-            count
-        } catch (t: Throwable) {
-            logger.error("Error getting number of participants: ${t.message}")
-            1
-        }
+        val result = callRecorderApiAsync(
+            "getRoomsInfo",
+            """
+            api.getRoomsInfo().then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                cb(mainRoom?.participants?.length || 1);
+            }).catch(() => cb(1));
+            """
+        ) as? Number
+        val count = result?.toInt() ?: 1
+        logger.debug("Number of participants: $count")
+        return count
     }
 
     override fun isCallEmpty() = getNumParticipants() <= 1
 
     @Suppress("UNCHECKED_CAST")
     override fun getBitrates(): Map<String, Any?> {
-        return try {
-            val result = driver.executeAsyncScript(
-                """
-                const cb = arguments[arguments.length - 1];
-                if (!window.jibriRecorderApi) {
-                    cb({});
-                    return;
-                }
-                window.jibriRecorderApi.getConnectionStats()
-                    .then(stats => cb(stats || {}))
-                    .catch(() => cb({}));
-                """
-            )
-            val stats = result as? Map<String, Any?> ?: mapOf()
-            stats["bitrate"] as? Map<String, Any?> ?: mapOf()
-        } catch (t: Throwable) {
-            logger.error("Error getting bitrates: ${t.message}")
-            mapOf()
-        }
+        val result = callRecorderApiAsync(
+            "getConnectionStats",
+            """
+            api.getConnectionStats().then(stats => cb(stats || {})).catch(() => cb({}));
+            """
+        )
+        val stats = result as? Map<String, Any?> ?: mapOf()
+        return stats["bitrate"] as? Map<String, Any?> ?: mapOf()
     }
 
     override fun injectParticipantTrackerScript(): Boolean = true
