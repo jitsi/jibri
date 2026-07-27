@@ -97,5 +97,17 @@ internal class ExternalAPIPageTest : ShouldSpec() {
 
             page.isCallEmpty() shouldBe false
         }
+
+        should("return number of jigasi participants") {
+            every { driver.executeAsyncScript(any<String>()) } returns 2L
+
+            page.numRemoteParticipantsJigasi() shouldBe 2
+        }
+
+        should("return 0 jigasi participants when script fails") {
+            every { driver.executeAsyncScript(any<String>()) } throws RuntimeException("script error")
+
+            page.numRemoteParticipantsJigasi() shouldBe 0
+        }
     }
 }
