@@ -181,29 +181,19 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
     override fun getParticipants(): List<Map<String, Any>> = listOf()
 
     override fun numRemoteParticipantsJigasi(): Int {
-        return try {
-            val result = driver.executeAsyncScript(
-                """
-                const cb = arguments[arguments.length - 1];
-                if (!window.jibriRecorderApi) {
-                    cb(0);
-                    return;
-                }
-                window.jibriRecorderApi.getRoomsInfo().then(roomsData => {
-                    const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
-                    const numJigasiParticipants = (mainRoom?.participants || []).filter(p => p?.isJigasi === true).length;
-                    cb(numJigasiParticipants);
-                }).catch(() => cb(0));
-                """
-            ) as? Number
-
-            val numJigasiParticipants = result?.toInt() ?: 0
-            logger.debug("Number of Jigasi participants: $numJigasiParticipants")
-            numJigasiParticipants
-        } catch (t: Throwable) {
-            logger.error("Error getting number of Jigasi participants", t)
-            0
-        }
+        val result = callRecorderApiAsync(
+            "getRoomsInfo",
+            """
+            api.getRoomsInfo().then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                const numJigasiParticipants = (mainRoom?.participants || []).filter(p => p?.isJigasi === true).length;
+                cb(numJigasiParticipants);
+            }).catch(() => cb(0));
+            """
+        ) as? Number
+        val numJigasiParticipants = result?.toInt() ?: 0
+        logger.debug("Number of Jigasi participants: $numJigasiParticipants")
+        return numJigasiParticipants
     }
 
     override fun numHiddenParticipants(): Int = 0
