@@ -274,7 +274,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             }
             result
         } catch (t: Throwable) {
-            logger.error("Error setting participant properties: ${t.message}")
+            logger.error("Error setting participant properties", t)
             false
         }
     }
