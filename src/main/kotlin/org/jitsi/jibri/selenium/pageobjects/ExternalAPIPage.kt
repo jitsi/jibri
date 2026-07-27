@@ -207,5 +207,25 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun sendPresence(): Boolean = true
 
-    override fun leave(): Boolean = true
+    override fun leave(): Boolean {
+        val apiAvailable = driver.executeScript(
+            """
+            if (!window.jibriRecorderApi) return false;
+            window.jibriRecorderApi.executeCommand('hangup');
+            return true;
+            """
+        ) as? Boolean ?: false
+        if (!apiAvailable) return false
+
+        return try {
+            // videoConferenceLeft flips conferenceJoined back to false once the XMPP leave completes.
+            WebDriverWait(driver, Duration.ofSeconds(5)).until {
+                driver.executeScript("return window.jibriPageState?.conferenceJoined === false;") as? Boolean ?: false
+            }
+            true
+        } catch (e: TimeoutException) {
+            logger.error("Timed out waiting for videoConferenceLeft after hangup")
+            false
+        }
+    }
 }
