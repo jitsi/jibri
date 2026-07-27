@@ -278,6 +278,4 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             false
         }
     }
-
-    override fun leave(): Boolean = true
 }
