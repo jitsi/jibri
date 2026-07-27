@@ -163,6 +163,7 @@ class SipGatewayJibriService(
             val sipAddress = sipGatewayServiceParams.sipClientParams.sipAddress.getSipAddress()
             val sipScheme = sipGatewayServiceParams.sipClientParams.sipAddress.getSipScheme()
             if (!jibriSelenium.setParticipantProperties(mapOf("sip_address" to "$sipScheme:$sipAddress"))) {
+                logger.error("Error while setting SIP address in presence")
                 publishStatus(ComponentState.Error(ErrorSettingPresenceFields))
             }
         } catch (t: Throwable) {
