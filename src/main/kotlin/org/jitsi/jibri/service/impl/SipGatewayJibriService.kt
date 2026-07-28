@@ -162,8 +162,10 @@ class SipGatewayJibriService(
         try {
             val sipAddress = sipGatewayServiceParams.sipClientParams.sipAddress.getSipAddress()
             val sipScheme = sipGatewayServiceParams.sipClientParams.sipAddress.getSipScheme()
-            jibriSelenium.addToPresence("sip_address", "$sipScheme:$sipAddress")
-            jibriSelenium.sendPresence()
+            if (!jibriSelenium.setParticipantProperties(mapOf("sip_address" to "$sipScheme:$sipAddress"))) {
+                logger.error("Error while setting SIP address in presence")
+                publishStatus(ComponentState.Error(ErrorSettingPresenceFields))
+            }
         } catch (t: Throwable) {
             logger.error("Error while setting fields in presence", t)
             publishStatus(ComponentState.Error(ErrorSettingPresenceFields))

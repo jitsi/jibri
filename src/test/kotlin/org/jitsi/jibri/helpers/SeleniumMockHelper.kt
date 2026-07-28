@@ -20,6 +20,7 @@ class SeleniumMockHelper {
                 true
             }
         }
+        every { setParticipantProperties(any()) } returns true
     }
 
     fun startSuccessfully() {

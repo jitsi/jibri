@@ -114,14 +114,16 @@ class StreamingJibriService(
         whenever(jibriSelenium).transitionsTo(ComponentState.Running) {
             logger.info("Selenium joined the call, starting capturer")
             try {
-                jibriSelenium.addToPresence("session_id", streamingParams.sessionId)
-                jibriSelenium.addToPresence("mode", JibriIq.RecordingMode.STREAM.toString())
+                val properties = mutableMapOf(
+                    "session_id" to streamingParams.sessionId,
+                    "mode" to JibriIq.RecordingMode.STREAM.toString()
+                )
                 streamingParams.viewingUrl?.let { viewingUrl ->
-                    if (!jibriSelenium.addToPresence("live-stream-view-url", viewingUrl)) {
-                        logger.error("Error adding live stream url to presence")
-                    }
+                    properties["live-stream-view-url"] = viewingUrl
                 }
-                jibriSelenium.sendPresence()
+                if (!jibriSelenium.setParticipantProperties(properties)) {
+                    logger.error("Error setting presence properties")
+                }
                 capturer.start(sink)
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)
