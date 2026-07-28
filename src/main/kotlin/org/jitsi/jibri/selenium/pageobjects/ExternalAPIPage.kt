@@ -218,9 +218,25 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun isVisitor(): Boolean = false
 
-    override fun isLocalAudioMuted(): Boolean = true
+    override fun isLocalAudioMuted(): Boolean {
+        val result = callRecorderApiAsync(
+            "isAudioMuted",
+            """
+            api.isAudioMuted().then(muted => cb(muted === true)).catch(() => cb(false));
+            """
+        ) as? Boolean
+        return result ?: false
+    }
 
-    override fun isLocalVideoMuted(): Boolean = true
+    override fun isLocalVideoMuted(): Boolean {
+        val result = callRecorderApiAsync(
+            "isVideoMuted",
+            """
+            api.isVideoMuted().then(muted => cb(muted === true)).catch(() => cb(false));
+            """
+        ) as? Boolean
+        return result ?: false
+    }
 
     override fun isAudioForceMuted(): Boolean = false
 
