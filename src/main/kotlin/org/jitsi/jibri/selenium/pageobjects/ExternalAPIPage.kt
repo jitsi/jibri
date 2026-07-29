@@ -223,7 +223,29 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
     }
 
-    override fun numRemoteParticipantsMuted(): Int = 0
+    /**
+     * Returns a count of how many remote participants are totally muted (audio
+     * and video). We ignore jigasi participants as they may be muted in their presence
+     * but also hard muted via the device, and we later ignore their state.
+     * Note: Excludes hidden participants.
+     */
+    override fun numRemoteParticipantsMuted(): Int {
+        val result = callRecorderApiAsync(
+            "getRoomsInfo",
+            """
+            api.getRoomsInfo().then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                const numMutedParticipants = (mainRoom?.participants || []).filter(p => {
+                    return p?.audioMuted === true && p?.videoMuted === true && p?.isJigasi !== true;
+                }).length;
+                cb(numMutedParticipants);
+            }).catch(() => cb(0));
+            """
+        ) as? Number
+        val numMutedParticipants = result?.toInt() ?: 0
+        logger.debug("Number of muted participants: $numMutedParticipants")
+        return numMutedParticipants
+    }
 
     override fun isVisitor(): Boolean = false
 
