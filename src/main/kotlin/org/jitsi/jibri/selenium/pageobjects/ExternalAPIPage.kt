@@ -212,7 +212,16 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return iceConnected
     }
 
-    override fun isLocalParticipantKicked(): Boolean = false
+    override fun isLocalParticipantKicked(): Boolean {
+        return try {
+            driver.executeScript(
+                "return window.jibriPageState.localParticipantKicked === true;"
+            ) as? Boolean ?: false
+        } catch (t: Throwable) {
+            logger.error("Error checking isLocalParticipantKicked", t)
+            false
+        }
+    }
 
     override fun numRemoteParticipantsMuted(): Int = 0
 

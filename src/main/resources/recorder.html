@@ -72,7 +72,6 @@
 						parentNode: document.querySelector(
 							"#jitsiMeetContainer",
 						),
-
 						configOverwrite: {
 							...(config.config || {}),
 							iAmRecorder: true,
@@ -92,6 +91,7 @@
 						conferenceJoined: false,
 						apiError: null,
 						localParticipantId: null,
+						localParticipantKicked: false,
 					};
 
 					api.addListener("videoConferenceJoined", ({ id }) => {
@@ -101,6 +101,12 @@
 
 					api.addListener("videoConferenceLeft", () => {
 						window.jibriPageState.conferenceJoined = false;
+					});
+
+					api.addListener("participantKickedOut", ({ kicked }) => {
+						if (kicked?.local) {
+							window.jibriPageState.localParticipantKicked = true;
+						}
 					});
 
 					api.addListener("errorOccurred", (error) => {
