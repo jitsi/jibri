@@ -242,9 +242,45 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun isVideoForceMuted(): Boolean = false
 
-    override fun toggleVideoMute(): Any? = null
+    /**
+     * Toggles audio/video mute, then polls [isMutedMethod] until it
+     * reflects the change. Unmuting (re-acquiring mic/camera) is slower than muting, so it
+     * gets more time. Returns the last known state on timeout.
+     */
+    private fun toggleMute(mediaType: String, isMutedMethod: String, toggleCommand: String): Any? {
+        val result = callRecorderApiAsync(
+            isMutedMethod,
+            """
+            (async () => {
+                try {
+                    const initialMuted = await api.$isMutedMethod();
+                    api.executeCommand('$toggleCommand');
+                    const deadline = Date.now() + (initialMuted ? 12000 : 5000);
+                    while (Date.now() < deadline) {
+                        const nowMuted = await api.$isMutedMethod();
+                        if (nowMuted !== initialMuted) {
+                            return cb('ok wasMuted=' + initialMuted + ' nowMuted=' + nowMuted);
+                        }
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+                    cb('timeout wasMuted=' + initialMuted);
+                } catch (e) {
+                    cb('error: ' + e);
+                }
+            })();
+            """
+        )
+        if (result is String && result.startsWith("ok")) {
+            logger.debug("Toggle $mediaType mute result: $result")
+        } else {
+            logger.warn("Toggle $mediaType mute did not complete cleanly: $result")
+        }
+        return result
+    }
 
-    override fun toggleAudioMute(): Any? = null
+    override fun toggleVideoMute(): Any? = toggleMute("video", "isVideoMuted", "toggleVideo")
+
+    override fun toggleAudioMute(): Any? = toggleMute("audio", "isAudioMuted", "toggleAudio")
 
     override fun raiseHand(): Boolean = true
 
