@@ -231,15 +231,12 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         val result = callRecorderApiAsync(
             "isParticipantForceMuted",
             """
-            api.getRoomsInfo().then(roomsData => {
-                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
-                const localId = mainRoom?.participants?.[0]?.id;
-                if (!localId) {
-                    cb(false);
-                    return;
-                }
-                api.isParticipantForceMuted(localId, '$mediaType').then(forceMuted => cb(forceMuted === true)).catch(() => cb(false));
-            }).catch(() => cb(false));
+            const localId = window.jibriPageState?.localParticipantId;
+            if (!localId) {
+                cb(false);
+                return;
+            }
+            api.isParticipantForceMuted(localId, '$mediaType').then(forceMuted => cb(forceMuted === true)).catch(() => cb(false));
             """
         )
         return result as? Boolean ?: false

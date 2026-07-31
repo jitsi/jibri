@@ -91,10 +91,12 @@
 					window.jibriPageState = {
 						conferenceJoined: false,
 						apiError: null,
+						localParticipantId: null,
 					};
 
-					api.addListener("videoConferenceJoined", () => {
+					api.addListener("videoConferenceJoined", ({ id }) => {
 						window.jibriPageState.conferenceJoined = true;
+						window.jibriPageState.localParticipantId = id;
 					});
 
 					api.addListener("videoConferenceLeft", () => {
