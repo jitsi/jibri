@@ -238,9 +238,28 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return result ?: true
     }
 
-    override fun isAudioForceMuted(): Boolean = false
+    override fun isAudioForceMuted(): Boolean = isForceMuted("audio")
 
-    override fun isVideoForceMuted(): Boolean = false
+    override fun isVideoForceMuted(): Boolean = isForceMuted("video")
+
+    /** Returns true if AV moderation is enabled for [mediaType] and the local participant is not approved to unmute. */
+    private fun isForceMuted(mediaType: String): Boolean {
+        val result = callRecorderApiAsync(
+            "isParticipantForceMuted",
+            """
+            api.getRoomsInfo().then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                const localId = mainRoom?.participants?.[0]?.id;
+                if (!localId) {
+                    cb(false);
+                    return;
+                }
+                api.isParticipantForceMuted(localId, '$mediaType').then(forceMuted => cb(forceMuted === true)).catch(() => cb(false));
+            }).catch(() => cb(false));
+            """
+        )
+        return result as? Boolean ?: false
+    }
 
     /**
      * Toggles audio/video mute, then polls [isMutedMethod] until it
