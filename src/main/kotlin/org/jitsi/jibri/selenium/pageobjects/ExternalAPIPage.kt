@@ -231,7 +231,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         val result = callRecorderApiAsync(
             "isParticipantForceMuted",
             """
-            const localId = window.jibriPageState?.localParticipantId;
+            const localId = window.jibriPageState.localParticipantId;
             if (!localId) {
                 cb(false);
                 return;
