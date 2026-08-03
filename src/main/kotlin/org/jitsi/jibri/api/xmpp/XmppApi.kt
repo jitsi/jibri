@@ -19,6 +19,12 @@ package org.jitsi.jibri.api.xmpp
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.StatusCode
+import io.opentelemetry.api.trace.TraceFlags
+import io.opentelemetry.api.trace.TraceState
+import io.opentelemetry.context.Context
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
@@ -36,7 +42,10 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
+import org.jitsi.tracing.TracingGlobal
 import org.jitsi.utils.logging2.createLogger
+import org.jitsi.xmpp.extensions.TraceParent
+import org.jitsi.xmpp.extensions.TraceParentProvider
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
 import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
@@ -51,6 +60,34 @@ import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
+
+/**
+ * Extracts a remote [Span] from the `traceparent` extension of an IQ, if present.
+ *
+ * Inlined from jicoco-tracing's TracingUtil, which was removed because it pulled in a Smack
+ * dependency that isn't available on Maven Central: https://github.com/jitsi/jicoco/pull/241
+ */
+private fun remoteSpanFromIq(iq: IQ): Span? {
+    val extension = iq.getExtension(TraceParent::class.java) ?: return null
+    return Span.wrap(
+        SpanContext.createFromRemoteParent(
+            extension.traceId,
+            extension.parentId,
+            TraceFlags.fromHex(extension.traceFlags, 0),
+            TraceState.getDefault()
+        )
+    )
+}
+
+/**
+ * Extracts a remote [Context] from the `traceparent` extension of an IQ, if present, or the root
+ * context otherwise.
+ */
+private fun remoteContextFromIq(iq: IQ): Context {
+    val root = Context.root()
+    val span = remoteSpanFromIq(iq) ?: return root
+    return root.with(span)
+}
 
 private class UnsupportedIqMode(val iqMode: String) : Exception()
 
@@ -71,6 +108,7 @@ class XmppApi(
     private val jibriStatusManager: JibriStatusManager,
 ) : IQListener {
     private val logger = createLogger()
+    private val tracer = TracingGlobal.sdk.getTracer("org.jitsi.jibri.xmpp")
 
     private val connectionStateListener = object : ConnectionStateListener {
         override fun connected(mucClient: MucClient) {
@@ -135,6 +173,11 @@ class XmppApi(
             JibriIq.ELEMENT,
             JibriIq.NAMESPACE,
             JibriIqProvider()
+        )
+        ProviderManager.addExtensionProvider(
+            TraceParent.ELEMENT,
+            TraceParent.NAMESPACE,
+            TraceParentProvider()
         )
         updatePresence(jibriStatusManager.overallStatus)
         jibriStatusManager.addStatusHandler(::updatePresence)
@@ -343,10 +386,20 @@ class XmppApi(
      * response with [JibriIq.Status.OFF].
      */
     private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
-        jibriManager.stopService()
-        // By this point the service has been fully stopped
-        return stopJibriIq.createResult {
-            status = JibriIq.Status.OFF
+        val span = tracer.spanBuilder("jibri.stop")
+            .setParent(remoteContextFromIq(stopJibriIq))
+            .startSpan()
+        try {
+            jibriManager.stopService()
+            // By this point the service has been fully stopped
+            return stopJibriIq.createResult {
+                status = JibriIq.Status.OFF
+            }
+        } catch (e: Throwable) {
+            span.setStatus(StatusCode.ERROR, e.message ?: "")
+            throw e
+        } finally {
+            span.end()
         }
     }
 
@@ -356,6 +409,30 @@ class XmppApi(
      * expects
      */
     private fun handleStartService(
+        startIq: JibriIq,
+        xmppEnvironment: XmppEnvironmentConfig,
+        environmentContext: EnvironmentContext,
+        serviceStatusHandler: JibriServiceStatusHandler
+    ) {
+        val span = tracer.spanBuilder("jibri.start")
+            .setParent(remoteContextFromIq(startIq))
+            .setAttribute("room", startIq.room.toString())
+            .setAttribute("session.id", startIq.sessionId)
+            .setAttribute("recording-mode", startIq.recordingMode.toString())
+            .startSpan()
+        try {
+            span.makeCurrent().use {
+                doHandleStartService(startIq, xmppEnvironment, environmentContext, serviceStatusHandler)
+            }
+        } catch (e: Throwable) {
+            span.setStatus(StatusCode.ERROR, e.message ?: "")
+            throw e
+        } finally {
+            span.end()
+        }
+    }
+
+    private fun doHandleStartService(
         startIq: JibriIq,
         xmppEnvironment: XmppEnvironmentConfig,
         environmentContext: EnvironmentContext,
