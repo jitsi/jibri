@@ -19,6 +19,7 @@ package org.jitsi.jibri.api.xmpp
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.opentelemetry.api.trace.StatusCode
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
@@ -36,7 +37,10 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
+import org.jitsi.tracing.TracingGlobal
 import org.jitsi.utils.logging2.createLogger
+import org.jitsi.xmpp.extensions.TraceParent
+import org.jitsi.xmpp.extensions.TraceParentProvider
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
 import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
@@ -71,6 +75,7 @@ class XmppApi(
     private val jibriStatusManager: JibriStatusManager,
 ) : IQListener {
     private val logger = createLogger()
+    private val tracer = TracingGlobal.sdk.getTracer("org.jitsi.jibri.xmpp")
 
     private val connectionStateListener = object : ConnectionStateListener {
         override fun connected(mucClient: MucClient) {
@@ -135,6 +140,11 @@ class XmppApi(
             JibriIq.ELEMENT,
             JibriIq.NAMESPACE,
             JibriIqProvider()
+        )
+        ProviderManager.addExtensionProvider(
+            TraceParent.ELEMENT,
+            TraceParent.NAMESPACE,
+            TraceParentProvider()
         )
         updatePresence(jibriStatusManager.overallStatus)
         jibriStatusManager.addStatusHandler(::updatePresence)
@@ -356,6 +366,30 @@ class XmppApi(
      * expects
      */
     private fun handleStartService(
+        startIq: JibriIq,
+        xmppEnvironment: XmppEnvironmentConfig,
+        environmentContext: EnvironmentContext,
+        serviceStatusHandler: JibriServiceStatusHandler
+    ) {
+        val span = tracer.spanBuilder("jibri.start")
+            .setParent(org.jitsi.tracing.TracingUtil.remoteContextFromIq(startIq))
+            .setAttribute("room", startIq.room.toString())
+            .setAttribute("session.id", startIq.sessionId)
+            .setAttribute("recording-mode", startIq.recordingMode.toString())
+            .startSpan()
+        try {
+            span.makeCurrent().use {
+                doHandleStartService(startIq, xmppEnvironment, environmentContext, serviceStatusHandler)
+            }
+        } catch (e: Throwable) {
+            span.setStatus(StatusCode.ERROR, e.message ?: "")
+            throw e
+        } finally {
+            span.end()
+        }
+    }
+
+    private fun doHandleStartService(
         startIq: JibriIq,
         xmppEnvironment: XmppEnvironmentConfig,
         environmentContext: EnvironmentContext,
