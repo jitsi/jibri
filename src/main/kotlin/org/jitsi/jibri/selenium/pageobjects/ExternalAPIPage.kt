@@ -372,7 +372,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun toggleAudioMute(): Any? = toggleMute("audio", "isAudioMuted", "toggleAudio")
 
-    override fun raiseHand(): Boolean = true
+    override fun raiseHand(): Boolean = executeRecorderCommand("toggleRaiseHand")
 
     override fun addToPresence(key: String, value: String): Boolean = setParticipantProperties(mapOf(key to value))
 
