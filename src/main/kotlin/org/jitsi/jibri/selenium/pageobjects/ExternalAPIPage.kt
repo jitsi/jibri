@@ -276,7 +276,16 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return numMutedParticipants
     }
 
-    override fun isVisitor(): Boolean = false
+    override fun isVisitor(): Boolean {
+        return try {
+            driver.executeScript(
+                "return window.jibriRecorderApi && window.jibriRecorderApi.isVisitor() === true;"
+            ) as? Boolean ?: false
+        } catch (t: Throwable) {
+            logger.error("Error calling jibriRecorderApi.isVisitor", t)
+            false
+        }
+    }
 
     override fun isLocalAudioMuted(): Boolean {
         val result = callRecorderApiAsync(
