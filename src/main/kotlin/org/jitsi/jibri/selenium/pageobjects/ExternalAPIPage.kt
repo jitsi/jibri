@@ -143,7 +143,21 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
     }
 
-    override fun unmute() = true
+    /** Enable the local camera and microphone. Used in sip gateway mode. */
+    override fun unmute(): Boolean {
+        val audioOk = unmuteMedia("audio", "isAudioMuted", "toggleAudio")
+        val videoOk = unmuteMedia("video", "isVideoMuted", "toggleVideo")
+        return audioOk && videoOk
+    }
+
+    private fun unmuteMedia(mediaType: String, isMutedMethod: String, toggleCommand: String): Boolean {
+        val result = toggleMute(mediaType, isMutedMethod, toggleCommand, requiredInitialState = true)
+        val success = result is String && result.startsWith("ok")
+        if (!success) {
+            logger.error("Failed to unmute $mediaType: $result")
+        }
+        return success
+    }
 
     override fun getNumParticipants(): Int {
         val result = callRecorderApiAsync(
@@ -293,14 +307,28 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
      * Toggles audio/video mute, then polls [isMutedMethod] until it
      * reflects the change. Unmuting (re-acquiring mic/camera) is slower than muting, so it
      * gets more time. Returns the last known state on timeout.
+     *
+     * If [requiredInitialState] is set, the current state is checked and the toggle only
+     * executes if it matches.
      */
-    private fun toggleMute(mediaType: String, isMutedMethod: String, toggleCommand: String): Any? {
+    private fun toggleMute(
+        mediaType: String,
+        isMutedMethod: String,
+        toggleCommand: String,
+        requiredInitialState: Boolean? = null,
+    ): Any? {
+        val guard = if (requiredInitialState != null) {
+            "if (initialMuted !== $requiredInitialState) { cb('ok skipped alreadyMuted=' + initialMuted); return; }"
+        } else {
+            ""
+        }
         val result = callRecorderApiAsync(
             isMutedMethod,
             """
             (async () => {
                 try {
                     const initialMuted = await api.$isMutedMethod();
+                    $guard
                     api.executeCommand('$toggleCommand');
                     const deadline = Date.now() + (initialMuted ? 12000 : 5000);
                     while (Date.now() < deadline) {
