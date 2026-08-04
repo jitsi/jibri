@@ -158,6 +158,21 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
         return success
     }
+    private fun executeRecorderCommand(command: String, arg: Any? = null): Boolean {
+        return try {
+            driver.executeScript(
+                """
+                if (!window.jibriRecorderApi) return false;
+                window.jibriRecorderApi.executeCommand('$command', arguments[0]);
+                return true;
+                """,
+                arg
+            ) as? Boolean ?: false
+        } catch (t: Throwable) {
+            logger.error("Error executing recorder command $command", t)
+            false
+        }
+    }
 
     override fun getNumParticipants(): Int {
         val result = callRecorderApiAsync(
@@ -364,14 +379,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
     override fun sendPresence(): Boolean = true
 
     override fun leave(): Boolean {
-        val apiAvailable = driver.executeScript(
-            """
-            if (!window.jibriRecorderApi) return false;
-            window.jibriRecorderApi.executeCommand('hangup');
-            return true;
-            """
-        ) as? Boolean ?: false
-        if (!apiAvailable) return false
+        if (!executeRecorderCommand("hangup")) return false
 
         return try {
             // videoConferenceLeft flips conferenceJoined back to false once the XMPP leave completes.
@@ -384,18 +392,10 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             false
         }
     }
+
     override fun setParticipantProperties(properties: Map<String, String>): Boolean {
         return try {
-            val result = driver.executeScript(
-                """
-                if (!window.jibriRecorderApi) {
-                    return false;
-                }
-                window.jibriRecorderApi.executeCommand('setParticipantProperties', arguments[0]);
-                return true;
-                """,
-                properties
-            ) as? Boolean ?: false
+            val result = executeRecorderCommand("setParticipantProperties", properties)
             if (!result) {
                 logger.warn("Could not set participant properties, External API not ready")
             }
