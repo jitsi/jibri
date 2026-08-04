@@ -353,10 +353,20 @@ class XmppApi(
      * response with [JibriIq.Status.OFF].
      */
     private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
-        jibriManager.stopService()
-        // By this point the service has been fully stopped
-        return stopJibriIq.createResult {
-            status = JibriIq.Status.OFF
+        val span = tracer.spanBuilder("jibri.stop")
+            .setParent(org.jitsi.tracing.TracingUtil.remoteContextFromIq(stopJibriIq))
+            .startSpan()
+        try {
+            jibriManager.stopService()
+            // By this point the service has been fully stopped
+            return stopJibriIq.createResult {
+                status = JibriIq.Status.OFF
+            }
+        } catch (e: Throwable) {
+            span.setStatus(StatusCode.ERROR, e.message ?: "")
+            throw e
+        } finally {
+            span.end()
         }
     }
 
