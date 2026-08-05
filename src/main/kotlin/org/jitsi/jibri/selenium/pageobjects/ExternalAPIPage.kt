@@ -158,6 +158,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
         return success
     }
+
     private fun executeRecorderCommand(command: String, arg: Any? = null): Boolean {
         return try {
             driver.executeScript(
@@ -231,8 +232,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             """
             api.getRoomsInfo(true).then(roomsData => {
                 const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
-                // isJibri is isHidden() || isHiddenFromRecorder()
-                const numHidden = (mainRoom?.participants || []).filter(p => p?.isJibri === true).length;
+                const numHidden = (mainRoom?.participants || []).filter(p => p?.isHidden === true).length;
                 cb(numHidden);
             }).catch(() => cb(0));
             """
