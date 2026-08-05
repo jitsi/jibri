@@ -158,6 +158,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
         return success
     }
+
     private fun executeRecorderCommand(command: String, arg: Any? = null): Boolean {
         return try {
             driver.executeScript(
@@ -225,7 +226,21 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return numJigasiParticipants
     }
 
-    override fun numHiddenParticipants(): Int = 0
+    override fun numHiddenParticipants(): Int {
+        val result = callRecorderApiAsync(
+            "getRoomsInfo",
+            """
+            api.getRoomsInfo(true).then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                const numHidden = (mainRoom?.participants || []).filter(p => p?.isHidden === true).length;
+                cb(numHidden);
+            }).catch(() => cb(0));
+            """
+        ) as? Number
+        val numHidden = result?.toInt() ?: 0
+        logger.debug("Number of hidden participants: $numHidden")
+        return numHidden
+    }
 
     override fun isIceConnected(): Boolean {
         val result = callRecorderApiAsync(
