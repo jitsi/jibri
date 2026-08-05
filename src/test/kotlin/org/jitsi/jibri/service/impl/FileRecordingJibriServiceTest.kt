@@ -18,6 +18,7 @@
 package org.jitsi.jibri.service.impl
 
 import com.github.marschall.memoryfilesystem.MemoryFileSystemBuilder
+import com.typesafe.config.ConfigFactory
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -30,9 +31,11 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import org.jitsi.config.TypesafeConfigSource
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.capture.ffmpeg.FfmpegFailedToStart
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.helpers.SeleniumMockHelper
@@ -49,6 +52,14 @@ import java.nio.file.attribute.PosixFilePermissions
 @Suppress("BlockingMethodInNonBlockingContext")
 internal class FileRecordingJibriServiceTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
+
+    companion object {
+        init {
+            // Set the finalize-script config before Config class loads so that
+            // ConfigFactory.load() picks it up from system properties.
+            System.setProperty("jibri.recording.finalize-script", "/test/finalize")
+        }
+    }
 
     private val fs = MemoryFileSystemBuilder.newLinux().build()
 
@@ -222,6 +233,54 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
             should("sanitize the sessionId") {
                 // The sanitized version should replace all special chars with underscores
                 Files.exists(fs.getPath(recordingsDir.toString(), "foo_bar_baz")) shouldBe true
+            }
+        }
+        context("stopping a service when no finalize script is configured") {
+            // Temporarily swap config source to one without finalize-script
+            val originalConfigSource = Config.configSource
+            System.clearProperty("jibri.recording.finalize-script")
+            ConfigFactory.invalidateCaches()
+            Config.configSource = TypesafeConfigSource("config", ConfigFactory.load())
+
+            val noFinalizeSeleniumHelper = SeleniumMockHelper()
+            val noFinalizeCapturerHelper = CapturerMockHelper()
+            val noFinalizeProcessFactory: ProcessFactory = mockk()
+            val noFinalizeStatusUpdates = mutableListOf<ComponentState>()
+
+            val noFinalizeService = FileRecordingJibriService(
+                fileRecordingParams,
+                noFinalizeSeleniumHelper.mock,
+                noFinalizeCapturerHelper.mock,
+                noFinalizeProcessFactory,
+                fs
+            ).also {
+                it.addStatusHandler(noFinalizeStatusUpdates::add)
+            }
+
+            noFinalizeService.start()
+            noFinalizeSeleniumHelper.startSuccessfully()
+            noFinalizeCapturerHelper.startSuccessfully()
+
+            context("where a media file was written") {
+                Files.createFile(fs.getPath(noFinalizeCapturerHelper.sink.path))
+                every { noFinalizeSeleniumHelper.mock.getParticipants() } returns listOf(mapOf("a" to "b"))
+
+                noFinalizeService.stop()
+
+                // Restore config source for other tests
+                System.setProperty("jibri.recording.finalize-script", "/test/finalize")
+                ConfigFactory.invalidateCaches()
+                Config.configSource = originalConfigSource
+
+                should("not run any finalize command") {
+                    verify(exactly = 0) { noFinalizeProcessFactory.createProcess(any(), any(), any()) }
+                }
+                should("still write the metadata file") {
+                    Files.exists(fs.getPath(recordingsDir.toString(), sessionId, "metadata.json")) shouldBe true
+                }
+                should("still tell selenium to leave the call") {
+                    verify { noFinalizeSeleniumHelper.mock.leaveCallAndQuitBrowser() }
+                }
             }
         }
     }
