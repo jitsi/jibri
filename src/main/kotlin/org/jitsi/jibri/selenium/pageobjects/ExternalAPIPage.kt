@@ -207,7 +207,22 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     override fun injectLocalParticipantTrackerScript(): Boolean = true
 
-    override fun getParticipants(): List<Map<String, Any>> = listOf()
+    override fun getParticipants(): List<Map<String, Any>> {
+        val result = callRecorderApiAsync(
+            "getRoomsInfo",
+            """
+            api.getRoomsInfo().then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                const participants = (mainRoom?.participants || [])
+                    .filter(p => p?.userContext?.id || p?.userContext?.name || p?.userContext?.email)
+                    .map(p => ({ user: p.userContext }));
+                cb(participants);
+            }).catch(() => cb([]));
+            """
+        )
+        @Suppress("UNCHECKED_CAST")
+        return result as? List<Map<String, Any>> ?: listOf()
+    }
 
     override fun numRemoteParticipantsJigasi(): Int {
         val result = callRecorderApiAsync(
