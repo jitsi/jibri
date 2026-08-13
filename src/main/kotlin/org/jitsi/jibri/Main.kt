@@ -19,6 +19,7 @@ package org.jitsi.jibri
 
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.jetty.jakarta.Jetty
+import io.opentelemetry.sdk.OpenTelemetrySdk
 import kotlinx.coroutines.CancellationException
 import net.sourceforge.argparse4j.ArgumentParsers
 import org.jitsi.jibri.api.http.HttpApi
@@ -40,6 +41,7 @@ import org.jitsi.metaconfig.MetaconfigLogger
 import org.jitsi.metaconfig.MetaconfigSettings
 import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.configSupplier
+import org.jitsi.tracing.TracingGlobal
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.LoggerImpl
 import java.io.File
@@ -53,6 +55,12 @@ fun main(args: Array<String>) {
     handleCommandLineArgs(args)
 
     logger.info("Jibri starting up with id ${MainConfig.jibriId}")
+
+    // Jibri exits (via exitProcess below) as soon as a session ends when in single-use mode or after a config
+    // change, which is before the BatchSpanProcessor's export interval elapses; flush pending spans on the way out.
+    (TracingGlobal.sdk as? OpenTelemetrySdk)?.let { sdk ->
+        Runtime.getRuntime().addShutdownHook(Thread { sdk.close() })
+    }
 
     val jibriStatusManager = JibriStatusManager()
     val jibriManager = JibriManager()
