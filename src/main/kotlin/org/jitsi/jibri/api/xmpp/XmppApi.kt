@@ -21,7 +21,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
-import io.opentelemetry.api.trace.StatusCode
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
 import io.opentelemetry.context.Context
@@ -42,6 +42,7 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
+import org.jitsi.jibri.util.withSpan
 import org.jitsi.tracing.TracingGlobal
 import org.jitsi.utils.logging2.createLogger
 import org.jitsi.xmpp.extensions.TraceParent
@@ -385,21 +386,16 @@ class XmppApi(
      * Handle a stop [JibriIq] message to stop the currently running service (if there is one).  Send a [JibriIq]
      * response with [JibriIq.Status.OFF].
      */
-    private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
-        val span = tracer.spanBuilder("jibri.stop")
-            .setParent(remoteContextFromIq(stopJibriIq))
-            .startSpan()
-        try {
-            jibriManager.stopService()
-            // By this point the service has been fully stopped
-            return stopJibriIq.createResult {
-                status = JibriIq.Status.OFF
-            }
-        } catch (e: Throwable) {
-            span.setStatus(StatusCode.ERROR, e.message ?: "")
-            throw e
-        } finally {
-            span.end()
+    private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ = tracer.withSpan(
+        "jibri.stop",
+        remoteContextFromIq(stopJibriIq),
+        SpanKind.SERVER,
+        { setAttribute("session.id", stopJibriIq.sessionId ?: "") }
+    ) {
+        jibriManager.stopService()
+        // By this point the service has been fully stopped
+        stopJibriIq.createResult {
+            status = JibriIq.Status.OFF
         }
     }
 
@@ -413,23 +409,17 @@ class XmppApi(
         xmppEnvironment: XmppEnvironmentConfig,
         environmentContext: EnvironmentContext,
         serviceStatusHandler: JibriServiceStatusHandler
-    ) {
-        val span = tracer.spanBuilder("jibri.start")
-            .setParent(remoteContextFromIq(startIq))
-            .setAttribute("room", startIq.room.toString())
-            .setAttribute("session.id", startIq.sessionId)
-            .setAttribute("recording-mode", startIq.recordingMode.toString())
-            .startSpan()
-        try {
-            span.makeCurrent().use {
-                doHandleStartService(startIq, xmppEnvironment, environmentContext, serviceStatusHandler)
-            }
-        } catch (e: Throwable) {
-            span.setStatus(StatusCode.ERROR, e.message ?: "")
-            throw e
-        } finally {
-            span.end()
+    ) = tracer.withSpan(
+        "jibri.start",
+        remoteContextFromIq(startIq),
+        SpanKind.SERVER,
+        {
+            setAttribute("room", startIq.room.toString())
+            setAttribute("session.id", startIq.sessionId ?: "")
+            setAttribute("recording-mode", startIq.recordingMode.toString())
         }
+    ) {
+        doHandleStartService(startIq, xmppEnvironment, environmentContext, serviceStatusHandler)
     }
 
     private fun doHandleStartService(
