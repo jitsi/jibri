@@ -30,6 +30,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
+import io.opentelemetry.api.trace.SpanKind
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
@@ -49,8 +50,11 @@ import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriFailure
 import org.jitsi.jibri.status.JibriSessionStatus
 import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.util.remoteContextFromTraceparent
+import org.jitsi.jibri.util.withSpan
 import org.jitsi.jibri.webhooks.v1.WebhookClient
 import org.jitsi.metaconfig.config
+import org.jitsi.tracing.TracingGlobal
 import org.jitsi.utils.logging2.createLogger
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 
@@ -78,6 +82,7 @@ class HttpApi(
     private val webhookClient: WebhookClient
 ) {
     private val logger = createLogger()
+    private val tracer = TracingGlobal.sdk.getTracer("org.jitsi.jibri.http")
 
     fun Application.apiModule() {
         install(ContentNegotiation) {
@@ -112,7 +117,17 @@ class HttpApi(
                         logger.debug { "Got a start service request with params $startServiceParams" }
 
                         val serviceStatusHandler = createServiceStatusHandler(startServiceParams, webhookClient)
-                        handleStartService(startServiceParams, serviceStatusHandler)
+                        tracer.withSpan(
+                            "jibri.start",
+                            remoteContextFromTraceparent(call.request.headers["traceparent"]),
+                            SpanKind.SERVER,
+                            {
+                                setAttribute("session.id", startServiceParams.sessionId)
+                                setAttribute("sink-type", startServiceParams.sinkType.toString())
+                            }
+                        ) {
+                            handleStartService(startServiceParams, serviceStatusHandler)
+                        }
                         call.respond(HttpStatusCode.OK)
                     } catch (e: JibriBusyException) {
                         call.respond(HttpStatusCode.PreconditionFailed, "Jibri is currently busy")
@@ -129,7 +144,13 @@ class HttpApi(
                  */
                 post("stopService") {
                     logger.debug { "Got stop service request" }
-                    jibriManager.stopService()
+                    tracer.withSpan(
+                        "jibri.stop",
+                        remoteContextFromTraceparent(call.request.headers["traceparent"]),
+                        SpanKind.SERVER
+                    ) {
+                        jibriManager.stopService()
+                    }
                     call.respond(HttpStatusCode.OK)
                 }
             }
