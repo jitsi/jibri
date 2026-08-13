@@ -17,6 +17,10 @@
 
 package org.jitsi.jibri
 
+import io.opentelemetry.api.common.AttributeKey
+import io.opentelemetry.api.common.Attributes
+import io.opentelemetry.api.trace.StatusCode
+import io.opentelemetry.context.Context
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.health.EnvironmentContext
@@ -38,10 +42,13 @@ import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.extensions.schedule
+import org.jitsi.jibri.util.withSpan
 import org.jitsi.metaconfig.config
+import org.jitsi.tracing.TracingGlobal
 import org.jitsi.utils.logging2.createLogger
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 class JibriBusyException : Exception()
 
@@ -77,6 +84,7 @@ data class FileRecordingRequestParams(
  */
 class JibriManager : StatusPublisher<Any>() {
     private val logger = createLogger()
+    private val tracer = TracingGlobal.sdk.getTracer("org.jitsi.jibri")
     private var currentActiveService: JibriService? = null
 
     /**
@@ -189,6 +197,36 @@ class JibriManager : StatusPublisher<Any>() {
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
         publishStatus(ComponentBusyStatus.BUSY)
+        // A span covering the entire lifetime of the session, from the start request until the service reaches a
+        // terminal state.  The service does its real work (joining the call, capturing) asynchronously after the
+        // start request has been answered, so the span ends via the status handler below rather than when this
+        // method returns.
+        val sessionSpan = tracer.spanBuilder("jibri.session")
+            .setAttribute("sink-type", jibriService.getSinkType().toString())
+            .apply { environmentContext?.let { setAttribute("environment-context", it.toString()) } }
+            .startSpan()
+        val sessionSpanEnded = AtomicBoolean(false)
+        jibriService.addStatusHandler { state ->
+            when (state) {
+                is ComponentState.Error -> {
+                    if (sessionSpanEnded.compareAndSet(false, true)) {
+                        sessionSpan.setStatus(StatusCode.ERROR, state.error.toString())
+                        sessionSpan.end()
+                    }
+                }
+                is ComponentState.Finished -> {
+                    if (sessionSpanEnded.compareAndSet(false, true)) {
+                        sessionSpan.end()
+                    }
+                }
+                else -> {
+                    sessionSpan.addEvent(
+                        "state-transition",
+                        Attributes.of(AttributeKey.stringKey("state"), state.toString())
+                    )
+                }
+            }
+        }
         if (serviceStatusHandler != null) {
             jibriService.addStatusHandler(serviceStatusHandler)
         }
@@ -228,9 +266,16 @@ class JibriManager : StatusPublisher<Any>() {
                     }
                 }
         }
-        TaskPools.ioPool.submit {
-            jibriService.start()
-        }
+        // OpenTelemetry context is thread-local, so it has to be carried across the pool boundary explicitly for
+        // spans created inside the service to attach to the session span.
+        val sessionContext = Context.current().with(sessionSpan)
+        TaskPools.ioPool.submit(
+            sessionContext.wrap(
+                Runnable {
+                    jibriService.start()
+                }
+            )
+        )
     }
 
     /**
@@ -253,7 +298,9 @@ class JibriManager : StatusPublisher<Any>() {
         logger.info("Stopping the current service")
         serviceTimeoutTask?.cancel(false)
         // Note that this will block until the service is completely stopped
-        currentService.stop()
+        tracer.withSpan("jibri.service.stop") {
+            currentService.stop()
+        }
         currentActiveService = null
         currentEnvironmentContext = null
         // Invoke the function we've been told to next time we're idle
