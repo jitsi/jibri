@@ -21,6 +21,8 @@
         <mockk.version>1.13.8</mockk.version>
         <ktor.version>3.4.3</ktor.version>
         <jicoco.version>1.1-178-ga09ed33</jicoco.version>
+        <!-- Keep in sync with the OpenTelemetry version used by jicoco-tracing. -->
+        <opentelemetry.version>1.48.0</opentelemetry.version>
         <jitsi.utils.version>1.0-127-g6c65524</jitsi.utils.version>
         <jetty.version>12.0.35</jetty.version>
     </properties>
@@ -39,6 +41,14 @@
                 <groupId>org.eclipse.jetty.ee10</groupId>
                 <artifactId>jetty-ee10-bom</artifactId>
                 <version>${jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Align all OpenTelemetry artifacts with the version used by jicoco-tracing. -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${opentelemetry.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -274,9 +284,7 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.48.0</version>
         </dependency>
-
     </dependencies>
 
     <build>
