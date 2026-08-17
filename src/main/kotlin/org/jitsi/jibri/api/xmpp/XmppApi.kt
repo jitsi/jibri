@@ -387,6 +387,7 @@ class XmppApi(
      */
     private fun handleStopJibriIq(stopJibriIq: JibriIq): IQ {
         val span = tracer.spanBuilder("jibri.stop")
+            .setAttribute("session.id", stopJibriIq.sessionId)
             .setParent(remoteContextFromIq(stopJibriIq))
             .startSpan()
         try {
