@@ -271,12 +271,6 @@
             <artifactId>jicoco-tracing</artifactId>
             <version>${jicoco.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.48.0</version>
-        </dependency>
-
     </dependencies>
 
     <build>

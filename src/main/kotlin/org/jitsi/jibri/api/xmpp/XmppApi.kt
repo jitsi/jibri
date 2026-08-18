@@ -21,6 +21,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.TraceFlags
 import io.opentelemetry.api.trace.TraceState
@@ -389,6 +390,7 @@ class XmppApi(
         val span = tracer.spanBuilder("jibri.stop")
             .setAttribute("session.id", stopJibriIq.sessionId)
             .setParent(remoteContextFromIq(stopJibriIq))
+            .setSpanKind(SpanKind.SERVER)
             .startSpan()
         try {
             jibriManager.stopService()
@@ -398,6 +400,7 @@ class XmppApi(
             }
         } catch (e: Throwable) {
             span.setStatus(StatusCode.ERROR, e.message ?: "")
+            span.recordException(e)
             throw e
         } finally {
             span.end()
@@ -420,6 +423,7 @@ class XmppApi(
             .setAttribute("room", startIq.room.toString())
             .setAttribute("session.id", startIq.sessionId)
             .setAttribute("recording-mode", startIq.recordingMode.toString())
+            .setSpanKind(SpanKind.SERVER)
             .startSpan()
         try {
             span.makeCurrent().use {
@@ -427,6 +431,7 @@ class XmppApi(
             }
         } catch (e: Throwable) {
             span.setStatus(StatusCode.ERROR, e.message ?: "")
+            span.recordException(e)
             throw e
         } finally {
             span.end()
