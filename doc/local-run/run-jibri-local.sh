@@ -108,6 +108,14 @@ EOG
 )
 fi
 
+FFMPEG_LINUX_OVERRIDES=$(cat <<EOG
+    input-linux = [
+      "-f", "x11grab",
+      "-i", "${DISPLAY:-:0}",
+    ]
+EOG
+)
+
 cat > "$JIBRI_CONF" <<EOF
 jibri {
   id = "$JIBRI_INSTANCE_ID"
@@ -123,6 +131,7 @@ jibri {
     audio-source = "$JIBRI_AUDIO_SOURCE"
     audio-device = "$JIBRI_AUDIO_DEVICE"
     $FFMPEG_MAC_OVERRIDES
+    $FFMPEG_LINUX_OVERRIDES
   }
 
   chrome {
@@ -130,7 +139,8 @@ jibri {
       "--use-fake-ui-for-media-stream",
       "--enabled",
       "--autoplay-policy=no-user-gesture-required",
-      "--ignore-certificate-errors"
+      "--ignore-certificate-errors",
+      "--ozone-platform=x11" # Force X11, required for x11grab to capture video
     ]
   }
 

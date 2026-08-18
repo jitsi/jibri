@@ -103,7 +103,7 @@ data class JibriSeleniumOptions(
     /**
      * Which display selenium should be started on
      */
-    val display: String = ":0",
+    val display: String = System.getenv("DISPLAY") ?: ":0",
     /**
      * The display name that should be used for jibri.  Note that this
      * is currently only used in the sipgateway gateway scenario; when doing
