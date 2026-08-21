@@ -60,6 +60,19 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             }
         }
 
+        should("derive tenant from baseUrl path when tenant is not explicitly set") {
+            // The HTTP startService API only sets baseUrl/callName, leaving tenant empty
+            // even when baseUrl's path carries the tenant segment.
+            val urlSlot = slot<String>()
+            every { driver.get(capture(urlSlot)) } returns Unit
+            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
+
+            page.visit(CallUrlInfo("https://meet.example.com/tenant-test", "room-test", "")) shouldBe true
+            urlSlot.captured.shouldContain("room=room-test")
+            urlSlot.captured.shouldContain("tenant=tenant-test")
+        }
+
         should("return false if apiError occurs") {
             val t = table(
                 headers("errorAtCall", "scenario"),

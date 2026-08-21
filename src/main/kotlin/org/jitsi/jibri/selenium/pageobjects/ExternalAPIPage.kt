@@ -8,6 +8,7 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.io.File
+import java.net.URI
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
@@ -35,8 +36,13 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         // external_api.js from the deployment (the page itself is loaded from a
         // local file and has no deployment origin of its own).
         val baseUrl = url.baseUrl
-        // Convert tenant dots to slashes for URL path format.
-        val tenantPath = if (url.tenant.isNotEmpty()) url.tenant.replace(".", "/") else ""
+        // `tenant` is only set explicitly for XMPP-invited joins; other callers (e.g. the
+        // HTTP startService API) only set baseUrl/callName, so fall back to baseUrl's path.
+        val tenantPath = if (url.tenant.isNotEmpty()) {
+            url.tenant.replace(".", "/")
+        } else {
+            URI(baseUrl).path.trim('/')
+        }
         val recorderUrl = buildString {
             append(recorderHtmlFile.toURI().toString())
             append("?room=").append(encode(room))
