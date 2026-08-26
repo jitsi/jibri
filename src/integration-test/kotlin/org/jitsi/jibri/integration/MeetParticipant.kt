@@ -97,8 +97,16 @@ class MeetParticipant(val displayName: String) : AutoCloseable {
         )
     }
 
+    /** Leaves the conference, waiting for the XMPP leave to complete. */
+    fun leave() {
+        page.evaluate("() => APP.conference._room.leave()")
+    }
+
     override fun close() {
-        // The conference is left by tearing the browser down: nothing here outlives a single test.
+        // Leave explicitly rather than relying on tearing the browser down: killing the browser leaves
+        // prosody waiting for the websocket to time out, during which everyone else still sees the
+        // participant in the room.
+        runCatching { leave() }
         runCatching { context.close() }
         runCatching { browser.close() }
     }
