@@ -1,0 +1,66 @@
+# Integration tests
+
+The unit tests mock the browser away.  These tests do the opposite: they run jibri's
+[`CallPage`](../src/main/kotlin/org/jitsi/jibri/selenium/pageobjects/CallPage.kt) implementations against a
+real [docker-jitsi-meet](https://github.com/jitsi/docker-jitsi-meet) deployment, with real participants in
+the conference, so that the javascript those page objects execute is checked against the jitsi-meet it
+actually has to work with.
+
+Two things join every conference:
+
+* **jibri**, driven by selenium through `AppCallPage` or `ExternalAPIPage` — jibri's own production code,
+  which is what is under test.  Every scenario runs against both implementations, since jibri is expected
+  to behave the same whichever one it uses.
+* **participants**, driven by playwright — ordinary jitsi-meet clients with fake camera and microphone.
+  These are only a test fixture; nothing about them is asserted on.
+
+The tests live in `src/integration-test/kotlin` and are not part of the default build.
+
+## Running them
+
+Bring up a deployment, then run the tests against it:
+
+```bash
+./resources/integration-tests/deployment.sh up
+mvn -Pintegration-tests test-compile failsafe:integration-test failsafe:verify
+./resources/integration-tests/deployment.sh down
+```
+
+`deployment.sh` clones docker-jitsi-meet into `target/`, generates a configuration in
+`target/jitsi-meet-cfg` and starts the containers.  It starts from an empty configuration every time, so
+`up` throws away whatever the previous run left behind.  Useful environment variables:
+
+| Variable | Default | |
+| --- | --- | --- |
+| `DJM_DIR` | `target/docker-jitsi-meet` | where docker-jitsi-meet is checked out, cloned if missing |
+| `DJM_VERSION` | `stable` | the image tag to run |
+| `HTTPS_PORT` | `8443` | the port the deployment is served on |
+| `JVB_ADVERTISE_IPS` | `127.0.0.1` | the address the browsers reach the jvb on |
+
+The deployment serves a self-signed certificate on `https://localhost:8443`, which the tests tell their
+browsers to accept.  It has to be https: the jitsi-meet configuration the web container generates hardcodes
+`https`/`wss` for its bosh and websocket urls, so a plain-http deployment cannot be joined.
+
+Options for the tests themselves:
+
+```bash
+# a deployment somewhere else
+mvn -Pintegration-tests -Djibri.test.base-url=https://localhost:9443 ... 
+# watch the browsers instead of running them headless
+mvn -Pintegration-tests -Djibri.test.headless=false ...
+```
+
+### Media does not flow on docker desktop
+
+The browsers run on the host and the jvb runs in a container with its media port published, which relies
+on docker forwarding UDP to the host.  Docker Desktop (macOS, Windows) does not do this reliably, so ICE
+never connects and the assertions that depend on media — `isIceConnected`, and the mute state of remote
+participants — fail locally even though the deployment is healthy.  The scenarios that only need
+signalling still run.  On Linux, where the host can reach the container directly, everything works, which
+is what the `Integration tests` github workflow runs.
+
+## Adding tests
+
+`CallPageIT` runs every scenario against both `CallPage` implementations.  Conferences settle
+asynchronously, so assert through `await { }` rather than directly — a participant that just joined is not
+yet visible to everyone, and mute state takes a moment to propagate.

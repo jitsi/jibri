@@ -426,6 +426,7 @@
                     </sourceRoots>
                     <testSourceRoots>
                         <testSourceRoot>${project.basedir}/src/test/kotlin</testSourceRoot>
+                        <testSourceRoot>${project.basedir}/src/integration-test/kotlin</testSourceRoot>
                     </testSourceRoots>
                 </configuration>
                 <executions>
@@ -468,6 +469,73 @@
     </repositories>
 
     <profiles>
+        <profile>
+            <!--
+              Integration tests which run against a real docker-jitsi-meet deployment.  They are
+              not part of the default build: bring a deployment up with
+              resources/integration-tests/deployment.sh and then run
+              'mvn -Pintegration-tests verify'.
+            -->
+            <id>integration-tests</id>
+            <properties>
+                <playwright.version>1.62.0</playwright.version>
+                <!-- The deployment the tests join. -->
+                <jibri.test.base-url>https://localhost:8443</jibri.test.base-url>
+                <jibri.test.headless>true</jibri.test.headless>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>com.microsoft.playwright</groupId>
+                    <artifactId>playwright</artifactId>
+                    <version>${playwright.version}</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>kotlin-maven-plugin</artifactId>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <executions>
+                            <execution>
+                                <id>test-compile</id>
+                                <goals> <goal>test-compile</goal> </goals>
+                                <configuration>
+                                    <sourceDirs combine.children="append">
+                                        <sourceDir>${project.basedir}/src/integration-test/kotlin</sourceDir>
+                                    </sourceDirs>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>3.2.5</version>
+                        <configuration>
+                            <argLine>
+                                --add-opens java.base/java.lang=ALL-UNNAMED
+                                --add-opens java.base/java.util=ALL-UNNAMED
+                                --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                            </argLine>
+                            <systemPropertyVariables>
+                                <jibri.test.base-url>${jibri.test.base-url}</jibri.test.base-url>
+                                <jibri.test.headless>${jibri.test.headless}</jibri.test.headless>
+                                <java.util.logging.config.file>${project.basedir}/lib/test-logging.properties</java.util.logging.config.file>
+                            </systemPropertyVariables>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>coverage</id>
             <properties>
