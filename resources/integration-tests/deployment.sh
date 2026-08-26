@@ -11,7 +11,7 @@
 # Environment:
 #   DJM_DIR      where docker-jitsi-meet is checked out (it is cloned if missing)
 #   DJM_BRANCH   branch to clone (default: master)
-#   DJM_VERSION  image tag to run (default: stable)
+#   DJM_VERSION  image tag to run (default: unstable, which is what jibri master targets)
 #   DJM_CONFIG   host directory for the generated container config.  It is owned by this script and
 #                wiped on every 'up', so point it at a dedicated directory.
 #   HTTPS_PORT   port the deployment is served on (default: 8443)
@@ -22,7 +22,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 DJM_DIR="${DJM_DIR:-$PROJECT_DIR/target/docker-jitsi-meet}"
 DJM_BRANCH="${DJM_BRANCH:-master}"
-DJM_VERSION="${DJM_VERSION:-stable}"
+DJM_VERSION="${DJM_VERSION:-unstable}"
 DJM_CONFIG="${DJM_CONFIG:-$PROJECT_DIR/target/jitsi-meet-cfg}"
 HTTP_PORT="${HTTP_PORT:-8000}"
 HTTPS_PORT="${HTTPS_PORT:-8443}"
@@ -77,6 +77,13 @@ write_env() {
     # user running the tests is not uid 1000 on every host.
     chmod -R 777 "$DJM_CONFIG"
 
+    # hiddenFromRecorderFeatureEnabled is not one of the settings jitsi-meet lets a url override, so the
+    # deployment has to turn it on.  Without it lib-jitsi-meet drops hidden-from-recorder from the identity
+    # and jibri can never see that a participant is hidden from it.
+    cat > "$DJM_CONFIG/web/custom-config.js" <<'CONFIGEOF'
+config.hiddenFromRecorderFeatureEnabled = true;
+CONFIGEOF
+
     echo "Using JVB_ADVERTISE_IPS=$JVB_ADVERTISE_IPS"
 
     cat > "$ENV_FILE" <<ENVEOF
@@ -101,6 +108,22 @@ ENABLE_COLIBRI_WEBSOCKET=1
 ENABLE_XMPP_WEBSOCKET=1
 # Exposes jicofo's metrics, which the readiness check below polls.
 JICOFO_ENABLE_REST=1
+# Accept JWTs so that participants can join with an identity, which is what jibri reports from
+# getParticipants and what marks somebody as hidden from the recorder.  Empty tokens stay allowed so
+# that jibri, and any participant that does not need an identity, can still join anonymously; and
+# jicofo keeps handing moderator rights to the first participant, which the tests that kick jibri or
+# turn on AV moderation rely on.  The credentials are fixed and known to the tests.
+ENABLE_AUTH=1
+AUTH_TYPE=jwt
+JWT_APP_ID=jibri-integration-tests
+JWT_APP_SECRET=jibri-integration-tests-secret
+JWT_ACCEPTED_ISSUERS=jibri-integration-tests
+JWT_ACCEPTED_AUDIENCES=jibri-integration-tests
+JWT_ALLOW_EMPTY=1
+JICOFO_ENABLE_AUTH=0
+# Puts the identity from the token into the participant's presence.  This one hooks the virtual host
+# rather than the muc component, so it belongs in XMPP_MODULES rather than XMPP_MUC_MODULES.
+XMPP_MODULES=presence_identity
 JICOFO_AUTH_PASSWORD=$(openssl rand -hex 16)
 JVB_AUTH_PASSWORD=$(openssl rand -hex 16)
 JIGASI_XMPP_PASSWORD=$(openssl rand -hex 16)

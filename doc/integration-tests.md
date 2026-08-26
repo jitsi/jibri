@@ -26,6 +26,11 @@ mvn -Pintegration-tests test-compile failsafe:integration-test failsafe:verify
 ./resources/integration-tests/deployment.sh down
 ```
 
+The images default to `unstable` because jibri master is developed against jitsi-meet master, and the
+two do go out of sync: jibri's `ExternalAPIPage.setParticipantProperties` passes `useRawKeys`, which the
+`stable` web image silently ignores, so on stable jibri's `session_id` and `mode` land in presence under
+the wrong names. Set `DJM_VERSION=stable` to check what a released deployment does.
+
 `deployment.sh` clones docker-jitsi-meet into `target/`, generates a configuration in
 `target/jitsi-meet-cfg` and starts the containers.  It starts from an empty configuration every time, so
 `up` throws away whatever the previous run left behind.  Useful environment variables:
@@ -33,7 +38,7 @@ mvn -Pintegration-tests test-compile failsafe:integration-test failsafe:verify
 | Variable | Default | |
 | --- | --- | --- |
 | `DJM_DIR` | `target/docker-jitsi-meet` | where docker-jitsi-meet is checked out, cloned if missing |
-| `DJM_VERSION` | `stable` | the image tag to run |
+| `DJM_VERSION` | `unstable` | the image tag to run |
 | `HTTPS_PORT` | `8443` | the port the deployment is served on |
 | `JVB_ADVERTISE_IPS` | `127.0.0.1` | the address the browsers reach the jvb on |
 
@@ -58,6 +63,19 @@ never connects and the assertions that depend on media — `isIceConnected`, and
 participants — fail locally even though the deployment is healthy.  The scenarios that only need
 signalling still run.  On Linux, where the host can reach the container directly, everything works, which
 is what the `Integration tests` github workflow runs.
+
+## What the deployment is configured for
+
+`deployment.sh` turns on a few things a stock deployment leaves off, because jibri's behaviour depends on
+them:
+
+* **JWT authentication**, with empty tokens still allowed. Participants that need an identity join with a
+  token; jibri and everyone else still join anonymously. Without an identity there is nothing for
+  `getParticipants` to report and no way to mark a participant hidden from the recorder. `presence_identity`
+  is added to the MUC modules to put that identity into presence, and jicofo authentication is left off so
+  the first participant in a room is still its moderator — which is what the scenarios that kick jibri or
+  turn on AV moderation depend on.
+* **jicofo's REST interface**, so the readiness check can see when a bridge has joined the brewery.
 
 ## Adding tests
 

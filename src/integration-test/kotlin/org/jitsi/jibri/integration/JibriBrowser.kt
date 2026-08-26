@@ -18,6 +18,7 @@ package org.jitsi.jibri.integration
 
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
+import org.jitsi.jibri.selenium.SIP_GW_URL_OPTIONS
 import org.jitsi.jibri.selenium.pageobjects.AppCallPage
 import org.jitsi.jibri.selenium.pageobjects.CallPage
 import org.jitsi.jibri.selenium.pageobjects.ExternalAPIPage
@@ -38,6 +39,17 @@ enum class CallPageImpl(val create: (RemoteWebDriver) -> CallPage) {
     EXTERNAL_API({ ExternalAPIPage(it) })
 }
 
+/** The url params jibri joins with, which differ between recording and gatewaying a SIP call. */
+enum class JoinMode(val urlParams: List<String>) {
+    RECORDER(RECORDING_URL_OPTIONS),
+
+    /**
+     * The SIP gateway params, minus the pinned `devices.videoInput`: in production that names the PJSUA
+     * virtual camera, which does not exist in a test browser.  Everything else is what jibri really uses.
+     */
+    SIP_GATEWAY(SIP_GW_URL_OPTIONS.filterNot { it.startsWith("devices.videoInput") })
+}
+
 /**
  * A chrome instance driven by selenium the same way jibri drives it in production, joined to a conference
  * through one of the [CallPage] implementations.
@@ -50,9 +62,11 @@ class JibriBrowser(impl: CallPageImpl) : AutoCloseable {
         driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(60))
     }
 
-    /** Joins [roomName] with the url params jibri uses when recording.  Returns whether the join succeeded. */
-    fun join(roomName: String): Boolean =
-        page.visit(CallUrlInfo(TestDeployment.baseUrl, roomName, urlParams = RECORDING_URL_OPTIONS))
+    /** Joins [roomName] with the url params jibri uses in [mode].  Returns whether the join succeeded. */
+    fun join(roomName: String, mode: JoinMode = JoinMode.RECORDER, extraUrlParams: List<String> = listOf()): Boolean =
+        page.visit(
+            CallUrlInfo(TestDeployment.baseUrl, roomName, urlParams = mode.urlParams + extraUrlParams)
+        )
 
     /**
      * The warnings and errors from the chrome console, which is where jitsi-meet reports why it could not

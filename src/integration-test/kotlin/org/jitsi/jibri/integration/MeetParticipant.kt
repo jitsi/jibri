@@ -33,12 +33,26 @@ private object PlaywrightRuntime {
     }
 }
 
+/** The disco feature a real jigasi advertises, and which jibri identifies jigasi participants by. */
+const val JIGASI_FEATURE = "http://jitsi.org/protocol/jigasi"
+
 /**
  * A regular jitsi-meet participant, driven with playwright.  These are the other people in the conference:
  * jibri itself always joins through a [org.jitsi.jibri.selenium.pageobjects.CallPage] instead, so that the
  * tests exercise jibri's own code.
+ *
+ * The first participant to join a conference becomes its moderator, which is what the scenarios that need
+ * somebody to kick jibri or turn on AV moderation rely on.
  */
-class MeetParticipant(val displayName: String) : AutoCloseable {
+class MeetParticipant(
+    val displayName: String,
+    /**
+     * The `context.user` of the JWT this participant joins with.  Without one the participant is anonymous
+     * and carries no identity in its presence.  `hidden-from-recorder` set to "true" here is what makes a
+     * participant invisible to a recording jibri.
+     */
+    private val userContext: Map<String, String>? = null
+) : AutoCloseable {
     private val browser: Browser = PlaywrightRuntime.playwright.chromium().launch(
         BrowserType.LaunchOptions()
             .setHeadless(TestDeployment.headless)
@@ -75,7 +89,8 @@ class MeetParticipant(val displayName: String) : AutoCloseable {
             "config.startWithVideoMuted=false",
             "userInfo.displayName=\"$displayName\""
         )
-        page.navigate("${TestDeployment.baseUrl}/$roomName#${urlParams.joinToString("&")}")
+        val token = userContext?.let { "?jwt=${TestDeployment.jwtFor(it)}" } ?: ""
+        page.navigate("${TestDeployment.baseUrl}/$roomName$token#${urlParams.joinToString("&")}")
         page.waitForFunction(
             "() => Boolean(window.APP?.conference?._room?.isJoined())",
             null,
@@ -97,6 +112,117 @@ class MeetParticipant(val displayName: String) : AutoCloseable {
         )
     }
 
+    /**
+     * Advertises [feature] in this participant's disco#info, the way jigasi and the transcriber do.  Other
+     * endpoints only query features when they see the participant join, so this has to happen before jibri
+     * joins the conference.
+     */
+    fun advertiseFeature(feature: String) {
+        // The third argument marks the feature "external", which is what puts it in the MUC presence.
+        // Features are only read from presence, so without it nobody else ever sees it.
+        page.evaluate("(feature) => APP.conference._room.xmpp.caps.addFeature(feature, true, true)", feature)
+    }
+
+    /**
+     * Waits until this participant has been granted moderator rights.  Jicofo grants them a moment after
+     * the conference is joined, and the moderator-only operations below are silently dropped before that.
+     */
+    fun awaitModerator(): MeetParticipant {
+        page.waitForFunction(
+            "() => APP.conference._room.isModerator()",
+            null,
+            Page.WaitForFunctionOptions().setTimeout(MODERATOR_TIMEOUT_MS)
+        )
+        return this
+    }
+
+    /** Kicks every remote participant.  Only a moderator can do this. */
+    fun kickEveryoneElse() {
+        awaitModerator()
+        page.evaluate(
+            """
+            () => APP.conference._room.getParticipants()
+                .forEach(p => APP.conference._room.kickParticipant(p.getId()))
+            """.trimIndent()
+        )
+    }
+
+    /** Turns AV moderation on or off for [mediaType] ("audio" or "video").  Only a moderator can do this. */
+    fun setAvModerationEnabled(mediaType: String, enabled: Boolean) {
+        awaitModerator()
+        page.evaluate(
+            """
+            ([mediaType, enabled]) => enabled
+                ? APP.conference._room.enableAVModeration(mediaType)
+                : APP.conference._room.disableAVModeration(mediaType)
+            """.trimIndent(),
+            listOf(mediaType, enabled)
+        )
+    }
+
+    /** Approves every remote participant to unmute [mediaType] while AV moderation is on. */
+    fun approveEveryoneElse(mediaType: String) {
+        awaitModerator()
+        page.evaluate(
+            """
+            (mediaType) => APP.conference._room.getParticipants()
+                .forEach(p => APP.conference._room.avModerationApprove(mediaType, p.getId()))
+            """.trimIndent(),
+            mediaType
+        )
+    }
+
+    /** The remote participants this participant sees, one map per participant. */
+    @Suppress("UNCHECKED_CAST")
+    fun remoteParticipants(): List<Map<String, Any?>> {
+        val result = page.evaluate(
+            """
+            () => APP.conference._room.getParticipants().map(p => {
+                const stored = APP.store.getState()['features/base/participants'].remote.get(p.getId());
+                return {
+                    id: p.getId(),
+                    displayName: p.getDisplayName(),
+                    audioMuted: p.isAudioMuted(),
+                    videoMuted: p.isVideoMuted(),
+                    raisedHand: Number(stored?.raisedHandTimestamp || 0) > 0
+                };
+            })
+            """.trimIndent()
+        )
+        return result as? List<Map<String, Any?>> ?: listOf()
+    }
+
+    /** The single remote participant, which in these tests is always jibri. */
+    fun onlyRemoteParticipant(): Map<String, Any?> = remoteParticipants().single()
+
+    /**
+     * Reads a value jibri put in its presence with `addToPresence` or `setParticipantProperties`.  Those
+     * become plain presence nodes rather than anything jitsi-meet models, so the raw last presence is
+     * where they show up.
+     *
+     * The prefixed name is accepted as well because `ExternalAPIPage` asks the External API for raw keys,
+     * which jitsi-meet only honours since c9971d6a9 ("fix(external-api): add useRawKeys param for
+     * participant properties"); builds without it fall back to prefixing.  Drop the fallback once the
+     * images the tests run against have caught up.
+     */
+    fun remotePresenceValue(key: String): String? =
+        rawRemotePresenceValue(key) ?: rawRemotePresenceValue("jitsi_participant_$key")
+
+    private fun rawRemotePresenceValue(tagName: String): String? = page.evaluate(
+        """
+        (tagName) => {
+            const room = APP.conference._room.room;
+            const remote = APP.conference._room.getParticipants()[0];
+            if (!remote) return null;
+            const nodes = room.getLastPresence(remote.getId()) || [];
+            const node = nodes.find(n => n.tagName === tagName);
+            if (!node) return null;
+            return typeof node.value === 'string' ? node.value : JSON.stringify(node.value);
+        }
+        """.trimIndent(),
+        tagName
+    ) as? String
+
     /** Leaves the conference, waiting for the XMPP leave to complete. */
     fun leave() {
         page.evaluate("() => APP.conference._room.leave()")
@@ -113,5 +239,6 @@ class MeetParticipant(val displayName: String) : AutoCloseable {
 
     private companion object {
         const val JOIN_TIMEOUT_MS = 60_000.0
+        const val MODERATOR_TIMEOUT_MS = 30_000.0
     }
 }
