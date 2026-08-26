@@ -198,15 +198,9 @@ class MeetParticipant(
     /**
      * Reads a value jibri put in its presence with `addToPresence` or `setParticipantProperties`.  Those
      * become plain presence nodes rather than anything jitsi-meet models, so the raw last presence is
-     * where they show up.
-     *
-     * The prefixed name is accepted as well because `ExternalAPIPage` asks the External API for raw keys,
-     * which jitsi-meet only honours since c9971d6a9 ("fix(external-api): add useRawKeys param for
-     * participant properties"); builds without it fall back to prefixing.  Drop the fallback once the
-     * images the tests run against have caught up.
+     * where they show up.  The name is the raw one: jibri asks the External API not to prefix them.
      */
-    fun remotePresenceValue(key: String): String? =
-        rawRemotePresenceValue(key) ?: rawRemotePresenceValue("jitsi_participant_$key")
+    fun remotePresenceValue(key: String): String? = rawRemotePresenceValue(key)
 
     private fun rawRemotePresenceValue(tagName: String): String? = page.evaluate(
         """

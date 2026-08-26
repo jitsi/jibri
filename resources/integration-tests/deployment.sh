@@ -164,6 +164,9 @@ case "${1:-up}" in
         teardown
         reset_config
         write_env
+        # The image tags the tests use float, and 'up' on its own reuses whatever was pulled last time,
+        # so a local checkout quietly drifts behind what CI runs against.
+        compose pull --quiet
         compose up -d
         wait_for_deployment
         ;;

@@ -233,8 +233,8 @@ class CallPageIT : ShouldSpec({
                             }
                         }
                     }
-                    // Note that getNumParticipants is deliberately not asserted here: AppCallPage leaves
-                    // participants hidden from the recorder out of it, but ExternalAPIPage counts them,
+                    // getNumParticipants is deliberately not asserted here: AppCallPage leaves
+                    // participants hidden from the recorder out of it, ExternalAPIPage counts them,
                     // because the External API's getRoomsInfo only filters on isHidden().  That makes
                     // isCallEmpty disagree between the two for a conference with nobody but hidden
                     // participants left in it.  Tighten this once they agree.
