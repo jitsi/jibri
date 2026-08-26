@@ -27,6 +27,8 @@ DJM_CONFIG="${DJM_CONFIG:-$PROJECT_DIR/target/jitsi-meet-cfg}"
 HTTP_PORT="${HTTP_PORT:-8000}"
 HTTPS_PORT="${HTTPS_PORT:-8443}"
 JVB_PORT="${JVB_PORT:-10000}"
+JICOFO_REST_PORT="${JICOFO_REST_PORT:-8888}"
+JVB_COLIBRI_PORT="${JVB_COLIBRI_PORT:-8080}"
 
 ENV_FILE="$DJM_CONFIG/.env"
 
@@ -62,11 +64,18 @@ reset_config() {
             exit 1
             ;;
     esac
-    rm -rf "$DJM_CONFIG"
+    # The containers create files as root, which the user running the tests cannot remove.
+    rm -rf "$DJM_CONFIG" 2>/dev/null || sudo rm -rf "$DJM_CONFIG"
 }
 
 write_env() {
-    mkdir -p "$DJM_CONFIG"/{web,transcripts,prosody/config,prosody/prosody-plugins-custom,jicofo,jvb}
+    mkdir -p "$DJM_CONFIG"/{web,jicofo,jvb} \
+        "$DJM_CONFIG"/prosody/{config,prosody-plugins-custom} \
+        "$DJM_CONFIG"/storage/{web,transcripts,prosody} \
+        "$DJM_CONFIG"/tmp/web-load-test
+    # The containers run as uid 1000 and refuse to start if they cannot write to their volumes, and the
+    # user running the tests is not uid 1000 on every host.
+    chmod -R 777 "$DJM_CONFIG"
 
     echo "Using JVB_ADVERTISE_IPS=$JVB_ADVERTISE_IPS"
 
@@ -76,6 +85,8 @@ JITSI_IMAGE_VERSION=$DJM_VERSION
 HTTP_PORT=$HTTP_PORT
 HTTPS_PORT=$HTTPS_PORT
 JVB_PORT=$JVB_PORT
+JICOFO_REST_PORT=$JICOFO_REST_PORT
+JVB_COLIBRI_PORT=$JVB_COLIBRI_PORT
 JVB_ADVERTISE_IPS=$JVB_ADVERTISE_IPS
 # The generated jitsi-meet config hardcodes https/wss for the bosh and websocket urls, so the
 # deployment has to be reached over https.  It serves a self-signed certificate, which the tests tell
@@ -88,6 +99,8 @@ ENABLE_PREJOIN_PAGE=0
 ENABLE_P2P=0
 ENABLE_COLIBRI_WEBSOCKET=1
 ENABLE_XMPP_WEBSOCKET=1
+# Exposes jicofo's metrics, which the readiness check below polls.
+JICOFO_ENABLE_REST=1
 JICOFO_AUTH_PASSWORD=$(openssl rand -hex 16)
 JVB_AUTH_PASSWORD=$(openssl rand -hex 16)
 JIGASI_XMPP_PASSWORD=$(openssl rand -hex 16)
@@ -102,14 +115,19 @@ teardown() {
     compose down -v --remove-orphans
 }
 
+# The web container serving pages is not enough: a conference cannot be created until jicofo and the jvb
+# have registered with prosody, and the first test would otherwise race them.
 wait_for_deployment() {
     echo "Waiting for the deployment to come up on https://localhost:$HTTPS_PORT"
-    for _ in $(seq 1 60); do
-        if curl -ksf -o /dev/null "https://localhost:$HTTPS_PORT/external_api.js"; then
+    for _ in $(seq 1 90); do
+        if curl -ksf -o /dev/null "https://localhost:$HTTPS_PORT/external_api.js" &&
+            curl -sf -o /dev/null "http://localhost:$JVB_COLIBRI_PORT/about/health" &&
+            # jicofo only reports per-bridge metrics once it has seen a jvb join the brewery.
+            curl -sf "http://localhost:$JICOFO_REST_PORT/metrics" | grep -q '^jitsi_jicofo_bridge_.*jvb='; then
             echo "Deployment is up"
             return 0
         fi
-        sleep 5
+        sleep 2
     done
     echo "Deployment did not come up in time" >&2
     compose ps
