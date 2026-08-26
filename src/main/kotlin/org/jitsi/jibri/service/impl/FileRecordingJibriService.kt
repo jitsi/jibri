@@ -39,6 +39,7 @@ import org.jitsi.jibri.util.ProcessFactory
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
+import org.jitsi.metaconfig.optionalconfig
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
@@ -116,10 +117,8 @@ class FileRecordingJibriService(
         "JibriConfig::recordingDirectory" { Config.legacyConfigSource.recordingDirectory!! }
         "jibri.recording.recordings-directory".from(Config.configSource)
     }
-    private val finalizeScriptPath: String by config {
-        "JibriConfig::finalizeRecordingScriptPath" {
-            Config.legacyConfigSource.finalizeRecordingScriptPath!!
-        }
+    private val finalizeScriptPath: String? by optionalconfig {
+        "JibriConfig::finalizeRecordingScriptPath" { Config.legacyConfigSource.finalizeRecordingScriptPath!! }
         "jibri.recording.finalize-script".from(Config.configSource)
     }
 
@@ -139,7 +138,10 @@ class FileRecordingJibriService(
     }
 
     init {
-        logger.info("Writing recording to $sessionRecordingDirectory, finalize script path $finalizeScriptPath")
+        logger.info(
+            "Writing recording to $sessionRecordingDirectory, " +
+                "finalize script path ${finalizeScriptPath ?: "(none)"}"
+        )
         sink = FileSink(
             sessionRecordingDirectory,
             fileRecordingParams.callParams.callUrlInfo.callName
@@ -148,13 +150,15 @@ class FileRecordingJibriService(
         registerSubComponent(JibriSelenium.COMPONENT_ID, this.jibriSelenium)
         registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
 
-        jibriServiceFinalizer = JibriServiceFinalizeCommandRunner(
-            processFactory,
-            listOf(
-                finalizeScriptPath,
-                sessionRecordingDirectory.toString()
+        jibriServiceFinalizer = finalizeScriptPath?.takeIf { it.isNotBlank() }?.let { scriptPath ->
+            JibriServiceFinalizeCommandRunner(
+                processFactory,
+                listOf(
+                    scriptPath,
+                    sessionRecordingDirectory.toString()
+                )
             )
-        )
+        }
     }
 
     override fun start() {
