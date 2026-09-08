@@ -36,6 +36,7 @@ import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.error.BadRequestException
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.metrics.JibriMetricsContainer
 import org.jitsi.jibri.metrics.StatsConfig
@@ -116,6 +117,8 @@ class HttpApi(
                         call.respond(HttpStatusCode.OK)
                     } catch (e: JibriBusyException) {
                         call.respond(HttpStatusCode.PreconditionFailed, "Jibri is currently busy")
+                    } catch (e: BadRequestException) {
+                        call.respond(HttpStatusCode.BadRequest, e.detail)
                     } catch (e: IllegalStateException) {
                         call.respond(HttpStatusCode.PreconditionFailed, e.message ?: "")
                     } catch (t: Throwable) {
