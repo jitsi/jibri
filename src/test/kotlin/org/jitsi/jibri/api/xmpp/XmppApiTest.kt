@@ -35,6 +35,7 @@ import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.config.XmppMuc
+import org.jitsi.jibri.error.BadRequestException
 import org.jitsi.jibri.helpers.inPlaceExecutor
 import org.jitsi.jibri.helpers.resetIoPool
 import org.jitsi.jibri.helpers.setIoPool
@@ -48,6 +49,7 @@ import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.status.OverallHealth
 import org.jitsi.jibri.util.TaskPools
+import org.jitsi.xmpp.extensions.jibri.BadRequestPacketExt
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.mucclient.MucClient
 import org.jitsi.xmpp.mucclient.MucClientManager
@@ -209,6 +211,57 @@ class XmppApiTest : ShouldSpec() {
                     val result = xmppApi.handleIq(jibriIq, unknownMucClient)
                     result.error shouldNotBe null
                     result.error.condition shouldBe StanzaError.Condition.bad_request
+                }
+            }
+
+            context("when receiving a start streaming iq which is a bad request") {
+                every {
+                    jibriManager.startStreaming(any(), any(), any(), any())
+                } throws BadRequestException("The YouTube stream key has an invalid format")
+
+                context("from a jicofo which supports bad-request") {
+                    val jibriIq = createJibriIq(JibriIq.Action.START, JibriIq.RecordingMode.STREAM).apply {
+                        streamId = "invalid-key"
+                        supportsBadRequest = true
+                    }
+                    should("refuse it in the response to the start IQ") {
+                        val response = xmppApi.handleIq(jibriIq, mucClient)
+                        response should beInstanceOf<JibriIq>()
+                        response as JibriIq
+                        response.status shouldBe JibriIq.Status.OFF
+                        response.failureReason shouldBe JibriIq.FailureReason.ERROR
+                        response.shouldRetry shouldBe false
+                        response.getExtension(BadRequestPacketExt::class.java)?.detail shouldBe
+                            "The YouTube stream key has an invalid format"
+                    }
+                }
+
+                context("from a jicofo which does not support bad-request") {
+                    val jibriIq = createJibriIq(JibriIq.Action.START, JibriIq.RecordingMode.STREAM).apply {
+                        streamId = "invalid-key"
+                    }
+                    val response = xmppApi.handleIq(jibriIq, mucClient)
+
+                    should("answer the start IQ with pending, so that jicofo does not try other instances") {
+                        response should beInstanceOf<JibriIq>()
+                        response as JibriIq
+                        response.status shouldBe JibriIq.Status.PENDING
+                        response.failureReason shouldBe null
+                        response.getExtension(BadRequestPacketExt::class.java) shouldBe null
+                    }
+
+                    should("report the failure on the async path, telling jicofo not to retry") {
+                        val sentStanzas = mutableListOf<Stanza>()
+                        verify { mucClient.sendStanza(capture(sentStanzas)) }
+                        val stanza = sentStanzas.single()
+                        stanza should beInstanceOf<JibriIq>()
+                        stanza as JibriIq
+                        stanza.status shouldBe JibriIq.Status.OFF
+                        stanza.failureReason shouldBe JibriIq.FailureReason.ERROR
+                        stanza.shouldRetry shouldBe false
+                        // The element must be absent: this jicofo has no provider for it.
+                        stanza.getExtension(BadRequestPacketExt::class.java) shouldBe null
+                    }
                 }
             }
         }

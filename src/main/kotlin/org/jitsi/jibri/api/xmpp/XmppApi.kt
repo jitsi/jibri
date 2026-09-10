@@ -23,6 +23,8 @@ import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppEnvironmentConfig
+import org.jitsi.jibri.error.BadRequest
+import org.jitsi.jibri.error.BadRequestException
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.AppData
@@ -35,8 +37,10 @@ import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
 import org.jitsi.utils.logging2.createLogger
+import org.jitsi.xmpp.extensions.jibri.BadRequestPacketExt
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
 import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
@@ -131,6 +135,7 @@ class XmppApi(
 
         PingManager.setDefaultPingInterval(30)
         JibriStatusPacketExt.registerExtensionProvider()
+        BadRequestPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT,
             JibriIq.NAMESPACE,
@@ -285,6 +290,8 @@ class XmppApi(
                 failureReason = JibriIq.FailureReason.BUSY
                 shouldRetry = true
             }
+        } catch (e: BadRequestException) {
+            rejectBadRequest(startJibriIq, serviceStatusHandler, e)
         } catch (iq: UnsupportedIqMode) {
             logger.error("Unsupported IQ mode: ${iq.iqMode}")
             startJibriIq.createResult {
@@ -302,6 +309,39 @@ class XmppApi(
         }
     }
 
+    /**
+     * Refuses [startJibriIq] because the request is invalid.
+     *
+     * How we say so depends on whether the requester told us it understands a [BadRequestPacketExt] in the response.
+     * A Jicofo release which does not treats any response other than 'pending' as unexpected: it marks this healthy
+     * instance as failed and retries the same doomed request with other instances. So unless it opted in, we answer
+     * 'pending' and then report the failure on the asynchronous path, which every release already handles by giving
+     * up on the request.
+     */
+    private fun rejectBadRequest(
+        startJibriIq: JibriIq,
+        serviceStatusHandler: JibriServiceStatusHandler,
+        e: BadRequestException
+    ): JibriIq {
+        return if (startJibriIq.supportsBadRequest == true) {
+            logger.info("Refusing the start request: ${e.detail}")
+            startJibriIq.createResult {
+                status = JibriIq.Status.OFF
+                failureReason = JibriIq.FailureReason.ERROR
+                shouldRetry = false
+                addExtension(BadRequestPacketExt(e.detail))
+            }
+        } else {
+            logger.info("Refusing the start request asynchronously: ${e.detail}")
+            // Submitted to the io pool so that the 'pending' result is sent first, matching the order in which a
+            // session which starts and then fails reports itself.
+            TaskPools.ioPool.submit {
+                serviceStatusHandler(ComponentState.Error(BadRequest(e.detail)))
+            }
+            startJibriIq.createResult { status = JibriIq.Status.PENDING }
+        }
+    }
+
     private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): JibriServiceStatusHandler {
         return { serviceState ->
             when (serviceState) {
@@ -310,6 +350,11 @@ class XmppApi(
                         failureReason = JibriIq.FailureReason.ERROR
                         sipAddress = request.sipAddress
                         shouldRetry = serviceState.error.shouldRetry()
+                        // Only when the requester opted in. A release without a provider for the element logs a
+                        // warning for every one it receives.
+                        if (request.supportsBadRequest == true && serviceState.error is BadRequest) {
+                            addExtension(BadRequestPacketExt(serviceState.error.detail))
+                        }
                         logger.info(
                             "Current service had an error ${serviceState.error}, " +
                                 "sending error iq status=$status failureReason=$failureReason shouldRetry=$shouldRetry"
