@@ -25,7 +25,5 @@ import java.util.concurrent.ThreadFactory
  */
 class NameableThreadFactory(private val name: String) : ThreadFactory {
     private var threadNum = 1
-    override fun newThread(r: Runnable?): Thread {
-        return Thread(r, "$name-${threadNum++}")
-    }
+    override fun newThread(r: Runnable?): Thread = Thread(r, "$name-${threadNum++}")
 }

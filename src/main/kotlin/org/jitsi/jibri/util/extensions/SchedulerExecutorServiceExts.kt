@@ -31,9 +31,7 @@ fun ScheduledExecutorService.scheduleAtFixedRate(
     unit: TimeUnit,
     delay: Long = 0,
     action: () -> Unit
-): ScheduledFuture<*> {
-    return this.scheduleAtFixedRate(action, delay, period, unit)
-}
+): ScheduledFuture<*> = this.scheduleAtFixedRate(action, delay, period, unit)
 
 /**
  * A version of [ScheduledExecutorService.schedule] that takes a lambda
@@ -43,6 +41,4 @@ fun ScheduledExecutorService.schedule(
     delay: Long = 0,
     unit: TimeUnit = TimeUnit.SECONDS,
     action: () -> Unit
-): ScheduledFuture<*> {
-    return this.schedule(action, delay, unit)
-}
+): ScheduledFuture<*> = this.schedule(action, delay, unit)

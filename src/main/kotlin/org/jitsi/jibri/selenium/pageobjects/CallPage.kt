@@ -57,12 +57,10 @@ interface CallPage {
             "jibri.selenium.use-external-api".from(Config.configSource)
         }
 
-        fun create(driver: RemoteWebDriver): CallPage {
-            return if (useExternalAPI) {
-                ExternalAPIPage(driver)
-            } else {
-                AppCallPage(driver)
-            }
+        fun create(driver: RemoteWebDriver): CallPage = if (useExternalAPI) {
+            ExternalAPIPage(driver)
+        } else {
+            AppCallPage(driver)
         }
     }
 }

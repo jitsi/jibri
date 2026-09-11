@@ -18,6 +18,4 @@ package org.jitsi.jibri.util
 import kotlin.random.Random
 
 val alphaNum = ('a'..'z') + ('0'..'9')
-fun randomAlphaNum(len: Int): String {
-    return List(len) { alphaNum[Random.nextInt(0, alphaNum.size)] }.joinToString("")
-}
+fun randomAlphaNum(len: Int): String = List(len) { alphaNum[Random.nextInt(0, alphaNum.size)] }.joinToString("")

@@ -32,9 +32,7 @@ enum class OutputLineClassification {
  * Represents a parsed line of ffmpeg's stdout output.
  */
 open class FfmpegOutputStatus(val lineType: OutputLineClassification, val detail: String = "") {
-    override fun toString(): String {
-        return "Line type: $lineType, detail: $detail"
-    }
+    override fun toString(): String = "Line type: $lineType, detail: $detail"
 }
 
 /**
@@ -99,6 +97,7 @@ class OutputParser {
                 return when (exitedMatcher.group(1).toInt()) {
                     // 2 is the signal we pass to stop ffmpeg
                     2 -> FfmpegOutputStatus(OutputLineClassification.FINISHED, outputLine)
+
                     else -> FfmpegUnexpectedSignalStatus(outputLine)
                 }
             }

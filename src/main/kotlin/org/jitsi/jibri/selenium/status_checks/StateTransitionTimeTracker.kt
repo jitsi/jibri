@@ -38,9 +38,7 @@ class StateTransitionTimeTracker(private val clock: Clock) {
         }
     }
 
-    fun exceededTimeout(timeout: Duration): Boolean {
-        return timestampTransitionOccured?.let {
-            Duration.between(it, clock.instant()) > timeout
-        } ?: false
-    }
+    fun exceededTimeout(timeout: Duration): Boolean = timestampTransitionOccured?.let {
+        Duration.between(it, clock.instant()) > timeout
+    } ?: false
 }

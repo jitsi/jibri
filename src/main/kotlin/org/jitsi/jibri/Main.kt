@@ -61,9 +61,11 @@ fun main(args: Array<String>) {
             is ComponentBusyStatus -> {
                 jibriStatusManager.busyStatus = jibriStatus
             }
+
             is ComponentHealthStatus -> {
                 jibriStatusManager.updateHealth("JibriManager", jibriStatus)
             }
+
             else -> {
                 logger.error("Unrecognized status from JibriManager: ${jibriStatus.javaClass} $jibriStatus")
             }

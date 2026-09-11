@@ -39,6 +39,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
                     )
                     when (result) {
                         is Boolean -> result
+
                         else -> {
                             logger.debug { "Not joined yet: $result" }
                             false
@@ -251,6 +252,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         )
         return when (result) {
             is Number -> result.toInt()
+
             else -> {
                 logger.error("error running numRemoteParticipantsJigasi script: $result ${result?.javaClass}")
                 0
@@ -273,6 +275,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         )
         return when (result) {
             is Number -> result.toInt()
+
             else -> {
                 logger.error("error running numHiddenParticipants script: $result ${result?.javaClass}")
                 0
@@ -339,6 +342,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         )
         return when (result) {
             is Number -> result.toInt()
+
             else -> {
                 logger.error("error running numRemoteParticipantsMuted script: $result ${result?.javaClass}")
                 0

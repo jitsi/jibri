@@ -58,9 +58,7 @@ class LoggingUtils {
          * A future is returned which will be completed when the end of the given
          * stream is reached.
          */
-        fun logOutputOfProcess(process: ProcessWrapper, logger: Logger): Future<Boolean> {
-            return logOutput(process, logger)
-        }
+        fun logOutputOfProcess(process: ProcessWrapper, logger: Logger): Future<Boolean> = logOutput(process, logger)
     }
 }
 
@@ -68,9 +66,7 @@ class LoggingUtils {
  * Create a logger with [name] and all of its inherited
  * handlers cleared, adding only the given handler
  */
-fun getLoggerWithHandler(name: String, handler: FileHandler): Logger {
-    return LoggerImpl(name).apply {
-        setUseParentHandlers(false)
-        addHandler(handler)
-    }
+fun getLoggerWithHandler(name: String, handler: FileHandler): Logger = LoggerImpl(name).apply {
+    setUseParentHandlers(false)
+    addHandler(handler)
 }

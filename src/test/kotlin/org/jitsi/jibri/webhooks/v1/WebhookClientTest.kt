@@ -71,13 +71,16 @@ class WebhookClientTest : ShouldSpec({
                             contains("success") -> {
                                 respondOk()
                             }
+
                             contains("delay") -> {
                                 delay(1000)
                                 respondOk()
                             }
+
                             contains("error") -> {
                                 respondError(HttpStatusCode.BadRequest)
                             }
+
                             else -> error("Unsupported URL")
                         }
                     }

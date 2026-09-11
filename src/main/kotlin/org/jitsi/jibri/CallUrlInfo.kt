@@ -43,13 +43,11 @@ data class CallUrlInfo(
             }
         }
 
-    override fun equals(other: Any?): Boolean {
-        return when {
-            other == null -> false
-            this === other -> true
-            javaClass != other.javaClass -> false
-            else -> hashCode() == other.hashCode()
-        }
+    override fun equals(other: Any?): Boolean = when {
+        other == null -> false
+        this === other -> true
+        javaClass != other.javaClass -> false
+        else -> hashCode() == other.hashCode()
     }
 
     override fun hashCode(): Int {

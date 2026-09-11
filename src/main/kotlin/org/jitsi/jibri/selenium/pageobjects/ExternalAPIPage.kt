@@ -130,10 +130,9 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
      * Calls [methodName] on window.jibriRecorderApi, guarding against the API or the method
      * not being ready yet and any error. [script] can assume `api` and `cb` are already in scope.
      */
-    private fun callRecorderApiAsync(methodName: String, script: String): Any? {
-        return try {
-            driver.executeAsyncScript(
-                """
+    private fun callRecorderApiAsync(methodName: String, script: String): Any? = try {
+        driver.executeAsyncScript(
+            """
                 const cb = arguments[arguments.length - 1];
                 const api = window.jibriRecorderApi;
                 if (!api || typeof api.$methodName !== 'function') {
@@ -142,11 +141,10 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
                 }
                 $script
                 """
-            )
-        } catch (t: Throwable) {
-            logger.error("Error calling jibriRecorderApi.$methodName", t)
-            null
-        }
+        )
+    } catch (t: Throwable) {
+        logger.error("Error calling jibriRecorderApi.$methodName", t)
+        null
     }
 
     /** Enable the local camera and microphone. Used in sip gateway mode. */
@@ -165,20 +163,18 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return success
     }
 
-    private fun executeRecorderCommand(command: String, vararg args: Any?): Boolean {
-        return try {
-            driver.executeScript(
-                """
+    private fun executeRecorderCommand(command: String, vararg args: Any?): Boolean = try {
+        driver.executeScript(
+            """
                 if (!window.jibriRecorderApi) return false;
                 window.jibriRecorderApi.executeCommand('$command', ...arguments);
                 return true;
                 """,
-                *args
-            ) as? Boolean ?: false
-        } catch (t: Throwable) {
-            logger.error("Error executing recorder command $command", t)
-            false
-        }
+            *args
+        ) as? Boolean ?: false
+    } catch (t: Throwable) {
+        logger.error("Error executing recorder command $command", t)
+        false
     }
 
     override fun getNumParticipants(): Int {
@@ -277,15 +273,13 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return iceConnected
     }
 
-    override fun isLocalParticipantKicked(): Boolean {
-        return try {
-            driver.executeScript(
-                "return window.jibriPageState.localParticipantKicked === true;"
-            ) as? Boolean ?: false
-        } catch (t: Throwable) {
-            logger.error("Error checking isLocalParticipantKicked", t)
-            false
-        }
+    override fun isLocalParticipantKicked(): Boolean = try {
+        driver.executeScript(
+            "return window.jibriPageState.localParticipantKicked === true;"
+        ) as? Boolean ?: false
+    } catch (t: Throwable) {
+        logger.error("Error checking isLocalParticipantKicked", t)
+        false
     }
 
     /**
@@ -312,15 +306,13 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return numMutedParticipants
     }
 
-    override fun isVisitor(): Boolean {
-        return try {
-            driver.executeScript(
-                "return window.jibriRecorderApi && window.jibriRecorderApi.isVisitor() === true;"
-            ) as? Boolean ?: false
-        } catch (t: Throwable) {
-            logger.error("Error calling jibriRecorderApi.isVisitor", t)
-            false
-        }
+    override fun isVisitor(): Boolean = try {
+        driver.executeScript(
+            "return window.jibriRecorderApi && window.jibriRecorderApi.isVisitor() === true;"
+        ) as? Boolean ?: false
+    } catch (t: Throwable) {
+        logger.error("Error calling jibriRecorderApi.isVisitor", t)
+        false
     }
 
     override fun isLocalAudioMuted(): Boolean {
@@ -438,16 +430,14 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
     }
 
-    override fun setParticipantProperties(properties: Map<String, String>): Boolean {
-        return try {
-            val result = executeRecorderCommand("setParticipantProperties", properties, true)
-            if (!result) {
-                logger.warn("Could not set participant properties, External API not ready")
-            }
-            result
-        } catch (t: Throwable) {
-            logger.error("Error setting participant properties", t)
-            false
+    override fun setParticipantProperties(properties: Map<String, String>): Boolean = try {
+        val result = executeRecorderCommand("setParticipantProperties", properties, true)
+        if (!result) {
+            logger.warn("Could not set participant properties, External API not ready")
         }
+        result
+    } catch (t: Throwable) {
+        logger.error("Error setting participant properties", t)
+        false
     }
 }

@@ -203,6 +203,7 @@ class JibriManager : StatusPublisher<Any>() {
                     }
                     stopService()
                 }
+
                 is ComponentState.Finished -> {
                     // If a 'stop' was received externally, then this stopService call
                     // will be redundant, but we need to make it anyway as the service
@@ -210,6 +211,7 @@ class JibriManager : StatusPublisher<Any>() {
                     // and needs to be stopped (cleaned up)
                     stopService()
                 }
+
                 else -> { /* No op */ }
             }
         }

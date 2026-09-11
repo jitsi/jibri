@@ -43,6 +43,7 @@ class EmptyCallStatusCheck(
                 )
                 SeleniumEvent.CallEmpty
             }
+
             false -> null
         }
     }

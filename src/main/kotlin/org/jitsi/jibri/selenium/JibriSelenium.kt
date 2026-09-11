@@ -85,14 +85,12 @@ data class CallParams(
      */
     val extraUrlParams: List<String> = listOf()
 ) {
-    override fun toString(): String {
-        return if (passcode.isNullOrEmpty()) {
-            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode" +
-                ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
-        } else {
-            "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****" +
-                ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
-        }
+    override fun toString(): String = if (passcode.isNullOrEmpty()) {
+        "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=$passcode" +
+            ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
+    } else {
+        "CallParams(callUrlInfo=$callUrlInfo, email='$email', passcode=*****" +
+            ", callStatsUsernameOverride=$callStatsUsernameOverride, displayName=$displayName)"
     }
 }
 
@@ -190,7 +188,7 @@ class JibriSelenium(
      */
     private var recurringCallStatusCheckTask: ScheduledFuture<*>? = null
 
-    /**
+    /*
      * Set up default chrome driver options (using fake device, etc.)
      */
     init {
@@ -402,9 +400,7 @@ class JibriSelenium(
         }
     }
 
-    fun getParticipants(): List<Map<String, Any>> {
-        return callPage.getParticipants()
-    }
+    fun getParticipants(): List<Map<String, Any>> = callPage.getParticipants()
 
     fun leaveCallAndQuitBrowser() {
         logger.info("Leaving call and quitting browser")

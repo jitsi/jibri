@@ -23,7 +23,5 @@ class ProcessFactory {
         command: List<String>,
         parentLogger: Logger,
         environment: Map<String, String> = mapOf()
-    ): ProcessWrapper {
-        return ProcessWrapper(command, parentLogger, environment)
-    }
+    ): ProcessWrapper = ProcessWrapper(command, parentLogger, environment)
 }

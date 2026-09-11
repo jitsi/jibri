@@ -14,12 +14,10 @@ class LocalParticipantKickedStatusCheck(
         logger.info("Starting local participant kicked out call check")
     }
 
-    override fun run(callPage: CallPage): SeleniumEvent? {
-        return if (callPage.isLocalParticipantKicked()) {
-            logger.info("Local participant was kicked, returning LocalParticipantKicked event")
-            SeleniumEvent.LocalParticipantKicked
-        } else {
-            null
-        }
+    override fun run(callPage: CallPage): SeleniumEvent? = if (callPage.isLocalParticipantKicked()) {
+        logger.info("Local participant was kicked, returning LocalParticipantKicked event")
+        SeleniumEvent.LocalParticipantKicked
+    } else {
+        null
     }
 }

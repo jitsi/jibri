@@ -41,27 +41,28 @@ sealed class FfmpegEvent(val outputLine: String) {
  * of ffmpeg itself: if ffmpeg crashes, then its last output line may be "normal", but we need
  * to react to the fact that ffmpeg is no longer running.
  */
-fun FfmpegOutputStatus.toFfmpegEvent(ffmpegStillRunning: Boolean): FfmpegEvent {
-    return when (lineType) {
-        OutputLineClassification.ENCODING -> {
-            if (ffmpegStillRunning) {
-                FfmpegEvent.EncodingLine(detail)
-            } else {
-                FfmpegEvent.FfmpegExited(detail, QuitUnexpectedly(detail))
-            }
+fun FfmpegOutputStatus.toFfmpegEvent(ffmpegStillRunning: Boolean): FfmpegEvent = when (lineType) {
+    OutputLineClassification.ENCODING -> {
+        if (ffmpegStillRunning) {
+            FfmpegEvent.EncodingLine(detail)
+        } else {
+            FfmpegEvent.FfmpegExited(detail, QuitUnexpectedly(detail))
         }
-        OutputLineClassification.UNKNOWN -> {
-            if (ffmpegStillRunning) {
-                FfmpegEvent.OtherLine(detail)
-            } else {
-                FfmpegEvent.FfmpegExited(detail, QuitUnexpectedly(detail))
-            }
+    }
+
+    OutputLineClassification.UNKNOWN -> {
+        if (ffmpegStillRunning) {
+            FfmpegEvent.OtherLine(detail)
+        } else {
+            FfmpegEvent.FfmpegExited(detail, QuitUnexpectedly(detail))
         }
-        OutputLineClassification.FINISHED -> FfmpegEvent.FinishLine(detail)
-        OutputLineClassification.ERROR -> {
-            this as FfmpegErrorStatus
-            FfmpegEvent.ErrorLine(this.error)
-        }
+    }
+
+    OutputLineClassification.FINISHED -> FfmpegEvent.FinishLine(detail)
+
+    OutputLineClassification.ERROR -> {
+        this as FfmpegErrorStatus
+        FfmpegEvent.ErrorLine(this.error)
     }
 }
 

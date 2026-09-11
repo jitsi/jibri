@@ -110,14 +110,12 @@ class ProcessWrapper(
      * thrown.  'true' is returned if the process was successfully
      * ended, false otherwise
      */
-    fun stopAndWaitFor(timeout: Duration): Boolean {
-        return try {
-            stop()
-            waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
-        } catch (t: Throwable) {
-            logger.error("Error stopping process", t)
-            false
-        }
+    fun stopAndWaitFor(timeout: Duration): Boolean = try {
+        stop()
+        waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+    } catch (t: Throwable) {
+        logger.error("Error stopping process", t)
+        false
     }
 
     fun destroyForcibly(): Process = process.destroyForcibly()
@@ -128,14 +126,12 @@ class ProcessWrapper(
      * thrown.  'true' is returned if the process was successfully
      * ended, false otherwise
      */
-    fun destroyForciblyAndWaitFor(timeout: Duration): Boolean {
-        return try {
-            destroyForcibly()
-            waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
-        } catch (t: Throwable) {
-            logger.error("Error forcibly destroying process", t)
-            false
-        }
+    fun destroyForciblyAndWaitFor(timeout: Duration): Boolean = try {
+        destroyForcibly()
+        waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)
+    } catch (t: Throwable) {
+        logger.error("Error forcibly destroying process", t)
+        false
     }
 
     /**

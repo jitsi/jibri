@@ -102,9 +102,7 @@ class Tee(inputStream: InputStream) {
         }
     }
 
-    fun addBranch(): InputStream {
-        return teeLogic.addBranch()
-    }
+    fun addBranch(): InputStream = teeLogic.addBranch()
 
     fun stop() {
         task.cancel(true)

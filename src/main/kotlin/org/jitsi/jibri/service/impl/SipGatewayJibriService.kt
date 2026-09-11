@@ -104,6 +104,7 @@ class SipGatewayJibriService(
                     logger.info("Received *6 DTMF command from pjsua")
                     this.jibriSelenium.handleDtmfStar6()
                 }
+
                 "*7" -> {
                     logger.info("Received *7 DTMF command from pjsua")
                     this.jibriSelenium.handleDtmfStar7()
