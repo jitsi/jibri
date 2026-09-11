@@ -10,15 +10,15 @@
 
     <properties>
         <selenium.version>4.43.0</selenium.version>
-        <kotlin.version>2.3.21</kotlin.version>
+        <kotlin.version>2.4.20</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <kotlin.compiler.jvmTarget>17</kotlin.compiler.jvmTarget>
-        <jackson.version>2.19.4</jackson.version>
-        <junit.version>5.10.0</junit.version>
-        <kotest.version>5.7.2</kotest.version>
-        <mockk.version>1.13.8</mockk.version>
+        <jackson.version>2.21.5</jackson.version>
+        <junit.version>5.14.4</junit.version>
+        <kotest.version>5.9.1</kotest.version>
+        <mockk.version>1.14.11</mockk.version>
         <ktor.version>3.4.3</ktor.version>
         <jicoco.version>1.1-170-g3f48c50</jicoco.version>
         <jitsi.utils.version>1.0-127-g6c65524</jitsi.utils.version>
@@ -105,7 +105,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>${jackson.version}</version>
+            <version>2.21</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
@@ -319,7 +319,6 @@
                                 <arg>-Werror</arg>
                                 <arg>-opt-in=kotlin.ExperimentalStdlibApi</arg>
                                 <arg>-opt-in=kotlin.time.ExperimentalTime</arg>
-                                <arg>-Xannotation-default-target=param-property</arg>
                             </args>
                         </configuration>
                     </execution>
