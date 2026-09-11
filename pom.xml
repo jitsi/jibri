@@ -375,6 +375,7 @@
                         this is maven -->
                         <gradle.build.dir>${project.build.directory}/surefire-reports</gradle.build.dir>
                         <java.util.logging.config.file>${project.basedir}/lib/test-logging.properties</java.util.logging.config.file>
+                        <kotest.framework.classpath.scanning.autoscan.disable>true</kotest.framework.classpath.scanning.autoscan.disable>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
