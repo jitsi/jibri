@@ -27,13 +27,11 @@ sealed class JibriServiceEvent {
     class SubComponentFinished(val componentId: String, val subState: ComponentState.Finished) : JibriServiceEvent()
 }
 
-fun ComponentState.toJibriServiceEvent(componentId: String): JibriServiceEvent {
-    return when (this) {
-        is ComponentState.StartingUp -> JibriServiceEvent.SubComponentStartingUp(componentId, this)
-        is ComponentState.Running -> JibriServiceEvent.SubComponentRunning(componentId, this)
-        is ComponentState.Error -> JibriServiceEvent.SubComponentError(componentId, this)
-        is ComponentState.Finished -> JibriServiceEvent.SubComponentFinished(componentId, this)
-    }
+fun ComponentState.toJibriServiceEvent(componentId: String): JibriServiceEvent = when (this) {
+    is ComponentState.StartingUp -> JibriServiceEvent.SubComponentStartingUp(componentId, this)
+    is ComponentState.Running -> JibriServiceEvent.SubComponentRunning(componentId, this)
+    is ComponentState.Error -> JibriServiceEvent.SubComponentError(componentId, this)
+    is ComponentState.Finished -> JibriServiceEvent.SubComponentFinished(componentId, this)
 }
 
 sealed class JibriServiceSideEffect

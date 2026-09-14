@@ -86,7 +86,7 @@ class HttpApi(
 
         routing {
             route("jibri/api/v1.0") {
-                /**
+                /*
                  * Get the health of this Jibri in the format of a json-encoded
                  * [JibriHealth] object
                  */
@@ -97,7 +97,7 @@ class HttpApi(
                     call.respond(health)
                 }
 
-                /**
+                /*
                  * Start a new service using the given [StartServiceParams].
                  * Returns a response with [Response.Status.OK] on success, [Response.Status.PRECONDITION_FAILED]
                  * if this Jibri is already busy or params were missing and [Response.Status.INTERNAL_SERVER_ERROR] on
@@ -124,7 +124,7 @@ class HttpApi(
                     }
                 }
 
-                /**
+                /*
                  * [stopService] will stop the current service immediately
                  */
                 post("stopService") {
@@ -149,48 +149,49 @@ class HttpApi(
     private fun createServiceStatusHandler(
         serviceParams: StartServiceParams,
         webhookClient: WebhookClient
-    ): JibriServiceStatusHandler {
-        return { serviceState ->
-            when (serviceState) {
-                is ComponentState.Error -> {
-                    val failure = JibriFailure(
-                        JibriIq.FailureReason.ERROR,
-                        serviceState.error
-                    )
-                    val componentSessionStatus = JibriSessionStatus(
-                        serviceParams.sessionId,
-                        JibriIq.Status.OFF,
-                        serviceParams.sipClientParams?.sipAddress,
-                        failure,
-                        serviceState.error.shouldRetry()
-                    )
-                    logger.info(
-                        "Current service had an error ${serviceState.error}, " +
-                            "sending status error $componentSessionStatus"
-                    )
-                    webhookClient.updateSessionStatus(componentSessionStatus)
-                }
-                is ComponentState.Finished -> {
-                    val componentSessionStatus = JibriSessionStatus(
-                        serviceParams.sessionId,
-                        JibriIq.Status.OFF,
-                        serviceParams.sipClientParams?.sipAddress
-                    )
-                    logger.info("Current service finished, sending status off $componentSessionStatus")
-                    webhookClient.updateSessionStatus(componentSessionStatus)
-                }
-                is ComponentState.Running -> {
-                    val componentSessionStatus = JibriSessionStatus(
-                        serviceParams.sessionId,
-                        JibriIq.Status.ON,
-                        serviceParams.sipClientParams?.sipAddress
-                    )
-                    logger.info("Current service started up successfully, sending status on $componentSessionStatus")
-                    webhookClient.updateSessionStatus(componentSessionStatus)
-                }
-                else -> {
-                    logger.info("Webhook client ignoring service state update: $serviceState")
-                }
+    ): JibriServiceStatusHandler = { serviceState ->
+        when (serviceState) {
+            is ComponentState.Error -> {
+                val failure = JibriFailure(
+                    JibriIq.FailureReason.ERROR,
+                    serviceState.error
+                )
+                val componentSessionStatus = JibriSessionStatus(
+                    serviceParams.sessionId,
+                    JibriIq.Status.OFF,
+                    serviceParams.sipClientParams?.sipAddress,
+                    failure,
+                    serviceState.error.shouldRetry()
+                )
+                logger.info(
+                    "Current service had an error ${serviceState.error}, " +
+                        "sending status error $componentSessionStatus"
+                )
+                webhookClient.updateSessionStatus(componentSessionStatus)
+            }
+
+            is ComponentState.Finished -> {
+                val componentSessionStatus = JibriSessionStatus(
+                    serviceParams.sessionId,
+                    JibriIq.Status.OFF,
+                    serviceParams.sipClientParams?.sipAddress
+                )
+                logger.info("Current service finished, sending status off $componentSessionStatus")
+                webhookClient.updateSessionStatus(componentSessionStatus)
+            }
+
+            is ComponentState.Running -> {
+                val componentSessionStatus = JibriSessionStatus(
+                    serviceParams.sessionId,
+                    JibriIq.Status.ON,
+                    serviceParams.sipClientParams?.sipAddress
+                )
+                logger.info("Current service started up successfully, sending status on $componentSessionStatus")
+                webhookClient.updateSessionStatus(componentSessionStatus)
+            }
+
+            else -> {
+                logger.info("Webhook client ignoring service state update: $serviceState")
             }
         }
     }
@@ -212,6 +213,7 @@ class HttpApi(
                     statusHandler
                 )
             }
+
             RecordingSinkType.STREAM -> {
                 val youTubeStreamKey = startServiceParams.youTubeStreamKey
                     ?: throw IllegalStateException("Stream key missing")
@@ -230,6 +232,7 @@ class HttpApi(
                     statusHandler
                 )
             }
+
             RecordingSinkType.GATEWAY -> {
                 // If it's a sip gateway, it must have sipClientParams set
                 val sipClientParams = startServiceParams.sipClientParams

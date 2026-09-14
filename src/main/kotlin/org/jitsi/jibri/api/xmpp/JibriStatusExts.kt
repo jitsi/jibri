@@ -27,22 +27,18 @@ import java.lang.RuntimeException
 /**
  * Translate the Jibri busy status enum to the jitsi-protocol-jabber version
  */
-private fun ComponentBusyStatus.toBusyStatusExt(): JibriBusyStatusPacketExt.BusyStatus {
-    return when (this) {
-        ComponentBusyStatus.BUSY -> JibriBusyStatusPacketExt.BusyStatus.BUSY
-        ComponentBusyStatus.IDLE -> JibriBusyStatusPacketExt.BusyStatus.IDLE
-        ComponentBusyStatus.EXPIRED -> throw RuntimeException("'EXPIRED' not supported in JibriBusyStatusPacketExt")
-    }
+private fun ComponentBusyStatus.toBusyStatusExt(): JibriBusyStatusPacketExt.BusyStatus = when (this) {
+    ComponentBusyStatus.BUSY -> JibriBusyStatusPacketExt.BusyStatus.BUSY
+    ComponentBusyStatus.IDLE -> JibriBusyStatusPacketExt.BusyStatus.IDLE
+    ComponentBusyStatus.EXPIRED -> throw RuntimeException("'EXPIRED' not supported in JibriBusyStatusPacketExt")
 }
 
 /**
  * Translate the Jibri health status enum to the jitsi-protocol-jabber version
  */
-private fun ComponentHealthStatus.toHealthStatusExt(): HealthStatusPacketExt.Health {
-    return when (this) {
-        ComponentHealthStatus.HEALTHY -> HealthStatusPacketExt.Health.HEALTHY
-        ComponentHealthStatus.UNHEALTHY -> HealthStatusPacketExt.Health.UNHEALTHY
-    }
+private fun ComponentHealthStatus.toHealthStatusExt(): HealthStatusPacketExt.Health = when (this) {
+    ComponentHealthStatus.HEALTHY -> HealthStatusPacketExt.Health.HEALTHY
+    ComponentHealthStatus.UNHEALTHY -> HealthStatusPacketExt.Health.UNHEALTHY
 }
 
 /**
@@ -69,9 +65,7 @@ fun JibriStatus.toJibriStatusExt(): JibriStatusPacketExt {
  * defined by [JibriStatusPacketExt]), it's used only for the
  * internal health status so for now we don't see it to the MUC.
  */
-fun JibriStatus.shouldBeSentToMuc(): Boolean {
-    return when (this.busyStatus) {
-        ComponentBusyStatus.EXPIRED -> false
-        else -> true
-    }
+fun JibriStatus.shouldBeSentToMuc(): Boolean = when (this.busyStatus) {
+    ComponentBusyStatus.EXPIRED -> false
+    else -> true
 }

@@ -23,11 +23,9 @@ enum class OsType {
 }
 
 class OsDetector {
-    fun getOsType(): OsType {
-        return when (System.getProperty("os.name")) {
-            "Mac OS X" -> OsType.MAC
-            "Linux" -> OsType.LINUX
-            else -> OsType.UNSUPPORTED
-        }
+    fun getOsType(): OsType = when (System.getProperty("os.name")) {
+        "Mac OS X" -> OsType.MAC
+        "Linux" -> OsType.LINUX
+        else -> OsType.UNSUPPORTED
     }
 }

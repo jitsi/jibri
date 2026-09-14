@@ -47,7 +47,7 @@ class InternalHttpApi(
 
         routing {
             route("/jibri/api/internal/v1.0") {
-                /**
+                /*
                  * Signal this Jibri to shutdown gracefully, meaning shut down when
                  * it is idle (i.e. finish any currently running service). Returns a 200
                  * and schedules a shutdown for when it becomes idle.
@@ -56,7 +56,7 @@ class InternalHttpApi(
                     logger.info("Jibri gracefully shutting down")
                     respondOkAndRun(gracefulShutdownHandler)
                 }
-                /**
+                /*
                  * Signal this Jibri to reload its config file at the soonest opportunity
                  * (when it does not have a currently running service). Returns a 200.
                  */
@@ -64,7 +64,7 @@ class InternalHttpApi(
                     logger.info("Config file changed")
                     respondOkAndRun(configChangedHandler)
                 }
-                /**
+                /*
                  * Signal this Jibri to (cleanly) stop any services that are
                  * running and shutdown.  Returns a 200.
                  */

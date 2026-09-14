@@ -213,12 +213,10 @@ class XmppApi(
      * @param mucClient the [MucClient] from which the IQ comes.
      * @return the IQ to be sent as a response or `null`.
      */
-    override fun handleIq(iq: IQ, mucClient: MucClient): IQ {
-        return if (iq is JibriIq) {
-            handleJibriIq(iq, mucClient)
-        } else {
-            IQ.createErrorResponse(iq, StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build())
-        }
+    override fun handleIq(iq: IQ, mucClient: MucClient): IQ = if (iq is JibriIq) {
+        handleJibriIq(iq, mucClient)
+    } else {
+        IQ.createErrorResponse(iq, StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build())
     }
 
     /**
@@ -237,7 +235,9 @@ class XmppApi(
             )
         return when (jibriIq.action) {
             JibriIq.Action.START -> handleStartJibriIq(jibriIq, xmppEnvironment, mucClient)
+
             JibriIq.Action.STOP -> handleStopJibriIq(jibriIq)
+
             else -> IQ.createErrorResponse(
                 jibriIq,
                 StanzaError.getBuilder().setCondition(StanzaError.Condition.bad_request).build()
@@ -302,8 +302,8 @@ class XmppApi(
         }
     }
 
-    private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): JibriServiceStatusHandler {
-        return { serviceState ->
+    private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): JibriServiceStatusHandler =
+        { serviceState ->
             when (serviceState) {
                 is ComponentState.Error -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
@@ -317,6 +317,7 @@ class XmppApi(
                         mucClient.sendStanza(this)
                     }
                 }
+
                 is ComponentState.Finished -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.OFF)) {
                         sipAddress = request.sipAddress
@@ -324,6 +325,7 @@ class XmppApi(
                         mucClient.sendStanza(this)
                     }
                 }
+
                 is ComponentState.Running -> {
                     with(JibriIqHelper.create(request.from, status = JibriIq.Status.ON)) {
                         sipAddress = request.sipAddress
@@ -331,12 +333,12 @@ class XmppApi(
                         mucClient.sendStanza(this)
                     }
                 }
+
                 else -> {
                     logger.info("XmppAPI ignoring service state update: $serviceState")
                 }
             }
         }
-    }
 
     /**
      * Handle a stop [JibriIq] message to stop the currently running service (if there is one).  Send a [JibriIq]
@@ -386,6 +388,7 @@ class XmppApi(
                     serviceStatusHandler
                 )
             }
+
             JibriMode.STREAM -> {
                 val rtmpUrl = if (startIq.streamId.isRtmpUrl()) {
                     startIq.streamId
@@ -415,6 +418,7 @@ class XmppApi(
                     serviceStatusHandler
                 )
             }
+
             JibriMode.SIPGW -> {
                 jibriManager.startSipGateway(
                     serviceParams,
@@ -427,6 +431,7 @@ class XmppApi(
                     serviceStatusHandler
                 )
             }
+
             else -> {
                 throw UnsupportedIqMode(startIq.mode().toString())
             }

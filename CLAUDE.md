@@ -39,10 +39,10 @@ mvn test -Dtest=SeleniumStateMachineTest#testMethodName
 mvn verify
 
 # Run only ktlint
-mvn ktlint:check
+mvn exec:exec@ktlint-check
 
 # Auto-format Kotlin code
-mvn ktlint:format
+mvn exec:exec@ktlint-format
 ```
 
 ## Architecture

@@ -43,15 +43,13 @@ class JibriIqHelper {
  * Return a result IQ for this [JibriIq], setting a few fields and then
  * applying [block]
  */
-fun JibriIq.createResult(block: JibriIq.() -> Unit): JibriIq {
-    return JibriIq().apply {
-        type = IQ.Type.result
-        to = this@createResult.from
-        from = this@createResult.to
-        stanzaId = this@createResult.stanzaId
-        sipAddress = this@createResult.sipAddress
-        block()
-    }
+fun JibriIq.createResult(block: JibriIq.() -> Unit): JibriIq = JibriIq().apply {
+    type = IQ.Type.result
+    to = this@createResult.from
+    from = this@createResult.to
+    stanzaId = this@createResult.stanzaId
+    sipAddress = this@createResult.sipAddress
+    block()
 }
 
 enum class JibriMode(val mode: String) {

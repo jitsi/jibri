@@ -82,6 +82,7 @@ class FfmpegCapturer(
                     else -> throw UnsupportedSinkTypeException(sink)
                 } + listOf(sink.path)
             }
+
             OsType.LINUX -> { sink: Sink ->
                 when (sink) {
                     is StreamSink -> commandLinuxStreaming
@@ -89,6 +90,7 @@ class FfmpegCapturer(
                     else -> throw UnsupportedSinkTypeException(sink)
                 } + listOf(sink.path)
             }
+
             else -> throw UnsupportedOsException()
         }
 
@@ -116,6 +118,7 @@ class FfmpegCapturer(
                     FfmpegEvent.ErrorLine(FfmpegFailedToStart)
                 )
             }
+
             else -> {
                 if (ffmpegState.runningState is ProcessExited) {
                     logger.info("Ffmpeg quit abruptly.  Last output line: ${ffmpegState.mostRecentOutput}")

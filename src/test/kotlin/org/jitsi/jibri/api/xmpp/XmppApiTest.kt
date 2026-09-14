@@ -59,8 +59,8 @@ import org.jxmpp.jid.impl.JidCreate
 class XmppApiTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private fun createJibriIq(iqAction: JibriIq.Action, iqMode: JibriIq.RecordingMode? = null): JibriIq {
-        return JibriIq().apply {
+    private fun createJibriIq(iqAction: JibriIq.Action, iqMode: JibriIq.RecordingMode? = null): JibriIq =
+        JibriIq().apply {
             iqMode?.let {
                 recordingMode = it
             }
@@ -71,7 +71,6 @@ class XmppApiTest : ShouldSpec() {
             room = JidCreate.entityBareFrom("room_jid@xmppDomain")
             sessionId = "session_id"
         }
-    }
 
     init {
         val jibriManager: JibriManager = mockk(relaxed = true)
