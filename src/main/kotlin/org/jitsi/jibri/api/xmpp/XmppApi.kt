@@ -322,24 +322,22 @@ class XmppApi(
         startJibriIq: JibriIq,
         serviceStatusHandler: JibriServiceStatusHandler,
         e: BadRequestException
-    ): JibriIq {
-        return if (startJibriIq.supportsBadRequest == true) {
-            logger.info("Refusing the start request: ${e.detail}")
-            startJibriIq.createResult {
-                status = JibriIq.Status.OFF
-                failureReason = JibriIq.FailureReason.ERROR
-                shouldRetry = false
-                addExtension(BadRequestPacketExt(e.detail))
-            }
-        } else {
-            logger.info("Refusing the start request asynchronously: ${e.detail}")
-            // Submitted to the io pool so that the 'pending' result is sent first, matching the order in which a
-            // session which starts and then fails reports itself.
-            TaskPools.ioPool.submit {
-                serviceStatusHandler(ComponentState.Error(BadRequest(e.detail)))
-            }
-            startJibriIq.createResult { status = JibriIq.Status.PENDING }
+    ): JibriIq = if (startJibriIq.supportsBadRequest == true) {
+        logger.info("Refusing the start request: ${e.detail}")
+        startJibriIq.createResult {
+            status = JibriIq.Status.OFF
+            failureReason = JibriIq.FailureReason.ERROR
+            shouldRetry = false
+            addExtension(BadRequestPacketExt(e.detail))
         }
+    } else {
+        logger.info("Refusing the start request asynchronously: ${e.detail}")
+        // Submitted to the io pool so that the 'pending' result is sent first, matching the order in which a
+        // session which starts and then fails reports itself.
+        TaskPools.ioPool.submit {
+            serviceStatusHandler(ComponentState.Error(BadRequest(e.detail)))
+        }
+        startJibriIq.createResult { status = JibriIq.Status.PENDING }
     }
 
     private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): JibriServiceStatusHandler =

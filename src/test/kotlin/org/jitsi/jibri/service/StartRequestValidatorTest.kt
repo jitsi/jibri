@@ -35,11 +35,9 @@ class StartRequestValidatorTest : ShouldSpec({
     val callParams = CallParams(CallUrlInfo("http://example.com", "room"))
     val login = XmppCredentials(domain = "domain", username = "username", password = "password")
 
-    /**
-     * This is the regression test for compatibility with a Jicofo release which does not know a parameter. Such a
-     * release omits it, so every request from it arrives without it. If a missing parameter were treated as invalid,
-     * we would refuse every request from every such release the moment this Jibri is deployed.
-     */
+    // This is the regression test for compatibility with a Jicofo release which does not know a parameter. Such a
+    // release omits it, so every request from it arrives without it. If a missing parameter were treated as invalid,
+    // we would refuse every request from every such release the moment this Jibri is deployed.
     context("A request which sets only the parameters that every jicofo release sends") {
         should("be valid for a stream") {
             shouldNotThrowAny {
