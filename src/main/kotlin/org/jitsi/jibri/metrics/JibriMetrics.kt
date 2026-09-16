@@ -63,8 +63,8 @@ class JibriMetrics {
         errors.inc()
     }
 
-    fun badRequest() {
-        incrementStatsDCounter(ASPECT_BAD_REQUEST, TAG_SERVICE_LIVE_STREAM)
+    fun badRequest(type: RecordingSinkType) {
+        incrementStatsDCounter(ASPECT_BAD_REQUEST, type.getTag())
         badRequests.inc()
     }
 

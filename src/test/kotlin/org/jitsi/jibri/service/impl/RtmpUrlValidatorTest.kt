@@ -63,6 +63,29 @@ class RtmpUrlValidatorTest : ShouldSpec({
         should("be accepted with rtmps") {
             shouldNotThrowAny { validator.validate("rtmps://example.com/live/K") }
         }
+        should("be accepted with a single path segment, since not every server uses an app name") {
+            shouldNotThrowAny { validator.validate("rtmp://myserver.local/mystreamkey") }
+        }
+        should("be accepted with an underscore in the host") {
+            // java.net.URI.getHost() returns null for a host containing an underscore, a legal (if discouraged)
+            // hostname character. getAuthority() still has it.
+            shouldNotThrowAny { validator.validate("rtmp://my_server/live/$VALID_KEY") }
+        }
+    }
+
+    context("A YouTube URL in a form other than the one Jibri builds itself") {
+        // These must all still be caught: the pathological key "oooo" is from the incident, and a client can send
+        // any of these forms directly, unlike Jicofo, which only ever asks for the exact form JIBRI builds.
+        listOf(
+            "rtmps://a.rtmp.youtube.com/live2/oooo",
+            "rtmp://a.rtmp.youtube.com:1935/live2/oooo",
+            "RTMP://a.rtmp.youtube.com/live2/oooo",
+            "rtmp://b.rtmp.youtube.com/live2/oooo"
+        ).forEach { url ->
+            should("still catch a malformed key: '$url'") {
+                shouldThrow<BadRequestException> { validator.validate(url) }
+            }
+        }
     }
 
     context("A structurally invalid URL") {
@@ -76,7 +99,7 @@ class RtmpUrlValidatorTest : ShouldSpec({
             shouldThrow<BadRequestException> { validator.validate("rtmp:///live/$VALID_KEY") }
         }
         should("be rejected when there is no stream key") {
-            shouldThrow<BadRequestException> { validator.validate("rtmp://example.com/live") }
+            shouldThrow<BadRequestException> { validator.validate("rtmp://example.com/") }
         }
         should("be rejected when the path is empty") {
             shouldThrow<BadRequestException> { validator.validate("rtmp://example.com") }

@@ -107,12 +107,12 @@ class JibriManager : StatusPublisher<Any>() {
      * Refuses a request which can never succeed, while this instance is still idle. Going busy for such a request
      * wastes an instance, and in single-use mode it also causes a restart.
      */
-    private fun <T> validate(params: T, validate: (T) -> Unit) {
+    private fun <T> validate(sinkType: RecordingSinkType, params: T, validate: (T) -> Unit) {
         try {
             validate(params)
         } catch (e: BadRequestException) {
             logger.info("Rejecting the request: ${e.detail}")
-            jibriMetrics.badRequest()
+            jibriMetrics.badRequest(sinkType)
             throw e
         }
     }
@@ -142,7 +142,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
-        validate(fileRecordingRequestParams, startRequestValidator::validate)
+        validate(RecordingSinkType.FILE, fileRecordingRequestParams, startRequestValidator::validate)
         throwIfBusy(RecordingSinkType.FILE)
         logger.info(
             "Starting a file recording, sessionId=${fileRecordingRequestParams.sessionId}, " +
@@ -171,8 +171,8 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
+        validate(RecordingSinkType.STREAM, streamingParams, startRequestValidator::validate)
         logger.info("Starting a stream, sessionId=${streamingParams.sessionId}, call=${streamingParams.callParams}")
-        validate(streamingParams, startRequestValidator::validate)
         throwIfBusy(RecordingSinkType.STREAM)
         val service = StreamingJibriService(streamingParams)
         jibriMetrics.start(RecordingSinkType.STREAM)
@@ -187,7 +187,7 @@ class JibriManager : StatusPublisher<Any>() {
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
         logger.info("Starting a SIP gateway, call=${sipGatewayServiceParams.callParams}")
-        validate(sipGatewayServiceParams, startRequestValidator::validate)
+        validate(RecordingSinkType.GATEWAY, sipGatewayServiceParams, startRequestValidator::validate)
         throwIfBusy(RecordingSinkType.GATEWAY)
         val service = SipGatewayJibriService(
             SipGatewayServiceParams(

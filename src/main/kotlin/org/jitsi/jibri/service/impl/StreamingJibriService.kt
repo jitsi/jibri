@@ -32,6 +32,10 @@ import org.jitsi.xmpp.extensions.jibri.JibriIq
 
 const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
 
+/** Whether [this] looks like a full RTMP URL, as opposed to a bare stream key. */
+internal fun String.isRtmpUrl(): Boolean =
+    startsWith("rtmp://", ignoreCase = true) || startsWith("rtmps://", ignoreCase = true)
+
 /**
  * Parameters needed for starting a [StreamingJibriService]
  */

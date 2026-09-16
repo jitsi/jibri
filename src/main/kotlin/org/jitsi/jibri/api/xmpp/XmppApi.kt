@@ -33,6 +33,7 @@ import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.service.impl.YOUTUBE_URL
+import org.jitsi.jibri.service.impl.isRtmpUrl
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
@@ -55,8 +56,12 @@ import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 private class UnsupportedIqMode(val iqMode: String) : Exception()
+
+private val ASYNC_BAD_REQUEST_REPORT_DELAY: Duration = Duration.ofMillis(200)
 
 /**
  * [XmppApi] connects to XMPP MUCs according to the given [XmppEnvironmentConfig]s (which are
@@ -323,7 +328,6 @@ class XmppApi(
         serviceStatusHandler: JibriServiceStatusHandler,
         e: BadRequestException
     ): JibriIq = if (startJibriIq.supportsBadRequest == true) {
-        logger.info("Refusing the start request: ${e.detail}")
         startJibriIq.createResult {
             status = JibriIq.Status.OFF
             failureReason = JibriIq.FailureReason.ERROR
@@ -331,12 +335,16 @@ class XmppApi(
             addExtension(BadRequestPacketExt(e.detail))
         }
     } else {
-        logger.info("Refusing the start request asynchronously: ${e.detail}")
-        // Submitted to the io pool so that the 'pending' result is sent first, matching the order in which a
-        // session which starts and then fails reports itself.
-        TaskPools.ioPool.submit {
-            serviceStatusHandler(ComponentState.Error(BadRequest(e.detail)))
-        }
+        // The 'pending' result below is sent by Smack only after this whole call returns, and Smack gives us no
+        // callback for when that has actually happened. So this cannot be a hard ordering guarantee: it is a short
+        // delay, long enough to beat handing a small stanza to the OS socket (microseconds), not a network round
+        // trip. This path is only exercised by a Jicofo release old enough not to set supportsBadRequest, so it
+        // stops being exercised at all once that release is upgraded.
+        TaskPools.recurringTasksPool.schedule(
+            { serviceStatusHandler(ComponentState.Error(BadRequest(e.detail))) },
+            ASYNC_BAD_REQUEST_REPORT_DELAY.toMillis(),
+            TimeUnit.MILLISECONDS
+        )
         startJibriIq.createResult { status = JibriIq.Status.PENDING }
     }
 
@@ -447,7 +455,8 @@ class XmppApi(
                 } else {
                     null
                 }
-                logger.info("Using RTMP URL $rtmpUrl and viewing URL $viewingUrl")
+                // The stream key is a credential; redact it before logging the URL.
+                logger.info("Using RTMP URL ${rtmpUrl.redactStreamKey()} and viewing URL $viewingUrl")
                 jibriManager.startStreaming(
                     serviceParams,
                     StreamingParams(
@@ -482,10 +491,11 @@ class XmppApi(
     }
 }
 
-private fun String.isRtmpUrl(): Boolean =
-    startsWith("rtmp://", ignoreCase = true) || startsWith("rtmps://", ignoreCase = true)
 private fun String.isViewingUrl(): Boolean =
     startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
+
+/** Replaces the last path segment (the stream key, for an RTMP URL) with a placeholder, for logging. */
+private fun String.redactStreamKey(): String = substringBeforeLast('/') + "/****"
 
 private fun createEnvironmentContext(xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient) =
     EnvironmentContext("${xmppEnvironment.name}-${mucClient.id}")

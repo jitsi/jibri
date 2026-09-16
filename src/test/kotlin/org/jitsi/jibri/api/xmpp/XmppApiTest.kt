@@ -20,6 +20,8 @@ package org.jitsi.jibri.api.xmpp
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -38,7 +40,9 @@ import org.jitsi.jibri.config.XmppMuc
 import org.jitsi.jibri.error.BadRequestException
 import org.jitsi.jibri.helpers.inPlaceExecutor
 import org.jitsi.jibri.helpers.resetIoPool
+import org.jitsi.jibri.helpers.seconds
 import org.jitsi.jibri.helpers.setIoPool
+import org.jitsi.jibri.helpers.within
 import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
@@ -57,6 +61,7 @@ import org.jivesoftware.smack.packet.IQ
 import org.jivesoftware.smack.packet.Stanza
 import org.jivesoftware.smack.packet.StanzaError
 import org.jxmpp.jid.impl.JidCreate
+import java.util.concurrent.CopyOnWriteArrayList
 
 class XmppApiTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -239,6 +244,10 @@ class XmppApiTest : ShouldSpec() {
                     val jibriIq = createJibriIq(JibriIq.Action.START, JibriIq.RecordingMode.STREAM).apply {
                         streamId = "invalid-key"
                     }
+                    // A CopyOnWriteArrayList because it is written from the scheduled-task thread and read from
+                    // this one.
+                    val sentStanzas = CopyOnWriteArrayList<Stanza>()
+                    every { mucClient.sendStanza(capture(sentStanzas)) } returns true
                     val response = xmppApi.handleIq(jibriIq, mucClient)
 
                     should("answer the start IQ with pending, so that jicofo does not try other instances") {
@@ -249,9 +258,17 @@ class XmppApiTest : ShouldSpec() {
                         response.getExtension(BadRequestPacketExt::class.java) shouldBe null
                     }
 
-                    should("report the failure on the async path, telling jicofo not to retry") {
-                        val sentStanzas = mutableListOf<Stanza>()
-                        verify { mucClient.sendStanza(capture(sentStanzas)) }
+                    should("not report the failure inline with the start IQ response") {
+                        // A real scheduled delay stands between the two: this is a regression test for a bug where
+                        // an inline (same-thread, unscheduled) report could reach jicofo before this IQ's own
+                        // response, which jicofo interprets as "the session failed before it started".
+                        sentStanzas.shouldBeEmpty()
+                    }
+
+                    should("report the failure shortly after, on the async path, telling jicofo not to retry") {
+                        within(2.seconds) {
+                            sentStanzas shouldHaveSize 1
+                        }
                         val stanza = sentStanzas.single()
                         stanza should beInstanceOf<JibriIq>()
                         stanza as JibriIq

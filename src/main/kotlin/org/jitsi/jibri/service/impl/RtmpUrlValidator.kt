@@ -31,7 +31,7 @@ class RtmpUrlValidator(
     private val youTubeStreamKeyPattern: Pattern = configYouTubeStreamKeyPattern
 ) {
     /**
-     * Throws [InvalidRtmpUrlException] if [rtmpUrl] can not be used for a streaming session.
+     * Throws [BadRequestException] if [rtmpUrl] can not be used for a streaming session.
      */
     fun validate(rtmpUrl: String) {
         val uri = try {
@@ -44,13 +44,17 @@ class RtmpUrlValidator(
         if (scheme != "rtmp" && scheme != "rtmps") {
             throw BadRequestException("The RTMP URL scheme must be rtmp or rtmps, but it is $scheme")
         }
-        if (uri.host.isNullOrBlank()) {
+        // uri.host is null for a host with an underscore (a legal, if discouraged, hostname character that URI
+        // does not accept in the host component). Fall back to the raw authority so such hosts are not rejected.
+        val host = uri.host ?: uri.authority
+        if (host.isNullOrBlank()) {
             throw BadRequestException("The RTMP URL has no host")
         }
 
-        // The path must contain an application (e.g. "live2") and a stream key.
+        // The path must contain at least a stream key. Not every RTMP server also expects an application name
+        // (e.g. "live2") as a separate path segment, so this does not require one.
         val pathSegments = uri.path.orEmpty().split('/').filter { it.isNotEmpty() }
-        if (pathSegments.size < 2) {
+        if (pathSegments.isEmpty()) {
             throw BadRequestException("The RTMP URL has no stream key")
         }
 
@@ -58,8 +62,10 @@ class RtmpUrlValidator(
             throw BadRequestException("The RTMP URL is not allowed")
         }
 
-        // Only applied to the YouTube ingest URL, because only then do we know which format the stream key must have.
-        if (rtmpUrl.startsWith("$YOUTUBE_URL/") &&
+        // Only applied to YouTube's ingest hosts, because only then do we know which format the stream key must
+        // have. Matched by host, not by the exact URL we build ourselves elsewhere, so a client-supplied URL is
+        // covered too: any scheme (rtmp/rtmps), any port, any case, and both the primary and backup ingest hosts.
+        if (host.substringBefore(':').lowercase() in YOUTUBE_INGEST_HOSTS &&
             !youTubeStreamKeyPattern.matcher(pathSegments.last()).matches()
         ) {
             throw BadRequestException("The YouTube stream key has an invalid format")
@@ -67,6 +73,8 @@ class RtmpUrlValidator(
     }
 
     companion object {
+        private val YOUTUBE_INGEST_HOSTS = setOf("a.rtmp.youtube.com", "b.rtmp.youtube.com")
+
         val configAllowList: List<Pattern> by config {
             "jibri.streaming.rtmp-allow-list".from(Config.configSource)
                 .convertFrom<List<String>> { it.map(Pattern::compile) }
