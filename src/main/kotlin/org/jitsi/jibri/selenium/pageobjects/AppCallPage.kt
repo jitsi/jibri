@@ -1,6 +1,7 @@
 package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.util.Resolution
 import org.jitsi.utils.logging2.createLogger
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -130,6 +131,49 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
     override fun getBitrates(): Map<String, Any?> {
         val stats = getStats()
         return stats.getOrDefault("bitrate", mapOf<String, Any?>()) as Map<String, Any?>
+    }
+
+    /**
+     * We dispatch the action itself rather than call the setTileView action creator, because the client does not
+     * expose its action creators. The client only uses stage view for a recorder unless something sets this.
+     */
+    override fun setTileView(enabled: Boolean): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                APP.store.dispatch({ type: 'SET_TILE_VIEW', enabled: $enabled });
+                return true;
+            } catch (e) {
+                return false;
+            }
+            """.trimMargin()
+        )
+        return result as? Boolean ?: false
+    }
+
+    /**
+     * Reads the tile count and the tile size in one script, so that a participant who joins between two reads cannot
+     * give us the size of one layout and the count of another.
+     *
+     * The recorder hides its own tile, and the client adds no participant for a hidden participant or for one whose
+     * video is hidden from the recorder. So each remote participant in the client state is one tile, and screen shares
+     * count too because the client adds them as participants.
+     */
+    override fun getTileLayout(): TileLayout? {
+        val result = driver.executeScript(
+            """
+            try {
+                var state = APP.store.getState();
+                var size = state['features/filmstrip'].tileViewDimensions?.thumbnailSize;
+                var count = state['features/base/participants'].remote.size;
+                return size ? [count, Math.round(size.width), Math.round(size.height)] : null;
+            } catch (e) {
+                return null;
+            }
+            """.trimMargin()
+        )
+        val values = (result as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: return null
+        return if (values.size == 3) TileLayout(values[0], Resolution(values[1], values[2])) else null
     }
 
     override fun injectParticipantTrackerScript(): Boolean {

@@ -37,11 +37,14 @@ import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.helpers.SeleniumMockHelper
 import org.jitsi.jibri.helpers.createFinalizeProcessMock
+import org.jitsi.jibri.metrics.JibriMetrics
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.FailedToJoinCall
+import org.jitsi.jibri.service.RecordingProfile
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.util.ProcessFactory
+import org.jitsi.jibri.util.Resolution
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermissions
@@ -200,6 +203,41 @@ internal class FileRecordingJibriServiceTest : ShouldSpec() {
                 should("run the finalize command") {
                     verify { finalizeProcessMock.start() }
                     verify { finalizeProcessMock.waitFor() }
+                }
+            }
+        }
+        context("starting a tiled recording") {
+            val jibriMetrics: JibriMetrics = mockk(relaxed = true)
+            val tiledSelenium = SeleniumMockHelper()
+            FileRecordingJibriService(
+                FileRecordingParams(
+                    callParams,
+                    sessionId,
+                    callLoginParams,
+                    recordingProfile = RecordingProfile(
+                        canvas = Resolution(2582, 748),
+                        tileResolution = Resolution(1280, 720),
+                        tileCount = 2
+                    )
+                ),
+                tiledSelenium.mock,
+                CapturerMockHelper().mock,
+                processFactory,
+                fs,
+                jibriMetrics = jibriMetrics
+            ).start()
+
+            context("and selenium joins the call") {
+                tiledSelenium.startSuccessfully()
+
+                should("put the client in tile view") {
+                    verify { tiledSelenium.mock.setTileView(true) }
+                }
+                should("not report a tile size mismatch when it joins") {
+                    // At join time the client shows however many participants have arrived so far, which is
+                    // usually not the number of tiles we asked for, so its tile size is not comparable yet.
+                    // Comparing it anyway reported a false mismatch for almost every recording.
+                    verify(exactly = 0) { jibriMetrics.tileSizeMismatch() }
                 }
             }
         }

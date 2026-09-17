@@ -19,8 +19,15 @@ package org.jitsi.jibri.selenium.pageobjects
 
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.config.Config
+import org.jitsi.jibri.util.Resolution
 import org.jitsi.metaconfig.config
 import org.openqa.selenium.remote.RemoteWebDriver
+
+/**
+ * The tile view layout of the client at one instant. The size of a tile depends on how many tiles there are, so the two
+ * are only meaningful together.
+ */
+data class TileLayout(val tileCount: Int, val tileSize: Resolution)
 
 interface CallPage {
     fun visit(url: CallUrlInfo): Boolean
@@ -51,6 +58,16 @@ interface CallPage {
     }
     fun leave(): Boolean
     fun getBitrates(): Map<String, Any?>
+
+    /** Puts the client in tile view, or takes it out of it. */
+    fun setTileView(enabled: Boolean): Boolean
+
+    /**
+     * How many tiles the client shows in tile view, and how big each one is, read together at one instant. Returns
+     * null when we cannot read them. We use it to check that the client gave us the tile resolution which the request
+     * asked for.
+     */
+    fun getTileLayout(): TileLayout?
 
     companion object {
         val useExternalAPI: Boolean by config {

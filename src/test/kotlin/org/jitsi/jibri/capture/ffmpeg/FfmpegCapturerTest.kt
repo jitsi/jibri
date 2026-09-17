@@ -44,6 +44,7 @@ import org.jitsi.jibri.util.ProcessExited
 import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
+import org.jitsi.jibri.util.Resolution
 import org.jitsi.utils.logging2.Logger
 
 internal class FfmpegCapturerTest : ShouldSpec() {
@@ -160,6 +161,23 @@ internal class FfmpegCapturerTest : ShouldSpec() {
                     verify { ffmpeg.launch(capture(commandCaptor), any()) }
                     commandCaptor.captured should contain("x11grab")
                     commandCaptor.captured should contain("alsa")
+                }
+            }
+        }
+        context("with a resolution for this session") {
+            every { osDetector.getOsType() } returns OsType.LINUX
+            val ffmpegCapturer = FfmpegCapturer(logger, osDetector, ffmpeg, Resolution(2582, 748))
+            context("the command") {
+                should("capture that size instead of the configured one") {
+                    ffmpegCapturer.start(sink)
+                    val commandCaptor = slot<List<String>>()
+                    verify { ffmpeg.launch(capture(commandCaptor), any()) }
+
+                    val command = commandCaptor.captured
+                    command[command.indexOf("-s") + 1] shouldBe "2582x748"
+                    // The rest of the command must stay as configured.
+                    command should contain("x11grab")
+                    command should contain("alsa")
                 }
             }
         }

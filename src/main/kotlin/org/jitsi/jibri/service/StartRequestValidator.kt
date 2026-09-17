@@ -30,14 +30,18 @@ import org.jitsi.jibri.service.impl.StreamingParams
  * missing, we would refuse every request from every such release.
  */
 class StartRequestValidator(
-    private val rtmpUrlValidator: RtmpUrlValidator = RtmpUrlValidator()
+    private val rtmpUrlValidator: RtmpUrlValidator = RtmpUrlValidator(),
+    private val recordingProfiles: RecordingProfiles = RecordingProfiles()
 ) {
     fun validate(params: StreamingParams) {
         rtmpUrlValidator.validate(params.rtmpUrl)
+        // Throws if we cannot serve the layout which the request asks for.
+        recordingProfiles.resolve(params.recordingParams)
     }
 
     fun validate(params: FileRecordingRequestParams) {
-        // No file recording parameter needs checking yet.
+        // Throws if we cannot serve the recording which the request asks for.
+        recordingProfiles.resolve(params.recordingParams)
     }
 
     fun validate(params: SipGatewayServiceParams) {

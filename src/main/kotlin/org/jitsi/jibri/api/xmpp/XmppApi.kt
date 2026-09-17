@@ -29,6 +29,7 @@ import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.AppData
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.service.RequestedRecordingParams
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
@@ -45,6 +46,7 @@ import org.jitsi.xmpp.extensions.jibri.BadRequestPacketExt
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
 import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
+import org.jitsi.xmpp.extensions.jibri.RecordingParamsPacketExt
 import org.jitsi.xmpp.mucclient.ConnectionStateListener
 import org.jitsi.xmpp.mucclient.IQListener
 import org.jitsi.xmpp.mucclient.MucClient
@@ -141,6 +143,7 @@ class XmppApi(
         PingManager.setDefaultPingInterval(30)
         JibriStatusPacketExt.registerExtensionProvider()
         BadRequestPacketExt.registerExtensionProvider()
+        RecordingParamsPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT,
             JibriIq.NAMESPACE,
@@ -434,7 +437,12 @@ class XmppApi(
             JibriMode.FILE -> {
                 jibriManager.startFileRecording(
                     serviceParams,
-                    FileRecordingRequestParams(callParams, startIq.sessionId, xmppEnvironment.callLogin),
+                    FileRecordingRequestParams(
+                        callParams,
+                        startIq.sessionId,
+                        xmppEnvironment.callLogin,
+                        startIq.recordingParams()
+                    ),
                     environmentContext,
                     serviceStatusHandler
                 )
@@ -464,7 +472,8 @@ class XmppApi(
                         startIq.sessionId,
                         xmppEnvironment.callLogin,
                         rtmpUrl = rtmpUrl,
-                        viewingUrl = viewingUrl
+                        viewingUrl = viewingUrl,
+                        recordingParams = startIq.recordingParams()
                     ),
                     environmentContext,
                     serviceStatusHandler
@@ -493,6 +502,24 @@ class XmppApi(
 
 private fun String.isViewingUrl(): Boolean =
     startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
+
+/**
+ * Reads what the recording must look like from a start request, or returns null if the request does not ask for
+ * anything specific.
+ *
+ * We read the values as they arrived and check none of them here. [RecordingProfiles.resolve] decides what we can
+ * serve, so that a request we refuse is refused in one place, and counted.
+ */
+private fun JibriIq.recordingParams(): RequestedRecordingParams? =
+    getExtension(RecordingParamsPacketExt::class.java)?.let {
+        RequestedRecordingParams(
+            tileResolution = it.getAttributeAsString(RecordingParamsPacketExt.TILE_RESOLUTION_ATTR_NAME),
+            tileCount = it.getAttributeAsString(RecordingParamsPacketExt.TILE_COUNT_ATTR_NAME),
+            maxFullResolutionParticipants = it.getAttributeAsString(
+                RecordingParamsPacketExt.MAX_FULL_RESOLUTION_PARTICIPANTS_ATTR_NAME
+            )
+        )
+    }
 
 /** Replaces the last path segment (the stream key, for an RTMP URL) with a placeholder, for logging. */
 private fun String.redactStreamKey(): String = substringBeforeLast('/') + "/****"

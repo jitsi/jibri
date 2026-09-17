@@ -33,6 +33,7 @@ import org.jitsi.jibri.util.ProcessExited
 import org.jitsi.jibri.util.ProcessFailedToStart
 import org.jitsi.jibri.util.ProcessRunning
 import org.jitsi.jibri.util.ProcessState
+import org.jitsi.jibri.util.Resolution
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.getLoggerWithHandler
 import org.jitsi.metaconfig.config
@@ -46,7 +47,12 @@ import org.jitsi.utils.logging2.createChildLogger
 class FfmpegCapturer(
     parentLogger: Logger,
     osDetector: OsDetector = OsDetector(),
-    ffmpeg: JibriSubprocess? = null
+    ffmpeg: JibriSubprocess? = null,
+    /**
+     * The size to capture, or null to use the size from the configuration. It is a per-session value, while the rest
+     * of the command comes from the configuration and is read once for the process.
+     */
+    private val resolution: Resolution? = null
 ) : Capturer, StatusPublisher<ComponentState>() {
     private val logger = createChildLogger(parentLogger)
     private val ffmpeg = ffmpeg ?: JibriSubprocess(logger, "ffmpeg", ffmpegOutputLogger)
@@ -55,6 +61,9 @@ class FfmpegCapturer(
 
     companion object {
         const val COMPONENT_ID = "Ffmpeg Capturer"
+
+        /** The ffmpeg arguments whose value is the size of the input: "-s" on Linux, "-video_size" on macOS. */
+        private val SIZE_ARGUMENTS = setOf("-s", "-video_size")
         private val ffmpegOutputLogger = getLoggerWithHandler("ffmpeg", FfmpegFileHandler())
 
         val commandLinuxRecording: List<String> by config {
@@ -102,8 +111,25 @@ class FfmpegCapturer(
      * Start the capturer and write to the given [Sink].
      */
     override fun start(sink: Sink) {
-        val command = getCommand(sink)
+        val command = getCommand(sink).withResolution(resolution)
+        logger.info("Starting ffmpeg with command: $command")
         ffmpeg.launch(command)
+    }
+
+    /**
+     * Replaces the value of the size argument of the input, so that we capture the whole screen when a session uses
+     * a resolution other than the configured one. The rest of the command stays as configured.
+     */
+    private fun List<String>.withResolution(resolution: Resolution?): List<String> {
+        if (resolution == null) {
+            return this
+        }
+        val index = indexOfFirst { it in SIZE_ARGUMENTS }
+        if (index < 0 || index == size - 1) {
+            logger.error("Found no size argument in the ffmpeg command, capturing the configured size instead")
+            return this
+        }
+        return toMutableList().apply { this[index + 1] = resolution.toString() }
     }
 
     /**

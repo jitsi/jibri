@@ -27,6 +27,7 @@ import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.sipgateway.SipClientParams
+import org.jitsi.jibri.util.Resolution
 
 class StartRequestValidatorTest : ShouldSpec({
     isolationMode = IsolationMode.InstancePerLeaf
@@ -76,6 +77,31 @@ class StartRequestValidatorTest : ShouldSpec({
                         rtmpUrl = "rtmp://a.rtmp.youtube.com/live2/oooo"
                     )
                 )
+            }
+        }
+    }
+
+    context("A stream with recording parameters") {
+        val tiledValidator = StartRequestValidator(
+            recordingProfiles = RecordingProfiles(
+                listOf(TileCanvas(Resolution(1280, 720), 2, Resolution(2582, 748))),
+                tileLayoutsEnabled = true
+            )
+        )
+        fun stream(recordingParams: RequestedRecordingParams) = StreamingParams(
+            callParams = callParams,
+            sessionId = "session",
+            callLoginParams = login,
+            rtmpUrl = "rtmp://a.rtmp.youtube.com/live2/abcd-1234-efgh-5678-ijkl",
+            recordingParams = recordingParams
+        )
+
+        should("be valid for a supported tile layout, as for a file recording") {
+            shouldNotThrowAny { tiledValidator.validate(stream(RequestedRecordingParams("1280x720", "2"))) }
+        }
+        should("be refused for a tile layout we have no canvas for") {
+            shouldThrow<BadRequestException> {
+                tiledValidator.validate(stream(RequestedRecordingParams("1280x720", "3")))
             }
         }
     }

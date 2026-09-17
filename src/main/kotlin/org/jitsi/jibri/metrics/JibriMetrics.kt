@@ -68,6 +68,15 @@ class JibriMetrics {
         badRequests.inc()
     }
 
+    /**
+     * A recording did not get the tile size which the request asked for. The canvas we use for that layout no longer
+     * matches what the client does, so it must be measured again.
+     */
+    fun tileSizeMismatch() {
+        incrementStatsDCounter(ASPECT_TILE_SIZE_MISMATCH, "")
+        tileSizeMismatches.inc()
+    }
+
     fun xmppConnected(tags: String) {
         incrementStatsDCounter(XMPP_CONNECTED, tags)
         xmppConnected.inc()
@@ -128,6 +137,10 @@ class JibriMetrics {
         val badRequests = JibriMetricsContainer.registerCounter(
             "bad_requests",
             "Number of start requests refused because the request itself was invalid."
+        )
+        val tileSizeMismatches = JibriMetricsContainer.registerCounter(
+            "tile_size_mismatches",
+            "Number of recordings where the tiles did not get the size the request asked for."
         )
         val xmppConnected = JibriMetricsContainer.registerCounter(
             "xmpp_connected",
