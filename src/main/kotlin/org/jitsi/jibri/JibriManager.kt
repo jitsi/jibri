@@ -19,12 +19,14 @@ package org.jitsi.jibri
 
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.error.BadRequestException
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.metrics.JibriMetrics
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
+import org.jitsi.jibri.service.StartRequestValidator
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
 import org.jitsi.jibri.service.impl.FileRecordingParams
 import org.jitsi.jibri.service.impl.SipGatewayJibriService
@@ -99,6 +101,22 @@ class JibriManager : StatusPublisher<Any>() {
 
     val jibriMetrics = JibriMetrics()
 
+    private val startRequestValidator = StartRequestValidator()
+
+    /**
+     * Refuses a request which can never succeed, while this instance is still idle. Going busy for such a request
+     * wastes an instance, and in single-use mode it also causes a restart.
+     */
+    private fun <T> validate(sinkType: RecordingSinkType, params: T, validate: (T) -> Unit) {
+        try {
+            validate(params)
+        } catch (e: BadRequestException) {
+            logger.info("Rejecting the request: ${e.detail}")
+            jibriMetrics.badRequest(sinkType)
+            throw e
+        }
+    }
+
     /**
      * Note: should only be called if the instance-wide lock is held (i.e. called from
      * one of the synchronized methods)
@@ -124,6 +142,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
+        validate(RecordingSinkType.FILE, fileRecordingRequestParams, startRequestValidator::validate)
         throwIfBusy(RecordingSinkType.FILE)
         logger.info(
             "Starting a file recording, sessionId=${fileRecordingRequestParams.sessionId}, " +
@@ -152,6 +171,7 @@ class JibriManager : StatusPublisher<Any>() {
         environmentContext: EnvironmentContext? = null,
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
+        validate(RecordingSinkType.STREAM, streamingParams, startRequestValidator::validate)
         logger.info("Starting a stream, sessionId=${streamingParams.sessionId}, call=${streamingParams.callParams}")
         throwIfBusy(RecordingSinkType.STREAM)
         val service = StreamingJibriService(streamingParams)
@@ -167,6 +187,7 @@ class JibriManager : StatusPublisher<Any>() {
         serviceStatusHandler: JibriServiceStatusHandler? = null
     ) {
         logger.info("Starting a SIP gateway, call=${sipGatewayServiceParams.callParams}")
+        validate(RecordingSinkType.GATEWAY, sipGatewayServiceParams, startRequestValidator::validate)
         throwIfBusy(RecordingSinkType.GATEWAY)
         val service = SipGatewayJibriService(
             SipGatewayServiceParams(

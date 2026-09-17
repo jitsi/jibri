@@ -23,6 +23,8 @@ import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.config.XmppEnvironmentConfig
+import org.jitsi.jibri.error.BadRequest
+import org.jitsi.jibri.error.BadRequestException
 import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.AppData
@@ -31,12 +33,15 @@ import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
 import org.jitsi.jibri.service.impl.YOUTUBE_URL
+import org.jitsi.jibri.service.impl.isRtmpUrl
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
+import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
 import org.jitsi.utils.logging2.createLogger
+import org.jitsi.xmpp.extensions.jibri.BadRequestPacketExt
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 import org.jitsi.xmpp.extensions.jibri.JibriIqProvider
 import org.jitsi.xmpp.extensions.jibri.JibriStatusPacketExt
@@ -51,8 +56,12 @@ import org.jivesoftware.smack.packet.StanzaError
 import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 private class UnsupportedIqMode(val iqMode: String) : Exception()
+
+private val ASYNC_BAD_REQUEST_REPORT_DELAY: Duration = Duration.ofMillis(200)
 
 /**
  * [XmppApi] connects to XMPP MUCs according to the given [XmppEnvironmentConfig]s (which are
@@ -131,6 +140,7 @@ class XmppApi(
 
         PingManager.setDefaultPingInterval(30)
         JibriStatusPacketExt.registerExtensionProvider()
+        BadRequestPacketExt.registerExtensionProvider()
         ProviderManager.addIQProvider(
             JibriIq.ELEMENT,
             JibriIq.NAMESPACE,
@@ -285,6 +295,8 @@ class XmppApi(
                 failureReason = JibriIq.FailureReason.BUSY
                 shouldRetry = true
             }
+        } catch (e: BadRequestException) {
+            rejectBadRequest(startJibriIq, serviceStatusHandler, e)
         } catch (iq: UnsupportedIqMode) {
             logger.error("Unsupported IQ mode: ${iq.iqMode}")
             startJibriIq.createResult {
@@ -302,6 +314,40 @@ class XmppApi(
         }
     }
 
+    /**
+     * Refuses [startJibriIq] because the request is invalid.
+     *
+     * How we say so depends on whether the requester told us it understands a [BadRequestPacketExt] in the response.
+     * A Jicofo release which does not treats any response other than 'pending' as unexpected: it marks this healthy
+     * instance as failed and retries the same doomed request with other instances. So unless it opted in, we answer
+     * 'pending' and then report the failure on the asynchronous path, which every release already handles by giving
+     * up on the request.
+     */
+    private fun rejectBadRequest(
+        startJibriIq: JibriIq,
+        serviceStatusHandler: JibriServiceStatusHandler,
+        e: BadRequestException
+    ): JibriIq = if (startJibriIq.supportsBadRequest == true) {
+        startJibriIq.createResult {
+            status = JibriIq.Status.OFF
+            failureReason = JibriIq.FailureReason.ERROR
+            shouldRetry = false
+            addExtension(BadRequestPacketExt(e.detail))
+        }
+    } else {
+        // The 'pending' result below is sent by Smack only after this whole call returns, and Smack gives us no
+        // callback for when that has actually happened. So this cannot be a hard ordering guarantee: it is a short
+        // delay, long enough to beat handing a small stanza to the OS socket (microseconds), not a network round
+        // trip. This path is only exercised by a Jicofo release old enough not to set supportsBadRequest, so it
+        // stops being exercised at all once that release is upgraded.
+        TaskPools.recurringTasksPool.schedule(
+            { serviceStatusHandler(ComponentState.Error(BadRequest(e.detail))) },
+            ASYNC_BAD_REQUEST_REPORT_DELAY.toMillis(),
+            TimeUnit.MILLISECONDS
+        )
+        startJibriIq.createResult { status = JibriIq.Status.PENDING }
+    }
+
     private fun createServiceStatusHandler(request: JibriIq, mucClient: MucClient): JibriServiceStatusHandler =
         { serviceState ->
             when (serviceState) {
@@ -310,6 +356,11 @@ class XmppApi(
                         failureReason = JibriIq.FailureReason.ERROR
                         sipAddress = request.sipAddress
                         shouldRetry = serviceState.error.shouldRetry()
+                        // Only when the requester opted in. A release without a provider for the element logs a
+                        // warning for every one it receives.
+                        if (request.supportsBadRequest == true && serviceState.error is BadRequest) {
+                            addExtension(BadRequestPacketExt(serviceState.error.detail))
+                        }
                         logger.info(
                             "Current service had an error ${serviceState.error}, " +
                                 "sending error iq status=$status failureReason=$failureReason shouldRetry=$shouldRetry"
@@ -404,7 +455,8 @@ class XmppApi(
                 } else {
                     null
                 }
-                logger.info("Using RTMP URL $rtmpUrl and viewing URL $viewingUrl")
+                // The stream key is a credential; redact it before logging the URL.
+                logger.info("Using RTMP URL ${rtmpUrl.redactStreamKey()} and viewing URL $viewingUrl")
                 jibriManager.startStreaming(
                     serviceParams,
                     StreamingParams(
@@ -439,10 +491,11 @@ class XmppApi(
     }
 }
 
-private fun String.isRtmpUrl(): Boolean =
-    startsWith("rtmp://", ignoreCase = true) || startsWith("rtmps://", ignoreCase = true)
 private fun String.isViewingUrl(): Boolean =
     startsWith("http://", ignoreCase = true) || startsWith("https://", ignoreCase = true)
+
+/** Replaces the last path segment (the stream key, for an RTMP URL) with a placeholder, for logging. */
+private fun String.redactStreamKey(): String = substringBeforeLast('/') + "/****"
 
 private fun createEnvironmentContext(xmppEnvironment: XmppEnvironmentConfig, mucClient: MucClient) =
     EnvironmentContext("${xmppEnvironment.name}-${mucClient.id}")

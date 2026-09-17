@@ -46,6 +46,8 @@ import org.jitsi.jibri.health.EnvironmentContext
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.ServiceParams
+import org.jitsi.jibri.service.impl.StreamingParams
+import org.jitsi.jibri.service.impl.YOUTUBE_URL
 import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.JibriStatus
@@ -148,6 +150,70 @@ class HttpApiTest : ShouldSpec() {
 
                     should("call JibriManager#startFileRecording with the right params") {
                         capturedServiceParams.captured.usageTimeoutMinutes shouldBe 0
+                    }
+                }
+            }
+            context("start streaming with a bare YouTube stream key") {
+                val capturedStreamingParams = slot<StreamingParams>()
+                every {
+                    jibriManager.startStreaming(any(), capture(capturedStreamingParams), any(), any())
+                } just Runs
+                val startServiceRequest = StartServiceParams(
+                    sessionId = "session_id",
+                    callParams = CallParams(
+                        callUrlInfo = CallUrlInfo("https://meet.jit.si", "callName")
+                    ),
+                    callLoginParams = XmppCredentials(
+                        domain = "xmpp_domain",
+                        username = "xmpp_username",
+                        password = "xmpp_password"
+                    ),
+                    sinkType = RecordingSinkType.STREAM,
+                    youTubeStreamKey = "abcd-1234-efgh-5678"
+                )
+                val json = jacksonObjectMapper().writeValueAsString(startServiceRequest)
+                apiTest {
+                    client.post("/jibri/api/v1.0/startService") {
+                        headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        setBody(json)
+                    }
+
+                    // The field is named for a bare key, and has always accepted one. Normalize it into a full
+                    // RTMP URL the same way the XMPP API does, so it goes through validation instead of failing
+                    // later with a confusing "no scheme" error.
+                    should("normalize the bare key into a full YouTube RTMP URL") {
+                        capturedStreamingParams.captured.rtmpUrl shouldBe "$YOUTUBE_URL/abcd-1234-efgh-5678"
+                    }
+                }
+            }
+            context("start streaming with a full RTMP URL") {
+                val capturedStreamingParams = slot<StreamingParams>()
+                every {
+                    jibriManager.startStreaming(any(), capture(capturedStreamingParams), any(), any())
+                } just Runs
+                val fullUrl = "rtmp://example.com/live/abcd-1234-efgh-5678"
+                val startServiceRequest = StartServiceParams(
+                    sessionId = "session_id",
+                    callParams = CallParams(
+                        callUrlInfo = CallUrlInfo("https://meet.jit.si", "callName")
+                    ),
+                    callLoginParams = XmppCredentials(
+                        domain = "xmpp_domain",
+                        username = "xmpp_username",
+                        password = "xmpp_password"
+                    ),
+                    sinkType = RecordingSinkType.STREAM,
+                    youTubeStreamKey = fullUrl
+                )
+                val json = jacksonObjectMapper().writeValueAsString(startServiceRequest)
+                apiTest {
+                    client.post("/jibri/api/v1.0/startService") {
+                        headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        setBody(json)
+                    }
+
+                    should("pass it through unchanged, not double-prefixed") {
+                        capturedStreamingParams.captured.rtmpUrl shouldBe fullUrl
                     }
                 }
             }

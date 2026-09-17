@@ -63,6 +63,11 @@ class JibriMetrics {
         errors.inc()
     }
 
+    fun badRequest(type: RecordingSinkType) {
+        incrementStatsDCounter(ASPECT_BAD_REQUEST, type.getTag())
+        badRequests.inc()
+    }
+
     fun xmppConnected(tags: String) {
         incrementStatsDCounter(XMPP_CONNECTED, tags)
         xmppConnected.inc()
@@ -119,6 +124,10 @@ class JibriMetrics {
         val requestsWhileBusy = JibriMetricsContainer.registerCounter(
             "busy",
             "Number of times a request was received while the instance was busy."
+        )
+        val badRequests = JibriMetricsContainer.registerCounter(
+            "bad_requests",
+            "Number of start requests refused because the request itself was invalid."
         )
         val xmppConnected = JibriMetricsContainer.registerCounter(
             "xmpp_connected",

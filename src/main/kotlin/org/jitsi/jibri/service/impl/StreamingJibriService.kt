@@ -18,9 +18,7 @@
 package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
-import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
-import org.jitsi.jibri.error.JibriError
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
@@ -29,13 +27,14 @@ import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
-import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.whenever
-import org.jitsi.metaconfig.config
 import org.jitsi.xmpp.extensions.jibri.JibriIq
-import java.util.regex.Pattern
 
 const val YOUTUBE_URL = "rtmp://a.rtmp.youtube.com/live2"
+
+/** Whether [this] looks like a full RTMP URL, as opposed to a bare stream key. */
+internal fun String.isRtmpUrl(): Boolean =
+    startsWith("rtmp://", ignoreCase = true) || startsWith("rtmps://", ignoreCase = true)
 
 /**
  * Parameters needed for starting a [StreamingJibriService]
@@ -79,11 +78,6 @@ class StreamingJibriService(
     private val sink: Sink
     private val jibriSelenium = JibriSelenium(logger)
 
-    private val rtmpAllowList: List<Pattern> by config {
-        "jibri.streaming.rtmp-allow-list".from(Config.configSource)
-            .convertFrom<List<String>> { it.map(Pattern::compile) }
-    }
-
     init {
         sink = StreamSink(url = streamingParams.rtmpUrl)
 
@@ -92,18 +86,6 @@ class StreamingJibriService(
     }
 
     override fun start() {
-        if (rtmpAllowList.none { it.matcher(streamingParams.rtmpUrl).matches() }) {
-            logger.error("RTMP url ${streamingParams.rtmpUrl} is not allowed")
-            publishStatus(
-                ComponentState.Error(
-                    JibriError(
-                        ErrorScope.SESSION,
-                        "RTMP URL ${streamingParams.rtmpUrl} is not allowed"
-                    )
-                )
-            )
-            return
-        }
         jibriSelenium.joinCall(
             streamingParams.callParams.callUrlInfo.copy(
                 urlParams = RECORDING_URL_OPTIONS + streamingParams.callParams.extraUrlParams

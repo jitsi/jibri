@@ -36,6 +36,7 @@ import org.jitsi.jibri.JibriManager
 import org.jitsi.jibri.RecordingSinkType
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.error.BadRequestException
 import org.jitsi.jibri.health.JibriHealth
 import org.jitsi.jibri.metrics.JibriMetricsContainer
 import org.jitsi.jibri.metrics.StatsConfig
@@ -44,6 +45,8 @@ import org.jitsi.jibri.service.JibriServiceStatusHandler
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.impl.SipGatewayServiceParams
 import org.jitsi.jibri.service.impl.StreamingParams
+import org.jitsi.jibri.service.impl.YOUTUBE_URL
+import org.jitsi.jibri.service.impl.isRtmpUrl
 import org.jitsi.jibri.sipgateway.SipClientParams
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.JibriFailure
@@ -116,6 +119,8 @@ class HttpApi(
                         call.respond(HttpStatusCode.OK)
                     } catch (e: JibriBusyException) {
                         call.respond(HttpStatusCode.PreconditionFailed, "Jibri is currently busy")
+                    } catch (e: BadRequestException) {
+                        call.respond(HttpStatusCode.BadRequest, e.detail)
                     } catch (e: IllegalStateException) {
                         call.respond(HttpStatusCode.PreconditionFailed, e.message ?: "")
                     } catch (t: Throwable) {
@@ -220,13 +225,17 @@ class HttpApi(
                 // If it's a stream, it must have the callLoginParams set
                 val callLoginParams = startServiceParams.callLoginParams
                     ?: throw IllegalStateException("Call login params missing")
+                // The field is named for a bare YouTube key, but a full RTMP URL has always been accepted too.
+                // Normalize a bare key into a full URL the same way the XMPP API does, so it is validated (and
+                // rejected, if the key is malformed) rather than failing later with a confusing "no scheme" error.
+                val rtmpUrl = if (youTubeStreamKey.isRtmpUrl()) youTubeStreamKey else "$YOUTUBE_URL/$youTubeStreamKey"
                 jibriManager.startStreaming(
                     ServiceParams(usageTimeoutMinutes = 0),
                     StreamingParams(
                         startServiceParams.callParams,
                         startServiceParams.sessionId,
                         callLoginParams,
-                        youTubeStreamKey
+                        rtmpUrl
                     ),
                     environmentContext = null,
                     statusHandler
