@@ -260,13 +260,6 @@
             <version>${ktor.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>1.14.6</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>com.github.marschall</groupId>
             <artifactId>memoryfilesystem</artifactId>
@@ -509,7 +502,7 @@
         <profile>
             <id>coverage</id>
             <properties>
-                <jacoco.version>0.8.8</jacoco.version>
+                <jacoco.version>0.8.14</jacoco.version>
             </properties>
             <build>
                 <plugins>
