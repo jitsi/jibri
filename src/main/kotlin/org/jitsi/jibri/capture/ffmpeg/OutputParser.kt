@@ -73,7 +73,14 @@ class OutputParser {
 
         private const val FFMPEG_ENCODING_LINE = "($FFMPEG_OUTPUT_FIELD)+$ZERO_OR_MORE_SPACES"
         private const val FFMPEG_EXITED_LINE = "Exiting.*signal$ZERO_OR_MORE_SPACES($ONE_OR_MORE_DIGITS).*"
-        private const val BAD_RTMP_URL = "rtmp://.*Input/output error"
+
+        // ffmpeg 7.x prefixes this error with the muxer's output context, e.g.
+        // "[out#0/flv @ 0x...] Error opening output "; ffmpeg 5.x and earlier
+        // logged the bare "rtmp://..." line with no such prefix. Keep the
+        // prefix optional so this matches both.
+        private const val FFMPEG_OUTPUT_CONTEXT_PREFIX =
+            """(\[out#$ONE_OR_MORE_DIGITS/$ONE_OR_MORE_NON_SPACES @ 0x[0-9a-f]+\] Error opening output )?"""
+        private const val BAD_RTMP_URL = "$FFMPEG_OUTPUT_CONTEXT_PREFIX" + "rtmp://.*Input/output error"
         private const val BROKEN_PIPE = ".*Broken pipe.*"
 
         /**
