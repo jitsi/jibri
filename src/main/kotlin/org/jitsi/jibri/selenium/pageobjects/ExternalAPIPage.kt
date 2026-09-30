@@ -206,6 +206,14 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         return stats["bitrate"] as? Map<String, Any?> ?: mapOf()
     }
 
+    override fun setTileView(enabled: Boolean): Boolean = executeRecorderCommand("setTileView", enabled)
+
+    /**
+     * The external API has no way to read the tile layout, and the conference runs in an iframe of another origin, so
+     * we cannot read it from the client state either. A recording driven this way is not checked.
+     */
+    override fun getTileLayout(): TileLayout? = null
+
     override fun injectParticipantTrackerScript(): Boolean = true
 
     override fun injectLocalParticipantTrackerScript(): Boolean = true

@@ -22,6 +22,7 @@ import org.jitsi.jibri.MainConfig
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.selenium.pageobjects.CallPage
+import org.jitsi.jibri.selenium.status_checks.CallStatusCheck
 import org.jitsi.jibri.selenium.status_checks.EmptyCallStatusCheck
 import org.jitsi.jibri.selenium.status_checks.IceConnectionStatusCheck
 import org.jitsi.jibri.selenium.status_checks.LocalParticipantKickedStatusCheck
@@ -132,7 +133,12 @@ data class JibriSeleniumOptions(
      * Use local participant status checks, such as if the local participant is kicked out
      * This is currently only used in the sipgateway gateway scenario;
      */
-    val enableLocalParticipantStatusChecks: Boolean = false
+    val enableLocalParticipantStatusChecks: Boolean = false,
+    /**
+     * Checks which a service adds for its own session. They run with the common checks, after them, for as long as
+     * the call lasts.
+     */
+    val extraCallStatusChecks: List<CallStatusCheck> = listOf()
 )
 
 val SIP_GW_URL_OPTIONS = listOf(
@@ -232,6 +238,7 @@ class JibriSelenium(
             if (jibriSeleniumOptions.enableLocalParticipantStatusChecks) {
                 add(LocalParticipantKickedStatusCheck(logger))
             }
+            addAll(jibriSeleniumOptions.extraCallStatusChecks)
         }
 
         // We fire all state transitions in the ioPool, otherwise we may try and cancel the
@@ -290,6 +297,8 @@ class JibriSelenium(
 
     fun setParticipantProperties(properties: Map<String, String>): Boolean =
         callPage.setParticipantProperties(properties)
+
+    fun setTileView(enabled: Boolean): Boolean = callPage.setTileView(enabled)
 
     fun handleDtmfStar6() {
         logger.info("Handling *6 DTMF command (audio toggle)")

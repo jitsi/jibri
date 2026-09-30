@@ -25,17 +25,21 @@ import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppCredentials
 import org.jitsi.jibri.error.JibriError
+import org.jitsi.jibri.metrics.JibriMetrics
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceFinalizer
+import org.jitsi.jibri.service.RecordingProfile
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.FileSink
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
 import org.jitsi.jibri.util.ProcessFactory
+import org.jitsi.jibri.util.Resolution
 import org.jitsi.jibri.util.createIfDoesNotExist
 import org.jitsi.jibri.util.whenever
 import org.jitsi.metaconfig.config
@@ -66,7 +70,15 @@ data class FileRecordingParams(
      * A map of arbitrary key, value metadata that will be written
      * to the metadata file.
      */
-    val additionalMetadata: Map<Any, Any>? = null
+    val additionalMetadata: Map<Any, Any>? = null,
+    /**
+     * What the recording must look like, or null for the default recording.
+     */
+    val recordingProfile: RecordingProfile? = null,
+    /**
+     * The resolution for ffmpeg to capture, or null to use the resolution in the ffmpeg config.
+     */
+    val captureResolution: Resolution? = null
 )
 
 /**
@@ -99,14 +111,22 @@ class FileRecordingJibriService(
     capturer: FfmpegCapturer? = null,
     processFactory: ProcessFactory = ProcessFactory(),
     fileSystem: FileSystem = FileSystems.getDefault(),
-    private var jibriServiceFinalizer: JibriServiceFinalizer? = null
+    private var jibriServiceFinalizer: JibriServiceFinalizer? = null,
+    private val jibriMetrics: JibriMetrics = JibriMetrics()
 ) : StatefulJibriService("File recording") {
     init {
         logger.addContext("session_id", fileRecordingParams.sessionId)
     }
 
-    private val capturer = capturer ?: FfmpegCapturer(logger)
-    private val jibriSelenium = jibriSelenium ?: JibriSelenium(logger)
+    private val capturer = capturer ?: FfmpegCapturer(logger, resolution = fileRecordingParams.captureResolution)
+    private val jibriSelenium = jibriSelenium ?: JibriSelenium(
+        logger,
+        JibriSeleniumOptions(
+            extraCallStatusChecks = listOfNotNull(
+                fileRecordingParams.recordingProfile?.createTileSizeCheck(logger) { jibriMetrics.tileSizeMismatch() }
+            )
+        )
+    )
 
     /**
      * The [Sink] this class will use to model the file on the filesystem
@@ -167,9 +187,11 @@ class FileRecordingJibriService(
             publishStatus(ComponentState.Error(RecordingsDirectoryNotWritable))
             return
         }
+        val recordingProfile = fileRecordingParams.recordingProfile
         jibriSelenium.joinCall(
             fileRecordingParams.callParams.callUrlInfo.copy(
-                urlParams = RECORDING_URL_OPTIONS + fileRecordingParams.callParams.extraUrlParams
+                urlParams = RECORDING_URL_OPTIONS + fileRecordingParams.callParams.extraUrlParams +
+                    (recordingProfile?.urlParams() ?: emptyList())
             ),
             fileRecordingParams.callLoginParams
         )
@@ -183,6 +205,9 @@ class FileRecordingJibriService(
                         "mode" to JibriIq.RecordingMode.FILE.toString()
                     )
                 )
+                if (recordingProfile?.useTileView == true && !jibriSelenium.setTileView(true)) {
+                    logger.error("Failed to put the client in tile view")
+                }
                 capturer.start(sink)
             } catch (t: Throwable) {
                 logger.error("Error while setting fields in presence", t)

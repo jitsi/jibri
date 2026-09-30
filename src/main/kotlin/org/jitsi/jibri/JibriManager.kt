@@ -25,6 +25,9 @@ import org.jitsi.jibri.metrics.JibriMetrics
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.service.JibriService
 import org.jitsi.jibri.service.JibriServiceStatusHandler
+import org.jitsi.jibri.service.RecordingProfiles
+import org.jitsi.jibri.service.RequestedRecordingParams
+import org.jitsi.jibri.service.Screen
 import org.jitsi.jibri.service.ServiceParams
 import org.jitsi.jibri.service.StartRequestValidator
 import org.jitsi.jibri.service.impl.FileRecordingJibriService
@@ -37,8 +40,10 @@ import org.jitsi.jibri.status.ComponentBusyStatus
 import org.jitsi.jibri.status.ComponentHealthStatus
 import org.jitsi.jibri.status.ComponentState
 import org.jitsi.jibri.status.ErrorScope
+import org.jitsi.jibri.util.Resolution
 import org.jitsi.jibri.util.StatusPublisher
 import org.jitsi.jibri.util.TaskPools
+import org.jitsi.jibri.util.XrandrException
 import org.jitsi.jibri.util.extensions.schedule
 import org.jitsi.metaconfig.config
 import org.jitsi.utils.logging2.createLogger
@@ -65,7 +70,12 @@ data class FileRecordingRequestParams(
      * The login information needed to appear invisible in
      * the call
      */
-    val callLoginParams: XmppCredentials
+    val callLoginParams: XmppCredentials,
+    /**
+     * What the recording must look like, as asked for in the request, or null if the request asks for the default
+     * recording.
+     */
+    val recordingParams: RequestedRecordingParams? = null
 )
 
 /**
@@ -77,7 +87,10 @@ data class FileRecordingRequestParams(
  * TODO: we mark 'Any' as the status type we publish because we have 2 different status types we want to publish:
  * ComponentBusyStatus and ComponentState and i was unable to think of a better solution for that (yet...)
  */
-class JibriManager : StatusPublisher<Any>() {
+class JibriManager(
+    /** Controls the X screen. Null means the screen which the config describes. */
+    screen: Screen? = null
+) : StatusPublisher<Any>() {
     private val logger = createLogger()
     private var currentActiveService: JibriService? = null
 
@@ -101,7 +114,26 @@ class JibriManager : StatusPublisher<Any>() {
 
     val jibriMetrics = JibriMetrics()
 
-    private val startRequestValidator = StartRequestValidator()
+    private val screen = screen ?: Screen(logger)
+
+    private val recordingProfiles = RecordingProfiles(tileLayoutsEnabled = this.screen.xrandrEnabled)
+
+    private val startRequestValidator = StartRequestValidator(recordingProfiles = recordingProfiles)
+
+    /**
+     * Gives the screen the resolution for a session, before the service starts Chrome. If this fails, the X server
+     * config does not match ours, and every later session can fail in the same way. So we report that we are
+     * unhealthy, and we do not start the session.
+     *
+     * @return the resolution for ffmpeg to capture, or null to use the resolution in the ffmpeg config.
+     */
+    private fun prepareScreen(canvas: Resolution?): Resolution? = try {
+        screen.prepare(canvas)
+    } catch (e: XrandrException) {
+        logger.error("Failed to set the screen resolution", e)
+        publishStatus(ComponentHealthStatus.UNHEALTHY)
+        throw e
+    }
 
     /**
      * Refuses a request which can never succeed, while this instance is still idle. Going busy for such a request
@@ -148,13 +180,21 @@ class JibriManager : StatusPublisher<Any>() {
             "Starting a file recording, sessionId=${fileRecordingRequestParams.sessionId}, " +
                 "call=${fileRecordingRequestParams.callParams}"
         )
+        // The request was accepted above, so this repeats a lookup which cannot fail.
+        val recordingProfile = recordingProfiles.resolve(fileRecordingRequestParams.recordingParams)
+        // Chrome reads the screen size when it starts, and FileRecordingJibriService starts it, so the resolution
+        // must be in place before we create the service.
+        val captureResolution = prepareScreen(recordingProfile?.canvas)
         val service = FileRecordingJibriService(
             FileRecordingParams(
                 fileRecordingRequestParams.callParams,
                 fileRecordingRequestParams.sessionId,
                 fileRecordingRequestParams.callLoginParams,
-                serviceParams.appData?.fileRecordingMetadata
-            )
+                serviceParams.appData?.fileRecordingMetadata,
+                recordingProfile,
+                captureResolution
+            ),
+            jibriMetrics = jibriMetrics
         )
         jibriMetrics.start(RecordingSinkType.FILE)
         startService(service, serviceParams, environmentContext, serviceStatusHandler)
@@ -174,7 +214,13 @@ class JibriManager : StatusPublisher<Any>() {
         validate(RecordingSinkType.STREAM, streamingParams, startRequestValidator::validate)
         logger.info("Starting a stream, sessionId=${streamingParams.sessionId}, call=${streamingParams.callParams}")
         throwIfBusy(RecordingSinkType.STREAM)
-        val service = StreamingJibriService(streamingParams)
+        // The request was accepted above, so this repeats a lookup which cannot fail.
+        val recordingProfile = recordingProfiles.resolve(streamingParams.recordingParams)
+        val captureResolution = prepareScreen(recordingProfile?.canvas)
+        val service = StreamingJibriService(
+            streamingParams.copy(recordingProfile = recordingProfile, captureResolution = captureResolution),
+            jibriMetrics = jibriMetrics
+        )
         jibriMetrics.start(RecordingSinkType.STREAM)
         startService(service, serviceParams, environmentContext, serviceStatusHandler)
     }
@@ -189,6 +235,8 @@ class JibriManager : StatusPublisher<Any>() {
         logger.info("Starting a SIP gateway, call=${sipGatewayServiceParams.callParams}")
         validate(RecordingSinkType.GATEWAY, sipGatewayServiceParams, startRequestValidator::validate)
         throwIfBusy(RecordingSinkType.GATEWAY)
+        // The SIP client captures the screen, so it needs the default resolution too.
+        prepareScreen(null)
         val service = SipGatewayJibriService(
             SipGatewayServiceParams(
                 sipGatewayServiceParams.callParams,
@@ -279,6 +327,7 @@ class JibriManager : StatusPublisher<Any>() {
         currentService.stop()
         currentActiveService = null
         currentEnvironmentContext = null
+        screen.restore()
         // Invoke the function we've been told to next time we're idle
         // and reset it
         pendingIdleFunc()

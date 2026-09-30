@@ -19,14 +19,19 @@ package org.jitsi.jibri.service.impl
 
 import org.jitsi.jibri.capture.ffmpeg.FfmpegCapturer
 import org.jitsi.jibri.config.XmppCredentials
+import org.jitsi.jibri.metrics.JibriMetrics
 import org.jitsi.jibri.selenium.CallParams
 import org.jitsi.jibri.selenium.JibriSelenium
+import org.jitsi.jibri.selenium.JibriSeleniumOptions
 import org.jitsi.jibri.selenium.RECORDING_URL_OPTIONS
 import org.jitsi.jibri.service.ErrorSettingPresenceFields
 import org.jitsi.jibri.service.JibriService
+import org.jitsi.jibri.service.RecordingProfile
+import org.jitsi.jibri.service.RequestedRecordingParams
 import org.jitsi.jibri.sink.Sink
 import org.jitsi.jibri.sink.impl.StreamSink
 import org.jitsi.jibri.status.ComponentState
+import org.jitsi.jibri.util.Resolution
 import org.jitsi.jibri.util.whenever
 import org.jitsi.xmpp.extensions.jibri.JibriIq
 
@@ -60,7 +65,21 @@ data class StreamingParams(
     /**
      * The URL at which the stream can be viewed
      */
-    val viewingUrl: String? = null
+    val viewingUrl: String? = null,
+    /**
+     * What the stream must look like, as asked for in the request, or null if the request asks for the default
+     * stream.
+     */
+    val recordingParams: RequestedRecordingParams? = null,
+    /**
+     * What we do for [recordingParams], after we accepted them. [JibriManager] sets this.
+     */
+    val recordingProfile: RecordingProfile? = null,
+    /**
+     * The resolution for ffmpeg to capture, or null to use the resolution in the ffmpeg config. [JibriManager] sets
+     * this.
+     */
+    val captureResolution: Resolution? = null
 )
 
 /**
@@ -69,26 +88,38 @@ data class StreamingParams(
  * to a url
  */
 class StreamingJibriService(
-    private val streamingParams: StreamingParams
+    private val streamingParams: StreamingParams,
+    jibriSelenium: JibriSelenium? = null,
+    capturer: FfmpegCapturer? = null,
+    private val jibriMetrics: JibriMetrics = JibriMetrics()
 ) : StatefulJibriService("Streaming") {
     init {
         logger.addContext("session_id", streamingParams.sessionId)
     }
-    private val capturer = FfmpegCapturer(logger)
+    private val capturer = capturer ?: FfmpegCapturer(logger, resolution = streamingParams.captureResolution)
     private val sink: Sink
-    private val jibriSelenium = JibriSelenium(logger)
+    private val jibriSelenium = jibriSelenium ?: JibriSelenium(
+        logger,
+        JibriSeleniumOptions(
+            extraCallStatusChecks = listOfNotNull(
+                streamingParams.recordingProfile?.createTileSizeCheck(logger) { jibriMetrics.tileSizeMismatch() }
+            )
+        )
+    )
 
     init {
         sink = StreamSink(url = streamingParams.rtmpUrl)
 
-        registerSubComponent(JibriSelenium.COMPONENT_ID, jibriSelenium)
-        registerSubComponent(FfmpegCapturer.COMPONENT_ID, capturer)
+        registerSubComponent(JibriSelenium.COMPONENT_ID, this.jibriSelenium)
+        registerSubComponent(FfmpegCapturer.COMPONENT_ID, this.capturer)
     }
 
     override fun start() {
+        val recordingProfile = streamingParams.recordingProfile
         jibriSelenium.joinCall(
             streamingParams.callParams.callUrlInfo.copy(
-                urlParams = RECORDING_URL_OPTIONS + streamingParams.callParams.extraUrlParams
+                urlParams = RECORDING_URL_OPTIONS + streamingParams.callParams.extraUrlParams +
+                    (recordingProfile?.urlParams() ?: emptyList())
             ),
             streamingParams.callLoginParams
         )
@@ -105,6 +136,9 @@ class StreamingJibriService(
                 }
                 if (!jibriSelenium.setParticipantProperties(properties)) {
                     logger.error("Error setting presence properties")
+                }
+                if (recordingProfile?.useTileView == true && !jibriSelenium.setTileView(true)) {
+                    logger.error("Failed to put the client in tile view")
                 }
                 capturer.start(sink)
             } catch (t: Throwable) {

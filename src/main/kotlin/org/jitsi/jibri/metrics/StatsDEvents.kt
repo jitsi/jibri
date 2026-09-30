@@ -21,6 +21,7 @@ internal const val ASPECT_STOP = "stop"
 internal const val ASPECT_BUSY = "busy"
 internal const val ASPECT_ERROR = "error"
 internal const val ASPECT_BAD_REQUEST = "bad-request"
+internal const val ASPECT_TILE_SIZE_MISMATCH = "tile-size-mismatch"
 
 internal const val XMPP_CONNECTED = "xmpp-connected"
 internal const val XMPP_RECONNECTING = "xmpp-reconnecting"
