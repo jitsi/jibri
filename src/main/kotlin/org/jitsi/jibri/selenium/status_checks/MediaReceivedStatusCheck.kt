@@ -23,6 +23,7 @@ class MediaReceivedStatusCheck(
     parentLogger: Logger,
     private val clock: Clock = Clock.systemDefaultZone()
 ) : CallStatusCheck {
+    override val name = "MediaReceivedStatusCheck"
     private val logger = createChildLogger(parentLogger)
 
     // The last timestamp where we saw non-zero media.  We default with the

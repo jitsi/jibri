@@ -196,7 +196,7 @@ class JibriSelenium(
         this.chromeDriver = if (chromeDriver != null) {
             chromeDriver
         } else {
-            System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver.log")
+            System.setProperty("webdriver.chrome.logfile", "/tmp/chromedriver-${System.currentTimeMillis()}.log")
             val chromeOptions = ChromeOptions()
             chromeOptions.addArguments(chromeOpts)
             chromeOptions.setExperimentalOption("w3c", false)
@@ -243,13 +243,17 @@ class JibriSelenium(
         }
         recurringCallStatusCheckTask = TaskPools.recurringTasksPool.scheduleAtFixedRate(15, TimeUnit.SECONDS, 15) {
             val callPage = CallPage(chromeDriver)
+            var currentCheckName = ""
             try {
                 // Run through each of the checks.  If we hit one that returns an event, then we stop and process the
                 // state transition from that event. Note: it's intentional that we stop at the first check that fails
                 // and 'asSequence' is necessary to do that.
                 val event = callStatusChecks
                     .asSequence()
-                    .map { check -> check.run(callPage) }
+                    .map { check ->
+                        currentCheckName = check.name
+                        check.run(callPage)
+                    }
                     .firstOrNull { result -> result != null }
                 if (event != null) {
                     logger.info("Recurring call status checks generated event $event")
@@ -258,7 +262,10 @@ class JibriSelenium(
             } catch (t: TimeoutException) {
                 // We've found that a timeout here often implies chrome has hung so consider this as an error
                 // which will result in this Jibri being marked as unhealthy
-                logger.error("Javascript timed out, assuming chrome has hung", t)
+                logger.error(
+                    "Javascript timed out in check $currentCheckName, assuming chrome has hung",
+                    t
+                )
                 transitionState(SeleniumEvent.ChromeHung)
             } catch (t: UnreachableBrowserException) {
                 if (!shuttingDown.get()) {

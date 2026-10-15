@@ -9,6 +9,11 @@ import org.jitsi.jibri.selenium.pageobjects.CallPage
  */
 interface CallStatusCheck {
     /**
+     * A descriptive name for this check, used in logging.
+     */
+    val name: String
+
+    /**
      * Run a check via [callPage], return a [SeleniumEvent] if something notable has been detected (i.e. an error),
      * null if whatever the check is looking for was fine.
      */

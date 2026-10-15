@@ -8,6 +8,7 @@ import org.jitsi.utils.logging2.createChildLogger
 class LocalParticipantKickedStatusCheck(
     parentLogger: Logger
 ) : CallStatusCheck {
+    override val name = "LocalParticipantKickedStatusCheck"
     private val logger = createChildLogger(parentLogger)
 
     init {

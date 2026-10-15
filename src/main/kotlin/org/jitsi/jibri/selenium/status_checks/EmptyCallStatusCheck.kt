@@ -21,6 +21,7 @@ class EmptyCallStatusCheck(
     private val callEmptyTimeout: Duration = defaultCallEmptyTimeout,
     private val clock: Clock = Clock.systemUTC()
 ) : CallStatusCheck {
+    override val name = "EmptyCallStatusCheck"
     private val logger = createChildLogger(parentLogger)
     init {
         logger.info("Starting empty call check with a timeout of $callEmptyTimeout")

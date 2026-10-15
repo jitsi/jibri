@@ -17,6 +17,7 @@ class IceConnectionStatusCheck(
     parentLogger: Logger,
     private val clock: Clock = Clock.systemDefaultZone()
 ) : CallStatusCheck {
+    override val name = "IceConnectionStatusCheck"
     private val logger = createChildLogger(parentLogger)
 
     // The last timestamp when ICE was connected. Initialized to give the same timeout for the initial connection.
