@@ -29,8 +29,9 @@ internal const val XMPP_RECONNECTION_FAILED = "xmpp-reconnection-failed"
 internal const val XMPP_PING_FAILED = "xmpp-ping-failed"
 internal const val XMPP_CLOSED = "xmpp-closed"
 internal const val XMPP_CLOSED_ON_ERROR = "xmpp-closed-on-error"
+internal const val XMPP_RESUMED = "xmpp-resumed"
 
-// A recording session was stopped because XMPP disconnected.
+// A recording session was stopped because XMPP disconnected and did not resume the session.
 internal const val STOPPED_ON_XMPP_CLOSED = "stopped-on-xmpp-closed"
 
 internal const val TAG_SERVICE_RECORDING = "recording"
