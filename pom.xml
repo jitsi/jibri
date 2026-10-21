@@ -20,7 +20,7 @@
         <kotest.version>5.9.1</kotest.version>
         <mockk.version>1.14.11</mockk.version>
         <ktor.version>3.4.3</ktor.version>
-        <jicoco.version>1.1-SNAPSHOT</jicoco.version>
+        <jicoco.version>1.1-186-gaff5438</jicoco.version>
         <jitsi.utils.version>1.0-153-gd5c0102</jitsi.utils.version>
         <jetty.version>12.0.35</jetty.version>
         <ktlint.version>1.8.0</ktlint.version>
