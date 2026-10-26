@@ -7,7 +7,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.jitsi.jibri.CallUrlInfo
-import org.jxmpp.jid.parts.Localpart
+import org.jxmpp.jid.impl.JidCreate
 import org.openqa.selenium.remote.RemoteWebDriver
 
 internal class AppCallPageTest : ShouldSpec() {
@@ -20,7 +20,7 @@ internal class AppCallPageTest : ShouldSpec() {
             "https://meet.example.com",
             "testroom",
             "",
-            authorizedRoom = Localpart.from("testroom")
+            authorizedRoom = JidCreate.entityBareFrom("testroom@conference.meet.example.com")
         )
 
         every { driver.executeScript(match<String> { it.contains("isJoined()") }) } returns true
@@ -37,6 +37,14 @@ internal class AppCallPageTest : ShouldSpec() {
         should("leave and return false when the joined room is not the authorized room") {
             every { driver.executeScript(match<String> { it.contains("roomjid") }) } returns
                 mapOf("roomJid" to "otherroom@conference.meet.example.com")
+
+            page.visit(callUrl) shouldBe false
+            verify { driver.executeScript(match<String> { it.contains("_room.leave()") }) }
+        }
+
+        should("leave and return false when the joined room is in another domain") {
+            every { driver.executeScript(match<String> { it.contains("roomjid") }) } returns
+                mapOf("roomJid" to "testroom@conference.othertenant.meet.example.com")
 
             page.visit(callUrl) shouldBe false
             verify { driver.executeScript(match<String> { it.contains("_room.leave()") }) }

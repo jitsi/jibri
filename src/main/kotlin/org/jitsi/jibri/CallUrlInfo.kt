@@ -18,7 +18,7 @@
 package org.jitsi.jibri
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import org.jxmpp.jid.parts.Localpart
+import org.jxmpp.jid.EntityBareJid
 import java.util.Objects
 
 /**
@@ -28,8 +28,8 @@ import java.util.Objects
  * set, a list of [urlParams] will be concatenated after the call name with
  * a "#" in between.
  *
- * [authorizedRoom] is the room localpart which the requester is authorized for. If it is set, the call page must
- * verify that the conference it joined is this room. It is a [Localpart] so that the comparison uses XMPP string
+ * [authorizedRoom] is the room JID which the requester is authorized for. If it is set, the call page must verify
+ * that the conference it joined is this room. It is an [EntityBareJid] so that the comparison uses XMPP string
  * preparation, like the server does, and not the spelling of the name. It is never read from a request body.
  */
 data class CallUrlInfo(
@@ -39,7 +39,7 @@ data class CallUrlInfo(
     val urlParams: List<String> = listOf(),
     @JsonIgnore
     @get:JsonIgnore
-    val authorizedRoom: Localpart? = null
+    val authorizedRoom: EntityBareJid? = null
 ) {
     @get:JsonIgnore
     val callUrl: String

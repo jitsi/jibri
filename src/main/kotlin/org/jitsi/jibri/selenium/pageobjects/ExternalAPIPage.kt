@@ -3,7 +3,8 @@ package org.jitsi.jibri.selenium.pageobjects
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
-import org.jxmpp.jid.parts.Localpart
+import org.jxmpp.jid.EntityBareJid
+import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.stringprep.XmppStringprepException
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -82,15 +83,28 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
     }
 
-    private fun isInAuthorizedRoom(authorizedRoom: Localpart): Boolean {
-        val joinedRoomName = driver.executeScript("return window.jibriPageState?.roomName;") as? String
-        // Compare prepared localparts, not strings: the room name the page reports is the one it joined on the
-        // server, which prepares it, for example by making it lowercase.
-        val joinedRoom = joinedRoomName?.let {
+    /**
+     * The main room's "jid" from getRoomsInfo is our occupant JID when there are no breakout rooms, and the room JID
+     * when there are. Its bare form is the room JID in both cases.
+     */
+    private fun isInAuthorizedRoom(authorizedRoom: EntityBareJid): Boolean {
+        val joinedRoomJid = callRecorderApiAsync(
+            "getRoomsInfo",
+            """
+            api.getRoomsInfo().then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                cb(mainRoom?.jid || null);
+            }).catch(() => cb(null));
+            """
+        ) as? String
+        // Compare prepared JIDs, not strings: the room the page joined went through the server's string preparation,
+        // which for example makes the name lowercase. The domain must match too, so a room with the same name in
+        // another tenant fails.
+        val joinedRoom = joinedRoomJid?.let {
             try {
-                Localpart.from(it)
+                JidCreate.from(it).asEntityBareJidIfPossible()
             } catch (e: XmppStringprepException) {
-                logger.error("The joined room name '$it' is not a valid localpart: ${e.message}")
+                logger.error("The joined room JID '$it' is not a valid JID: ${e.message}")
                 null
             }
         }
@@ -99,7 +113,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         } else if (joinedRoom == authorizedRoom) {
             return true
         } else {
-            logger.error("Joined room $joinedRoomName, but the request is for room $authorizedRoom. Leaving.")
+            logger.error("Joined room $joinedRoomJid, but the request is for room $authorizedRoom. Leaving.")
         }
         if (!leave()) {
             logger.error("Failed to leave the room")

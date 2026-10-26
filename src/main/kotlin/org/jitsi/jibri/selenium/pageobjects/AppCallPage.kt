@@ -3,8 +3,8 @@ package org.jitsi.jibri.selenium.pageobjects
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.util.Resolution
 import org.jitsi.utils.logging2.createLogger
+import org.jxmpp.jid.EntityBareJid
 import org.jxmpp.jid.impl.JidCreate
-import org.jxmpp.jid.parts.Localpart
 import org.jxmpp.stringprep.XmppStringprepException
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -65,7 +65,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         return url.authorizedRoom == null || isInAuthorizedRoom(url.authorizedRoom)
     }
 
-    private fun isInAuthorizedRoom(authorizedRoom: Localpart): Boolean {
+    private fun isInAuthorizedRoom(authorizedRoom: EntityBareJid): Boolean {
         val result = driver.executeScript(
             """
             try {
@@ -76,11 +76,12 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
             """.trimMargin()
         ) as? Map<*, *>
         val joinedRoomJid = result?.get("roomJid") as? String
-        // Compare prepared localparts, not strings: the room the page joined went through the server's string
-        // preparation, which for example makes the name lowercase.
+        // Compare prepared JIDs, not strings: the room the page joined went through the server's string preparation,
+        // which for example makes the name lowercase. The domain must match too, so a room with the same name in
+        // another tenant fails.
         val joinedRoom = joinedRoomJid?.let {
             try {
-                JidCreate.entityBareFrom(it).localpart
+                JidCreate.entityBareFrom(it)
             } catch (e: XmppStringprepException) {
                 logger.error("The joined room JID '$it' is not a valid JID: ${e.message}")
                 null

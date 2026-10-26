@@ -57,18 +57,13 @@ fun getCallUrlInfoFromJid(
         }
 
         return when {
-            subdomain.isEmpty() -> CallUrlInfo(baseCallUrl, callName, "", authorizedRoom = roomJid.localpart)
+            subdomain.isEmpty() -> CallUrlInfo(baseCallUrl, callName, "", authorizedRoom = roomJid)
 
             else -> {
                 if (!isBackendSafeTenant(subdomain.toString())) {
                     throw BadRequestException("Tenant '$subdomain' is not in the form jitsi-meet uses")
                 }
-                CallUrlInfo(
-                    "$baseCallUrl/$subdomain",
-                    callName,
-                    subdomain.toString(),
-                    authorizedRoom = roomJid.localpart
-                )
+                CallUrlInfo("$baseCallUrl/$subdomain", callName, subdomain.toString(), authorizedRoom = roomJid)
             }
         }
     } catch (e: BadRequestException) {
