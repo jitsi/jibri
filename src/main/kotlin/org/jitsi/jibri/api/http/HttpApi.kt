@@ -63,8 +63,8 @@ data class StartServiceParams(
     /**
      * The call to join. The HTTP API is for the operator of this Jibri, so the room name and the tenant in
      * [CallParams.callUrlInfo] are taken as given: they are not checked for the form jitsi-meet uses, and
-     * [org.jitsi.jibri.CallUrlInfo.authorizedRoom] stays unset, so the call page does not verify the room it joined. The XMPP API
-     * does both, because there the request comes from a conference participant.
+     * [org.jitsi.jibri.CallUrlInfo.authorizedRoom] stays unset, so the call page does not verify the room it
+     * joined. The XMPP API does both, because there the request comes from a conference participant.
      */
     val callParams: CallParams,
     /**
