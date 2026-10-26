@@ -104,8 +104,8 @@ class XmppUtilsTest : ShouldSpec() {
             context("a room name in a form jitsi-meet does not use") {
                 should("be refused") {
                     forAll(
-                        row("lockedvictim?x"),
-                        row("victim#config.startsilent=true"),
+                        row("myroom?x"),
+                        row("myroom#config.startsilent=true"),
                         row("%61"),
                         row("a%2"),
                         row("room+x"),
@@ -116,7 +116,13 @@ class XmppUtilsTest : ShouldSpec() {
                         row("."),
                         row(".."),
                         row("a%2fb"),
-                        row("a%2Fb")
+                        row("a%2Fb"),
+                        // jitsi-meet removes these from the URL path before it decodes the name, so "myroom*" joins
+                        // "myroom". encodeURIComponent keeps them, so a round trip alone does not detect them.
+                        row("myroom*"),
+                        row("myroom!"),
+                        row("myroom()"),
+                        row("myroom%2a")
                     ) { name ->
                         val jid = JidCreate.entityBareFrom("$name@$baseDomain")
                         shouldThrow<BadRequestException> {
@@ -133,7 +139,7 @@ class XmppUtilsTest : ShouldSpec() {
                         row("x.y"),
                         row("a%2fb")
                     ) { tenant ->
-                        val jid = JidCreate.entityBareFrom("victim@mucdomain.$tenant.$baseDomain")
+                        val jid = JidCreate.entityBareFrom("myroom@mucdomain.$tenant.$baseDomain")
                         shouldThrow<BadRequestException> {
                             getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "")
                         }

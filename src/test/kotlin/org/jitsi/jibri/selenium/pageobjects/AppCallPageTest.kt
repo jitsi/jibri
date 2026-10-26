@@ -30,7 +30,7 @@ internal class AppCallPageTest : ShouldSpec() {
 
         should("leave and return false when the joined room is not the authorized room") {
             every { driver.executeScript(match<String> { it.contains("roomjid") }) } returns
-                mapOf("roomJid" to "victim@conference.meet.example.com")
+                mapOf("roomJid" to "otherroom@conference.meet.example.com")
 
             page.visit(callUrl) shouldBe false
             verify { driver.executeScript(match<String> { it.contains("_room.leave()") }) }
@@ -46,7 +46,7 @@ internal class AppCallPageTest : ShouldSpec() {
 
         should("return false when other participants stay in the room after leaving") {
             every { driver.executeScript(match<String> { it.contains("roomjid") }) } returns
-                mapOf("roomJid" to "victim@conference.meet.example.com")
+                mapOf("roomJid" to "otherroom@conference.meet.example.com")
             every { driver.executeScript(match<String> { it.contains("_room.leave()") }) } returns null
             every { driver.executeScript(match<String> { it.contains("getParticipants()") }) } returns 2L
 

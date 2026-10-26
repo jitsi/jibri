@@ -52,9 +52,9 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.get(any<String>()) } returns Unit
             every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
             every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
-            every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "lockedvictim"
+            every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "myroom"
 
-            page.visit(callUrl.copy(callName = "lockedvictim?x", authorizedRoom = "lockedvictim?x")) shouldBe false
+            page.visit(callUrl.copy(callName = "myroom?x", authorizedRoom = "myroom?x")) shouldBe false
             verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
         }
 

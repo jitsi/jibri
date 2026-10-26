@@ -83,13 +83,22 @@ class CallUrlInfoFromJidException(message: String) : Exception(message)
 private const val URI_COMPONENT_UNRESERVED = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.!~*'()"
 private val ENCODED_URI_COMPONENT = Regex("(?:[A-Za-z0-9\\-_.!~*'()]|%[0-9A-Fa-f]{2})+")
 
+// jitsi-meet removes these characters from a URL path segment (_ROOM_EXCLUDE_PATTERN in
+// react/features/base/util/uri.ts) before it decodes and normalizes the name. "!", "(", ")", "*" and "'" are
+// unreserved for encodeURIComponent, so a round trip through decode and encode alone does not detect them.
+private val REMOVED_BY_JITSI_MEET = Regex("[:?#\\[\\]@!$&'()*+,;=></\"]")
+
 /**
  * Whether [name] is a room name (or tenant) equal, ignoring case, to what jitsi-meet's getBackendSafeRoomName
  * produces. A name in any other form makes us join a room other than the one we were asked to join. For example, the
- * browser cuts "a?b" at the "?" and resolves ".." as a path, and jitsi-meet decodes "%61" to "a".
+ * browser cuts "a?b" at the "?" and resolves ".." as a path, jitsi-meet decodes "%61" to "a", and jitsi-meet removes
+ * the "*" from "a*".
  */
 fun isBackendSafeRoomName(name: String): Boolean {
     if (name == "." || name == ".." || !ENCODED_URI_COMPONENT.matches(name)) {
+        return false
+    }
+    if (REMOVED_BY_JITSI_MEET.containsMatchIn(name)) {
         return false
     }
     val decoded = URLDecoder.decode(name, Charsets.UTF_8)
