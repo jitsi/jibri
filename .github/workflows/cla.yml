@@ -15,7 +15,7 @@ concurrency:
 jobs:
   cla:
     if: github.repository_owner == 'jitsi'
-    uses: jitsi/.github/.github/workflows/cla-check.yml@83a3e157391a80c725fe1a8f2ad2c2f43738f697 # main
+    uses: jitsi/.github/.github/workflows/cla-check.yml@main
     permissions:
       pull-requests: write
     secrets:
