@@ -63,22 +63,31 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
     }
 
     private fun isInAuthorizedRoom(authorizedRoom: String): Boolean {
-        val joinedRoomJid = driver.executeScript(
+        val result = driver.executeScript(
             """
             try {
-                return APP.conference._room.room.roomjid;
+                return { roomJid: APP.conference._room.room.roomjid };
             } catch (e) {
-                return null;
+                return { error: e.message };
             }
             """.trimMargin()
-        ) as? String
-        val joinedRoom = joinedRoomJid?.substringBefore('@')
-        if (joinedRoom.equals(authorizedRoom, ignoreCase = true)) {
+        ) as? Map<*, *>
+        val joinedRoomJid = result?.get("roomJid") as? String
+        if (joinedRoomJid == null) {
+            logger.error("Cannot read the joined room (${result?.get("error")}), so cannot verify it. Leaving.")
+        } else if (joinedRoomJid.substringBefore('@').equals(authorizedRoom, ignoreCase = true)) {
             return true
+        } else {
+            logger.error("Joined room $joinedRoomJid, but the request is for room $authorizedRoom. Leaving.")
         }
-        logger.error("Joined room $joinedRoomJid, but the request is for room $authorizedRoom. Leaving.")
-        // leave() throws if other participants stay in the room, and we refuse the room in either case.
-        runCatching { leave() }
+        try {
+            if (!leave()) {
+                logger.error("Failed to leave the room")
+            }
+        } catch (e: TimeoutException) {
+            // leave() times out when other participants stay in the room. We refuse the room either way.
+            logger.warn("Timed out waiting to be alone in the room after leaving")
+        }
         return false
     }
 

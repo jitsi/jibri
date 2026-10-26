@@ -11,6 +11,7 @@ import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import org.jitsi.jibri.CallUrlInfo
 import org.openqa.selenium.remote.RemoteWebDriver
 
@@ -54,6 +55,26 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "lockedvictim"
 
             page.visit(callUrl.copy(callName = "lockedvictim?x", authorizedRoom = "lockedvictim?x")) shouldBe false
+            verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
+        }
+
+        should("return false when the joined room cannot be read") {
+            every { driver.get(any<String>()) } returns Unit
+            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
+            every { driver.executeScript("return window.jibriPageState?.roomName;") } returns null
+
+            page.visit(callUrl.copy(authorizedRoom = "testroom")) shouldBe false
+            verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
+        }
+
+        should("ignore case when it compares the joined room with the authorized room") {
+            every { driver.get(any<String>()) } returns Unit
+            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
+            every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "TestRoom"
+
+            page.visit(callUrl.copy(authorizedRoom = "testroom")) shouldBe true
         }
 
         should("extract room name and pass tenant from URL path") {

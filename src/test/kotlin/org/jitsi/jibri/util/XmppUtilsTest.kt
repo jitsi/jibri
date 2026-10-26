@@ -80,6 +80,10 @@ class XmppUtilsTest : ShouldSpec() {
                     val jid = JidCreate.entityBareFrom("my%20room@$baseDomain")
                     getCallUrlInfoFromJid(jid, "", baseDomain, null).authorizedRoom shouldBe "my%20room"
                 }
+                should("set the authorized room to the localpart without the tenant") {
+                    val jid = JidCreate.entityBareFrom("roomName@mucdomain.tenant.$baseDomain")
+                    getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "").authorizedRoom shouldBe "roomname"
+                }
             }
             context("a room name in the form jitsi-meet uses") {
                 should("be accepted") {
@@ -88,6 +92,7 @@ class XmppUtilsTest : ShouldSpec() {
                         row("roomName"),
                         row("my%20room"),
                         row("caf%c3%a9"),
+                        row("caf%C3%A9"),
                         row("a%3fb"),
                         row("__jicofo-health-check-abc")
                     ) { name ->
@@ -105,7 +110,13 @@ class XmppUtilsTest : ShouldSpec() {
                         row("a%2"),
                         row("room+x"),
                         row("caf%c3%89"),
-                        row("a%ff")
+                        row("a%ff"),
+                        row("%ef%ac%81"),
+                        row("café"),
+                        row("."),
+                        row(".."),
+                        row("a%2fb"),
+                        row("a%2Fb")
                     ) { name ->
                         val jid = JidCreate.entityBareFrom("$name@$baseDomain")
                         shouldThrow<BadRequestException> {
@@ -116,9 +127,16 @@ class XmppUtilsTest : ShouldSpec() {
             }
             context("a tenant in a form jitsi-meet does not use") {
                 should("be refused") {
-                    val jid = JidCreate.entityBareFrom("victim@mucdomain.tenant?x.$baseDomain")
-                    shouldThrow<BadRequestException> {
-                        getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "")
+                    forAll(
+                        row("tenant?x"),
+                        row("%61"),
+                        row("x.y"),
+                        row("a%2fb")
+                    ) { tenant ->
+                        val jid = JidCreate.entityBareFrom("victim@mucdomain.$tenant.$baseDomain")
+                        shouldThrow<BadRequestException> {
+                            getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "")
+                        }
                     }
                 }
             }

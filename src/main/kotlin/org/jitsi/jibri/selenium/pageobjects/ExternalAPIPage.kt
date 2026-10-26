@@ -82,11 +82,16 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
 
     private fun isInAuthorizedRoom(authorizedRoom: String): Boolean {
         val joinedRoom = driver.executeScript("return window.jibriPageState?.roomName;") as? String
-        if (joinedRoom.equals(authorizedRoom, ignoreCase = true)) {
+        if (joinedRoom == null) {
+            logger.error("Cannot read the joined room, so cannot verify it. Leaving.")
+        } else if (joinedRoom.equals(authorizedRoom, ignoreCase = true)) {
             return true
+        } else {
+            logger.error("Joined room $joinedRoom, but the request is for room $authorizedRoom. Leaving.")
         }
-        logger.error("Joined room $joinedRoom, but the request is for room $authorizedRoom. Leaving.")
-        leave()
+        if (!leave()) {
+            logger.error("Failed to leave the room")
+        }
         return false
     }
 

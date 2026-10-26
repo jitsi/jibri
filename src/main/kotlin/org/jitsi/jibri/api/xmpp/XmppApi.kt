@@ -299,6 +299,7 @@ class XmppApi(
                 shouldRetry = true
             }
         } catch (e: BadRequestException) {
+            logger.info("Refusing the start request for room ${startJibriIq.room}: ${e.detail}")
             rejectBadRequest(startJibriIq, serviceStatusHandler, e)
         } catch (iq: UnsupportedIqMode) {
             logger.error("Unsupported IQ mode: ${iq.iqMode}")

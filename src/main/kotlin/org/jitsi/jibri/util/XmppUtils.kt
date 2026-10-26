@@ -60,7 +60,9 @@ fun getCallUrlInfoFromJid(
             subdomain.isEmpty() -> CallUrlInfo(baseCallUrl, callName, "", authorizedRoom = callName)
 
             else -> {
-                if (!isBackendSafeRoomName(subdomain.toString())) {
+                // Jitsi-meet maps a "." in the tenant to "_" in the MUC domain, so a tenant with a "." is never one that
+                // jitsi-meet joins.
+                if (subdomain.contains('.') || !isBackendSafeRoomName(subdomain.toString())) {
                     throw BadRequestException("Tenant '$subdomain' is not in the form jitsi-meet uses")
                 }
                 CallUrlInfo("$baseCallUrl/$subdomain", callName, subdomain.toString(), authorizedRoom = callName)
@@ -82,17 +84,22 @@ private const val URI_COMPONENT_UNRESERVED = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh
 private val ENCODED_URI_COMPONENT = Regex("(?:[A-Za-z0-9\\-_.!~*'()]|%[0-9A-Fa-f]{2})+")
 
 /**
- * Whether [name] is a room name (or tenant) exactly as jitsi-meet's getBackendSafeRoomName produces it. Jitsi-meet
- * decodes and encodes again the name it finds in the URL path, so a name in any other form makes us join a room other
- * than the one we were asked to join. For example, "a?b" is cut at the "?", and "%61" becomes "a".
+ * Whether [name] is a room name (or tenant) equal, ignoring case, to what jitsi-meet's getBackendSafeRoomName
+ * produces. A name in any other form makes us join a room other than the one we were asked to join. For example, the
+ * browser cuts "a?b" at the "?" and resolves ".." as a path, and jitsi-meet decodes "%61" to "a".
  */
 fun isBackendSafeRoomName(name: String): Boolean {
-    if (!ENCODED_URI_COMPONENT.matches(name)) {
+    if (name == "." || name == ".." || !ENCODED_URI_COMPONENT.matches(name)) {
         return false
     }
     val decoded = URLDecoder.decode(name, Charsets.UTF_8)
     val normalized = Normalizer.normalize(decoded, Normalizer.Form.NFKC).lowercase(Locale.ROOT)
-    // Prosody makes the localpart lowercase, so a name that differs only in case is the same room.
+    // A web server can decode "%2f" before it splits the tenant from the room, so "a%2fb" can put us in tenant "a".
+    // The check after the join compares only the room, so it cannot catch this.
+    if (normalized.contains('/')) {
+        return false
+    }
+    // XMPP nodeprep makes the localpart lowercase, so a name that differs only in case is the same room.
     return encodeUriComponent(normalized).equals(name, ignoreCase = true)
 }
 
