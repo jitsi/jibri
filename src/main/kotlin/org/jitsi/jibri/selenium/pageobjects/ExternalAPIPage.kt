@@ -70,7 +70,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
                 result
             }
             logger.info("Recorder page initialized successfully")
-            true
+            url.authorizedRoom == null || isInAuthorizedRoom(url.authorizedRoom)
         } catch (e: TimeoutException) {
             logger.error("Failed to join conference: timeout waiting for conferenceJoined event")
             false
@@ -78,6 +78,16 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             logger.error("Failed to join conference: ${e.message}")
             false
         }
+    }
+
+    private fun isInAuthorizedRoom(authorizedRoom: String): Boolean {
+        val joinedRoom = driver.executeScript("return window.jibriPageState?.roomName;") as? String
+        if (joinedRoom.equals(authorizedRoom, ignoreCase = true)) {
+            return true
+        }
+        logger.error("Joined room $joinedRoom, but the request is for room $authorizedRoom. Leaving.")
+        leave()
+        return false
     }
 
     private fun extractRecorderHtml(): File {

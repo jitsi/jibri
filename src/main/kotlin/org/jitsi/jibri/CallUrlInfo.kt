@@ -26,12 +26,17 @@ import java.util.Objects
  * url will be created by joining [baseUrl] and [callName] with a "/".  If
  * set, a list of [urlParams] will be concatenated after the call name with
  * a "#" in between.
+ *
+ * [authorizedRoom] is the room localpart which the requester is authorized for. If it is set, the call page must
+ * verify that the conference it joined is this room. It is never read from a request body.
  */
 data class CallUrlInfo(
     val baseUrl: String = "",
     val callName: String = "",
     val tenant: String = "",
-    val urlParams: List<String> = listOf()
+    val urlParams: List<String> = listOf(),
+    @JsonIgnore
+    val authorizedRoom: String? = null
 ) {
     @get:JsonIgnore
     val callUrl: String

@@ -92,11 +92,13 @@
 						apiError: null,
 						localParticipantId: null,
 						localParticipantKicked: false,
+						roomName: null,
 					};
 
-					api.addListener("videoConferenceJoined", ({ id }) => {
+					api.addListener("videoConferenceJoined", ({ id, roomName }) => {
 						window.jibriPageState.conferenceJoined = true;
 						window.jibriPageState.localParticipantId = id;
+						window.jibriPageState.roomName = roomName;
 					});
 
 					api.addListener("videoConferenceLeft", () => {

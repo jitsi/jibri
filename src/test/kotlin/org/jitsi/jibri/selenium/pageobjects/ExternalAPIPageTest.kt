@@ -38,6 +38,24 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             page.visit(callUrl) shouldBe false
         }
 
+        should("return true when the joined room is the authorized room") {
+            every { driver.get(any<String>()) } returns Unit
+            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
+            every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "testroom"
+
+            page.visit(callUrl.copy(authorizedRoom = "testroom")) shouldBe true
+        }
+
+        should("return false when the joined room is not the authorized room") {
+            every { driver.get(any<String>()) } returns Unit
+            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
+            every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "lockedvictim"
+
+            page.visit(callUrl.copy(callName = "lockedvictim?x", authorizedRoom = "lockedvictim?x")) shouldBe false
+        }
+
         should("extract room name and pass tenant from URL path") {
             val t = table(
                 headers("input", "room", "tenant"),

@@ -17,9 +17,13 @@
 
 package org.jitsi.jibri.util
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.ShouldSpec
+import io.kotest.data.forAll
+import io.kotest.data.row
 import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.CallUrlInfo
+import org.jitsi.jibri.error.BadRequestException
 import org.jxmpp.jid.impl.JidCreate
 
 class XmppUtilsTest : ShouldSpec() {
@@ -69,6 +73,53 @@ class XmppUtilsTest : ShouldSpec() {
                 should("convert to a call url correctly") {
                     // we want to strip the first conference from the jid
                     getCallUrlInfoFromJid(jid, "conference", conferenceBaseDomain, "") shouldBe expected
+                }
+            }
+            context("a room jid") {
+                should("set the authorized room to the localpart") {
+                    val jid = JidCreate.entityBareFrom("my%20room@$baseDomain")
+                    getCallUrlInfoFromJid(jid, "", baseDomain, null).authorizedRoom shouldBe "my%20room"
+                }
+            }
+            context("a room name in the form jitsi-meet uses") {
+                should("be accepted") {
+                    forAll(
+                        row("roomname"),
+                        row("roomName"),
+                        row("my%20room"),
+                        row("caf%c3%a9"),
+                        row("a%3fb"),
+                        row("__jicofo-health-check-abc")
+                    ) { name ->
+                        val jid = JidCreate.entityBareFrom("$name@$baseDomain")
+                        getCallUrlInfoFromJid(jid, "", baseDomain, null).callName shouldBe name.lowercase()
+                    }
+                }
+            }
+            context("a room name in a form jitsi-meet does not use") {
+                should("be refused") {
+                    forAll(
+                        row("lockedvictim?x"),
+                        row("victim#config.startsilent=true"),
+                        row("%61"),
+                        row("a%2"),
+                        row("room+x"),
+                        row("caf%c3%89"),
+                        row("a%ff")
+                    ) { name ->
+                        val jid = JidCreate.entityBareFrom("$name@$baseDomain")
+                        shouldThrow<BadRequestException> {
+                            getCallUrlInfoFromJid(jid, "", baseDomain, null)
+                        }
+                    }
+                }
+            }
+            context("a tenant in a form jitsi-meet does not use") {
+                should("be refused") {
+                    val jid = JidCreate.entityBareFrom("victim@mucdomain.tenant?x.$baseDomain")
+                    shouldThrow<BadRequestException> {
+                        getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "")
+                    }
                 }
             }
         }

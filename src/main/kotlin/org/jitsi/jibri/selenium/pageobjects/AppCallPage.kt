@@ -54,11 +54,32 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
             }
         }
 
-        if (result) {
-            logger.info("Waited $totalTime to join the conference")
+        if (!result) {
+            return false
         }
+        logger.info("Waited $totalTime to join the conference")
 
-        return result
+        return url.authorizedRoom == null || isInAuthorizedRoom(url.authorizedRoom)
+    }
+
+    private fun isInAuthorizedRoom(authorizedRoom: String): Boolean {
+        val joinedRoomJid = driver.executeScript(
+            """
+            try {
+                return APP.conference._room.room.roomjid;
+            } catch (e) {
+                return null;
+            }
+            """.trimMargin()
+        ) as? String
+        val joinedRoom = joinedRoomJid?.substringBefore('@')
+        if (joinedRoom.equals(authorizedRoom, ignoreCase = true)) {
+            return true
+        }
+        logger.error("Joined room $joinedRoomJid, but the request is for room $authorizedRoom. Leaving.")
+        // leave() throws if other participants stay in the room, and we refuse the room in either case.
+        runCatching { leave() }
+        return false
     }
 
     /**
