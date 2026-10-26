@@ -131,13 +131,28 @@ class XmppUtilsTest : ShouldSpec() {
                     }
                 }
             }
+            context("a tenant in the form jitsi-meet uses") {
+                should("be accepted") {
+                    forAll(
+                        row("tenant"),
+                        row("vpaas-magic-cookie-0123456789abcdef"),
+                        row("my_tenant"),
+                        row("caf\u00e9")
+                    ) { tenant ->
+                        val jid = JidCreate.entityBareFrom("room@mucdomain.$tenant.$baseDomain")
+                        getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "").tenant shouldBe tenant
+                    }
+                }
+            }
             context("a tenant in a form jitsi-meet does not use") {
                 should("be refused") {
                     forAll(
                         row("tenant?x"),
+                        row("tenant*"),
                         row("%61"),
                         row("x.y"),
-                        row("a%2fb")
+                        row("a%2fb"),
+                        row("caf%c3%a9")
                     ) { tenant ->
                         val jid = JidCreate.entityBareFrom("myroom@mucdomain.$tenant.$baseDomain")
                         shouldThrow<BadRequestException> {

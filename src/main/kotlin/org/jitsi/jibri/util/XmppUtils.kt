@@ -60,9 +60,7 @@ fun getCallUrlInfoFromJid(
             subdomain.isEmpty() -> CallUrlInfo(baseCallUrl, callName, "", authorizedRoom = callName)
 
             else -> {
-                // Jitsi-meet maps a "." in the tenant to "_" in the MUC domain, so a tenant with a "." is never one that
-                // jitsi-meet joins.
-                if (subdomain.contains('.') || !isBackendSafeRoomName(subdomain.toString())) {
+                if (!isBackendSafeTenant(subdomain.toString())) {
                     throw BadRequestException("Tenant '$subdomain' is not in the form jitsi-meet uses")
                 }
                 CallUrlInfo("$baseCallUrl/$subdomain", callName, subdomain.toString(), authorizedRoom = callName)
@@ -111,6 +109,17 @@ fun isBackendSafeRoomName(name: String): Boolean {
     // XMPP nodeprep makes the localpart lowercase, so a name that differs only in case is the same room.
     return encodeUriComponent(normalized).equals(name, ignoreCase = true)
 }
+
+// A tenant comes from a label of the MUC domain, which the XMPP server prepares: nameprep makes it lowercase and keeps
+// non-ASCII characters raw. nginx decodes the tenant from the URL path and jitsi-meet maps "." to "_", so jitsi-meet
+// never joins a tenant with a "%" or a "." in the MUC. Jicofo and the Prosody modules use the same rule.
+private val TENANT = Regex("(?:[A-Za-z0-9_-]|[^\\x00-\\x7f])+")
+
+/**
+ * Whether [tenant] is a tenant in the form jitsi-meet uses. A tenant in another form can put us in a different tenant
+ * once it is in a URL: a web server decodes "%2f" before it splits the path, and jitsi-meet maps "." to "_".
+ */
+fun isBackendSafeTenant(tenant: String): Boolean = TENANT.matches(tenant)
 
 private fun encodeUriComponent(str: String): String = buildString {
     for (byte in str.toByteArray(Charsets.UTF_8)) {
