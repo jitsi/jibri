@@ -26,6 +26,7 @@ import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.error.BadRequestException
 import org.jxmpp.jid.impl.JidCreate
 import org.jxmpp.jid.parts.Localpart
+import org.jxmpp.stringprep.XmppStringprepException
 
 class XmppUtilsTest : ShouldSpec() {
     private val baseDomain = "brian.jitsi.net"
@@ -146,11 +147,22 @@ class XmppUtilsTest : ShouldSpec() {
                     }
                 }
             }
+            context("a tenant with a character that JitsiXmppStringprep refuses") {
+                should("not parse as a JID") {
+                    // Smack drops such a request when it parses the IQ, so it never reaches getCallUrlInfoFromJid.
+                    forAll(
+                        row("tenant?x"),
+                        row("tenant*")
+                    ) { tenant ->
+                        shouldThrow<XmppStringprepException> {
+                            JidCreate.entityBareFrom("myroom@mucdomain.$tenant.$baseDomain")
+                        }
+                    }
+                }
+            }
             context("a tenant in a form jitsi-meet does not use") {
                 should("be refused") {
                     forAll(
-                        row("tenant?x"),
-                        row("tenant*"),
                         row("%61"),
                         row("x.y"),
                         row("a%2fb"),
