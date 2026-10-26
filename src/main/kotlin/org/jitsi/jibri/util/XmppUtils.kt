@@ -102,7 +102,8 @@ fun isBackendSafeRoomName(name: String): Boolean {
     val decoded = URLDecoder.decode(name, Charsets.UTF_8)
     val normalized = Normalizer.normalize(decoded, Normalizer.Form.NFKC).lowercase(Locale.ROOT)
     // A web server can decode "%2f" before it splits the tenant from the room, so "a%2fb" can put us in tenant "a".
-    // The check after the join compares only the room, so it cannot catch this.
+    // The check after the join also catches this, because the domain of the joined room is different. We refuse the
+    // name here too, so that the request fails before Jibri becomes busy.
     if (normalized.contains('/')) {
         return false
     }
