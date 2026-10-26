@@ -25,6 +25,7 @@ import io.kotest.matchers.shouldBe
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.error.BadRequestException
 import org.jxmpp.jid.impl.JidCreate
+import org.jxmpp.jid.parts.Localpart
 
 class XmppUtilsTest : ShouldSpec() {
     private val baseDomain = "brian.jitsi.net"
@@ -78,11 +79,12 @@ class XmppUtilsTest : ShouldSpec() {
             context("a room jid") {
                 should("set the authorized room to the localpart") {
                     val jid = JidCreate.entityBareFrom("my%20room@$baseDomain")
-                    getCallUrlInfoFromJid(jid, "", baseDomain, null).authorizedRoom shouldBe "my%20room"
+                    getCallUrlInfoFromJid(jid, "", baseDomain, null).authorizedRoom shouldBe Localpart.from("my%20room")
                 }
                 should("set the authorized room to the localpart without the tenant") {
                     val jid = JidCreate.entityBareFrom("roomName@mucdomain.tenant.$baseDomain")
-                    getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "").authorizedRoom shouldBe "roomname"
+                    getCallUrlInfoFromJid(jid, "mucdomain.", baseDomain, "").authorizedRoom shouldBe
+                        Localpart.from("roomname")
                 }
             }
             context("a room name in the form jitsi-meet uses") {

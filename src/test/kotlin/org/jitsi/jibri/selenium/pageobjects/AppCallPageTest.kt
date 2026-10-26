@@ -7,6 +7,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.jitsi.jibri.CallUrlInfo
+import org.jxmpp.jid.parts.Localpart
 import org.openqa.selenium.remote.RemoteWebDriver
 
 internal class AppCallPageTest : ShouldSpec() {
@@ -15,7 +16,12 @@ internal class AppCallPageTest : ShouldSpec() {
     init {
         val driver = mockk<RemoteWebDriver>(relaxed = true)
         val page = AppCallPage(driver)
-        val callUrl = CallUrlInfo("https://meet.example.com", "testroom", "", authorizedRoom = "testroom")
+        val callUrl = CallUrlInfo(
+            "https://meet.example.com",
+            "testroom",
+            "",
+            authorizedRoom = Localpart.from("testroom")
+        )
 
         every { driver.executeScript(match<String> { it.contains("isJoined()") }) } returns true
         every { driver.executeScript(match<String> { it.contains("getParticipants()") }) } returns 1L
@@ -39,6 +45,14 @@ internal class AppCallPageTest : ShouldSpec() {
         should("leave and return false when the joined room cannot be read") {
             every { driver.executeScript(match<String> { it.contains("roomjid") }) } returns
                 mapOf("error" to "Cannot read properties of undefined")
+
+            page.visit(callUrl) shouldBe false
+            verify { driver.executeScript(match<String> { it.contains("_room.leave()") }) }
+        }
+
+        should("leave and return false when the joined room is not a valid JID") {
+            every { driver.executeScript(match<String> { it.contains("roomjid") }) } returns
+                mapOf("roomJid" to "test room@conference.meet.example.com")
 
             page.visit(callUrl) shouldBe false
             verify { driver.executeScript(match<String> { it.contains("_room.leave()") }) }

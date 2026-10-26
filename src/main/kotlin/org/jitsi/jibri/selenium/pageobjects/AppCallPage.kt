@@ -3,6 +3,9 @@ package org.jitsi.jibri.selenium.pageobjects
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.util.Resolution
 import org.jitsi.utils.logging2.createLogger
+import org.jxmpp.jid.impl.JidCreate
+import org.jxmpp.jid.parts.Localpart
+import org.jxmpp.stringprep.XmppStringprepException
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
@@ -62,7 +65,7 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
         return url.authorizedRoom == null || isInAuthorizedRoom(url.authorizedRoom)
     }
 
-    private fun isInAuthorizedRoom(authorizedRoom: String): Boolean {
+    private fun isInAuthorizedRoom(authorizedRoom: Localpart): Boolean {
         val result = driver.executeScript(
             """
             try {
@@ -73,9 +76,19 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
             """.trimMargin()
         ) as? Map<*, *>
         val joinedRoomJid = result?.get("roomJid") as? String
-        if (joinedRoomJid == null) {
+        // Compare prepared localparts, not strings: the room the page joined went through the server's string
+        // preparation, which for example makes the name lowercase.
+        val joinedRoom = joinedRoomJid?.let {
+            try {
+                JidCreate.entityBareFrom(it).localpart
+            } catch (e: XmppStringprepException) {
+                logger.error("The joined room JID '$it' is not a valid JID: ${e.message}")
+                null
+            }
+        }
+        if (joinedRoom == null) {
             logger.error("Cannot read the joined room (${result?.get("error")}), so cannot verify it. Leaving.")
-        } else if (joinedRoomJid.substringBefore('@').equals(authorizedRoom, ignoreCase = true)) {
+        } else if (joinedRoom == authorizedRoom) {
             return true
         } else {
             logger.error("Joined room $joinedRoomJid, but the request is for room $authorizedRoom. Leaving.")

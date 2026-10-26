@@ -3,6 +3,8 @@ package org.jitsi.jibri.selenium.pageobjects
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
+import org.jxmpp.jid.parts.Localpart
+import org.jxmpp.stringprep.XmppStringprepException
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
@@ -80,14 +82,24 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
         }
     }
 
-    private fun isInAuthorizedRoom(authorizedRoom: String): Boolean {
-        val joinedRoom = driver.executeScript("return window.jibriPageState?.roomName;") as? String
+    private fun isInAuthorizedRoom(authorizedRoom: Localpart): Boolean {
+        val joinedRoomName = driver.executeScript("return window.jibriPageState?.roomName;") as? String
+        // Compare prepared localparts, not strings: the room name the page reports is the one it joined on the
+        // server, which prepares it, for example by making it lowercase.
+        val joinedRoom = joinedRoomName?.let {
+            try {
+                Localpart.from(it)
+            } catch (e: XmppStringprepException) {
+                logger.error("The joined room name '$it' is not a valid localpart: ${e.message}")
+                null
+            }
+        }
         if (joinedRoom == null) {
             logger.error("Cannot read the joined room, so cannot verify it. Leaving.")
-        } else if (joinedRoom.equals(authorizedRoom, ignoreCase = true)) {
+        } else if (joinedRoom == authorizedRoom) {
             return true
         } else {
-            logger.error("Joined room $joinedRoom, but the request is for room $authorizedRoom. Leaving.")
+            logger.error("Joined room $joinedRoomName, but the request is for room $authorizedRoom. Leaving.")
         }
         if (!leave()) {
             logger.error("Failed to leave the room")

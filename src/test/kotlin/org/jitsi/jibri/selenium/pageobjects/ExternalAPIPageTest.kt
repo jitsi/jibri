@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.jitsi.jibri.CallUrlInfo
+import org.jxmpp.jid.parts.Localpart
 import org.openqa.selenium.remote.RemoteWebDriver
 
 internal class ExternalAPIPageTest : ShouldSpec() {
@@ -45,7 +46,7 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
             every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "testroom"
 
-            page.visit(callUrl.copy(authorizedRoom = "testroom")) shouldBe true
+            page.visit(callUrl.copy(authorizedRoom = Localpart.from("testroom"))) shouldBe true
         }
 
         should("return false when the joined room is not the authorized room") {
@@ -54,7 +55,7 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
             every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "myroom"
 
-            page.visit(callUrl.copy(callName = "myroom?x", authorizedRoom = "myroom?x")) shouldBe false
+            page.visit(callUrl.copy(callName = "myroom?x", authorizedRoom = Localpart.from("myroom?x"))) shouldBe false
             verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
         }
 
@@ -64,7 +65,7 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
             every { driver.executeScript("return window.jibriPageState?.roomName;") } returns null
 
-            page.visit(callUrl.copy(authorizedRoom = "testroom")) shouldBe false
+            page.visit(callUrl.copy(authorizedRoom = Localpart.from("testroom"))) shouldBe false
             verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
         }
 
@@ -74,7 +75,7 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
             every { driver.executeScript("return window.jibriPageState?.roomName;") } returns "TestRoom"
 
-            page.visit(callUrl.copy(authorizedRoom = "testroom")) shouldBe true
+            page.visit(callUrl.copy(authorizedRoom = Localpart.from("testroom"))) shouldBe true
         }
 
         should("extract room name and pass tenant from URL path") {
