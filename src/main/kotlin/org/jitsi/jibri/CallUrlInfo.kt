@@ -18,6 +18,7 @@
 package org.jitsi.jibri
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import org.jxmpp.jid.EntityBareJid
 import java.util.Objects
 
 /**
@@ -26,12 +27,19 @@ import java.util.Objects
  * url will be created by joining [baseUrl] and [callName] with a "/".  If
  * set, a list of [urlParams] will be concatenated after the call name with
  * a "#" in between.
+ *
+ * [authorizedRoom] is the room JID which the requester is authorized for. If it is set, the call page must verify
+ * that the conference it joined is this room. It is an [EntityBareJid] so that the comparison uses XMPP string
+ * preparation, like the server does, and not the spelling of the name. It is never read from a request body.
  */
 data class CallUrlInfo(
     val baseUrl: String = "",
     val callName: String = "",
     val tenant: String = "",
-    val urlParams: List<String> = listOf()
+    val urlParams: List<String> = listOf(),
+    @JsonIgnore
+    @get:JsonIgnore
+    val authorizedRoom: EntityBareJid? = null
 ) {
     @get:JsonIgnore
     val callUrl: String

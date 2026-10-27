@@ -42,6 +42,7 @@ import org.jitsi.metaconfig.config
 import org.jitsi.metaconfig.configSupplier
 import org.jitsi.utils.logging2.Logger
 import org.jitsi.utils.logging2.LoggerImpl
+import org.jitsi.xmpp.Smack
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
@@ -51,6 +52,8 @@ val logger: Logger = LoggerImpl("org.jitsi.jibri.Main")
 fun main(args: Array<String>) {
     setupMetaconfigLogger()
     handleCommandLineArgs(args)
+    // Before anything creates a JID, so that all JIDs use the same stringprep.
+    Smack.initialize(useJitsiXmppStringprep = MainConfig.useJitsiJidValidation)
 
     logger.info("Jibri starting up with id ${MainConfig.jibriId}")
 
@@ -168,6 +171,10 @@ class MainConfig {
         val jibriId: String by config {
             "JibriConfig::jibriId" { Config.legacyConfigSource.jibriId!! }
             "jibri.id".from(Config.configSource)
+        }
+
+        val useJitsiJidValidation: Boolean by config {
+            "jibri.api.xmpp.use-jitsi-jid-validation".from(Config.configSource)
         }
     }
 }
