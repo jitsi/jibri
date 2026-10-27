@@ -22,6 +22,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.jitsi.jibri.FileRecordingRequestParams
 import org.jitsi.jibri.JibriBusyException
 import org.jitsi.jibri.JibriManager
+import org.jitsi.jibri.config.Config
 import org.jitsi.jibri.config.XmppEnvironmentConfig
 import org.jitsi.jibri.error.BadRequest
 import org.jitsi.jibri.error.BadRequestException
@@ -41,6 +42,7 @@ import org.jitsi.jibri.status.JibriStatus
 import org.jitsi.jibri.status.JibriStatusManager
 import org.jitsi.jibri.util.TaskPools
 import org.jitsi.jibri.util.getCallUrlInfoFromJid
+import org.jitsi.metaconfig.config
 import org.jitsi.utils.logging2.createLogger
 import org.jitsi.xmpp.extensions.jibri.BadRequestPacketExt
 import org.jitsi.xmpp.extensions.jibri.JibriIq
@@ -59,6 +61,7 @@ import org.jivesoftware.smack.provider.ProviderManager
 import org.jivesoftware.smackx.ping.PingManager
 import org.jxmpp.jid.impl.JidCreate
 import java.time.Duration
+import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 private class UnsupportedIqMode(val iqMode: String) : Exception()
@@ -80,8 +83,16 @@ class XmppApi(
     private val jibriManager: JibriManager,
     private val xmppConfigs: List<XmppEnvironmentConfig>,
     private val jibriStatusManager: JibriStatusManager,
+    /** How long a running service waits for its dropped XMPP connection to resume the session. */
+    private val resumeTimeout: Duration = XmppApi.resumeTimeout,
 ) : IQListener {
     private val logger = createLogger()
+
+    /**
+     * Services waiting for their XMPP connection to come back, keyed by [MucClient.id]. Each is stopped by its task
+     * unless the connection resumes the same session before [resumeTimeout].
+     */
+    private val pendingStops = mutableMapOf<String, ScheduledFuture<*>>()
 
     private val connectionStateListener = object : ConnectionStateListener {
         override fun connected(mucClient: MucClient) {
@@ -98,30 +109,82 @@ class XmppApi(
         }
 
         /**
-         * If XMPP disconnects we lost our communication channel with jicofo. Jicofo currently doesn't attempt to
-         * communicate later, and starts a new session (with a different jibri) immediately. Make sure in this case the
-         * recording is stopped.
+         * The connection logged in again. If it resumed the session, we are still in the brewery MUC as far as jicofo
+         * is concerned, and anything either side sent in the meantime is delivered now, so the service keeps running.
+         * If it started a new session instead, jicofo saw us leave the brewery and has moved the request to another
+         * jibri, so we stop.
          */
-        override fun closed(mucClient: MucClient) {
-            jibriManager.jibriMetrics.xmppClosed(mucClient.tags())
-            maybeStop(mucClient)
+        override fun authenticated(mucClient: MucClient, resumed: Boolean) {
+            val wasWaiting = cancelPendingStop(mucClient)
+            if (resumed) {
+                jibriManager.jibriMetrics.xmppResumed(mucClient.tags())
+                if (wasWaiting) {
+                    logger.info("XMPP session resumed on $mucClient, the service keeps running.")
+                }
+            } else {
+                maybeStop(mucClient, "XMPP reconnected without resuming the session")
+            }
         }
 
         /**
-         * If XMPP disconnects we lost our communication channel with jicofo. Jicofo currently doesn't attempt to
-         * communicate later, and starts a new session (with a different jibri) immediately. Make sure in this case the
-         * recording is stopped.
+         * The connection was closed cleanly. The session cannot be resumed, so jicofo will see us leave the brewery and
+         * move the request to another jibri. Stop.
+         */
+        override fun closed(mucClient: MucClient) {
+            jibriManager.jibriMetrics.xmppClosed(mucClient.tags())
+            cancelPendingStop(mucClient)
+            maybeStop(mucClient, "XMPP closed")
+        }
+
+        /**
+         * The connection dropped. If the session can be resumed, the XMPP server keeps us in the brewery MUC for a
+         * while and jicofo does not notice, so give the connection [resumeTimeout] to come back before stopping.
          */
         override fun closedOnError(mucClient: MucClient) {
             jibriManager.jibriMetrics.xmppClosedOnError(mucClient.tags())
-            maybeStop(mucClient)
+            if (!isCurrentEnvironment(mucClient)) {
+                return
+            }
+            if (!mucClient.isSmResumptionPossible) {
+                maybeStop(mucClient, "XMPP disconnected and the session cannot be resumed")
+                return
+            }
+
+            logger.warn("XMPP disconnected on $mucClient, waiting up to $resumeTimeout for the session to resume.")
+            synchronized(pendingStops) {
+                pendingStops.remove(mucClient.id)?.cancel(false)
+                pendingStops[mucClient.id] = TaskPools.recurringTasksPool.schedule(
+                    {
+                        synchronized(pendingStops) { pendingStops.remove(mucClient.id) }
+                        try {
+                            maybeStop(mucClient, "XMPP session not resumed within $resumeTimeout")
+                        } catch (t: Throwable) {
+                            logger.error("Error while stopping the service after XMPP was not resumed", t)
+                        }
+                    },
+                    resumeTimeout.toMillis(),
+                    TimeUnit.MILLISECONDS
+                )
+            }
         }
 
-        private fun maybeStop(mucClient: MucClient) {
-            val xmppEnvironment = getXmppEnvironment(mucClient) ?: return
-            val environmentContext = createEnvironmentContext(xmppEnvironment, mucClient)
-            if (jibriManager.currentEnvironmentContext == environmentContext) {
-                logger.warn("XMPP disconnected, stopping.")
+        /** Returns whether a stop was pending for [mucClient]. */
+        private fun cancelPendingStop(mucClient: MucClient): Boolean = synchronized(pendingStops) {
+            pendingStops.remove(mucClient.id)?.let {
+                it.cancel(false)
+                true
+            } ?: false
+        }
+
+        private fun isCurrentEnvironment(mucClient: MucClient): Boolean {
+            val xmppEnvironment = getXmppEnvironment(mucClient) ?: return false
+            return jibriManager.currentEnvironmentContext == createEnvironmentContext(xmppEnvironment, mucClient)
+        }
+
+        /** Stops the service if it was started through [mucClient]: jicofo can no longer reach it there. */
+        private fun maybeStop(mucClient: MucClient, reason: String) {
+            if (isCurrentEnvironment(mucClient)) {
+                logger.warn("$reason on $mucClient, stopping.")
                 jibriManager.jibriMetrics.stoppedOnXmppClosed(mucClient.tags())
                 jibriManager.stopService()
             }
@@ -497,6 +560,12 @@ class XmppApi(
             else -> {
                 throw UnsupportedIqMode(startIq.mode().toString())
             }
+        }
+    }
+
+    companion object {
+        val resumeTimeout: Duration by config {
+            "jibri.api.xmpp.resume-timeout".from(Config.configSource)
         }
     }
 }

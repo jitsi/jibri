@@ -107,6 +107,11 @@ class JibriMetrics {
         xmppClosedOnError.inc()
     }
 
+    fun xmppResumed(tags: String) {
+        incrementStatsDCounter(XMPP_RESUMED, tags)
+        xmppResumed.inc()
+    }
+
     fun stoppedOnXmppClosed(tags: String) {
         incrementStatsDCounter(STOPPED_ON_XMPP_CLOSED, tags)
         stoppedOnXmppClosed.inc()
@@ -165,6 +170,10 @@ class JibriMetrics {
         val xmppClosedOnError = JibriMetricsContainer.registerCounter(
             "xmpp_closed_on_error",
             "Number of times an XMPP connection was closed on error."
+        )
+        val xmppResumed = JibriMetricsContainer.registerCounter(
+            "xmpp_resumed",
+            "Number of times an XMPP connection came back and resumed its previous session."
         )
         val stoppedOnXmppClosed = JibriMetricsContainer.registerCounter(
             "stopped_on_xmpp_closed",
