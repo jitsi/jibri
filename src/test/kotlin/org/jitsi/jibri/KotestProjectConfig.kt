@@ -19,8 +19,14 @@ package org.jitsi.jibri
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.extensions.junitxml.JunitXmlReporter
+import org.jitsi.xmpp.Smack
 
 class KotestProjectConfig : AbstractProjectConfig() {
+    override suspend fun beforeProject() {
+        // Use the same JID stringprep as Main does with the default config.
+        Smack.initialize(useJitsiXmppStringprep = true)
+    }
+
     override fun extensions(): List<Extension> = listOf(
         /*
          * The JunitXmlReporter writes a junit5 compatible unit test output

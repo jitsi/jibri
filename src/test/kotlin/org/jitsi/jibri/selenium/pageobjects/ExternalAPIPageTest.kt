@@ -11,7 +11,9 @@ import io.kotest.matchers.string.shouldContain
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import org.jitsi.jibri.CallUrlInfo
+import org.jxmpp.jid.impl.JidCreate
 import org.openqa.selenium.remote.RemoteWebDriver
 
 internal class ExternalAPIPageTest : ShouldSpec() {
@@ -36,6 +38,67 @@ internal class ExternalAPIPageTest : ShouldSpec() {
             every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns false
 
             page.visit(callUrl) shouldBe false
+        }
+
+        context("verifying the joined room") {
+            val authorizedRoom = JidCreate.entityBareFrom("testroom@conference.meet.example.com")
+            every { driver.get(any<String>()) } returns Unit
+            every { driver.executeScript("return window.jibriPageState?.apiError;") } returns null
+            every { driver.executeScript("return window.jibriPageState?.conferenceJoined === true;") } returns true
+
+            fun joinedRoomJidIs(jid: String?) {
+                every {
+                    driver.executeAsyncScript(match<String> { it.contains("mainRoom?.jid") }, *anyVararg<Any>())
+                } returns jid
+            }
+
+            should("return true when the joined room is the authorized room") {
+                // Without breakout rooms getRoomsInfo gives the occupant JID.
+                joinedRoomJidIs("testroom@conference.meet.example.com/abcd1234")
+
+                page.visit(callUrl.copy(authorizedRoom = authorizedRoom)) shouldBe true
+            }
+
+            should("return true when getRoomsInfo gives the bare room JID") {
+                // With breakout rooms getRoomsInfo gives the room JID.
+                joinedRoomJidIs("testroom@conference.meet.example.com")
+
+                page.visit(callUrl.copy(authorizedRoom = authorizedRoom)) shouldBe true
+            }
+
+            should("ignore case when it compares the joined room with the authorized room") {
+                joinedRoomJidIs("TestRoom@Conference.Meet.Example.com/abcd1234")
+
+                page.visit(callUrl.copy(authorizedRoom = authorizedRoom)) shouldBe true
+            }
+
+            should("return false when the joined room is not the authorized room") {
+                joinedRoomJidIs("otherroom@conference.meet.example.com/abcd1234")
+
+                page.visit(callUrl.copy(authorizedRoom = authorizedRoom)) shouldBe false
+                verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
+            }
+
+            should("return false when the joined room is in another domain") {
+                joinedRoomJidIs("testroom@conference.othertenant.meet.example.com/abcd1234")
+
+                page.visit(callUrl.copy(authorizedRoom = authorizedRoom)) shouldBe false
+                verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
+            }
+
+            should("return false when the joined room is not a valid JID") {
+                joinedRoomJidIs("test<room@conference.meet.example.com")
+
+                page.visit(callUrl.copy(authorizedRoom = authorizedRoom)) shouldBe false
+                verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
+            }
+
+            should("return false when the joined room cannot be read") {
+                joinedRoomJidIs(null)
+
+                page.visit(callUrl.copy(authorizedRoom = authorizedRoom)) shouldBe false
+                verify { driver.executeScript(match<String> { it.contains("'hangup'") }, *anyVararg<Any>()) }
+            }
         }
 
         should("extract room name and pass tenant from URL path") {

@@ -3,6 +3,9 @@ package org.jitsi.jibri.selenium.pageobjects
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.utils.logging2.createLogger
+import org.jxmpp.jid.EntityBareJid
+import org.jxmpp.jid.impl.JidCreate
+import org.jxmpp.stringprep.XmppStringprepException
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
@@ -70,7 +73,7 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
                 result
             }
             logger.info("Recorder page initialized successfully")
-            true
+            url.authorizedRoom == null || isInAuthorizedRoom(url.authorizedRoom)
         } catch (e: TimeoutException) {
             logger.error("Failed to join conference: timeout waiting for conferenceJoined event")
             false
@@ -78,6 +81,44 @@ class ExternalAPIPage(driver: RemoteWebDriver) : AbstractPageObject(driver), Cal
             logger.error("Failed to join conference: ${e.message}")
             false
         }
+    }
+
+    /**
+     * The main room's "jid" from getRoomsInfo is our occupant JID when there are no breakout rooms, and the room JID
+     * when there are. Its bare form is the room JID in both cases.
+     */
+    private fun isInAuthorizedRoom(authorizedRoom: EntityBareJid): Boolean {
+        val joinedRoomJid = callRecorderApiAsync(
+            "getRoomsInfo",
+            """
+            api.getRoomsInfo().then(roomsData => {
+                const mainRoom = (roomsData.rooms || []).find(r => r?.isMainRoom);
+                cb(mainRoom?.jid || null);
+            }).catch(() => cb(null));
+            """
+        ) as? String
+        // Compare prepared JIDs, not strings: the room the page joined went through the server's string preparation,
+        // which for example makes the name lowercase. The domain must match too, so a room with the same name in
+        // another tenant fails.
+        val joinedRoom = joinedRoomJid?.let {
+            try {
+                JidCreate.from(it).asEntityBareJidIfPossible()
+            } catch (e: XmppStringprepException) {
+                logger.error("The joined room JID '$it' is not a valid JID: ${e.message}")
+                null
+            }
+        }
+        if (joinedRoom == null) {
+            logger.error("Cannot read the joined room, so cannot verify it. Leaving.")
+        } else if (joinedRoom == authorizedRoom) {
+            return true
+        } else {
+            logger.error("Joined room $joinedRoomJid, but the request is for room $authorizedRoom. Leaving.")
+        }
+        if (!leave()) {
+            logger.error("Failed to leave the room")
+        }
+        return false
     }
 
     private fun extractRecorderHtml(): File {

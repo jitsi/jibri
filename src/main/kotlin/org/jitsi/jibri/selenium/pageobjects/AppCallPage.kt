@@ -3,6 +3,9 @@ package org.jitsi.jibri.selenium.pageobjects
 import org.jitsi.jibri.CallUrlInfo
 import org.jitsi.jibri.util.Resolution
 import org.jitsi.utils.logging2.createLogger
+import org.jxmpp.jid.EntityBareJid
+import org.jxmpp.jid.impl.JidCreate
+import org.jxmpp.stringprep.XmppStringprepException
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.PageFactory
@@ -54,11 +57,52 @@ class AppCallPage(driver: RemoteWebDriver) : AbstractPageObject(driver), CallPag
             }
         }
 
-        if (result) {
-            logger.info("Waited $totalTime to join the conference")
+        if (!result) {
+            return false
         }
+        logger.info("Waited $totalTime to join the conference")
 
-        return result
+        return url.authorizedRoom == null || isInAuthorizedRoom(url.authorizedRoom)
+    }
+
+    private fun isInAuthorizedRoom(authorizedRoom: EntityBareJid): Boolean {
+        val result = driver.executeScript(
+            """
+            try {
+                return { roomJid: APP.conference._room.room.roomjid };
+            } catch (e) {
+                return { error: e.message };
+            }
+            """.trimMargin()
+        ) as? Map<*, *>
+        val joinedRoomJid = result?.get("roomJid") as? String
+        // Compare prepared JIDs, not strings: the room the page joined went through the server's string preparation,
+        // which for example makes the name lowercase. The domain must match too, so a room with the same name in
+        // another tenant fails.
+        val joinedRoom = joinedRoomJid?.let {
+            try {
+                JidCreate.entityBareFrom(it)
+            } catch (e: XmppStringprepException) {
+                logger.error("The joined room JID '$it' is not a valid JID: ${e.message}")
+                null
+            }
+        }
+        if (joinedRoom == null) {
+            logger.error("Cannot read the joined room (${result?.get("error")}), so cannot verify it. Leaving.")
+        } else if (joinedRoom == authorizedRoom) {
+            return true
+        } else {
+            logger.error("Joined room $joinedRoomJid, but the request is for room $authorizedRoom. Leaving.")
+        }
+        try {
+            if (!leave()) {
+                logger.error("Failed to leave the room")
+            }
+        } catch (e: TimeoutException) {
+            // leave() times out when other participants stay in the room. We refuse the room either way.
+            logger.warn("Timed out waiting to be alone in the room after leaving")
+        }
+        return false
     }
 
     /**

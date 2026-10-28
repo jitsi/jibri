@@ -17,6 +17,8 @@
 
 package org.jitsi.jibri
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.data.forAll
@@ -46,6 +48,15 @@ class CallUrlInfoTest : ShouldSpec() {
                     info.callName shouldBe "callName"
                     info.callUrl shouldBe "baseUrl/callName#one&two&three"
                 }
+            }
+        }
+        context("parsing a CallUrlInfo from JSON") {
+            should("ignore an authorizedRoom in the JSON") {
+                val info = jacksonObjectMapper().readValue<CallUrlInfo>(
+                    """{"baseUrl":"baseUrl","callName":"callName","authorizedRoom":"other"}"""
+                )
+                info.callName shouldBe "callName"
+                info.authorizedRoom shouldBe null
             }
         }
         context("a nullable CallUrlInfo instance") {
