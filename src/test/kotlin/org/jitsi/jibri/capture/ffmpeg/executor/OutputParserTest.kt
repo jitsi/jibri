@@ -22,6 +22,7 @@ import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.beInstanceOf
+import org.jitsi.jibri.capture.ffmpeg.BadRtmpUrlStatus
 import org.jitsi.jibri.capture.ffmpeg.FfmpegErrorStatus
 import org.jitsi.jibri.capture.ffmpeg.OutputLineClassification
 import org.jitsi.jibri.capture.ffmpeg.OutputParser
@@ -67,6 +68,30 @@ internal class OutputParserTest : ShouldSpec() {
                     status as FfmpegErrorStatus
                     status.detail.shouldBe(outputLine)
                     status.error.scope shouldBe ErrorScope.SESSION
+                }
+            }
+        }
+        context("A bad RTMP URL output line") {
+            mapOf(
+                "from ffmpeg 5.x" to
+                    "rtmp://a.rtmp.youtube.com/live2/dkafkjlafkjhsadf: Input/output error",
+                "from ffmpeg 5.x with rtmps" to
+                    "rtmps://live-api-s.facebook.com:443/rtmp/dkafkjlafkjhsadf: Input/output error",
+                "from ffmpeg 7.x" to
+                    "[out#0/flv @ 0x55d5c6c1c840] Error opening output " +
+                    "rtmp://a.rtmp.youtube.com/live2/dkafkjlafkjhsadf: Input/output error",
+                "from ffmpeg 7.x with rtmps" to
+                    "[out#0/flv @ 0x55d5c6c1c840] Error opening output " +
+                    "rtmps://live-api-s.facebook.com:443/rtmp/dkafkjlafkjhsadf: Input/output error"
+            ).forEach { (name, outputLine) ->
+                context(name) {
+                    should("be parsed as a bad RTMP URL") {
+                        val status = OutputParser.parse(outputLine)
+                        status should beInstanceOf<BadRtmpUrlStatus>()
+                        status as FfmpegErrorStatus
+                        status.detail shouldBe outputLine
+                        status.error.scope shouldBe ErrorScope.SESSION
+                    }
                 }
             }
         }
