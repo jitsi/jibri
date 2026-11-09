@@ -1,0 +1,9 @@
+# Room name checks
+
+Read this before you change how `getCallUrlInfoFromJid` (`XmppUtils.kt`) builds the call URL from the room JID of a start IQ.
+
+- jitsi-meet and the browser change some room names when they read the URL path. For example, `a?b`, `%61` and `a*` all join the room `a`. A `%2f` can move the room into another tenant when a web server decodes it before it splits the path. Without checks, Jibri joins and records a room other than the room in the IQ.
+- Three checks refuse a bad room before Jibri becomes busy: stringprep when Smack parses the IQ, `isBackendSafeRoomName`, and `isBackendSafeTenant`. The last two throw `BadRequestException`, and `rejectBadRequest` in `XmppApi.kt` answers Jicofo. A fourth check runs after the join (see `src/main/kotlin/org/jitsi/jibri/selenium/CLAUDE.md`).
+- Stringprep: `Main.kt` calls `org.jitsi.xmpp.Smack.initialize(useJitsiXmppStringprep = ...)`, as Jicofo does. The flag is `jibri.api.xmpp.use-jitsi-jid-validation` (default `true`). JitsiXmppStringprep allows `_` and `%` in a domain label. A domain with `?` or `*` does not parse. `Smack.initialize` also sets `ExceptionLoggingCallback`: Smack logs and drops a stanza that it cannot parse, and keeps the connection. Jicofo then gets no reply and times out. The default Smack callback closes the connection instead.
+- `isBackendSafeRoomName`: the localpart must equal, ignoring case, what `getBackendSafeRoomName` in jitsi-meet gives (decode, NFKC, lowercase, `encodeURIComponent`). It must not contain a character of `_ROOM_EXCLUDE_PATTERN` (`react/features/base/util/uri.ts` in jitsi-meet). It must not decode to a name that contains `/`, and it must not be `.` or `..`. Keep these rules the same as in jitsi-meet.
+- `isBackendSafeTenant`: a tenant has only letters, digits, `_`, `-` and raw non-ASCII characters. It has no `%` and no `.`, because jitsi-meet maps `.` to `_` in the MUC domain. Jicofo and the Prosody modules use the same rule.

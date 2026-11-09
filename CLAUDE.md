@@ -45,6 +45,10 @@ mvn exec:exec@ktlint-check
 mvn exec:exec@ktlint-format
 ```
 
+`mvn verify` runs ktlint in the `verify` phase, after the tests. To find a lint error without a full test run, run `mvn exec:exec@ktlint-check` before `mvn verify`.
+
+ktlint runs through exec-maven-plugin, not a ktlint Maven plugin. Do not use `mvn ktlint:check`. It fails with `No plugin found for prefix 'ktlint'`.
+
 ## Architecture
 
 ### Core Components
@@ -122,6 +126,7 @@ Key config sections:
 - Mocking: MockK for Kotlin
 - Test helpers in `src/test/kotlin/org/jitsi/jibri/helpers/`
 - Tests use in-memory filesystems for file operations
+- `KotestProjectConfig.beforeProject` calls `Smack.initialize`, so tests use the same JID stringprep as production. jxmpp caches prepared JID parts, so this call must come before any spec creates a JID. A JID with `?` or `*` in the domain does not parse, so test it as a parse failure, not through `getCallUrlInfoFromJid`.
 
 ## Java Version
 
@@ -145,3 +150,24 @@ Key external dependencies:
 - Health checks exposed at internal HTTP API `/jibri/api/v1.0/health`
 - Metrics available via StatsD and optionally Prometheus
 - Webhook support for external status notifications
+- Jicofo uses one brewery and picks any healthy, idle Jibri from it. Brewery presence carries no capability data, so Jicofo cannot send a request to a Jibri with a different config. A per-session feature must work on every Jibri in the pool, so make it a request parameter (as the recording params are).
+
+## Room authorization
+
+- A start IQ must not make Chrome join a room other than the room JID in the IQ. Four checks enforce this: JID stringprep when Smack parses the IQ, `isBackendSafeRoomName` and `isBackendSafeTenant` (`util/XmppUtils.kt`), and a full-JID check of the joined room after the join (`selenium/pageobjects/`). Keep all four when you change how the call URL is built.
+- The check after the join compares the MUC domain too. This works because `config.iAmRecorder=true` makes lib-jitsi-meet ignore a visitor-node redirect, so Jibri always joins the main room. Do not remove `config.iAmRecorder=true` from the URL options.
+- The HTTP API does not check the room. It uses the room name and the tenant from the request as given, and `CallUrlInfo.authorizedRoom` stays null.
+- Detail is in `src/main/kotlin/org/jitsi/jibri/util/CLAUDE.md` (the first three checks) and `src/main/kotlin/org/jitsi/jibri/selenium/CLAUDE.md` (the check after the join).
+
+## Package versions
+
+The debian package version is `git describe --match "v[0-9.]*" --long` of the build commit, without the `v`, plus `-1` (`resources/jenkins/release.sh`). Example: `8.0-239-g9f821d1-1` is commit `9f821d1`, the 239th commit after tag `v8.0`. To find out if a package contains a change, run `git merge-base --is-ancestor <change-commit> <sha>`.
+
+## Logs
+
+- The default `lib/logging.properties` writes `/var/log/jitsi/jibri/log.N.txt` and rotates at 10 MB. A session from some minutes ago can be in `log.1.txt` or later. Find it with `grep -l "<session id>" log.*.txt`.
+- To follow one session in the log, grep for `Received JibriIq`, `Starting a file recording`, `Setting the resolution`, `Starting ffmpeg with command`, `Rejecting the request` and `Finalizing`.
+
+## Screen and recording params
+
+Detail is in `src/main/kotlin/org/jitsi/jibri/service/CLAUDE.md`. Read it before you change the X screen, the `recording-params` element of the start IQ, or the tile layout.
