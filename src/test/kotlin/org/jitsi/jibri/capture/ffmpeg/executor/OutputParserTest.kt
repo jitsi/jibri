@@ -73,14 +73,14 @@ internal class OutputParserTest : ShouldSpec() {
         }
         context("A bad RTMP URL output line") {
             mapOf(
-                "from ffmpeg 5.x" to
+                "from ffmpeg 6.0 and earlier" to
                     "rtmp://a.rtmp.youtube.com/live2/dkafkjlafkjhsadf: Input/output error",
-                "from ffmpeg 5.x with rtmps" to
+                "from ffmpeg 6.0 and earlier with rtmps" to
                     "rtmps://live-api-s.facebook.com:443/rtmp/dkafkjlafkjhsadf: Input/output error",
-                "from ffmpeg 7.x" to
+                "from ffmpeg 6.1 and later" to
                     "[out#0/flv @ 0x55d5c6c1c840] Error opening output " +
                     "rtmp://a.rtmp.youtube.com/live2/dkafkjlafkjhsadf: Input/output error",
-                "from ffmpeg 7.x with rtmps" to
+                "from ffmpeg 6.1 and later with rtmps" to
                     "[out#0/flv @ 0x55d5c6c1c840] Error opening output " +
                     "rtmps://live-api-s.facebook.com:443/rtmp/dkafkjlafkjhsadf: Input/output error"
             ).forEach { (name, outputLine) ->
@@ -91,6 +91,20 @@ internal class OutputParserTest : ShouldSpec() {
                         status as FfmpegErrorStatus
                         status.detail shouldBe outputLine
                         status.error.scope shouldBe ErrorScope.SESSION
+                    }
+                }
+            }
+        }
+        context("An output-error line ffmpeg 6.1 and later print after the bad RTMP URL line") {
+            listOf(
+                "Error opening output file rtmp://a.rtmp.youtube.com/live2/dkafkjlafkjhsadf.",
+                "Error opening output files: Input/output error"
+            ).forEach { outputLine ->
+                context(outputLine) {
+                    should("not be parsed as an error") {
+                        val status = OutputParser.parse(outputLine)
+                        status.lineType shouldBe OutputLineClassification.UNKNOWN
+                        status.detail shouldBe outputLine
                     }
                 }
             }
