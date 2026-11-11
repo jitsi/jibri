@@ -1,5 +1,7 @@
 # Jibri
 
+# Some dummy change to test CLA checks
+
 JItsi BRoadcasting Infrastructure
 
 # What is Jibri
