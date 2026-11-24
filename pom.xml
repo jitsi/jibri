@@ -10,25 +10,32 @@
 
     <properties>
         <selenium.version>4.43.0</selenium.version>
-        <kotlin.version>2.4.20</kotlin.version>
+        <kotlin.version>2.4.21</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <kotlin.compiler.jvmTarget>17</kotlin.compiler.jvmTarget>
-        <jackson.version>2.21.5</jackson.version>
+        <jackson.version>2.21.9</jackson.version>
         <junit.version>5.14.4</junit.version>
         <kotest.version>5.9.1</kotest.version>
-        <mockk.version>1.14.11</mockk.version>
-        <ktor.version>3.4.3</ktor.version>
-        <jicoco.version>1.1-186-gaff5438</jicoco.version>
-        <jitsi.utils.version>1.0-153-gd5c0102</jitsi.utils.version>
-        <jetty.version>12.0.35</jetty.version>
+        <mockk.version>1.14.12</mockk.version>
+        <ktor.version>3.5.2</ktor.version>
+        <jicoco.version>1.1-190-ge52cce5</jicoco.version>
+        <jitsi.utils.version>1.0-158-g4eebe2e</jitsi.utils.version>
+        <jetty.version>12.0.41</jetty.version>
         <ktlint.version>1.8.0</ktlint.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Align all Jetty artifacts with the version used by jicoco. -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Align the Jetty artifacts that ktor-server-jetty-jakarta pulls in. -->
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
@@ -101,22 +108,18 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.21</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-kotlin</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.jaxrs</groupId>
             <artifactId>jackson-jaxrs-json-provider</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>net.sourceforge.argparse4j</groupId>
@@ -126,7 +129,7 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>jitsi-xmpp-extensions</artifactId>
-            <version>1.0-126-g0ca2e0a</version>
+            <version>1.0-129-gdd02a91</version>
         </dependency>
         <dependency>
             <groupId>com.datadoghq</groupId>
@@ -198,7 +201,7 @@
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
-            <version>1.4.0</version>
+            <version>1.4.2</version>
         </dependency>
         <!-- testing -->
         <dependency>
