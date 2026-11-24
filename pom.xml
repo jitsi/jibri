@@ -9,7 +9,7 @@
     <version>8.0-SNAPSHOT</version>
 
     <properties>
-        <selenium.version>4.43.0</selenium.version>
+        <selenium.version>4.54.0</selenium.version>
         <kotlin.version>2.4.20</kotlin.version>
         <exec.mainClass>org.jitsi.jibri.MainKt</exec.mainClass>
         <maven.compiler.source>17</maven.compiler.source>
@@ -90,7 +90,7 @@
         </dependency>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
+            <artifactId>selenium-chrome-driver</artifactId>
             <version>${selenium.version}</version>
         </dependency>
         <dependency>
